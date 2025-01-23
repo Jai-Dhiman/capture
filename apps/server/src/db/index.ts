@@ -1,10 +1,6 @@
-import { drizzle } from 'drizzle-orm/d1';
+import { drizzle } from 'drizzle-orm/d1'
+import * as schema from './schema'
 
-export interface Env {
-  <BINDING_NAME>: D1Database;
+export function createDb(d1: D1Database) {
+  return drizzle(d1, { schema })
 }
-export default {
-  async fetch(request: Request, env: Env) {
-    const db = drizzle(env.<BINDING_NAME>);
-  },
-};

@@ -71,7 +71,7 @@ importers:
         version: 3.12.12
     devDependencies:
       '@cloudflare/workers-types':
-        specifier: ^4.0.0
+        specifier: ^4.20250121.0
         version: 4.20250121.0
       drizzle-kit:
         specifier: ^0.30.2

@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1737621088875,
+      "tag": "0000_clear_celestials",
+      "breakpoints": true
+    }
+  ]
+}
