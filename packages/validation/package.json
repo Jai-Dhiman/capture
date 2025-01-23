@@ -1,0 +1,25 @@
+{
+  "name": "@capture/validation",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "files": ["dist/**"],
+  "scripts": {
+    "build": "tsup src/index.ts ,cjs --dts",
+    "dev": "tsup src/index.ts ,cjs --watch --dts",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "zod": "^3.22.0"
+  }
+}
