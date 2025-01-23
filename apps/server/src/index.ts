@@ -1,14 +1,24 @@
-import { Hono } from "hono";
-import { cors } from "hono/cors";
+import { Hono } from 'hono'
+import { cors } from 'hono/cors'
+import { logger } from 'hono/logger'
 
-const app = new Hono();
+const app = new Hono()
 
-app.use("/*", cors());
+app.use('*', logger())
+app.use('*', cors())
 
-app.get("/", (c) => {
+app.get('/', (c) => {
   return c.json({
-    message: "Welcome to Capture API",
-  });
-});
+    status: 'ok',
+    timestamp: new Date().toISOString()
+  })
+})
 
-export default app;
+app.onError((err, c) => {
+  console.error(`${err}`)
+  return c.json({
+    error: err.message || 'Internal Server Error'
+  }, 500)
+})
+
+export default app
