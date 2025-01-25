@@ -8,6 +8,13 @@
       "when": 1737621088875,
       "tag": "0000_clear_celestials",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1737685078469,
+      "tag": "0001_chunky_boomerang",
+      "breakpoints": true
     }
   ]
 }

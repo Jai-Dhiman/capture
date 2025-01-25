@@ -12,10 +12,8 @@
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "strict": true,
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "baseUrl": "src"
   },
-  "include": ["src", "*.ts", "*.tsx", "*.js", "*.jsx", "App.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],
+  "include": ["src", "*.ts", "*.tsx", "*.js", "*.jsx", "src/App.tsx"],
   "exclude": ["node_modules", "babel.config.js", "metro.config.js"]
 }

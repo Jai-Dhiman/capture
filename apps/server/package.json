@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@capture/validation": "workspace:*",
+    "better-auth": "^1.1.14",
     "drizzle-orm": "^0.38.4",
     "hono": "^3.0.0"
   },
