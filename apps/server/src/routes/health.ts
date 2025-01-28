@@ -2,10 +2,7 @@ import { createDb } from 'db'
 import { Hono } from 'hono'
 import { schema } from 'db/schema'
 import { PgTable } from 'drizzle-orm/pg-core'
-
-type Bindings = {
-  DATABASE_URL: string
-}
+import type { Bindings } from 'types'
 
 const healthRouter = new Hono<{
   Bindings: Bindings

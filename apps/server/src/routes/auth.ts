@@ -1,15 +1,7 @@
 import { Hono } from 'hono'
 import { createAuth } from 'lib/auth'
 import { requireAuth } from 'middleware/auth'
-
-type Bindings = {
-  DATABASE_URL: string
-}
-
-type Variables = {
-  user: typeof auth.$Infer.Session.user | null
-  session: typeof auth.$Infer.Session.session | null
-}
+import type { Bindings, Variables } from 'types'
 
 const authRouter = new Hono<{
   Bindings: Bindings
