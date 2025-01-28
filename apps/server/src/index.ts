@@ -1,12 +1,25 @@
 import { Hono } from 'hono'
 import { logger } from 'hono/logger'
 import { cors } from 'hono/cors'
+import { createAuth } from 'lib/auth'
 import { authMiddleware } from 'middleware/auth'
 import { errorHandler } from 'middleware/errorHandler'
 import healthRoutes from 'routes/health'
 import authRoutes from 'routes/auth'
 
-const app = new Hono<{}>()
+type Bindings = {
+  DATABASE_URL: string
+}
+
+type Variables = {
+  user: typeof auth.$Infer.Session.user | null
+  session: typeof auth.$Infer.Session.session | null
+}
+
+const app = new Hono<{
+  Bindings: Bindings
+  Variables: Variables
+}>()
 
 app.use('*', logger())
 app.use(
@@ -20,12 +33,10 @@ app.use(
     credentials: true,
   })
 )
-
-// app.use('/api', authMiddleware)
+app.use('*', authMiddleware)
 
 app.route('/', healthRoutes)
 app.route('/api/auth', authRoutes)
-
 app.onError(errorHandler)
 
 export default app
