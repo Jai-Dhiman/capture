@@ -1,17 +1,32 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  StyleSheet, 
+import React, { useState } from 'react'
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
   SafeAreaView,
   TextInput,
-  Image 
-} from 'react-native';
+  Image,
+  Alert,
+} from 'react-native'
+import { useAuth } from '../hooks/useAuth'
 
 export const LoginScreen = () => {
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const { signIn, isPending, error } = useAuth()
 
+  const handleLogin = () => {
+    signIn(
+      { email, password },
+      {
+        onError: (error) => {
+          Alert.alert('Error', error.message)
+        },
+      }
+    )
+  }
   return (
     <SafeAreaView style={styles.container}>
       {/* Background Image */}
@@ -26,33 +41,37 @@ export const LoginScreen = () => {
         <View style={styles.divider} />
 
         {/* Email Input */}
-        <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>Email</Text>
-          <View style={styles.inputWrapper}>
-            <Image 
-              source={require('../assets/icons/Email Icon.svg')}
-              style={styles.inputIcon}
-            />
-            <TextInput
-              placeholder="johndoe@icloud.com"
-              style={styles.input}
-              placeholderTextColor="#C8C8C8"
-            />
-          </View>
+      <View style={styles.inputContainer}>
+        <Text style={styles.inputLabel}>Email</Text>
+        <View style={styles.inputWrapper}>
+          <Image
+            source={require('../assets/icons/Email Icon.svg')}
+            style={styles.inputIcon}
+          />
+          <TextInput
+            placeholder="johndoe@icloud.com"
+            style={styles.input}
+            placeholderTextColor="#C8C8C8"
+            value={email}
+            onChangeText={setEmail}
+          />
         </View>
+      </View>
 
         {/* Password Input */}
-        <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>Password</Text>
-          <View style={styles.inputWrapper}>
-            <Image 
-              source={require('../assets/icons/Lock Icon.svg')}
-              style={styles.inputIcon}
-            />
-            <TextInput
-              secureTextEntry={!showPassword}
-              style={styles.input}
-            />
+      <View style={styles.inputContainer}>
+        <Text style={styles.inputLabel}>Password</Text>
+        <View style={styles.inputWrapper}>
+          <Image
+            source={require('../assets/icons/Lock Icon.svg')}
+            style={styles.inputIcon}
+          />
+          <TextInput
+            secureTextEntry={!showPassword}
+            style={styles.input}
+            value={password}
+            onChangeText={setPassword}
+          />
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
               <Image 
                 source={showPassword ? 
@@ -67,9 +86,15 @@ export const LoginScreen = () => {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.loginButton}>
-          <Text style={styles.loginButtonText}>Login</Text>
-        </TouchableOpacity>
+        <TouchableOpacity 
+        style={styles.loginButton}
+        onPress={handleLogin}
+        disabled={isPending}
+      >
+        <Text style={styles.loginButtonText}>
+          {isPending ? 'Loading...' : 'Login'}
+        </Text>
+      </TouchableOpacity>
 
         <View style={styles.divider} />
 
