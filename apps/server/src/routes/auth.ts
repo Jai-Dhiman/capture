@@ -30,17 +30,37 @@ authRouter.post('/sign-up', async (c) => {
 // Sign in with email
 authRouter.post('/sign-in', async (c) => {
   const auth = createAuth(c.env)
-  const { email, password } = await c.req.json()
   try {
+    const body = await c.req.json()
+    const { email, password } = body
+    if (!email || !password) {
+      return c.json(
+        {
+          error: 'Email and password are required',
+        },
+        400
+      )
+    }
     const session = await auth.api.signInEmail({
-      body: {
-        email,
-        password,
-      },
+      body: { email, password },
     })
+    if (!session) {
+      return c.json(
+        {
+          error: 'Authentication failed',
+        },
+        401
+      )
+    }
     return c.json({ session })
   } catch (error) {
-    return c.json({ error: 'Invalid credentials' }, 401)
+    console.error('Sign in error:', error)
+    return c.json(
+      {
+        error: error instanceof Error ? error.message : 'Invalid credentials',
+      },
+      401
+    )
   }
 })
 

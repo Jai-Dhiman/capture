@@ -22,6 +22,9 @@
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
       }
+    },
+    "extra": {
+      "API_URL": "http://localhost:8787/api"
     }
   }
 }

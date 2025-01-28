@@ -17,15 +17,21 @@ app.use('*', logger())
 app.use(
   '*',
   cors({
-    origin: '*',
+    origin: [
+      'http://localhost:8081', // Dev Domain
+      'http://localhost:19000', // Expo development server
+      'http://localhost:19006', // Expo web
+      'exp://*', // Expo Go client
+    ],
     allowHeaders: ['Content-Type', 'Authorization'],
-    allowMethods: ['POST', 'GET', 'OPTIONS'],
+    allowMethods: ['POST', 'GET', 'OPTIONS', 'DELETE', 'PUT'],
     exposeHeaders: ['Content-Length'],
     maxAge: 600,
     credentials: true,
   })
 )
-app.use('*', authMiddleware)
+app.options('*', (c) => c.text('', 204))
+// app.use('/api', authMiddleware)
 
 app.route('/', healthRoutes)
 app.route('/api/auth', authRoutes)

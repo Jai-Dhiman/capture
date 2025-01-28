@@ -9,7 +9,7 @@ import {
   Image,
   Alert,
 } from 'react-native'
-import { useAuth } from '../hooks/useAuth'
+import { useAuth } from 'hooks/useAuth'
 
 export const LoginScreen = () => {
   const [showPassword, setShowPassword] = useState(false)
