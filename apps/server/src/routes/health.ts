@@ -1,6 +1,7 @@
 import { createDb } from 'db'
 import { Hono } from 'hono'
-import * as schema from 'db/schema'
+import { schema } from 'db/schema'
+import { PgTable } from 'drizzle-orm/pg-core'
 
 type Bindings = {
   DATABASE_URL: string
@@ -13,7 +14,10 @@ const healthRouter = new Hono<{
 healthRouter.get('/', async (c) => {
   try {
     const dbInstance = createDb(c.env)
-    const result = await dbInstance.select().from(schema.user).limit(1)
+    const result = await dbInstance
+      .select()
+      .from(schema.user as PgTable | any)
+      .limit(1)
 
     return c.json({
       status: 'ok',
@@ -32,18 +36,6 @@ healthRouter.get('/', async (c) => {
       },
       500
     )
-  }
-})
-
-healthRouter.get('/api/test-db', async (c) => {
-  const db = createDb(c.env)
-
-  try {
-    const result = await db.select().from(schema.user).limit(1)
-    return c.json({ result })
-  } catch (error) {
-    console.error('Database connection failed:', error)
-    return c.json({ error: 'Database connection failed' }, 500)
   }
 })
 
