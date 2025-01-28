@@ -1,12 +1,16 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { createDb } from '../db'
+import { createDb } from 'db'
+import { schema } from 'db/schema'
 
-export const auth = betterAuth({
-  database: drizzleAdapter(createDb, {
-    provider: 'sqlite',
-  }),
-  emailAndPassword: {
-    enabled: true,
-  },
-})
+export function createAuth(env: { DATABASE_URL: string }) {
+  return betterAuth({
+    database: drizzleAdapter(createDb(env), {
+      provider: 'pg',
+      schema,
+    }),
+    emailAndPassword: {
+      enabled: true,
+    },
+  })
+}

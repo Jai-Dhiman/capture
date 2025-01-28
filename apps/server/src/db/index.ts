@@ -1,6 +1,14 @@
-import { drizzle } from 'drizzle-orm/d1'
-import * as schema from './schema'
+import { Pool } from 'pg'
+import { drizzle } from 'drizzle-orm/node-postgres'
+import { schema } from './schema'
 
-export function createDb(d1: D1Database) {
-  return drizzle(d1, { schema })
+interface Env {
+  DATABASE_URL: string
+}
+
+export function createDb(env: Env) {
+  const pool = new Pool({
+    connectionString: env.DATABASE_URL,
+  })
+  return drizzle(pool, { schema })
 }

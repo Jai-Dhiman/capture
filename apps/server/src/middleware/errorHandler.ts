@@ -1,9 +1,6 @@
-export const errorHandler = (err: Error, c: any) => {
-  console.error(`${err}`)
-  return c.json(
-    {
-      error: err.message || 'Internal Server Error',
-    },
-    500
-  )
+import { Context } from 'hono'
+
+export const errorHandler = (err: Error, c: Context) => {
+  console.error(err)
+  return c.json({ message: 'Internal Server Error' }, 500)
 }

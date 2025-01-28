@@ -1,51 +1,31 @@
 import { Hono } from 'hono'
-import { auth } from '../lib/auth'
-import { createUserSchema } from '@capture/validation/src/schemas'
+import { createAuth } from '../lib/auth'
 
-const router = new Hono()
+const authRouter = new Hono<{
+  Bindings: {
+    DATABASE_URL: string
+  }
+}>()
 
-router.post('/register', async (c) => {
+// console.log('auth.api keys:', Object.keys(auth.api))
+
+authRouter.post('/sign-up', async (c) => {
+  const auth = createAuth(c.env)
+  const { email, password, name } = await c.req.json()
+
   try {
-    const body = await c.req.json()
-    const validatedData = createUserSchema.parse(body)
-
-    const result = await auth.api.emailAndPassword.register({
-      email: validatedData.email,
-      password: validatedData.password,
-      userData: {
-        name: validatedData.name,
+    const user = await auth.api.signUpEmail({
+      body: {
+        email,
+        password,
+        name,
       },
     })
-
-    return c.json(result)
+    return c.json({ user })
   } catch (error) {
-    return c.json({ error: error.message }, 400)
+    console.error('Sign-up failed:', error)
+    return c.json({ error: 'Sign-up failed' }, 400)
   }
 })
 
-router.post('/login', async (c) => {
-  try {
-    const { email, password } = await c.req.json()
-    const result = await auth.api.emailAndPassword.login({
-      email,
-      password,
-    })
-    return c.json(result)
-  } catch (error) {
-    return c.json({ error: error.message }, 401)
-  }
-})
-
-router.post('/logout', async (c) => {
-  try {
-    const session = c.get('session')
-    if (!session) return c.json({ error: 'Not authenticated' }, 401)
-
-    await auth.api.invalidateSession(session.id)
-    return c.json({ success: true })
-  } catch (error) {
-    return c.json({ error: error.message }, 500)
-  }
-})
-
-export default router
+export default authRouter

@@ -1,17 +1,12 @@
 import { Hono } from 'hono'
 import { logger } from 'hono/logger'
 import { cors } from 'hono/cors'
-import { authMiddleware } from './middleware/auth'
-import { errorHandler } from './middleware/errorHandler'
-import authRoutes from './routes/auth'
-import { auth } from './lib/auth'
+import { authMiddleware } from 'middleware/auth'
+import { errorHandler } from 'middleware/errorHandler'
+import healthRoutes from 'routes/health'
+import authRoutes from 'routes/auth'
 
-const app = new Hono<{
-  Variables: {
-    user: typeof auth.$Infer.Session.user | null
-    session: typeof auth.$Infer.Session.session | null
-  }
-}>()
+const app = new Hono<{}>()
 
 app.use('*', logger())
 app.use(
@@ -25,26 +20,11 @@ app.use(
     credentials: true,
   })
 )
-app.use('*', authMiddleware)
 
-app.get('/', (c) => {
-  return c.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-  })
-})
+// app.use('/api', authMiddleware)
 
+app.route('/', healthRoutes)
 app.route('/api/auth', authRoutes)
-
-app.get('/session', async (c) => {
-  const session = c.get('session')
-  const user = c.get('user')
-  if (!user) return c.body(null, 401)
-  return c.json({
-    session,
-    user,
-  })
-})
 
 app.onError(errorHandler)
 
