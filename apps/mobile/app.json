@@ -23,6 +23,10 @@
         "backgroundColor": "#ffffff"
       }
     },
+    "scheme": "capture",
+    "web": {
+      "bundler": "metro"
+    },
     "extra": {
       "API_URL": "http://localhost:8787/api"
     }

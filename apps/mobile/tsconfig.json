@@ -3,7 +3,11 @@
   "compilerOptions": {
     "target": "ESNext",
     "module": "ESNext",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "jsx": "react-native",
     "moduleResolution": "node",
     "allowJs": true,
@@ -14,6 +18,18 @@
     "strict": true,
     "baseUrl": "src"
   },
-  "include": ["src", "*.ts", "*.tsx", "*.js", "*.jsx", "src/App.tsx"],
-  "exclude": ["node_modules", "babel.config.js", "metro.config.js"]
+  "include": [
+    "src",
+    "*.ts",
+    "*.tsx",
+    "*.js",
+    "*.jsx",
+    "src/App.tsx",
+    "nativewind-env.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "babel.config.js",
+    "metro.config.js"
+  ]
 }

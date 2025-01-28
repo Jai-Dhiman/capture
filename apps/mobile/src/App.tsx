@@ -1,11 +1,10 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { LoginScreen } from './screens/LoginScreen';
-
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import "../global.css"
 
 const queryClient = new QueryClient()
-
 const Stack = createNativeStackNavigator();
 
 export default function App() {

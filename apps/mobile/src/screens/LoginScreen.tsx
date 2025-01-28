@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
   SafeAreaView,
   TextInput,
   Image,
@@ -27,220 +26,96 @@ export const LoginScreen = () => {
       }
     )
   }
+
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Background Image */}
+    <SafeAreaView className="flex-1 bg-[#DCDCDE]">
       <Image 
         source={require('../assets/Fluid Background Coffee.png')}
-        style={styles.backgroundImage}
+        className="absolute w-full h-full"
       />
       
-      <View style={styles.content}>
-        <Text style={styles.appTitle}>Capture</Text>
+      <View className="flex-1 p-5">
+        <Text className="text-4xl font-roboto text-center my-8">Capture</Text>
         
-        <View style={styles.divider} />
+        <View className="h-[1px] bg-black/10 my-5" />
 
-        {/* Email Input */}
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Email</Text>
-        <View style={styles.inputWrapper}>
-          <Image
-            source={require('../assets/icons/Email Icon.svg')}
-            style={styles.inputIcon}
-          />
-          <TextInput
-            placeholder="johndoe@icloud.com"
-            style={styles.input}
-            placeholderTextColor="#C8C8C8"
-            value={email}
-            onChangeText={setEmail}
-          />
+        <View className="mb-5">
+          <Text className="text-base font-roboto mb-2">Email</Text>
+          <View className="bg-white rounded-2xl p-4 shadow-md flex-row items-center">
+            <Image
+              source={require('../assets/icons/Email Icon.svg')}
+              className="w-6 h-6 mr-2"
+            />
+            <TextInput
+              placeholder="johndoe@icloud.com"
+              className="flex-1 text-base font-roboto"
+              placeholderTextColor="#C8C8C8"
+              value={email}
+              onChangeText={setEmail}
+            />
+          </View>
         </View>
-      </View>
 
-        {/* Password Input */}
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Password</Text>
-        <View style={styles.inputWrapper}>
-          <Image
-            source={require('../assets/icons/Lock Icon.svg')}
-            style={styles.inputIcon}
-          />
-          <TextInput
-            secureTextEntry={!showPassword}
-            style={styles.input}
-            value={password}
-            onChangeText={setPassword}
-          />
+        <View className="mb-5">
+          <Text className="text-base font-roboto mb-2">Password</Text>
+          <View className="bg-white rounded-2xl p-4 shadow-md flex-row items-center">
+            <Image
+              source={require('../assets/icons/Lock Icon.svg')}
+              className="w-6 h-6 mr-2"
+            />
+            <TextInput
+              secureTextEntry={!showPassword}
+              className="flex-1 text-base font-roboto"
+              value={password}
+              onChangeText={setPassword}
+            />
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
               <Image 
                 source={showPassword ? 
                   require('../assets/icons/View Password Icon.svg') :
                   require('../assets/icons/Dont Show Passoword Icon.svg')}
-                style={styles.visibilityIcon}
+                className="w-6 h-6 ml-2"
               />
             </TouchableOpacity>
           </View>
           <TouchableOpacity>
-            <Text style={styles.forgotPassword}>Forgot Password?</Text>
+            <Text className="text-xs underline mt-2">Forgot Password?</Text>
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity 
-        style={styles.loginButton}
-        onPress={handleLogin}
-        disabled={isPending}
-      >
-        <Text style={styles.loginButtonText}>
-          {isPending ? 'Loading...' : 'Login'}
-        </Text>
-      </TouchableOpacity>
-
-        <View style={styles.divider} />
-
-        <TouchableOpacity style={styles.socialButton}>
-          <Text style={styles.socialButtonText}>Sign In with Google</Text>
+          className="bg-[#E4CAC7] rounded-3xl p-4 items-center shadow-md my-5"
+          onPress={handleLogin}
+          disabled={isPending}
+        >
+          <Text className="text-base font-bold font-roboto">
+            {isPending ? 'Loading...' : 'Login'}
+          </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.socialButton}>
-          <Text style={styles.socialButtonText}>Sign In with Apple</Text>
+        <View className="h-[1px] bg-black/10 my-5" />
+
+        <TouchableOpacity className="bg-white rounded-3xl p-4 items-center shadow-md my-2.5">
+          <Text className="text-base font-bold font-roboto text-[#1C1C1C]">
+            Sign In with Google
+          </Text>
         </TouchableOpacity>
 
-        <View style={styles.registerContainer}>
-          <Text style={styles.registerText}>Don't have an account?</Text>
+        <TouchableOpacity className="bg-white rounded-3xl p-4 items-center shadow-md my-2.5">
+          <Text className="text-base font-bold font-roboto text-[#1C1C1C]">
+            Sign In with Apple
+          </Text>
+        </TouchableOpacity>
+
+        <View className="items-center mt-5">
+          <Text className="text-base font-roboto mb-2">Don't have an account?</Text>
           <TouchableOpacity>
-            <Text style={styles.registerLink}>Register</Text>
+            <Text className="text-base font-semibold font-roboto text-[#827B85] underline">
+              Register
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
     </SafeAreaView>
-  );
-};
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#DCDCDE',
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
-  appTitle: {
-    fontSize: 40,
-    fontFamily: 'Roboto',
-    textAlign: 'center',
-    marginVertical: 30,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
-    marginVertical: 20,
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  inputLabel: {
-    fontSize: 16,
-    marginBottom: 8,
-    fontFamily: 'Roboto',
-  },
-  inputWrapper: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 4,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  input: {
-    fontSize: 16,
-    fontFamily: 'Roboto',
-    flex: 1,
-  },
-  forgotPassword: {
-    fontSize: 12,
-    textDecorationLine: 'underline',
-    marginTop: 8,
-  },
-  loginButton: {
-    backgroundColor: '#E4CAC7',
-    borderRadius: 30,
-    padding: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 4,
-    marginVertical: 20,
-  },
-  loginButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    fontFamily: 'Roboto',
-  },
-  socialButton: {
-    backgroundColor: 'white',
-    borderRadius: 30,
-    padding: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 4,
-    marginVertical: 10,
-  },
-  socialButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    fontFamily: 'Roboto',
-    color: '#1C1C1C',
-  },
-  registerContainer: {
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  registerText: {
-    fontSize: 16,
-    fontFamily: 'Roboto',
-    marginBottom: 8,
-  },
-  registerLink: {
-    fontSize: 16,
-    fontFamily: 'Roboto',
-    fontWeight: '600',
-    color: '#827B85',
-    textDecorationLine: 'underline',
-  },
-  backgroundImage: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  inputIcon: {
-    width: 24,
-    height: 24,
-    marginRight: 10,
-  },
-  visibilityIcon: {
-    width: 24,
-    height: 24,
-    marginLeft: 10,
-  },
-});
+  )
+}
