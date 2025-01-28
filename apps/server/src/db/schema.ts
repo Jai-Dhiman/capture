@@ -6,6 +6,8 @@ export const user = pgTable('user', {
   email: text('email').notNull().unique(),
   emailVerified: boolean('email_verified').notNull(),
   image: text('image'),
+  bio: text('bio'),
+  mediaVerified: boolean('verified').default(false),
   createdAt: timestamp('created_at').notNull(),
   updatedAt: timestamp('updated_at').notNull(),
 })
@@ -50,15 +52,53 @@ export const verification = pgTable('verification', {
   updatedAt: timestamp('updated_at'),
 })
 
-export const posts = pgTable('posts', {
+export const post = pgTable('post', {
   id: text('id').primaryKey(),
   userId: text('user_id').references(() => user.id),
   content: text('content').notNull(),
-  mediaUrl: text('media_url'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
 
-export const relationships = pgTable('relationships', {
+export const media = pgTable('media', {
+  id: text('id').primaryKey(),
+  postId: text('post_id').references(() => post.id),
+  type: text('type').notNull(),
+  url: text('url').notNull(),
+  thumbnailUrl: text('thumbnail_url'),
+  order: integer('order').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
+const commentTableName = 'comment' as const
+export const comment = pgTable(commentTableName, {
+  id: text('id').primaryKey(),
+  postId: text('post_id').references(() => post.id),
+  userId: text('user_id').references(() => user.id),
+  content: text('content').notNull(),
+  parentCommentId: text('parent_comment_id').references((): any => comment.id),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
+export const savedPost = pgTable('saved_posts', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').references(() => user.id),
+  postId: text('post_id').references(() => post.id),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
+export const captag = pgTable('captag', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull().unique(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
+export const postCaptag = pgTable('post_captag', {
+  postId: text('post_id').references(() => post.id),
+  captagId: text('hashtag_id').references(() => captag.id),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
+export const relationship = pgTable('relationship', {
   id: text('id').primaryKey(),
   followerId: text('follower_id').references(() => user.id),
   followedId: text('followed_id').references(() => user.id),
@@ -70,6 +110,11 @@ export const schema = {
   session,
   account,
   verification,
-  posts,
-  relationships,
+  post,
+  media,
+  comment,
+  savedPost,
+  captag,
+  postCaptag,
+  relationship,
 }

@@ -41,6 +41,7 @@ pnpm-debug.log*
 .wrangler
 wrangler.toml
 .dev.vars
+drizzle.config.ts
 
 # Expo
 .expo/
