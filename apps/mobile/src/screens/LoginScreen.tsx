@@ -1,5 +1,4 @@
-// src/screens/LoginScreen.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   View, 
   Text, 
@@ -11,10 +10,17 @@ import {
 } from 'react-native';
 
 export const LoginScreen = () => {
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
     <SafeAreaView style={styles.container}>
+      {/* Background Image */}
+      <Image 
+        source={require('../assets/Fluid Background Coffee.png')}
+        style={styles.backgroundImage}
+      />
+      
       <View style={styles.content}>
-        {/* App Title */}
         <Text style={styles.appTitle}>Capture</Text>
         
         <View style={styles.divider} />
@@ -23,6 +29,10 @@ export const LoginScreen = () => {
         <View style={styles.inputContainer}>
           <Text style={styles.inputLabel}>Email</Text>
           <View style={styles.inputWrapper}>
+            <Image 
+              source={require('../assets/icons/Email Icon.svg')}
+              style={styles.inputIcon}
+            />
             <TextInput
               placeholder="johndoe@icloud.com"
               style={styles.input}
@@ -35,24 +45,34 @@ export const LoginScreen = () => {
         <View style={styles.inputContainer}>
           <Text style={styles.inputLabel}>Password</Text>
           <View style={styles.inputWrapper}>
+            <Image 
+              source={require('../assets/icons/Lock Icon.svg')}
+              style={styles.inputIcon}
+            />
             <TextInput
-              secureTextEntry
+              secureTextEntry={!showPassword}
               style={styles.input}
             />
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+              <Image 
+                source={showPassword ? 
+                  require('../assets/icons/View Password Icon.svg') :
+                  require('../assets/icons/Dont Show Passoword Icon.svg')}
+                style={styles.visibilityIcon}
+              />
+            </TouchableOpacity>
           </View>
           <TouchableOpacity>
             <Text style={styles.forgotPassword}>Forgot Password?</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Login Button */}
         <TouchableOpacity style={styles.loginButton}>
           <Text style={styles.loginButtonText}>Login</Text>
         </TouchableOpacity>
 
         <View style={styles.divider} />
 
-        {/* Social Login Buttons */}
         <TouchableOpacity style={styles.socialButton}>
           <Text style={styles.socialButtonText}>Sign In with Google</Text>
         </TouchableOpacity>
@@ -61,7 +81,6 @@ export const LoginScreen = () => {
           <Text style={styles.socialButtonText}>Sign In with Apple</Text>
         </TouchableOpacity>
 
-        {/* Register Link */}
         <View style={styles.registerContainer}>
           <Text style={styles.registerText}>Don't have an account?</Text>
           <TouchableOpacity>
@@ -113,10 +132,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   input: {
     fontSize: 16,
     fontFamily: 'Roboto',
+    flex: 1,
   },
   forgotPassword: {
     fontSize: 12,
@@ -179,5 +201,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#827B85',
     textDecorationLine: 'underline',
+  },
+  backgroundImage: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  inputIcon: {
+    width: 24,
+    height: 24,
+    marginRight: 10,
+  },
+  visibilityIcon: {
+    width: 24,
+    height: 24,
+    marginLeft: 10,
   },
 });
