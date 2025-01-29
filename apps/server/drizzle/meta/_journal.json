@@ -15,6 +15,13 @@
       "when": 1738042494948,
       "tag": "0001_mature_stepford_cuckoos",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1738110807168,
+      "tag": "0002_goofy_giant_girl",
+      "breakpoints": true
     }
   ]
 }

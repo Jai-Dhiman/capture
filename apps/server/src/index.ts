@@ -18,10 +18,10 @@ app.use(
   '*',
   cors({
     origin: [
-      'http://localhost:8081', // Dev Domain
-      'http://localhost:19000', // Expo development server
-      'http://localhost:19006', // Expo web
-      'exp://*', // Expo Go client
+      'http://localhost:8081',
+      'http://localhost:19000',
+      'http://localhost:19006',
+      'exp://*',
     ],
     allowHeaders: ['Content-Type', 'Authorization'],
     allowMethods: ['POST', 'GET', 'OPTIONS', 'DELETE', 'PUT'],
@@ -31,7 +31,7 @@ app.use(
   })
 )
 app.options('*', (c) => c.text('', 204))
-// app.use('/api', authMiddleware)
+app.use('/api', authMiddleware)
 
 app.route('/', healthRoutes)
 app.route('/api/auth', authRoutes)

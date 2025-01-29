@@ -7,7 +7,7 @@ export const user = pgTable('user', {
   emailVerified: boolean('email_verified').notNull(),
   image: text('image'),
   bio: text('bio'),
-  mediaVerified: boolean('verified').default(false),
+  mediaVerifiedType: text('media_verified_type').default('none'),
   createdAt: timestamp('created_at').notNull(),
   updatedAt: timestamp('updated_at').notNull(),
 })
@@ -61,6 +61,7 @@ export const post = pgTable('post', {
 
 export const media = pgTable('media', {
   id: text('id').primaryKey(),
+  userId: text('user_id').references(() => user.id),
   postId: text('post_id').references(() => post.id),
   type: text('type').notNull(),
   url: text('url').notNull(),
