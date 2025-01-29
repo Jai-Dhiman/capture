@@ -1,0 +1,312 @@
+#Project Vision:
+Redefining Social Media with Privacy & Safety in Mind
+
+Capture, was created to incorporate a user-friendly interface that simplified the best aspects of every day social media apps. Removing the features and algorithms in current social media applications that are a risk to a users privacy and safety.
+
+Problem Statement
+
+Current social media platforms often compromise user privacy and safety through invasive algorithms, data tracking, and harmful features. Capture was designed to simplify the best aspects of social media while removing risks to privacy and mental well-being.
+
+Objectives & Goals
+
+    Objective: Create a user-friendly social media app that prioritizes privacy, safety, and mental well-being while maintaining the engaging features users love.
+
+    Goal: Redefine the social media experience by eliminating harmful, addictive algorithms and fostering a secure, supportive, and customizable platform.
+
+User Needs
+
+    Users need a social media platform that prioritizes their privacy and does not exploit their data for profit.
+
+    Users want an interface that is easy to navigate and enhances positive social interactions without the risk of harmful content.
+
+    Users require tools to control their experience, such as customizable feeds and filters to avoid overwhelming or triggering content.
+
+Root Cause Analysis
+
+Core Problem: Existing social media platforms prioritize profit through invasive algorithms and data tracking, leading to compromised user privacy and well-being.
+
+Contributing Factors:
+
+    Algorithms designed to maximize engagement often promote harmful or addictive content.
+
+    Monetization strategies rely heavily on user data, creating privacy concerns.
+
+    Limited user control over content and interactions exacerbates mental health risks.
+
+Solution:
+
+    Develop a social media app that removes invasive algorithms and data tracking.
+
+    Incorporate customizable features that allow users to control their experience, such as chronological feeds and content filters.
+
+    Ensure privacy and safety through robust security measures and transparent policies.
+
+    Tech Stack:
+
+###Frontend:
+- React Native + Expo
+- TypeScript
+- React Navigation
+- React Query
+- Zustand 
+- React Native Reanimated
+
+###Backend/Infrastructure:
+- Cloudflare Workers
+  - Hono
+  - Drizzle ORM for type-safe D1 queries
+  - Neon Serverless for PostgreSQL database
+  - R2 for file storage
+  - Durable Objects for real-time/websockets
+  - KV for caching
+  - WebPush API through Workers for notifications
+  - Workers AI for content moderation
+  - Qdrant Vector DB for 'similar content' recommendations (maybe try neon vector first)
+
+
+###Development Tools:
+- pnpm
+- Turborepo 
+- Vitest
+- GitHub Actions
+- Wrangler for Workers development
+- Mix of RESTful API's and Graph QL
+
+###Security/Messaging:
+- Signal Protocol (E2E encrypted DMs)
+- TweetNaCl.js (crypto)
+- jose for JWT handling
+- Zod for runtime type validation
+- better-auth
+
+###Image Processing:
+- Workers Image Resizing API
+- Cloudflare Images for optimization and delivery
+
+#Zod Validation/Type Schema:
+import { z } from 'zod'
+
+export const userSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string().email(),
+  emailVerified: z.boolean(),
+  image: z.string().nullable().optional(),
+  bio: z.string().nullable().optional(),
+  mediaVerified: z.boolean().default(false),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+})
+
+export const sessionSchema = z.object({
+  id: z.string(),
+  expiresAt: z.date(),
+  token: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  ipAddress: z.string().nullable().optional(),
+  userAgent: z.string().nullable().optional(),
+  userId: z.string(),
+})
+
+export const accountSchema = z.object({
+  id: z.string(),
+  accountId: z.string(),
+  providerId: z.string(),
+  userId: z.string(),
+  accessToken: z.string().nullable().optional(),
+  refreshToken: z.string().nullable().optional(),
+  idToken: z.string().nullable().optional(),
+  accessTokenExpiresAt: z.date().nullable().optional(),
+  refreshTokenExpiresAt: z.date().nullable().optional(),
+  scope: z.string().nullable().optional(),
+  password: z.string().nullable().optional(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+})
+
+export const verificationSchema = z.object({
+  id: z.string(),
+  identifier: z.string(),
+  value: z.string(),
+  expiresAt: z.date(),
+  createdAt: z.date().nullable().optional(),
+  updatedAt: z.date().nullable().optional(),
+})
+
+export const postSchema = z.object({
+  id: z.string(),
+  userId: z.string().nullable().optional(),
+  content: z.string(),
+  createdAt: z.date(),
+})
+
+export const mediaSchema = z.object({
+  id: z.string(),
+  postId: z.string().nullable().optional(),
+  type: z.string(),
+  url: z.string(),
+  thumbnailUrl: z.string().nullable().optional(),
+  order: z.number(),
+  createdAt: z.date(),
+})
+
+export const commentSchema = z.object({
+  id: z.string(),
+  postId: z.string().nullable().optional(),
+  userId: z.string().nullable().optional(),
+  content: z.string(),
+  parentCommentId: z.string().nullable().optional(),
+  createdAt: z.date(),
+})
+
+export const savedPostSchema = z.object({
+  id: z.string(),
+  userId: z.string().nullable().optional(),
+  postId: z.string().nullable().optional(),
+  createdAt: z.date(),
+})
+
+export const captagSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  createdAt: z.date(),
+})
+
+export const postCaptagSchema = z.object({
+  postId: z.string().nullable().optional(),
+  captagId: z.string().nullable().optional(),
+  createdAt: z.date(),
+})
+
+export const relationshipSchema = z.object({
+  id: z.string(),
+  followerId: z.string().nullable().optional(),
+  followedId: z.string().nullable().optional(),
+  createdAt: z.date(),
+})
+
+export type User = z.infer<typeof userSchema>
+export type Session = z.infer<typeof sessionSchema>
+export type Account = z.infer<typeof accountSchema>
+export type Verification = z.infer<typeof verificationSchema>
+export type Post = z.infer<typeof postSchema>
+export type Media = z.infer<typeof mediaSchema>
+export type Comment = z.infer<typeof commentSchema>
+export type SavedPost = z.infer<typeof savedPostSchema>
+export type Captag = z.infer<typeof captagSchema>
+export type PostCaptag = z.infer<typeof postCaptagSchema>
+export type Relationship = z.infer<typeof relationshipSchema>
+
+#API Route Reference:
+##REST API Routes
+
+###Auth Routes (REST)
+app.post('/api/auth/sign-up', authController.register)
+app.post('/api/auth/sign-in', authController.login)
+app.post('/api/auth/sign-out', authController.logout)
+app.post('/api/auth/verify-email', authController.verifyEmail)
+app.put('/api/auth/password/reset', authController.resetPassword)
+app.put('/api/auth/password/change', authController.changePassword)
+
+###Media Routes (REST)
+app.post('/api/media/upload', mediaController.upload)
+app.delete('/api/media/:mediaId', mediaController.delete)
+
+###User Actions (REST)
+app.post('/api/relationships/follow/:userId', relationshipController.follow)
+app.delete('/api/relationships/unfollow/:userId', relationshipController.unfollow)
+app.put('/api/users/settings', userController.updateSettings)
+app.post('/api/posts/:postId/save', postsController.savePost)
+app.delete('/api/posts/:postId/save', postsController.unsavePost)
+app.delete('/api/posts/:postId', postsController.deletePost)
+
+##GraphQL Schema
+const typeDefs = `
+  type Query {
+    feed(limit: Int, offset: Int): [Post!]!
+    post(id: ID!): Post
+    user(id: ID!): User
+    searchHashtags(query: String!): [Hashtag!]!
+    searchUsers(query: String!): [User!]!
+    comments(postId: ID!, limit: Int, offset: Int): [Comment!]!
+  }
+
+  type Mutation {
+    createPost(input: PostInput!): Post!
+    createComment(input: CommentInput!): Comment!
+    updatePost(id: ID!, input: PostInput!): Post!
+  }
+
+  type Subscription {
+    newComment(postId: ID!): Comment!
+    newPost(userId: ID!): Post!
+  }
+
+  type User {
+    id: ID!
+    name: String!
+    bio: String
+    verified: Boolean!
+    verificationType: String
+    posts: [Post!]!
+    followers: [User!]!
+    following: [User!]!
+  }
+
+  type Post {
+    id: ID!
+    content: String!
+    user: User!
+    media: [Media!]!
+    comments: [Comment!]!
+    hashtags: [Hashtag!]!
+    savedBy: [User!]!
+    createdAt: String!
+  }
+
+  type Comment {
+    id: ID!
+    content: String!
+    user: User!
+    replies: [Comment!]!
+    createdAt: String!
+  }
+
+  type Media {
+    id: ID!
+    type: String!
+    url: String!
+    thumbnailUrl: String
+  }
+
+  type Hashtag {
+    id: ID!
+    name: String!
+    posts: [Post!]!
+  }
+`
+
+#Frontend Assets:
+~/Documents/capture/apps/mobile/src/assets % ls -R
+Fluid Background Coffee.png
+icons/
+
+./icons:
+Back Icon.svg
+Block Icon.svg
+Cancel Icon.svg
+Dont Show Passoword Icon.svg
+Email Icon.svg
+Favorites Icon.svg
+Lock Icon 2.svg
+Lock Icon.svg
+Notification Icon.svg
+Plus Icon.svg
+Profile Icon.svg
+Question Icon.svg
+Search Icon.svg
+Settings Icon.svg
+View Password Icon.svg
+apple.svg
+google.svg
