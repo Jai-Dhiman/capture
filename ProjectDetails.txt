@@ -161,34 +161,48 @@ export type Relationship = z.infer<typeof relationshipSchema>
 # API Route Reference:
 ## REST API Routes
 
-### Auth Routes (REST)
-app.post('/api/auth/sign-up', authController.register)
-app.post('/api/auth/sign-in', authController.login)
-app.post('/api/auth/sign-out', authController.logout)
-app.post('/api/auth/verify-email', authController.verifyEmail)
-app.put('/api/auth/password/reset', authController.resetPassword)
-app.put('/api/auth/password/change', authController.changePassword)
+// REST API Routes
 
-### Media Routes (REST)
-app.post('/api/media/upload', mediaController.upload)
-app.delete('/api/media/:mediaId', mediaController.delete)
+// Profile Routes (REST)
+app.get('/api/profile/:userId')
+app.put('/api/profile')
+app.put('/api/profile/settings')
 
-### User Actions (REST)
-app.post('/api/relationships/follow/:userId', relationshipController.follow)
-app.delete('/api/relationships/unfollow/:userId', relationshipController.unfollow)
-app.put('/api/users/settings', userController.updateSettings)
-app.post('/api/posts/:postId/save', postsController.savePost)
-app.delete('/api/posts/:postId/save', postsController.unsavePost)
-app.delete('/api/posts/:postId', postsController.deletePost)
+// Media Routes (REST)
+app.post('/api/media/upload')
+app.delete('/api/media/:mediaId')
 
-## GraphQL Schema
+// Post Routes (REST)
+app.post('/api/posts')
+app.get('/api/posts/:postId')
+app.delete('/api/posts/:postId')
+app.post('/api/posts/:postId/save')
+app.delete('/api/posts/:postId/save')
+
+// Comment Routes (REST)
+app.post('/api/posts/:postId/comments')
+app.get('/api/posts/:postId/comments')
+app.post('/api/comments/:commentId/replies')
+app.delete('/api/comments/:commentId')
+
+// Relationship Routes (REST)
+app.post('/api/relationships/follow/:userId')
+app.delete('/api/relationships/unfollow/:userId')
+app.get('/api/relationships/followers/:userId')
+app.get('/api/relationships/following/:userId')
+
+// Captag Routes (REST)
+app.get('/api/captags/search')
+app.get('/api/captags/:name/posts')
+
+// GraphQL Schema
 const typeDefs = `
   type Query {
     feed(limit: Int, offset: Int): [Post!]!
     post(id: ID!): Post
-    user(id: ID!): User
-    searchHashtags(query: String!): [Hashtag!]!
-    searchUsers(query: String!): [User!]!
+    profile(id: ID!): Profile
+    searchCaptags(query: String!): [Captag!]!
+    searchUsers(query: String!): [Profile!]!
     comments(postId: ID!, limit: Int, offset: Int): [Comment!]!
   }
 
@@ -196,6 +210,7 @@ const typeDefs = `
     createPost(input: PostInput!): Post!
     createComment(input: CommentInput!): Comment!
     updatePost(id: ID!, input: PostInput!): Post!
+    updateProfile(input: ProfileInput!): Profile!
   }
 
   type Subscription {
@@ -203,32 +218,38 @@ const typeDefs = `
     newPost(userId: ID!): Post!
   }
 
-  type User {
+  type Profile {
     id: ID!
-    name: String!
+    username: String!
+    email: String!
+    phoneNumber: String
+    image: String
     bio: String
-    verified: Boolean!
-    verificationType: String
+    verifiedType: String!
     posts: [Post!]!
-    followers: [User!]!
-    following: [User!]!
+    followers: [Profile!]!
+    following: [Profile!]!
+    createdAt: String!
+    updatedAt: String!
   }
 
   type Post {
     id: ID!
     content: String!
-    user: User!
+    user: Profile!
     media: [Media!]!
     comments: [Comment!]!
-    hashtags: [Hashtag!]!
-    savedBy: [User!]!
+    captags: [Captag!]!
+    savedBy: [Profile!]!
     createdAt: String!
   }
 
   type Comment {
     id: ID!
     content: String!
-    user: User!
+    user: Profile!
+    post: Post!
+    parentComment: Comment
     replies: [Comment!]!
     createdAt: String!
   }
@@ -238,12 +259,34 @@ const typeDefs = `
     type: String!
     url: String!
     thumbnailUrl: String
+    order: Int!
+    createdAt: String!
   }
 
-  type Hashtag {
+  type Captag {
     id: ID!
     name: String!
     posts: [Post!]!
+    createdAt: String!
+  }
+
+  input PostInput {
+    content: String!
+    mediaIds: [ID!]
+    captagIds: [ID!]
+  }
+
+  input CommentInput {
+    postId: ID!
+    content: String!
+    parentCommentId: ID
+  }
+
+  input ProfileInput {
+    username: String
+    bio: String
+    image: String
+    phoneNumber: String
   }
 `
 

@@ -6,7 +6,7 @@ import { errorHandler } from 'middleware/errorHandler'
 import type { Bindings } from 'types'
 import healthRoutes from 'routes/health'
 // import authRoutes from 'routes/auth'
-import mediaRouter from 'routes/media'
+// import mediaRouter from 'routes/media'
 
 const app = new Hono<{
   Bindings: Bindings
@@ -34,7 +34,7 @@ app.use(
 
 app.route('/', healthRoutes)
 // app.route('/api/auth', authRoutes)
-app.route('/api/media', mediaRouter)
+// app.route('/api/media', mediaRouter)
 app.onError(errorHandler)
 
 export default app

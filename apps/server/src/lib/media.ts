@@ -1,7 +1,6 @@
-// lib/media.ts
 import { nanoid } from 'nanoid'
 import { eq } from 'drizzle-orm'
-import { createDb } from '../db'
+import { createD1Client } from '../db'
 import * as schema from 'db/schema'
 import type { Bindings } from '../types/index'
 
@@ -16,7 +15,7 @@ export interface MediaService {
 }
 
 export function createMediaService(env: Bindings): MediaService {
-  const db = createDb(env)
+  const db = createD1Client(env)
   const r2 = env.BUCKET
 
   return {
@@ -36,19 +35,18 @@ export function createMediaService(env: Bindings): MediaService {
         order: data.order,
         thumbnailUrl: data.thumbnailUrl,
         postId: data.postId,
-        createdAt: new Date(),
+        createdAt: new Date().toISOString(),
       })
 
-      // Return the created media object
       return await db.query.media.findFirst({
-        where: (media, { eq }) => eq(schema.media.id, mediaId),
+        where: (media, { eq }) => eq(media.id, mediaId),
       })
     },
 
     async list(userId?: string) {
       if (userId) {
         return await db.query.media.findMany({
-          where: (media, { eq }) => eq(schema.media.userId, userId),
+          where: (media, { eq }) => eq(media.userId, userId),
         })
       } else {
         return await db.query.media.findMany()
@@ -57,7 +55,7 @@ export function createMediaService(env: Bindings): MediaService {
 
     async findById(id: string) {
       return await db.query.media.findFirst({
-        where: (media, { eq }) => eq(schema.media.id, id),
+        where: (media, { eq }) => eq(media.id, id),
       })
     },
 

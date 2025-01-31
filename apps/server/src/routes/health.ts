@@ -1,7 +1,6 @@
-import { createDb } from 'db'
+import { createD1Client } from 'db'
 import { Hono } from 'hono'
-import { schema } from 'db/schema'
-import { PgTable } from 'drizzle-orm/pg-core'
+import * as schema from 'db/schema'
 import type { Bindings } from 'types'
 
 const healthRouter = new Hono<{
@@ -10,10 +9,10 @@ const healthRouter = new Hono<{
 
 healthRouter.get('/', async (c) => {
   try {
-    const dbInstance = createDb(c.env)
+    const dbInstance = createD1Client(c.env)
     const result = await dbInstance
       .select()
-      .from(schema.user as PgTable | any)
+      .from(schema.profile)
       .limit(1)
 
     return c.json({
