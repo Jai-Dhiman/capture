@@ -1,6 +1,7 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { LoginScreen } from './screens/LoginScreen';
+import  SignupScreen from './screens/SignupScreen';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import "../global.css"
 
@@ -20,6 +21,10 @@ export default function App() {
         <Stack.Screen 
           name="Login" 
           component={LoginScreen} 
+        />
+        <Stack.Screen 
+          name="Signup" 
+          component={SignupScreen} 
         />
       </Stack.Navigator>
     </NavigationContainer>

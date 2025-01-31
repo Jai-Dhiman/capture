@@ -9,16 +9,15 @@
     "db:migrate": "wrangler d1 migrations apply capture-db"
   },
   "dependencies": {
-    "@auth/core": "^0.37.4",
-    "@auth/drizzle-adapter": "^1.7.4",
     "@capture/validation": "workspace:*",
     "@hono/zod-validator": "^0.4.2",
     "drizzle-orm": "^0.39.1",
     "hono": "^3.0.0"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250121.0",
+    "@cloudflare/workers-types": "^4.20250129.0",
     "drizzle-kit": "^0.30.4",
+    "typescript": "^5.5.4",
     "wrangler": "^3.0.0"
   }
 }

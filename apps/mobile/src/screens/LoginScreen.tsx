@@ -9,8 +9,13 @@ import {
   Alert,
 } from 'react-native'
 import { useAuth } from 'hooks/useAuth'
+import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 
-export const LoginScreen = () => {
+type Props = {
+  navigation: NativeStackNavigationProp<any>
+}
+
+export const LoginScreen = ({ navigation }: Props) => {
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -61,8 +66,8 @@ export const LoginScreen = () => {
               onFocus={() => setIsEmailFocused(true)}
               onBlur={() => setIsEmailFocused(false)}
               placeholder="johndoe@gmail.com"
-              placeholderTextColor="#C8C8C8" // Move the gray color to placeholder only
-              className="flex-1 text-base font-roboto text-black outline-none" // Remove italic, add text-black
+              placeholderTextColor="#C8C8C8"
+              className="flex-1 text-base font-roboto text-black outline-none"
               value={email}
               onChangeText={setEmail}
             />
@@ -140,7 +145,7 @@ export const LoginScreen = () => {
 
         <View className="items-center mt-[32px]">
           <Text className="text-base font-roboto mb-[5px]">Don't have an account?</Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
             <Text className="text-base font-semibold font-roboto text-[#827B85] underline">
               Register
             </Text>

@@ -14,9 +14,9 @@
     "@react-navigation/native-stack": "^6.11.0",
     "@react-navigation/stack": "^7.1.1",
     "@supabase/supabase-js": "^2.48.1",
-    "@tanstack/react-query": "^5.0.0",
+    "@tanstack/react-query": "^5.65.1",
     "better-auth": "^1.1.14",
-    "expo": "~52.0.27",
+    "expo": "~52.0.28",
     "expo-constants": "~17.0.5",
     "expo-linking": "^7.0.5",
     "expo-router": "^4.0.17",
@@ -37,9 +37,11 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
+    "@types/node": "^22.12.0",
     "@types/react": "~18.3.12",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.5.1",
+    "react-native-dotenv": "^3.4.11",
     "tailwindcss": "3.3.2",
     "typescript": "^5.3.3"
   },
