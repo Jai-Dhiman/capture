@@ -1,0 +1,20 @@
+name = "capture-api"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+ENV = "development"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "capture-db"
+database_id = "67b4415b-c00e-4590-bb70-28a0f7eab9d9"
+migrations_dir = "drizzle"
+
+[[r2_buckets]]
+binding = 'BUCKET'
+bucket_name = "capture-bucket"
+
+# [ai]
+# binding = "AI"

@@ -1,11 +1,7 @@
-import { Pool } from 'pg'
-import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres'
-import { schema } from './schema'
-import { Bindings } from 'types'
+import { drizzle } from 'drizzle-orm/d1'
+import { Bindings } from '../types'
 
-export function createDb(env: Bindings): NodePgDatabase<typeof schema> {
-  const pool = new Pool({
-    connectionString: env.DATABASE_URL,
-  })
-  return drizzle(pool, { schema })
+export default (bindings: Bindings) => {
+  const db = drizzle(bindings.DB)
+  return db
 }

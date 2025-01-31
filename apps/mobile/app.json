@@ -29,6 +29,9 @@
     },
     "extra": {
       "API_URL": "http://localhost:8787/api"
-    }
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
   }
 }

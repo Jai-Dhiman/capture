@@ -55,7 +55,7 @@ Solution:
 - Cloudflare Workers
   - Hono
   - Drizzle ORM for type-safe D1 queries
-  - Neon Serverless for PostgreSQL database
+  - D1 Sqlite Database
   - R2 for file storage
   - Durable Objects for real-time/websockets
   - KV for caching
@@ -75,9 +75,7 @@ Solution:
 ###Security/Messaging:
 - Signal Protocol (E2E encrypted DMs)
 - TweetNaCl.js (crypto)
-- jose for JWT handling
 - Zod for runtime type validation
-- better-auth
 
 ###Image Processing:
 - Workers Image Resizing API

@@ -2,7 +2,7 @@
 import { nanoid } from 'nanoid'
 import { eq } from 'drizzle-orm'
 import { createDb } from '../db'
-import { schema } from 'db/schema'
+import * as schema from 'db/schema'
 import type { Bindings } from '../types/index'
 
 export interface MediaService {

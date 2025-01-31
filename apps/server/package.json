@@ -6,21 +6,19 @@
     "dev": "wrangler dev src/index.ts",
     "deploy": "wrangler deploy src/index.ts",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "wrangler d1 migrations apply capture-db"
   },
   "dependencies": {
+    "@auth/core": "^0.37.4",
+    "@auth/drizzle-adapter": "^1.7.4",
     "@capture/validation": "workspace:*",
     "@hono/zod-validator": "^0.4.2",
-    "@neondatabase/serverless": "^0.10.4",
-    "better-auth": "^1.1.14",
-    "drizzle-orm": "^0.39.0",
-    "hono": "^3.0.0",
-    "pg": "^8.13.1"
+    "drizzle-orm": "^0.39.1",
+    "hono": "^3.0.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250121.0",
-    "@types/pg": "^8.11.11",
-    "drizzle-kit": "^0.30.2",
+    "drizzle-kit": "^0.30.4",
     "wrangler": "^3.0.0"
   }
 }

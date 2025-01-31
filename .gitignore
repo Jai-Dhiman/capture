@@ -39,9 +39,7 @@ pnpm-debug.log*
 .prettierrc
 
 .wrangler
-wrangler.toml
 .dev.vars
-drizzle.config.ts
 
 # Expo
 .expo/
