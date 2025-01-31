@@ -15,6 +15,7 @@
     "@react-navigation/stack": "^7.1.1",
     "@supabase/supabase-js": "^2.48.1",
     "@tanstack/react-query": "^5.65.1",
+    "@babel/runtime": "^7.26.7",
     "better-auth": "^1.1.14",
     "expo": "~52.0.28",
     "expo-constants": "~17.0.5",

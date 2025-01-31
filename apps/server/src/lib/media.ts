@@ -19,13 +19,7 @@ export function createMediaService(env: Bindings): MediaService {
   const r2 = env.BUCKET
 
   return {
-    async create({
-      userId = '6AyQt2ddpeJUG7W1SC3VQiDGbADEbSDo',
-      ...data
-    }: {
-      userId?: string
-      [key: string]: any
-    }) {
+    async create({ userId = 'test-user', ...data }: { userId?: string; [key: string]: any }) {
       const mediaId = nanoid()
       await db.insert(schema.media).values({
         id: mediaId,
@@ -65,7 +59,7 @@ export function createMediaService(env: Bindings): MediaService {
 
     async uploadFile(file: File, userId?: string) {
       const extension = file.name.split('.').pop()
-      const key = `${userId || '6AyQt2ddpeJUG7W1SC3VQiDGbADEbSDo'}/${nanoid()}.${extension}`
+      const key = `${userId || 'test-user'}/${nanoid()}.${extension}`
 
       await r2.put(key, file, {
         httpMetadata: {

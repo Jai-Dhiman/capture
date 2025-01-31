@@ -5,7 +5,7 @@
     "module": "ESNext",
     "lib": ["esnext"],
     "types": ["@cloudflare/workers-types"],
-    "typeRoots": ["../../node_modules/@types"],
+    "typeRoots": ["../../node_modules/@types", "./node_modules"],
     "moduleResolution": "node",
     "strict": true,
     "noEmit": true,

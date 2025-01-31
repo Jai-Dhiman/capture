@@ -11,7 +11,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024
 
 mediaRouter.post('/', async (c) => {
   const mediaService = createMediaService(c.env)
-  const testUserId = '6AyQt2ddpeJUG7W1SC3VQiDGbADEbSDo'
+  const testUserId = 'test-user'
 
   try {
     const formData = await c.req.formData()
@@ -56,7 +56,7 @@ mediaRouter.post('/', async (c) => {
 })
 
 mediaRouter.delete('/:mediaId', async (c) => {
-  const testUserId = '6AyQt2ddpeJUG7W1SC3VQiDGbADEbSDo'
+  const testUserId = 'test-user'
   const mediaId = c.req.param('mediaId')
   const mediaService = createMediaService(c.env)
 
