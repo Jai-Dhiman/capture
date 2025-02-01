@@ -25,28 +25,20 @@ export default function SignupScreen({ navigation }: Props) {
   const passwordInputRef = useRef<TextInput>(null)
 
   const handleSignup = async () => {
-    setLoading(true)
+    setLoading(true);
+    setError(null);
+    
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-      })
-
-      if (error) throw error
-
-      if (!data?.session) {
-        throw new Error('No session available after sign up');
-      }
-
-      await SecureStore.setItemAsync('supabase_jwt', data.session.access_token)
-      navigation.navigate('VerifyPhoneNumber')
+      // Temporary authentication bypass for testing
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate async operation
+      navigation.navigate('VerifyPhoneNumber');
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
-      setError(errorMessage)
+      const errorMessage = error instanceof Error ? error.message : 'Navigation failed';
+      setError(errorMessage);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <SafeAreaView className="flex-1 p-5 justify-center">

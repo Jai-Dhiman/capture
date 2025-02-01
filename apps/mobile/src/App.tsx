@@ -2,6 +2,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { LoginScreen } from './screens/auth/LoginScreen';
 import  SignupScreen from './screens/auth/SignupScreen';
+import VerifyPhoneNumberScreen from './screens/auth/VerifyPhoneNumber';
+import CreateProfile from './screens/auth/CreateProfile';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import "../global.css"
 
@@ -25,6 +27,14 @@ export default function App() {
         <Stack.Screen 
           name="Signup" 
           component={SignupScreen} 
+        />
+        <Stack.Screen 
+          name="VerifyPhoneNumber" 
+          component={VerifyPhoneNumberScreen} 
+        />
+        <Stack.Screen 
+          name="CreateProfile" 
+          component={CreateProfile} 
         />
       </Stack.Navigator>
     </NavigationContainer>
