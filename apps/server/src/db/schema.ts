@@ -1,20 +1,15 @@
 import { sqliteTable, text, integer, numeric, index } from 'drizzle-orm/sqlite-core'
 
-export const profile = sqliteTable(
-  'profile',
-  {
-    id: text('id').primaryKey(),
-    username: text('username').notNull().unique(),
-    email: text('email').notNull().unique(),
-    phoneNumber: text('phone_number'),
-    image: text('image'),
-    bio: text('bio'),
-    verifiedType: text('verified_type').default('none'),
-    createdAt: numeric('created_at').default(new Date().toISOString()).notNull(),
-    updatedAt: numeric('updated_at').default(new Date().toISOString()).notNull(),
-  },
-  (table) => [index('username_idx').on(table.username), index('email_idx').on(table.email)]
-)
+export const profile = sqliteTable('profile', {
+  id: text('id').primaryKey(),
+  supabaseUserId: text('supabase_user_id').notNull().unique(),
+  username: text('username').notNull().unique(),
+  profileImage: text('profile_image'),
+  bio: text('bio'),
+  verifiedType: text('verified_type').default('none'),
+  createdAt: numeric('created_at').default(new Date().toISOString()).notNull(),
+  updatedAt: numeric('updated_at').default(new Date().toISOString()).notNull(),
+})
 
 export const post = sqliteTable(
   'post',

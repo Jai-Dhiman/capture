@@ -135,6 +135,9 @@ importers:
       hono:
         specifier: ^3.0.0
         version: 3.12.12
+      jose:
+        specifier: ^5.9.6
+        version: 5.9.6
       nanoid:
         specifier: ^5.0.9
         version: 5.0.9
@@ -1523,7 +1526,7 @@ packages:
 
   '@expo/bunyan@4.0.1':
     resolution: {integrity: sha512-+Lla7nYSiHZirgK+U/uYzsLv/X+HaJienbD5AKX1UQZHYfWaP+9uuQluRB4GrEVWF0GZ7vEVp/jzaOT9k/SQlg==}
-    engines: {'0': node >=0.10.0}
+    engines: {node: '>=0.10.0'}
 
   '@expo/cli@0.22.11':
     resolution: {integrity: sha512-D5Vl7IBLi53WmL57NAFYB1mIqlMQxDIZVzbi/FTpo5a3oIHELKr0ElTKeOLf1f1/Y3FA7cxgphoawdA0+O1JWQ==}

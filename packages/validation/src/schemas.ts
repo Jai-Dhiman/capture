@@ -2,10 +2,9 @@ import { z } from 'zod'
 
 export const profileSchema = z.object({
   id: z.string(),
+  supabaseUserId: z.string(),
   username: z.string(),
-  email: z.string().email(),
-  phoneNumber: z.string().nullable().optional(),
-  image: z.string().nullable().optional(),
+  profileImage: z.string().nullable().optional(),
   bio: z.string().nullable().optional(),
   verifiedType: z.string().default('none'),
   createdAt: z.date(),

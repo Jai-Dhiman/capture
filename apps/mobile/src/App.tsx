@@ -1,7 +1,7 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { LoginScreen } from './screens/LoginScreen';
-import  SignupScreen from './screens/SignupScreen';
+import { LoginScreen } from './screens/auth/LoginScreen';
+import  SignupScreen from './screens/auth/SignupScreen';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import "../global.css"
 
