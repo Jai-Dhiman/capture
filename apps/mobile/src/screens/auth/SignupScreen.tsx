@@ -29,12 +29,25 @@ export default function SignupScreen({ navigation }: Props) {
     setError(null);
     
     try {
-      // Temporary authentication bypass for testing
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate async operation
-      navigation.navigate('VerifyPhoneNumber');
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.session) {
+        await SecureStore.setItemAsync('supabase_jwt', data.session.access_token);
+        navigation.navigate('VerifyPhoneNumber');
+      } else {
+        throw new Error('Session not created - check your email for verification');
+      }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Navigation failed';
+      const errorMessage = error instanceof Error ? error.message : 'Signup failed';
       setError(errorMessage);
+      Alert.alert('Error', errorMessage);
     } finally {
       setLoading(false);
     }

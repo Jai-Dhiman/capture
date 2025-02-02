@@ -8,33 +8,43 @@ import {
   Image,
   Alert,
 } from 'react-native'
-// import { useAuth } from 'hooks/useAuth'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import { supabase } from 'lib/supabase'
 
 type Props = {
   navigation: NativeStackNavigationProp<any>
 }
 
-export const LoginScreen = ({ navigation }: Props) => {
+export default function LoginScreen({ navigation }: Props) {
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  // const { signIn, isPending, error } = useAuth()
   const [isEmailFocused, setIsEmailFocused] = useState(false)
   const [isPasswordFocused, setIsPasswordFocused] = useState(false)
+  const [loading, setLoading] = useState(false)
   const emailInputRef = useRef<TextInput>(null)
   const passwordInputRef = useRef<TextInput>(null)
 
-  // const handleLogin = () => {
-  //   signIn(
-  //     { email, password },
-  //     {
-  //       onError: (error) => {
-  //         Alert.alert('Error', error.message)
-  //       },
-  //     }
-  //   )
-  // }
+  const handleLogin = async () => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
+      });
+
+      if (error) {
+        Alert.alert('Login Failed', error.message);
+        return;
+      }
+      
+      navigation.navigate('Home');
+    } catch (error) {
+      Alert.alert('Error', 'An unexpected error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-[#DCDCDE] rounded-[30px] overflow-hidden">
@@ -110,14 +120,13 @@ export const LoginScreen = ({ navigation }: Props) => {
         </View>
 
         <TouchableOpacity
-          className="bg-[#E4CAC7] h-[56px] rounded-[30px] shadow-md justify-center mt-[59px]"
-          // onPress={handleLogin}
-          // disabled={isPending}
-        >
+        className="bg-[#E4CAC7] h-[56px] rounded-[30px] shadow-md justify-center mt-[59px]"
+        onPress={handleLogin}
+        disabled={loading}>
           <Text className="text-base font-bold font-roboto text-center">
-            {/* {isPending ? 'Loading...' : 'Login'} */}
-          </Text>
-        </TouchableOpacity>
+            {loading ? 'Signing In...' : 'Login'}
+  </Text>
+  </TouchableOpacity>
 
         <View className="h-[1px] bg-[#7B7B7B] my-[29px]" />
 
