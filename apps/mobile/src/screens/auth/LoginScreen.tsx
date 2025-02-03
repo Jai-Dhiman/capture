@@ -3,13 +3,20 @@ import {
   View,
   Text,
   TouchableOpacity,
-  SafeAreaView,
   TextInput,
   Image,
   Alert,
+  ScrollView,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { supabase } from 'lib/supabase'
+import EmailIcon from '../../assets/icons/Email Icon.svg';
+import LockIcon from '../../assets/icons/Lock Icon.svg';
+import ViewPasswordIcon from '../../assets/icons/View Password Icon.svg';
+import HidePasswordIcon from '../../assets/icons/Dont Show Passoword Icon.svg';
+import GoogleIcon from '../../assets/icons/google.svg';
+import AppleIcon from '../../assets/icons/apple.svg';
 
 type Props = {
   navigation: NativeStackNavigationProp<any>
@@ -38,7 +45,7 @@ export default function LoginScreen({ navigation }: Props) {
         return;
       }
       
-      navigation.navigate('Home');
+      navigation.navigate('Feed');
     } catch (error) {
       Alert.alert('Error', 'An unexpected error occurred');
     } finally {
@@ -47,120 +54,108 @@ export default function LoginScreen({ navigation }: Props) {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#DCDCDE] rounded-[30px] overflow-hidden">
-    <Image
-      source={require('../../assets/Fluid Background Coffee.png')}
-      style={{ width: '100%', height: '100%', position: 'absolute' }}
-      resizeMode="cover"
-    />
-      <View className="flex-1 px-[26px]">
-        <Text className="text-[40px] font-roboto font-light text-center mt-[84px] mb-[26px]">
-          Capture
-        </Text>
-        <View className="h-[1px] bg-black/10 mb-[30px]" />
-
-        <View className="mb-[29px]">
-          <Text className="text-base font-roboto mb-[6px]">Email</Text>
-          <TouchableOpacity 
-            activeOpacity={1}
-            onPress={() => emailInputRef.current?.focus()}
-            className={`bg-white h-[56px] rounded-[16px] shadow-md flex-row items-center px-[9px] ${isEmailFocused ? 'border-2 border-[#E4CAC7]' : ''}`}
-          >
-            <Image
-              source={require('../../assets/icons/Email Icon.svg')}
-              style={{ width: 35, height: 35, marginRight: 14 }}
-              resizeMode="contain"
-            />
-            <TextInput
-              ref={emailInputRef}
-              onFocus={() => setIsEmailFocused(true)}
-              onBlur={() => setIsEmailFocused(false)}
-              placeholder="johndoe@gmail.com"
-              placeholderTextColor="#C8C8C8"
-              className="flex-1 text-base font-roboto text-black outline-none"
-              value={email}
-              onChangeText={setEmail}
-            />
-          </TouchableOpacity>
-        </View>
-
-        <View>
-          <Text className="text-base font-roboto mb-[6px]">Your Password</Text>
-          <TouchableOpacity
-            activeOpacity={1}
-            onPress={() => passwordInputRef.current?.focus()}
-            className={`bg-white h-[55px] rounded-[16px] shadow-md flex-row items-center px-[9px] relative ${isPasswordFocused ? 'border-2 border-[#E4CAC7]' : ''}`}
-          >
-            <Image
-              source={require('../../assets/icons/Lock Icon.svg')}
-              style={{ width: 35, height: 35, marginRight: 14 }}
-              resizeMode="contain"
-            />
-            <TextInput
-              ref={passwordInputRef}
-              onFocus={() => setIsPasswordFocused(true)}
-              onBlur={() => setIsPasswordFocused(false)}
-              secureTextEntry={!showPassword}
-              className="flex-1 text-base font-roboto pr-[30px] outline-none"
-              value={password}
-              onChangeText={setPassword}
-            />
-            <TouchableOpacity 
-              className="absolute right-[9px]"
-              onPress={() => setShowPassword(!showPassword)}
-            >
-              <Image
-                source={showPassword ? require('../../assets/icons/View Password Icon.svg') : require('../../assets/icons/Dont Show Passoword Icon.svg')}
-                style={{ width: 25, height: 25 }}
-                resizeMode="contain"
-              />
-            </TouchableOpacity>
-          </TouchableOpacity>
-          <Text className="text-xs font-roboto underline mt-[12px]">Forgot Password?</Text>
-        </View>
-
-        <TouchableOpacity
-        className="bg-[#E4CAC7] h-[56px] rounded-[30px] shadow-md justify-center mt-[59px]"
-        onPress={handleLogin}
-        disabled={loading}>
-          <Text className="text-base font-bold font-roboto text-center">
-            {loading ? 'Signing In...' : 'Login'}
-  </Text>
-  </TouchableOpacity>
-
-        <View className="h-[1px] bg-[#7B7B7B] my-[29px]" />
-
-        <TouchableOpacity className="bg-white h-[56px] rounded-[30px] shadow-md flex-row items-center justify-center mb-[23px]">
+    <SafeAreaView style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+        <View className="flex-1 bg-[#DCDCDE] rounded-[30px] overflow-hidden">
           <Image
-            source={require('../../assets/icons/google.svg')}
-            style={{ width: 24, height: 24, marginRight: 7 }}
-            resizeMode="contain"
+            source={require('../../assets/Fluid Background Coffee.png')}
+            style={{ width: '100%', height: '100%', position: 'absolute' }}
+            resizeMode="cover"
           />
-          <Text className="text-base font-bold font-roboto text-[#1C1C1C]">
-            Sign In with Google
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity className="bg-white h-[56px] rounded-[30px] shadow-md flex-row items-center justify-center">
-          <Image
-            source={require('../../assets/icons/apple.svg')}
-            style={{ width: 24, height: 24, marginRight: 7 }}
-            resizeMode="contain"
-          />
-          <Text className="text-base font-bold font-roboto text-[#1C1C1C]">
-            Sign In with Apple
-          </Text>
-        </TouchableOpacity>
-
-        <View className="items-center mt-[32px]">
-          <Text className="text-base font-roboto mb-[5px]">Don't have an account?</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
-            <Text className="text-base font-semibold font-roboto text-[#827B85] underline">
-              Register
+          <View className="flex-1 px-[26px]">
+            <Text className="text-[40px] font-roboto font-light text-center mt-[84px] mb-[26px]">
+              Capture
             </Text>
-          </TouchableOpacity>
+            <View className="h-[1px] bg-black/10 mb-[30px]" />
+
+            <View className="mb-[29px]">
+              <Text className="text-base font-roboto mb-[6px]">Email</Text>
+              <TouchableOpacity 
+                activeOpacity={1}
+                onPress={() => emailInputRef.current?.focus()}
+                className={`bg-white h-[56px] rounded-[16px] shadow-md flex-row items-center px-[9px] ${isEmailFocused ? 'border-2 border-[#E4CAC7]' : ''}`}
+              >
+            <EmailIcon width={35} height={35} style={{ marginRight: 14 }} />
+                <TextInput
+                  ref={emailInputRef}
+                  onFocus={() => setIsEmailFocused(true)}
+                  onBlur={() => setIsEmailFocused(false)}
+                  placeholder="johndoe@gmail.com"
+                  placeholderTextColor="#C8C8C8"
+                  className="flex-1 text-base font-roboto text-black outline-none"
+                  value={email}
+                  onChangeText={setEmail}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <View>
+              <Text className="text-base font-roboto mb-[6px]">Your Password</Text>
+              <TouchableOpacity
+                activeOpacity={1}
+                onPress={() => passwordInputRef.current?.focus()}
+                className={`bg-white h-[55px] rounded-[16px] shadow-md flex-row items-center px-[9px] relative ${isPasswordFocused ? 'border-2 border-[#E4CAC7]' : ''}`}
+              >
+            <LockIcon width={35} height={35} style={{ marginRight: 14 }} />
+                <TextInput
+                  ref={passwordInputRef}
+                  onFocus={() => setIsPasswordFocused(true)}
+                  onBlur={() => setIsPasswordFocused(false)}
+                  secureTextEntry={!showPassword}
+                  className="flex-1 text-base font-roboto pr-[30px] outline-none"
+                  value={password}
+                  onChangeText={setPassword}
+                />
+                <TouchableOpacity 
+                  className="absolute right-[9px]"
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                {showPassword ? (
+                  <ViewPasswordIcon width={25} height={25} />
+                ) : (
+                  <HidePasswordIcon width={25} height={25} />
+                )}
+                </TouchableOpacity>
+              </TouchableOpacity>
+              <Text className="text-xs font-roboto underline mt-[12px]">Forgot Password?</Text>
+            </View>
+
+            <TouchableOpacity
+            className="bg-[#E4CAC7] h-[56px] rounded-[30px] shadow-md justify-center mt-[59px]"
+            onPress={handleLogin}
+            disabled={loading}>
+              <Text className="text-base font-bold font-roboto text-center">
+                {loading ? 'Signing In...' : 'Login'}
+              </Text>
+            </TouchableOpacity>
+
+            <View className="h-[1px] bg-[#7B7B7B] my-[29px]" />
+
+            <TouchableOpacity className="bg-white h-[56px] rounded-[30px] shadow-md flex-row items-center justify-center mb-[23px]">
+            <GoogleIcon width={24} height={24} style={{ marginRight: 7 }} />
+              <Text className="text-base font-bold font-roboto text-[#1C1C1C]">
+                Sign In with Google
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity className="bg-white h-[56px] rounded-[30px] shadow-md flex-row items-center justify-center">
+            <AppleIcon width={24} height={24} style={{ marginRight: 7 }} />
+              <Text className="text-base font-bold font-roboto text-[#1C1C1C]">
+                Sign In with Apple
+              </Text>
+            </TouchableOpacity>
+
+            <View className="items-center mt-[32px]">
+              <Text className="text-base font-roboto mb-[5px]">Don't have an account?</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
+                <Text className="text-base font-semibold font-roboto text-[#827B85] underline">
+                  Register
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   )
 }
