@@ -17,6 +17,7 @@ import ViewPasswordIcon from '../../assets/icons/View Password Icon.svg';
 import HidePasswordIcon from '../../assets/icons/Dont Show Passoword Icon.svg';
 import GoogleIcon from '../../assets/icons/google.svg';
 import AppleIcon from '../../assets/icons/apple.svg';
+import { useSessionStore } from '../../stores/sessionStore'
 
 type Props = {
   navigation: NativeStackNavigationProp<any>
@@ -32,20 +33,39 @@ export default function LoginScreen({ navigation }: Props) {
   const emailInputRef = useRef<TextInput>(null)
   const passwordInputRef = useRef<TextInput>(null)
 
+  const { setAuthUser, setUserProfile } = useSessionStore()
+
   const handleLogin = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: email,
         password: password,
       });
 
-      if (error) {
-        Alert.alert('Login Failed', error.message);
+      if (authError) {
+        Alert.alert('Login Failed', authError.message);
         return;
       }
+
+      // Set auth user
+      setAuthUser({
+        id: authData.user!.id,
+        email: authData.user!.email!,
+        phone: authData.user!.phone || undefined,
+      });
+
+      // Fetch user profile from your D1 database
+      const response = await fetch(`/api/profile/${authData.user!.id}`);
+      const profileData = await response.json();
       
-      navigation.navigate('Feed');
+      if (profileData) {
+        setUserProfile(profileData);
+        navigation.navigate('Feed');
+      } else {
+        // No profile exists, user needs to create one
+        navigation.navigate('CreateProfile');
+      }
     } catch (error) {
       Alert.alert('Error', 'An unexpected error occurred');
     } finally {

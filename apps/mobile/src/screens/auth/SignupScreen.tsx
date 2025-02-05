@@ -16,6 +16,7 @@ import EmailIcon from '../../assets/icons/Email Icon.svg'
 import LockIcon from '../../assets/icons/Lock Icon.svg'
 import ViewPasswordIcon from '../../assets/icons/View Password Icon.svg'
 import HidePasswordIcon from '../../assets/icons/Dont Show Passoword Icon.svg'
+import { useSessionStore } from '../../stores/sessionStore'
 
 type Props = {
   navigation: NativeStackNavigationProp<any>
@@ -37,6 +38,8 @@ export default function SignupScreen({ navigation }: Props) {
   const passwordInputRef = useRef<TextInput>(null)
   const confirmPasswordInputRef = useRef<TextInput>(null)
 
+  const { setAuthUser } = useSessionStore()
+
   const handleSignup = async () => {
     if (password !== confirmPassword) {
       setError('Passwords do not match')
@@ -57,7 +60,17 @@ export default function SignupScreen({ navigation }: Props) {
 
       if (data.session) {
         await SecureStore.setItemAsync('supabase_jwt', data.session.access_token)
-        navigation.navigate('VerifyPhoneNumber')
+        
+        // Set auth user in store
+        setAuthUser({
+          id: data.user!.id,
+          email: data.user!.email!,
+          phone: data.user!.phone || undefined,
+        });
+
+        // Since this is a new signup, we don't set userProfile
+        // This will automatically make isNewUser true in the store
+        navigation.navigate('CreateProfile')
       } else {
         throw new Error('Session not created - check your email for verification')
       }
