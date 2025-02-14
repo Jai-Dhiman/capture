@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 export const profileSchema = z.object({
   id: z.string(),
-  supabaseUserId: z.string(),
+  userId: z.string(),
   username: z.string(),
   profileImage: z.string().nullable().optional(),
   bio: z.string().nullable().optional(),

@@ -1,97 +1,25 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, Image } from 'react-native';
+import React from 'react';
+import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { CompositeNavigationProp } from '@react-navigation/native';
 import { useSessionStore } from '../stores/sessionStore';
-import * as ImagePicker from 'expo-image-picker';
-import { API_URL } from '@env';
-import { Platform } from 'react-native';
-import { RootStackParamList } from '../types/navigation';
+import { AppStackParamList, RootStackParamList } from '../types/navigation';
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type NavigationProp = CompositeNavigationProp<
+  NativeStackNavigationProp<AppStackParamList>,
+  NativeStackNavigationProp<RootStackParamList>
+>;
 
 export default function Feed() {
   const navigation = useNavigation<NavigationProp>();
   const { authUser, clearSession } = useSessionStore();
-  const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
-
-  const handleImageUpload = async () => {
-    try {
-      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-      if (!permissionResult.granted) {
-        Alert.alert('Permission Required', 'Please allow access to your photos');
-        return;
-      }
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 1,
-        base64: Platform.OS === 'web',
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        const imageUri = result.assets[0].uri;
-        let file;
-        if (Platform.OS === 'web' && imageUri.startsWith('data:')) {
-          const response = await fetch(imageUri);
-          const blob = await response.blob();
-          file = new File([blob], 'upload.jpg', { type: 'image/jpeg' });
-        } else {
-          file = {
-            uri: imageUri,
-            type: 'image/jpeg',
-            name: 'upload.jpg',
-          };
-        }
-        const formData = new FormData();
-        formData.append('file', file as any);
-
-        const session = await supabase.auth.getSession();
-        if (!session.data.session?.access_token) {
-          throw new Error('No auth token available');
-        }
-        const response = await fetch(`${API_URL}/api/media`, {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'Authorization': `Bearer ${session.data.session.access_token}`,
-          },
-        });
-        
-        const responseText = await response.text();
-        
-        let data;
-        try {
-          data = JSON.parse(responseText);
-        } catch (e) {
-          console.error('Failed to parse response:', e);
-          throw new Error('Invalid server response');
-        }
-
-        if (!response.ok) {
-          console.error('Upload failed with status:', response.status, 'Error:', data);
-          throw new Error(data.error || 'Upload failed');
-        }
-
-        setUploadedUrl(data.media.url);
-        Alert.alert('Success', 'File uploaded successfully!');
-      }
-    } catch (error) {
-      console.error('Upload error:', {
-        message: error instanceof Error ? error.message : 'UnknownError',
-        error
-      });
-      Alert.alert('Error', `Failed to upload image`);
-    }
-  };
 
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
       clearSession();
-      // Remove navigation call - MainNavigator will handle this automatically
     } catch (error) {
       console.error('Error logging out:', error);
     }
@@ -142,21 +70,10 @@ export default function Feed() {
 
       <TouchableOpacity 
         className="bg-blue-600 p-3 rounded-lg mt-5 items-center"
-        onPress={handleImageUpload}
+        onPress={() => navigation.navigate('NewPost')}
       >
-        <Text className="text-white text-base font-bold">Upload Image</Text>
+        <Text className="text-white text-base font-bold">Create New Post</Text>
       </TouchableOpacity>
-
-      {uploadedUrl && (
-        <View className="mt-5">
-          <Text className="text-base mb-2.5">Uploaded Image:</Text>
-          <Image 
-            source={{ uri: uploadedUrl }} 
-            className="w-full h-40 rounded-lg"
-            resizeMode="cover"
-          />
-        </View>
-      )}
 
       <TouchableOpacity 
         className="bg-red-600 p-3 rounded-lg mt-5 items-center"

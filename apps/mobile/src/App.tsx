@@ -4,9 +4,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import "../global.css";
 import { useSessionStore } from './stores/sessionStore';
 import { RootStackParamList } from './types/navigation';
-
-import Feed from './screens/Feed';
-import AuthStack from 'components/Auth';
+import AppNavigator from 'components/AppNavigator';
+import AuthStack from 'components/AuthNavigator';
 import CreateProfile from './screens/auth/CreateProfile';
 
 const queryClient = new QueryClient();
@@ -22,7 +21,7 @@ function MainNavigator() {
       }}
     >
       {authUser ? (
-        <Stack.Screen name="Feed" component={Feed} />
+        <Stack.Screen name="App" component={AppNavigator} />
       ) : (
         <>
           <Stack.Screen name="Auth" component={AuthStack} />

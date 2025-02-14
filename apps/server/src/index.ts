@@ -1,14 +1,19 @@
 import { Hono } from 'hono'
 import { logger } from 'hono/logger'
 import { cors } from 'hono/cors'
+import { ApolloServer } from '@apollo/server'
+import { startServerAndCreateCloudflareWorkersHandler } from '@as-integrations/cloudflare-workers'
+import { typeDefs } from 'graphql/schema'
+import { resolvers } from 'graphql/resolvers'
 import { errorHandler } from 'middleware/errorHandler'
 import { authMiddleware } from 'middleware/auth'
-import type { Bindings } from 'types'
+import type { Bindings, Variables } from 'types'
 import healthRoutes from 'routes/health'
 import mediaRouter from 'routes/media'
 
 const app = new Hono<{
   Bindings: Bindings
+  Variables: Variables
 }>()
 
 app.use('*', logger())
@@ -29,10 +34,25 @@ app.use(
   })
 )
 
+// GraphQL
+const server = new ApolloServer<Bindings>({
+  typeDefs,
+  resolvers,
+})
+
+const handler = startServerAndCreateCloudflareWorkersHandler(server)
+app.use('/graphql', authMiddleware, async (c) => {
+  const response = await handler(c.req.raw)
+  return response
+})
+
+// Public routes
 app.route('/', healthRoutes)
 
+// Protected routes
 app.use('/api/*', authMiddleware)
 app.route('/api/media', mediaRouter)
+
 app.onError(errorHandler)
 
 export default app
