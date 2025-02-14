@@ -2,7 +2,7 @@ import { sqliteTable, text, integer, numeric, index } from 'drizzle-orm/sqlite-c
 
 export const profile = sqliteTable('profile', {
   id: text('id').primaryKey(),
-  supabaseUserId: text('supabase_user_id').notNull().unique(),
+  userId: text('user_id').notNull().unique(),
   username: text('username').notNull().unique(),
   profileImage: text('profile_image'),
   bio: text('bio'),
@@ -15,7 +15,7 @@ export const post = sqliteTable(
   'post',
   {
     id: text('id').primaryKey(),
-    userId: text('user_id').references(() => profile.id),
+    userId: text('user_id').references(() => profile.userId),
     content: text('content').notNull(),
     createdAt: numeric('created_at').default(new Date().toISOString()).notNull(),
   },
@@ -26,7 +26,7 @@ export const media = sqliteTable(
   'media',
   {
     id: text('id').primaryKey(),
-    userId: text('user_id').references(() => profile.id),
+    userId: text('user_id').references(() => profile.userId),
     postId: text('post_id').references(() => post.id),
     type: text('type').notNull(),
     url: text('url').notNull(),
@@ -43,7 +43,7 @@ export const comment = sqliteTable(
   {
     id: text('id').primaryKey(),
     postId: text('post_id').references(() => post.id),
-    userId: text('user_id').references(() => profile.id),
+    userId: text('user_id').references(() => profile.userId),
     content: text('content').notNull(),
     parentCommentId: text('parent_comment_id').references((): any => comment.id),
     createdAt: numeric('created_at').default(new Date().toISOString()).notNull(),
@@ -59,7 +59,7 @@ export const savedPost = sqliteTable(
   'saved_posts',
   {
     id: text('id').primaryKey(),
-    userId: text('user_id').references(() => profile.id),
+    userId: text('user_id').references(() => profile.userId),
     postId: text('post_id').references(() => post.id),
     createdAt: numeric('created_at').default(new Date().toISOString()).notNull(),
   },
@@ -94,8 +94,8 @@ export const relationship = sqliteTable(
   'relationship',
   {
     id: text('id').primaryKey(),
-    followerId: text('follower_id').references(() => profile.id),
-    followedId: text('followed_id').references(() => profile.id),
+    followerId: text('follower_id').references(() => profile.userId),
+    followedId: text('followed_id').references(() => profile.userId),
     createdAt: numeric('created_at').default(new Date().toISOString()).notNull(),
   },
   (table) => [

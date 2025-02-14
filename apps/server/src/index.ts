@@ -1,11 +1,10 @@
 import { Hono } from 'hono'
 import { logger } from 'hono/logger'
 import { cors } from 'hono/cors'
-// import { authMiddleware } from 'middleware/auth'
 import { errorHandler } from 'middleware/errorHandler'
+import { authMiddleware } from 'middleware/auth'
 import type { Bindings } from 'types'
 import healthRoutes from 'routes/health'
-// import authRoutes from 'routes/auth'
 import mediaRouter from 'routes/media'
 
 const app = new Hono<{
@@ -30,10 +29,9 @@ app.use(
   })
 )
 
-// app.use('/api/*', authMiddleware)
-
 app.route('/', healthRoutes)
-// app.route('/api/auth', authRoutes)
+
+app.use('/api/*', authMiddleware)
 app.route('/api/media', mediaRouter)
 app.onError(errorHandler)
 

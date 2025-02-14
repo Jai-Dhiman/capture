@@ -11,6 +11,7 @@
   "dependencies": {
     "@capture/validation": "workspace:*",
     "@hono/zod-validator": "^0.4.2",
+    "@supabase/supabase-js": "^2.48.1",
     "drizzle-orm": "^0.39.1",
     "hono": "^3.0.0",
     "jose": "^5.9.6",

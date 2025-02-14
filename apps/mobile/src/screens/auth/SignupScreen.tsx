@@ -17,9 +17,10 @@ import LockIcon from '../../assets/icons/Lock Icon.svg'
 import ViewPasswordIcon from '../../assets/icons/View Password Icon.svg'
 import HidePasswordIcon from '../../assets/icons/Dont Show Passoword Icon.svg'
 import { useSessionStore } from '../../stores/sessionStore'
+import { AuthStackParamList } from '../../types/navigation';
 
 type Props = {
-  navigation: NativeStackNavigationProp<any>
+  navigation: NativeStackNavigationProp<AuthStackParamList, 'Signup'>
 }
 
 export default function SignupScreen({ navigation }: Props) {
@@ -61,17 +62,16 @@ export default function SignupScreen({ navigation }: Props) {
       if (data.session) {
         await SecureStore.setItemAsync('supabase_jwt', data.session.access_token)
         
-        // Set auth user in store
         setAuthUser({
           id: data.user!.id,
           email: data.user!.email!,
           phone: data.user!.phone || undefined,
         });
 
-        // Since this is a new signup, we don't set userProfile
-        // This will automatically make isNewUser true in the store
-        navigation.navigate('CreateProfile')
-      } else {
+        // Navigate to CreateProfile within the root stack
+        navigation.getParent()?.navigate('CreateProfile');
+      }
+      else {
         throw new Error('Session not created - check your email for verification')
       }
     } catch (error) {

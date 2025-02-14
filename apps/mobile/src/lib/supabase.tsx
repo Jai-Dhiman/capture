@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { SUPABASE_URL, SUPABASE_KEY } from '@env'
 import { createContext, useContext, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useSessionStore } from '../stores/sessionStore'
+import { type AuthUser, useSessionStore } from '../stores/sessionStore'
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
@@ -25,20 +25,20 @@ type Session = {
 } | null
 
 type SessionContextType = {
-  session: Session
+  authUser: AuthUser | null
   isLoading: boolean
 }
 
 const SessionContext = createContext<SessionContextType>({
-  session: null,
+  authUser: null,
   isLoading: true,
 })
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
-  const setSession = useSessionStore((state) => state.setSession)
+  const setAuthUser = useSessionStore((state) => state.setAuthUser)
   const setIsLoading = useSessionStore((state) => state.setIsLoading)
   const sessionStore = useSessionStore((state) => ({
-    session: state.session,
+    authUser: state.authUser,
     isLoading: state.isLoading,
   }))
 
@@ -66,20 +66,41 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   })
 
   useEffect(() => {
-    setSession(session || null)
-    setIsLoading(isLoading)
-  }, [session, isLoading, setSession, setIsLoading])
+    const updateSessionState = async () => {
+      if (session) {
+        const authUser = {
+          id: session.user.id,
+          email: session.user.email || '',
+        }
+        setAuthUser(authUser)
+      } else {
+        setAuthUser(null)
+      }
+      setIsLoading(isLoading)
+    }
+
+    updateSessionState()
+  }, [session, isLoading, setAuthUser, setIsLoading])
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session)
+      if (session) {
+        const authUser = {
+          id: session.user.id,
+          email: session.user.email || '',
+        }
+        setAuthUser(authUser)
+      } else {
+        setAuthUser(null)
+      }
       setIsLoading(false)
       await refetch()
     })
+
     return () => {
       data.subscription.unsubscribe()
     }
-  }, [setSession, setIsLoading, refetch])
+  }, [setAuthUser, setIsLoading, refetch])
 
   return <SessionContext.Provider value={sessionStore}>{children}</SessionContext.Provider>
 }

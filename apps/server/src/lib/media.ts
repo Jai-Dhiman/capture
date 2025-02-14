@@ -5,13 +5,13 @@ import * as schema from 'db/schema'
 import type { Bindings } from '../types/index'
 
 export interface MediaService {
-  uploadFile: (file: File, userId?: string) => Promise<string>
+  uploadFile: (file: File, userId: string) => Promise<string>
   deleteFile: (key: string) => Promise<void>
   getSignedUrl: (key: string) => Promise<string>
-  create: (data: { userId?: string; [key: string]: any }) => Promise<any>
-  list: (userId?: string) => Promise<any[]>
-  findById: (id: string) => Promise<any>
-  delete: (id: string) => Promise<void>
+  create: (data: { userId: string; [key: string]: any }) => Promise<any>
+  list: (userId: string) => Promise<any[]>
+  findById: (id: string, userId: string) => Promise<any>
+  delete: (id: string, userId: string) => Promise<void>
 }
 
 export function createMediaService(env: Bindings): MediaService {
@@ -19,55 +19,84 @@ export function createMediaService(env: Bindings): MediaService {
   const r2 = env.BUCKET
 
   return {
-    async create({ userId = 'test-user', ...data }: { userId?: string; [key: string]: any }) {
-      const mediaId = nanoid()
-      await db.insert(schema.media).values({
-        id: mediaId,
-        userId,
-        type: data.type,
-        url: data.url,
-        order: data.order,
-        thumbnailUrl: data.thumbnailUrl,
-        postId: data.postId,
-        createdAt: new Date().toISOString(),
-      })
+    async create({ userId, ...data }: { userId: string; [key: string]: any }) {
+      if (!userId) throw new Error('User ID is required')
 
-      return await db.query.media.findFirst({
-        where: (media, { eq }) => eq(media.id, mediaId),
-      })
-    },
-
-    async list(userId?: string) {
-      if (userId) {
-        return await db.query.media.findMany({
-          where: (media, { eq }) => eq(media.userId, userId),
+      try {
+        const mediaId = nanoid()
+        await db.insert(schema.media).values({
+          id: mediaId,
+          userId,
+          type: data.type,
+          url: data.url,
+          order: data.order || 0,
+          thumbnailUrl: data.thumbnailUrl,
+          postId: data.postId,
+          createdAt: new Date().toISOString(),
         })
-      } else {
-        return await db.query.media.findMany()
+
+        const media = await db.query.media.findFirst({
+          where: (media, { eq }) => eq(media.id, mediaId),
+        })
+
+        if (!media) throw new Error('Failed to create media record')
+        return media
+      } catch (error) {
+        console.error('Database error:', error)
+        throw new Error(
+          `Failed to create media record: ${
+            error instanceof Error ? error.message : 'Unknown error'
+          }`
+        )
       }
     },
 
-    async findById(id: string) {
+    async list(userId: string) {
+      return await db.query.media.findMany({
+        where: (media, { eq }) => eq(media.userId, userId),
+      })
+    },
+
+    async findById(id: string, userId: string) {
       return await db.query.media.findFirst({
-        where: (media, { eq }) => eq(media.id, id),
+        where: (media, { and }) => and(eq(media.id, id), eq(media.userId, userId)),
       })
     },
 
-    async delete(id: string) {
-      await db.delete(schema.media).where(eq(schema.media.id, id))
+    async delete(id: string, userId: string) {
+      await db
+        .delete(schema.media)
+        .where(eq(schema.media.id, id) && eq(schema.media.userId, userId))
     },
 
-    async uploadFile(file: File, userId?: string) {
-      const extension = file.name.split('.').pop()
-      const key = `${userId || 'test-user'}/${nanoid()}.${extension}`
-
-      await r2.put(key, file, {
-        httpMetadata: {
-          contentType: file.type,
-        },
+    async uploadFile(file: File, userId: string) {
+      console.log('Starting file upload:', {
+        userId,
+        fileType: file.type,
+        fileSize: file.size,
+        fileName: file.name,
       })
 
-      return key
+      try {
+        const extension = file.name.split('.').pop()
+        const key = `${userId}/${nanoid()}.${extension}`
+        console.log('Generated storage key:', key)
+
+        await r2.put(key, file, {
+          httpMetadata: {
+            contentType: file.type,
+          },
+        })
+        console.log('File successfully uploaded to R2')
+
+        return key
+      } catch (error) {
+        console.error('R2 upload error:', {
+          name: error instanceof Error ? error.name : 'UnknownError',
+          message: error instanceof Error ? error.message : 'UnknownError',
+        })
+        throw error
+      }
     },
 
     async deleteFile(key: string) {

@@ -1,12 +1,12 @@
 import { create } from 'zustand'
 
-interface AuthUser {
+export interface AuthUser {
   id: string
   email: string
   phone?: string
 }
 
-interface UserProfile {
+export interface UserProfile {
   id: string
   supabase_id: string
   username: string | null
