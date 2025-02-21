@@ -70,25 +70,14 @@ export function createMediaService(env: Bindings): MediaService {
     },
 
     async uploadFile(file: File, userId: string) {
-      console.log('Starting file upload:', {
-        userId,
-        fileType: file.type,
-        fileSize: file.size,
-        fileName: file.name,
-      })
-
       try {
         const extension = file.name.split('.').pop()
         const key = `${userId}/${nanoid()}.${extension}`
-        console.log('Generated storage key:', key)
-
         await r2.put(key, file, {
           httpMetadata: {
             contentType: file.type,
           },
         })
-        console.log('File successfully uploaded to R2')
-
         return key
       } catch (error) {
         console.error('R2 upload error:', {

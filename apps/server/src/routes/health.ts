@@ -10,10 +10,7 @@ const healthRouter = new Hono<{
 healthRouter.get('/', async (c) => {
   try {
     const dbInstance = createD1Client(c.env)
-    const result = await dbInstance
-      .select()
-      .from(schema.profile)
-      .limit(1)
+    const result = await dbInstance.select().from(schema.profile).limit(1).execute()
 
     return c.json({
       status: 'ok',
