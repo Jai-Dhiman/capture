@@ -34,13 +34,11 @@ export default function NewPost() {
       });
 
       if (!result.canceled && result.assets.length > 0) {
-        console.log('Selected images:', result.assets);
         const formattedImages = result.assets.map(asset => ({
           uri: asset.uri,
           type: 'image/jpeg',
           name: `upload-${Date.now()}.jpg`,
         }));
-        console.log('Formatted images:', formattedImages);
         setSelectedImages(prevImages => [...prevImages, ...formattedImages]);
       }
     } catch (error) {
@@ -56,21 +54,26 @@ export default function NewPost() {
     }
 
     try {
-      console.log('Attempting to upload images:', selectedImages);
       const uploadedMedia = await uploadMediaMutation.mutateAsync(selectedImages);
-      console.log('Upload response:', uploadedMedia);
+      
       const mediaIds = uploadedMedia.map(media => media.id);
-
-      await createPostMutation.mutateAsync({
+      const postInput = {
         content,
         mediaIds,
-      });
-
+      };
+      console.log('Creating post with input:', postInput);
+      
+      const result = await createPostMutation.mutateAsync(postInput);
+      console.log('Post creation result:', result);
+      
       Alert.alert('Success', 'Post created successfully!');
       navigation.goBack();
-    } catch (error) {
-      console.error('Post creation error:', error);
-      Alert.alert('Error', 'Failed to create post');
+    } catch (error: any) {
+      console.error('Post creation error:', {
+        message: error.message,
+        details: error.response?.errors || error
+      });
+      Alert.alert('Error', `Failed to create post: ${error.message}`);
     }
   };
 

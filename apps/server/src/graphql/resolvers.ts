@@ -2,12 +2,12 @@ import { createD1Client } from '../db'
 import { eq } from 'drizzle-orm'
 import * as schema from '../db/schema'
 import { nanoid } from 'nanoid'
-import type { Bindings } from '../types'
+import { Bindings } from '../types'
 
 export const resolvers = {
   Query: {
-    async feed(_, { limit = 10, offset = 0 }, { bindings }: { bindings: Bindings }) {
-      const db = createD1Client(bindings)
+    async feed(_: unknown, { limit = 10, offset = 0 }, context: { env: any }) {
+      const db = createD1Client(context.env)
       const posts = await db.query.post.findMany({
         limit,
         offset,
@@ -23,8 +23,8 @@ export const resolvers = {
       return posts
     },
 
-    async post(_, { id }, { bindings }: { bindings: Bindings }) {
-      const db = createD1Client(bindings)
+    async post(_parent: unknown, { id }: { id: string }, context: { env: any }) {
+      const db = createD1Client(context.env)
       const post = await db.query.post.findFirst({
         where: (posts, { eq }) => eq(posts.id, id),
         with: {
@@ -42,33 +42,45 @@ export const resolvers = {
   },
 
   Mutation: {
-    async createPost(_, { input }, { bindings, user }: { bindings: Bindings; user: any }) {
-      const db = createD1Client(bindings)
+    async createPost(_parent: unknown, { input }: { input: any }, context: { env: Bindings }) {
+      const db = createD1Client(context.env)
 
-      return await db.transaction(async (tx) => {
-        // Create the post
+      const testUser = {
+        id: '9b451b0b-7e2e-45dd-8383-d2a6269a69ee',
+      }
+
+      try {
+        const existingProfile = await db
+          .select()
+          .from(schema.profile)
+          .where(eq(schema.profile.userId, testUser.id))
+          .get()
+
+        if (!existingProfile) {
+          throw new Error('Profile not found.')
+        }
+
         const postId = nanoid()
-        await tx.insert(schema.post).values({
+
+        await db.insert(schema.post).values({
           id: postId,
-          userId: user.id,
+          userId: testUser.id,
           content: input.content,
           createdAt: new Date().toISOString(),
         })
 
-        // Associate media if provided
         if (input.mediaIds?.length) {
           await Promise.all(
             input.mediaIds.map((mediaId: string) =>
-              tx.update(schema.media).set({ postId }).where(eq(schema.media.id, mediaId))
+              db.update(schema.media).set({ postId }).where(eq(schema.media.id, mediaId))
             )
           )
         }
 
-        // Associate captags if provided
         if (input.captagIds?.length) {
           await Promise.all(
             input.captagIds.map((captagId: string) =>
-              tx.insert(schema.postCaptag).values({
+              db.insert(schema.postCaptag).values({
                 postId,
                 captagId,
                 createdAt: new Date().toISOString(),
@@ -77,21 +89,50 @@ export const resolvers = {
           )
         }
 
-        // Fetch the created post with all relations
-        const post = await tx.query.post.findFirst({
-          where: (posts, { eq }) => eq(posts.id, postId),
-          with: {
-            user: true,
-            media: true,
-            comments: true,
-            captags: true,
-            savedBy: true,
-          },
-        })
+        const createdPost = await db
+          .select({
+            id: schema.post.id,
+            content: schema.post.content,
+            createdAt: schema.post.createdAt,
+            userId: schema.post.userId,
+          })
+          .from(schema.post)
+          .where(eq(schema.post.id, postId))
+          .get()
 
-        if (!post) throw new Error('Failed to create post')
-        return post
-      })
+        if (!createdPost) throw new Error('Failed to create post')
+
+        const userProfile = await db
+          .select()
+          .from(schema.profile)
+          .where(eq(schema.profile.userId, testUser.id))
+          .get()
+
+        if (!userProfile) throw new Error('User profile not found')
+
+        let mediaItems: Array<any> = []
+        if (input.mediaIds?.length) {
+          mediaItems = await db
+            .select()
+            .from(schema.media)
+            .where(eq(schema.media.postId, postId))
+            .all()
+        }
+
+        return {
+          ...createdPost,
+          user: userProfile,
+          media: mediaItems,
+          comments: [],
+          captags: [],
+          savedBy: [],
+        }
+      } catch (error) {
+        console.error('Creation error:', error)
+        throw new Error(
+          `Failed to create post: ${error instanceof Error ? error.message : 'Unknown error'}`
+        )
+      }
     },
   },
 }

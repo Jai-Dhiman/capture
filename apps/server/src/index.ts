@@ -35,14 +35,34 @@ app.use(
 )
 
 // GraphQL
-const server = new ApolloServer<Bindings>({
+const server = new ApolloServer({
   typeDefs,
   resolvers,
 })
 
-const handler = startServerAndCreateCloudflareWorkersHandler(server)
+type ContextType = {
+  env: Bindings
+  user: any
+}
+
+const handler = startServerAndCreateCloudflareWorkersHandler<ContextType>(server, {
+  context: async ({ request, ctx }) => {
+    return {
+      env: ctx.env,
+      user: ctx.user,
+    }
+  },
+})
+
 app.use('/graphql', authMiddleware, async (c) => {
-  const response = await handler(c.req.raw)
+  const response = await handler(
+    c.req.raw,
+    {
+      env: c.env,
+      user: c.get('user'),
+    },
+    c
+  )
   return response
 })
 

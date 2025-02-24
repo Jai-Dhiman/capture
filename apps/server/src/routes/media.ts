@@ -11,11 +11,6 @@ const ALLOWED_TYPES = ['image/jpg', 'image/jpeg', 'image/png', 'image/gif']
 const MAX_FILE_SIZE = 5 * 1024 * 1024
 
 mediaRouter.post('/', async (c) => {
-  console.log('Router environment:', {
-    hasBucket: !!c.env.BUCKET,
-    env: Object.keys(c.env),
-  })
-
   const mediaService = createMediaService(c.env)
   const user = c.get('user')
 

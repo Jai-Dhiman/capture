@@ -3,6 +3,16 @@ import { HTTPException } from 'hono/http-exception'
 import { createClient } from '@supabase/supabase-js'
 
 export async function authMiddleware(c: Context, next: Next) {
+  // Bypass auth for both GET and POST GraphQL requests
+  if (c.req.url.includes('/graphql')) {
+    c.set('user', {
+      id: 'test-user-id',
+      email: 'test@example.com',
+      username: 'testuser',
+    })
+    return await next()
+  }
+
   const authHeader = c.req.header('Authorization')
 
   if (!authHeader?.startsWith('Bearer ')) {

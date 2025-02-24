@@ -37,6 +37,7 @@ export const typeDefs = `
 
   type Post {
     id: ID!
+    userId: String!
     content: String!
     user: Profile!
     media: [Media!]!
