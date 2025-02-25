@@ -5,55 +5,61 @@ import { supabase } from 'lib/supabase'
 export const useCreatePost = () => {
   return useMutation({
     mutationFn: async ({ content, mediaIds }: { content: string; mediaIds: string[] }) => {
-      console.log('Creating post with content:', content, 'mediaIds:', mediaIds)
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
 
-      const session = await supabase.auth.getSession()
-      if (!session.data.session?.access_token) {
+      if (!session?.access_token) {
         throw new Error('No auth token available')
       }
 
-      try {
-        const response = await fetch(`${API_URL}/graphql`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.data.session.access_token}`,
-          },
-          body: JSON.stringify({
-            query: `
-              mutation CreatePost($input: PostInput!) {
-                createPost(input: $input) {
+      const response = await fetch(`${API_URL}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          query: `
+            mutation CreatePost($input: PostInput!) {
+              createPost(input: $input) {
+                id
+                content
+                createdAt
+                user {
                   id
-                  content
-                  media {
-                    id
-                    url
-                  }
+                  username
+                  image
+                }
+                media {
+                  id
+                  url
+                  type
+                }
+                captags {
+                  id
+                  name
                 }
               }
-            `,
-            variables: {
-              input: {
-                content,
-                mediaIds,
-              },
+            }
+          `,
+          variables: {
+            input: {
+              content,
+              mediaIds,
             },
-          }),
-        })
+          },
+        }),
+      })
 
-        console.log('GraphQL response status:', response.status)
-        const data = await response.json()
-        console.log('GraphQL response data:', data)
+      const data = await response.json()
 
-        if (data.errors) {
-          console.error('GraphQL Errors:', data.errors)
-          throw new Error(data.errors[0].message)
-        }
-        return data.data.createPost
-      } catch (error) {
-        console.error('Post creation error:', error)
-        throw error
+      if (data.errors) {
+        console.error('GraphQL Errors:', data.errors)
+        throw new Error(data.errors[0].message || 'Unknown GraphQL error')
       }
+
+      return data.data.createPost
     },
   })
 }

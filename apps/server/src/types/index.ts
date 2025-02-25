@@ -10,3 +10,8 @@ export type Bindings = {
 export type Variables = {
   user: User
 }
+
+export type ContextType = {
+  env: Bindings
+  user: any
+}

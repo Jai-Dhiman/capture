@@ -5,7 +5,6 @@ import { API_URL } from '@env'
 export const useUploadMedia = () => {
   return useMutation({
     mutationFn: async (files: Array<any>) => {
-      console.log('Starting file upload, files:', files)
       const session = await supabase.auth.getSession()
       if (!session.data.session?.access_token) {
         throw new Error('No auth token available')
@@ -13,7 +12,6 @@ export const useUploadMedia = () => {
 
       const uploads = files.map(async (file) => {
         const formData = new FormData()
-        console.log('Processing file:', file)
 
         if (file.uri.startsWith('data:')) {
           const response = await fetch(file.uri)
@@ -27,22 +25,16 @@ export const useUploadMedia = () => {
           } as any)
         }
 
-        console.log('FormData created:', formData)
-
         try {
           const response = await fetch(`${API_URL}/api/media`, {
             method: 'POST',
             body: formData,
             headers: {
               Authorization: `Bearer ${session?.data?.session?.access_token}`,
-              // Remove Content-Type header to let the browser set it automatically
-              // with the correct boundary
             },
           })
 
-          console.log('Upload response status:', response.status)
           const data = await response.json()
-          console.log('Upload response data:', data)
 
           if (!response.ok) throw new Error(data.error || 'Upload failed')
           return data.media

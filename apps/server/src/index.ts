@@ -7,7 +7,7 @@ import { typeDefs } from 'graphql/schema'
 import { resolvers } from 'graphql/resolvers'
 import { errorHandler } from 'middleware/errorHandler'
 import { authMiddleware } from 'middleware/auth'
-import type { Bindings, Variables } from 'types'
+import type { Bindings, Variables, ContextType } from 'types'
 import healthRoutes from 'routes/health'
 import mediaRouter from 'routes/media'
 
@@ -40,29 +40,24 @@ const server = new ApolloServer({
   resolvers,
 })
 
-type ContextType = {
-  env: Bindings
-  user: any
-}
-
-const handler = startServerAndCreateCloudflareWorkersHandler<ContextType>(server, {
+const handler = startServerAndCreateCloudflareWorkersHandler(server, {
   context: async ({ request, ctx }) => {
-    return {
-      env: ctx.env,
-      user: ctx.user,
-    }
+    const contextValue = (ctx as any).props as ContextType
+    return contextValue
   },
 })
 
 app.use('/graphql', authMiddleware, async (c) => {
-  const response = await handler(
-    c.req.raw,
-    {
-      env: c.env,
-      user: c.get('user'),
-    },
-    c
-  )
+  const contextValue: ContextType = {
+    env: c.env,
+    user: c.get('user'),
+  }
+
+  const response = await handler(c.req.raw, contextValue, {
+    waitUntil: c.executionCtx.waitUntil.bind(c.executionCtx),
+    passThroughOnException: c.executionCtx.passThroughOnException.bind(c.executionCtx),
+    props: contextValue,
+  })
   return response
 })
 

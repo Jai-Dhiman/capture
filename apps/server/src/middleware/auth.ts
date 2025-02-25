@@ -3,16 +3,6 @@ import { HTTPException } from 'hono/http-exception'
 import { createClient } from '@supabase/supabase-js'
 
 export async function authMiddleware(c: Context, next: Next) {
-  // Bypass auth for both GET and POST GraphQL requests
-  if (c.req.url.includes('/graphql')) {
-    c.set('user', {
-      id: 'test-user-id',
-      email: 'test@example.com',
-      username: 'testuser',
-    })
-    return await next()
-  }
-
   const authHeader = c.req.header('Authorization')
 
   if (!authHeader?.startsWith('Bearer ')) {
@@ -27,22 +17,28 @@ export async function authMiddleware(c: Context, next: Next) {
     }
 
     const supabase = createClient(c.env.SUPABASE_URL, c.env.SUPABASE_KEY)
-
     const {
       data: { user },
       error,
     } = await supabase.auth.getUser(token)
 
-    if (error) {
-      console.error('Supabase auth error:', error)
+    if (error || !user) {
       throw new HTTPException(401, { message: 'Invalid token' })
     }
 
-    if (!user) {
-      throw new HTTPException(401, { message: 'Invalid token' })
+    const userContext = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      ...user.user_metadata,
     }
 
-    c.set('user', user)
+    c.set('user', userContext)
+    console.log('Auth Middleware Debug:', {
+      userSet: true,
+      user: userContext,
+    })
+
     await next()
   } catch (error) {
     console.error('Authentication error:', error)

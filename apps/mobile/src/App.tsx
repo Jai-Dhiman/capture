@@ -7,6 +7,7 @@ import { RootStackParamList } from './types/navigation';
 import AppNavigator from 'components/AppNavigator';
 import AuthStack from 'components/AuthNavigator';
 import CreateProfile from './screens/auth/CreateProfile';
+import { ApolloProvider } from 'components/ApolloProvider';
 
 const queryClient = new QueryClient();
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -34,10 +35,12 @@ function MainNavigator() {
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <NavigationContainer>
-        <MainNavigator />
-      </NavigationContainer>
-    </QueryClientProvider>
+    <ApolloProvider>
+      <QueryClientProvider client={queryClient}>
+        <NavigationContainer>
+          <MainNavigator />
+        </NavigationContainer>
+      </QueryClientProvider>
+    </ApolloProvider>
   );
 }

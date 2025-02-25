@@ -17,7 +17,7 @@
     "@hono/zod-validator": "^0.4.2",
     "@supabase/supabase-js": "^2.48.1",
     "drizzle-orm": "^0.39.1",
-    "hono": "^3.0.0",
+    "hono": "^4.7.2",
     "jose": "^5.9.6",
     "nanoid": "^5.0.9"
   },

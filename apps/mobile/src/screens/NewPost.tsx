@@ -57,15 +57,9 @@ export default function NewPost() {
       const uploadedMedia = await uploadMediaMutation.mutateAsync(selectedImages);
       
       const mediaIds = uploadedMedia.map(media => media.id);
-      const postInput = {
-        content,
-        mediaIds,
-      };
-      console.log('Creating post with input:', postInput);
+      const result = await createPostMutation.mutateAsync({ content, mediaIds });
       
-      const result = await createPostMutation.mutateAsync(postInput);
       console.log('Post creation result:', result);
-      
       Alert.alert('Success', 'Post created successfully!');
       navigation.goBack();
     } catch (error: any) {
