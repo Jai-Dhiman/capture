@@ -70,6 +70,13 @@ export default function Feed() {
 
       <TouchableOpacity 
         className="bg-blue-600 p-3 rounded-lg mt-5 items-center"
+        onPress={() => navigation.navigate('Profile')}
+      >
+        <Text className="text-white text-base font-bold">Profile</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity 
+        className="bg-green-600 p-3 rounded-lg mt-5 items-center"
         onPress={() => navigation.navigate('NewPost')}
       >
         <Text className="text-white text-base font-bold">Create New Post</Text>

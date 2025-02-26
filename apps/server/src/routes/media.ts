@@ -41,20 +41,19 @@ mediaRouter.post('/', async (c) => {
 
     try {
       const key = await mediaService.uploadFile(file, user.id)
-      const url = await mediaService.getSignedUrl(key)
+      const signedUrl = await mediaService.getSignedUrl(key)
       const media = await mediaService.create({
         userId: user.id,
         type: file.type,
-        url: key,
+        storageKey: key,
         order: 0,
-        thumbnailUrl: null,
         postId: c.req.query('postId'),
       })
 
       return c.json({
         media: {
           ...media,
-          url,
+          url: signedUrl,
         },
       })
     } catch (serviceError) {
@@ -87,12 +86,11 @@ mediaRouter.delete('/:mediaId', async (c) => {
 
   try {
     const media = await mediaService.findById(mediaId, user.id)
-
     if (!media) {
       return c.json({ error: 'Media not found' }, 404)
     }
 
-    await mediaService.deleteFile(media.url)
+    await mediaService.deleteFile(media.storageKey)
     await mediaService.delete(mediaId, user.id)
 
     return c.json({ success: true })
@@ -111,14 +109,21 @@ mediaRouter.get('/:mediaId/url', async (c) => {
     const media = await mediaService.findById(mediaId, user.id)
 
     if (!media) {
+      console.error(`Media not found: ${mediaId}`)
       return c.json({ error: 'Media not found' }, 404)
     }
 
-    const signedUrl = await mediaService.getSignedUrl(media.url)
-    return c.json({ url: signedUrl })
+    try {
+      const signedUrl = await mediaService.getSignedUrl(media.storageKey)
+      console.log(`Generated signed URL for media ${mediaId}`)
+      return c.json({ url: signedUrl })
+    } catch (urlError) {
+      console.error(`Failed to generate signed URL: ${urlError}`)
+      return c.json({ error: 'Failed to generate signed URL' }, 500)
+    }
   } catch (error) {
-    console.error('Failed to get signed URL:', error)
-    return c.json({ error: 'Failed to get signed URL' }, 400)
+    console.error(`Error processing request: ${error}`)
+    return c.json({ error: 'Failed to get signed URL' }, 500)
   }
 })
 

@@ -33,8 +33,9 @@ export const useCreatePost = () => {
                 }
                 media {
                   id
-                  url
+                  storageKey
                   type
+                  order
                 }
                 captags {
                   id

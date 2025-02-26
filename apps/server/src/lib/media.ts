@@ -28,9 +28,8 @@ export function createMediaService(env: Bindings): MediaService {
           id: mediaId,
           userId,
           type: data.type,
-          url: data.url,
+          storageKey: data.storageKey,
           order: data.order || 0,
-          thumbnailUrl: data.thumbnailUrl,
           postId: data.postId,
           createdAt: new Date().toISOString(),
         })
@@ -95,7 +94,12 @@ export function createMediaService(env: Bindings): MediaService {
     async getSignedUrl(key: string) {
       const object = await r2.get(key)
       if (!object) throw new Error('File not found')
-      return `https://capture-bucket.r2.cloudflarestorage.com/${key}`
+
+      const url = await r2.createPresignedUrl(key, {
+        expiresIn: 3600,
+      })
+
+      return url
     },
   }
 }

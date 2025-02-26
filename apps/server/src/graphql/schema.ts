@@ -60,7 +60,7 @@ export const typeDefs = `
   type Media {
     id: ID!
     type: String!
-    url: String!
+    storageKey: String!
     thumbnailUrl: String
     order: Int!
     createdAt: String!

@@ -34,11 +34,6 @@ export async function authMiddleware(c: Context, next: Next) {
     }
 
     c.set('user', userContext)
-    console.log('Auth Middleware Debug:', {
-      userSet: true,
-      user: userContext,
-    })
-
     await next()
   } catch (error) {
     console.error('Authentication error:', error)

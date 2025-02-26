@@ -34,10 +34,11 @@ export default function NewPost() {
       });
 
       if (!result.canceled && result.assets.length > 0) {
-        const formattedImages = result.assets.map(asset => ({
+        const formattedImages = result.assets.map((asset, index) => ({
           uri: asset.uri,
           type: 'image/jpeg',
-          name: `upload-${Date.now()}.jpg`,
+          name: `upload-${Date.now()}-${index}.jpg`,
+          order: selectedImages.length + index,
         }));
         setSelectedImages(prevImages => [...prevImages, ...formattedImages]);
       }
@@ -57,9 +58,8 @@ export default function NewPost() {
       const uploadedMedia = await uploadMediaMutation.mutateAsync(selectedImages);
       
       const mediaIds = uploadedMedia.map(media => media.id);
-      const result = await createPostMutation.mutateAsync({ content, mediaIds });
+      await createPostMutation.mutateAsync({ content, mediaIds });
       
-      console.log('Post creation result:', result);
       Alert.alert('Success', 'Post created successfully!');
       navigation.goBack();
     } catch (error: any) {

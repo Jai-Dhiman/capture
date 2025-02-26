@@ -1,11 +1,10 @@
-import { createD1Client } from '../db'
+import { createD1Client } from '../../db'
 import { eq } from 'drizzle-orm'
-import * as schema from '../db/schema'
+import * as schema from '../../db/schema'
 import { nanoid } from 'nanoid'
-import { Bindings } from '../types'
-import type { ContextType } from '../types'
+import type { ContextType } from '../../types'
 
-export const resolvers = {
+export const postResolvers = {
   Query: {
     async feed(_: unknown, { limit = 10, offset = 0 }, context: { env: any; user: any }) {
       if (!context.user) {
@@ -80,8 +79,14 @@ export const resolvers = {
 
         if (input.mediaIds?.length) {
           await Promise.all(
-            input.mediaIds.map((mediaId: string) =>
-              db.update(schema.media).set({ postId }).where(eq(schema.media.id, mediaId))
+            input.mediaIds.map((mediaId: string, index: number) =>
+              db
+                .update(schema.media)
+                .set({
+                  postId,
+                  order: index,
+                })
+                .where(eq(schema.media.id, mediaId))
             )
           )
         }
@@ -112,7 +117,12 @@ export const resolvers = {
         if (!createdPost) throw new Error('Failed to create post')
 
         const userProfile = await db
-          .select()
+          .select({
+            id: schema.profile.id,
+            userId: schema.profile.userId,
+            username: schema.profile.username,
+            image: schema.profile.profileImage,
+          })
           .from(schema.profile)
           .where(eq(schema.profile.userId, context.user.id))
           .get()
@@ -138,6 +148,7 @@ export const resolvers = {
         }
       } catch (error) {
         console.error('Creation error:', error)
+        console.error('Input:', input)
         throw new Error(
           `Failed to create post: ${error instanceof Error ? error.message : 'Unknown error'}`
         )
