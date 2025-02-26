@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm'
 import { createD1Client } from '../db'
 import * as schema from 'db/schema'
 import type { Bindings } from '../types/index'
+import { generateImageSignature } from './crypto'
 
 export interface ImageService {
   getUploadUrl: () => Promise<{ uploadURL: string; id: string }>
@@ -57,6 +58,16 @@ export function createImageService(env: Bindings): ImageService {
     },
 
     getImageUrl(imageId, variant = 'public') {
+      // const expiry = Math.floor(Date.now() / 1000) + 1800
+      // const signature = generateImageSignature(
+      //   imageId,
+      //   variant,
+      //   expiry,
+      //   env.CLOUDFLARE_IMAGES_TOKEN
+      // )
+
+      // return `https://imagedelivery.net/${accountId}/${imageId}/${variant}?exp=${expiry}&sig=${signature}`
+
       return `https://imagedelivery.net/${accountId}/${imageId}/${variant}`
     },
 

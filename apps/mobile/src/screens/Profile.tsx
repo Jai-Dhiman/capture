@@ -5,12 +5,15 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../types/navigation';
 import { useUserPosts } from '../hooks/useUserPosts';
-import { useImageUrl } from '../hooks/useSignedUrl';
+import { useImageUrl } from '../hooks/useImageUrl';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 
 const PostMedia = ({ media }: { media: any }) => {
   const { data: imageUrl, isLoading, error } = useImageUrl(media.id);
+  
+  console.log('Media object:', media);
+  console.log('Image URL result:', imageUrl);
   
   if (isLoading) {
     return <Text>Loading media...</Text>;
@@ -33,6 +36,7 @@ const PostMedia = ({ media }: { media: any }) => {
     />
   );
 };
+
 export default function Profile() {
   const navigation = useNavigation<NavigationProp>();
   const { authUser } = useSessionStore();

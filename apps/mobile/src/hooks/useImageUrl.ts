@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { API_URL } from '@env'
 
 export const useImageUrl = (mediaId?: string) => {
+  const staleTime = 25 * 60 * 1000
   return useQuery({
     queryKey: ['imageUrl', mediaId],
     queryFn: async () => {
@@ -28,5 +29,7 @@ export const useImageUrl = (mediaId?: string) => {
       return data.url
     },
     enabled: !!mediaId,
+    staleTime: staleTime,
+    gcTime: staleTime + 5 * 60 * 1000,
   })
 }
