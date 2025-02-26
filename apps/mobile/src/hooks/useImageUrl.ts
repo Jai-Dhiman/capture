@@ -2,10 +2,11 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { API_URL } from '@env'
 
-export const useImageUrl = (mediaId?: string) => {
-  const staleTime = 25 * 60 * 1000
+export const useImageUrl = (mediaId?: string, expirySeconds = 1800) => {
+  const staleTime = Math.min(expirySeconds * 1000 * 0.8, 20 * 60 * 1000)
+
   return useQuery({
-    queryKey: ['imageUrl', mediaId],
+    queryKey: ['imageUrl', mediaId, expirySeconds],
     queryFn: async () => {
       const {
         data: { session },
@@ -15,7 +16,7 @@ export const useImageUrl = (mediaId?: string) => {
         throw new Error('No auth token available')
       }
 
-      const response = await fetch(`${API_URL}/api/media/${mediaId}/url`, {
+      const response = await fetch(`${API_URL}/api/media/${mediaId}/url?expiry=${expirySeconds}`, {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },

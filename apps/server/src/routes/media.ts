@@ -1,7 +1,6 @@
 import { Hono } from 'hono'
 import { createImageService } from '../lib/imageService'
 import type { Bindings, Variables } from 'types'
-import { generateImageSignature } from '../lib/crypto'
 
 const mediaRouter = new Hono<{
   Bindings: Bindings
@@ -50,10 +49,13 @@ mediaRouter.post('/image-record', async (c) => {
       postId,
     })
 
+    // Generate URL with short expiry for immediate use
+    const url = await imageService.getImageUrl(media.storageKey, 'public', 300) // 5 minute expiry
+
     return c.json({
       media: {
         ...media,
-        url: imageService.getImageUrl(imageId),
+        url,
       },
     })
   } catch (error) {
@@ -67,6 +69,11 @@ mediaRouter.get('/:mediaId/url', async (c) => {
   const mediaId = c.req.param('mediaId')
   const user = c.get('user')
 
+  const expirySeconds = parseInt(c.req.query('expiry') || '1800')
+
+  const maxExpirySeconds = 86400 // 24 hours
+  const finalExpiry = Math.min(expirySeconds, maxExpirySeconds)
+
   try {
     const imageService = createImageService(c.env)
     const media = await imageService.findById(mediaId, user.id)
@@ -75,7 +82,7 @@ mediaRouter.get('/:mediaId/url', async (c) => {
       return c.json({ error: 'Media not found' }, 404)
     }
 
-    const url = `https://imagedelivery.net/${c.env.CLOUDFLARE_ACCOUNT_HASH}/${media.storageKey}/public`
+    const url = await imageService.getImageUrl(media.storageKey, 'public', finalExpiry)
     return c.json({ url })
   } catch (error) {
     console.error('Error:', error instanceof Error ? error.message : 'Unknown error')

@@ -19,7 +19,9 @@
     "drizzle-orm": "^0.39.1",
     "hono": "^4.7.2",
     "jose": "^5.9.6",
-    "nanoid": "^5.0.9"
+    "nanoid": "^5.0.9",
+    "tweetnacl": "^1.0.3",
+    "tweetnacl-util": "^0.15.1"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250204.0",

@@ -3,15 +3,16 @@ import { eq } from 'drizzle-orm'
 import { createD1Client } from '../db'
 import * as schema from 'db/schema'
 import type { Bindings } from '../types/index'
-import { generateImageSignature } from './crypto'
+import { generateImageSignature, verifyImageSignature } from './crypto'
 
 export interface ImageService {
   getUploadUrl: () => Promise<{ uploadURL: string; id: string }>
-  getImageUrl: (imageId: string, variant?: string) => Promise<string>
+  getImageUrl: (imageId: string, variant?: string, expirySeconds?: number) => Promise<string>
   create: (data: { userId: string; imageId: string; [key: string]: any }) => Promise<any>
   list: (userId: string) => Promise<any[]>
   findById: (id: string, userId: string) => Promise<any>
   delete: (id: string, userId: string) => Promise<void>
+  validateSignedUrl: (url: string) => Promise<boolean>
 }
 
 export function createImageService(env: Bindings): ImageService {
@@ -32,7 +33,7 @@ export function createImageService(env: Bindings): ImageService {
           },
           body: JSON.stringify({
             metadata: {},
-            requireSignedURLs: false,
+            requireSignedURLs: true,
           }),
         }
       )
@@ -56,8 +57,8 @@ export function createImageService(env: Bindings): ImageService {
       }
     },
 
-    async getImageUrl(imageId, variant = 'public') {
-      const expiry = Math.floor(Date.now() / 1000) + 1800 // 30 minutes
+    async getImageUrl(imageId, variant = 'public', expirySeconds = 1800) {
+      const expiry = Math.floor(Date.now() / 1000) + expirySeconds // Default 30 minutes
       const signature = await generateImageSignature(
         imageId,
         variant,
@@ -65,7 +66,33 @@ export function createImageService(env: Bindings): ImageService {
         env.CLOUDFLARE_IMAGES_KEY
       )
 
-      return `https://imagedelivery.net/${accountId}/${imageId}/${variant}?exp=${expiry}&sig=${signature}`
+      return `https://imagedelivery.net/${env.CLOUDFLARE_ACCOUNT_HASH}/${imageId}/${variant}?exp=${expiry}&sig=${signature}`
+    },
+
+    async validateSignedUrl(url: string) {
+      try {
+        const urlObj = new URL(url)
+        const pathname = urlObj.pathname
+        const segments = pathname.split('/').filter((segment) => segment.length > 0)
+
+        if (segments.length < 3) return false
+
+        const imageId = segments[1]
+        const variant = segments[2]
+        const expiry = parseInt(urlObj.searchParams.get('exp') || '0')
+        const signature = urlObj.searchParams.get('sig') || ''
+
+        return await verifyImageSignature(
+          imageId,
+          variant,
+          expiry,
+          signature,
+          env.CLOUDFLARE_IMAGES_KEY
+        )
+      } catch (error) {
+        console.error('URL validation error:', error)
+        return false
+      }
     },
 
     async create({ userId, imageId, ...data }) {
