@@ -1,8 +1,8 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import Feed from '../screens/Feed';
-import NewPost from '../screens/NewPost';
-import Profile from '../screens/Profile';
-import { AppStackParamList } from '../types/navigation';
+import Feed from '../../screens/Feed';
+import NewPost from '../../screens/NewPost';
+import Profile from '../../screens/Profile';
+import { AppStackParamList } from '../../types/navigation';
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
 

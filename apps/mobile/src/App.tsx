@@ -5,8 +5,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import "../global.css";
 import { useSessionStore } from './stores/sessionStore';
 import { RootStackParamList } from './types/navigation';
-import AppNavigator from 'components/AppNavigator';
-import AuthStack from 'components/AuthNavigator';
+import AppNavigator from 'components/Navigators/AppNavigator';
+import AuthStack from 'components/Navigators/AuthNavigator';
 import CreateProfile from './screens/auth/CreateProfile';
 import { ApolloProvider } from 'components/ApolloProvider';
 
