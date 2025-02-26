@@ -94,12 +94,7 @@ export function createMediaService(env: Bindings): MediaService {
     async getSignedUrl(key: string) {
       const object = await r2.get(key)
       if (!object) throw new Error('File not found')
-
-      const url = await r2.createPresignedUrl(key, {
-        expiresIn: 3600,
-      })
-
-      return url
+      return `https://capture-bucket.r2.cloudflarestorage.com/${key}`
     },
   }
 }

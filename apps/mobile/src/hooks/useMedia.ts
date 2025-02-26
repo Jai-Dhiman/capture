@@ -11,33 +11,62 @@ export const useUploadMedia = () => {
       }
 
       const uploads = files.map(async (file) => {
-        const formData = new FormData()
-
-        if (file.uri.startsWith('data:')) {
-          const response = await fetch(file.uri)
-          const blob = await response.blob()
-          formData.append('file', blob, file.name)
-        } else {
-          formData.append('file', {
-            uri: file.uri,
-            type: file.type || 'image/jpeg',
-            name: file.name || 'upload.jpg',
-          } as any)
-        }
-
         try {
-          const response = await fetch(`${API_URL}/api/media`, {
+          const uploadUrlResponse = await fetch(`${API_URL}/api/media/image-upload`, {
             method: 'POST',
-            body: formData,
             headers: {
-              Authorization: `Bearer ${session?.data?.session?.access_token}`,
+              Authorization: `Bearer ${session.data.session?.access_token}`,
+              'Content-Type': 'application/json',
             },
           })
 
-          const data = await response.json()
+          if (!uploadUrlResponse.ok) {
+            throw new Error('Failed to get upload URL')
+          }
 
-          if (!response.ok) throw new Error(data.error || 'Upload failed')
-          return data.media
+          const { uploadURL, id: imageId } = await uploadUrlResponse.json()
+
+          const formData = new FormData()
+
+          if (file.uri.startsWith('data:')) {
+            const response = await fetch(file.uri)
+            const blob = await response.blob()
+            formData.append('file', blob, file.name)
+          } else {
+            formData.append('file', {
+              uri: file.uri,
+              type: file.type || 'image/jpeg',
+              name: file.name || 'upload.jpg',
+            } as any)
+          }
+
+          const uploadResponse = await fetch(uploadURL, {
+            method: 'POST',
+            body: formData,
+          })
+
+          if (!uploadResponse.ok) {
+            throw new Error('Failed to upload image to Cloudflare')
+          }
+
+          const createRecordResponse = await fetch(`${API_URL}/api/media/image-record`, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${session.data.session?.access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              imageId,
+              order: file.order,
+            }),
+          })
+
+          if (!createRecordResponse.ok) {
+            throw new Error('Failed to create media record')
+          }
+
+          const { media } = await createRecordResponse.json()
+          return media
         } catch (error) {
           console.error('Upload error:', error)
           throw error

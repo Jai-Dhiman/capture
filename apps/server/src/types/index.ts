@@ -5,6 +5,8 @@ export type Bindings = {
   BUCKET: R2Bucket
   SUPABASE_URL: string
   SUPABASE_KEY: string
+  CLOUDFLARE_ACCOUNT_ID: string
+  CLOUDFLARE_IMAGES_TOKEN: string
 }
 
 export type Variables = {

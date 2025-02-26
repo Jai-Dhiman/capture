@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { createMediaService } from '../lib/media'
+import { createImageService } from '../lib/imageService'
 import type { Bindings, Variables } from 'types'
 
 const mediaRouter = new Hono<{
@@ -7,123 +7,93 @@ const mediaRouter = new Hono<{
   Variables: Variables
 }>()
 
-const ALLOWED_TYPES = ['image/jpg', 'image/jpeg', 'image/png', 'image/gif']
-const MAX_FILE_SIZE = 5 * 1024 * 1024
-
-mediaRouter.post('/', async (c) => {
-  const mediaService = createMediaService(c.env)
+// Get upload URL for direct image upload
+mediaRouter.post('/image-upload', async (c) => {
+  const imageService = createImageService(c.env)
   const user = c.get('user')
 
+  if (!user) {
+    return c.json({ error: 'User not authenticated' }, 401)
+  }
+
   try {
-    if (!user) {
-      console.error('User not authenticated')
-      return c.json({ error: 'User not authenticated' }, 401)
-    }
-
-    const formData = await c.req.formData()
-    const fileData = formData.get('file')
-
-    if (!fileData || typeof fileData !== 'object' || !('arrayBuffer' in fileData)) {
-      console.error('Invalid file data received:', fileData)
-      return c.json({ error: 'No valid file provided' }, 400)
-    }
-
-    const file = fileData as File
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      console.error('Invalid file type:', file.type)
-      return c.json({ error: 'Invalid file type' }, 400)
-    }
-
-    if (file.size > MAX_FILE_SIZE) {
-      console.error('File too large:', file.size)
-      return c.json({ error: 'File too large' }, 400)
-    }
-
-    try {
-      const key = await mediaService.uploadFile(file, user.id)
-      const signedUrl = await mediaService.getSignedUrl(key)
-      const media = await mediaService.create({
-        userId: user.id,
-        type: file.type,
-        storageKey: key,
-        order: 0,
-        postId: c.req.query('postId'),
-      })
-
-      return c.json({
-        media: {
-          ...media,
-          url: signedUrl,
-        },
-      })
-    } catch (serviceError) {
-      console.error('Service error details:', {
-        name: serviceError instanceof Error ? serviceError.name : 'UnknownError',
-        message: serviceError instanceof Error ? serviceError.message : 'UnknownError',
-      })
-      throw serviceError
-    }
+    const { uploadURL, id } = await imageService.getUploadUrl()
+    return c.json({ uploadURL, id })
   } catch (error) {
-    console.error('Upload failed:', {
-      name: error instanceof Error ? error.name : 'UnknownError',
-      message: error instanceof Error ? error.message : 'UnknownError',
+    console.error('Error generating upload URL:', error)
+    return c.json({ error: 'Failed to generate upload URL' }, 500)
+  }
+})
+
+// Create media record after successful upload
+mediaRouter.post('/image-record', async (c) => {
+  const imageService = createImageService(c.env)
+  const user = c.get('user')
+
+  if (!user) {
+    return c.json({ error: 'User not authenticated' }, 401)
+  }
+
+  try {
+    const body = await c.req.json()
+    const { imageId, order, postId } = body
+
+    if (!imageId) {
+      return c.json({ error: 'Image ID is required' }, 400)
+    }
+
+    const media = await imageService.create({
+      userId: user.id,
+      imageId,
+      order: order || 0,
+      postId,
     })
-    return c.json(
-      {
-        error: 'Failed to create media',
-        details: error instanceof Error ? error.message : 'UnknownError',
-        type: error instanceof Error ? error.name : 'UnknownError',
+
+    return c.json({
+      media: {
+        ...media,
+        url: imageService.getImageUrl(imageId),
       },
-      500
-    )
-  }
-})
-
-mediaRouter.delete('/:mediaId', async (c) => {
-  const mediaId = c.req.param('mediaId')
-  const user = c.get('user')
-  const mediaService = createMediaService(c.env)
-
-  try {
-    const media = await mediaService.findById(mediaId, user.id)
-    if (!media) {
-      return c.json({ error: 'Media not found' }, 404)
-    }
-
-    await mediaService.deleteFile(media.storageKey)
-    await mediaService.delete(mediaId, user.id)
-
-    return c.json({ success: true })
+    })
   } catch (error) {
-    console.error('Delete failed:', error)
-    return c.json({ error: 'Delete failed' }, 400)
+    console.error('Failed to create media record:', error)
+    return c.json({ error: 'Failed to create media record' }, 500)
   }
 })
 
+// Get image URL
 mediaRouter.get('/:mediaId/url', async (c) => {
   const mediaId = c.req.param('mediaId')
   const user = c.get('user')
-  const mediaService = createMediaService(c.env)
+  const imageService = createImageService(c.env)
 
   try {
-    const media = await mediaService.findById(mediaId, user.id)
+    const media = await imageService.findById(mediaId, user.id)
 
     if (!media) {
-      console.error(`Media not found: ${mediaId}`)
       return c.json({ error: 'Media not found' }, 404)
     }
 
-    try {
-      const signedUrl = await mediaService.getSignedUrl(media.storageKey)
-      console.log(`Generated signed URL for media ${mediaId}`)
-      return c.json({ url: signedUrl })
-    } catch (urlError) {
-      console.error(`Failed to generate signed URL: ${urlError}`)
-      return c.json({ error: 'Failed to generate signed URL' }, 500)
-    }
+    const url = imageService.getImageUrl(media.storageKey)
+    return c.json({ url })
   } catch (error) {
-    console.error(`Error processing request: ${error}`)
-    return c.json({ error: 'Failed to get signed URL' }, 500)
+    console.error('Error getting image URL:', error)
+    return c.json({ error: 'Failed to get image URL' }, 500)
+  }
+})
+
+// Delete media
+mediaRouter.delete('/:mediaId', async (c) => {
+  const mediaId = c.req.param('mediaId')
+  const user = c.get('user')
+  const imageService = createImageService(c.env)
+
+  try {
+    await imageService.delete(mediaId, user.id)
+    return c.json({ success: true })
+  } catch (error) {
+    console.error('Delete failed:', error)
+    return c.json({ error: 'Delete failed' }, 500)
   }
 })
 

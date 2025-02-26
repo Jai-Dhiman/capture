@@ -2,9 +2,9 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { API_URL } from '@env'
 
-export const useSignedUrl = (mediaId?: string) => {
+export const useImageUrl = (mediaId?: string) => {
   return useQuery({
-    queryKey: ['signedUrl', mediaId],
+    queryKey: ['imageUrl', mediaId],
     queryFn: async () => {
       const {
         data: { session },
@@ -21,7 +21,7 @@ export const useSignedUrl = (mediaId?: string) => {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to fetch signed URL')
+        throw new Error('Failed to fetch image URL')
       }
 
       const data = await response.json()

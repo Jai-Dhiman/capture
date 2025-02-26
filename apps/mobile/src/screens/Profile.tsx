@@ -5,46 +5,34 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../types/navigation';
 import { useUserPosts } from '../hooks/useUserPosts';
-import { useSignedUrl } from '../hooks/useSignedUrl';
+import { useImageUrl } from '../hooks/useSignedUrl';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 
 const PostMedia = ({ media }: { media: any }) => {
-  const { data: signedUrl, isLoading, error } = useSignedUrl(media.id);
-  console.log('Media data:', {
-    mediaId: media.id,
-    storageKey: media.storageKey,
-    signedUrl,
-    isLoading,
-    error
-  });
-
+  const { data: imageUrl, isLoading, error } = useImageUrl(media.id);
+  
   if (isLoading) {
-    console.log('Loading signed URL for media:', media.id);
     return <Text>Loading media...</Text>;
   }
 
   if (error) {
-    console.error('Error loading signed URL:', error);
+    console.error('Error loading image URL:', error);
     return <Text>Failed to load media</Text>;
   }
 
-  if (!signedUrl) {
-    console.log('No signed URL available for media:', media.id);
+  if (!imageUrl) {
     return null;
   }
 
   return (
     <Image
-      source={{ uri: signedUrl }}
+      source={{ uri: imageUrl }}
       className="w-full h-48 rounded-lg mb-2"
       resizeMode="cover"
-      onError={(error) => console.error('Image loading error:', error.nativeEvent)}
-      onLoad={() => console.log('Image loaded successfully:', media.id)}
     />
   );
 };
-
 export default function Profile() {
   const navigation = useNavigation<NavigationProp>();
   const { authUser } = useSessionStore();
