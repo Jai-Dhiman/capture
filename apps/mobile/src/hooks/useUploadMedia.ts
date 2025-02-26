@@ -49,6 +49,9 @@ export const useUploadMedia = () => {
             throw new Error('Failed to upload image to Cloudflare')
           }
 
+          const uploadResponseData = await uploadResponse.json()
+          const cloudflareImageId = uploadResponseData.result.id
+
           const createRecordResponse = await fetch(`${API_URL}/api/media/image-record`, {
             method: 'POST',
             headers: {
@@ -56,7 +59,7 @@ export const useUploadMedia = () => {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              imageId,
+              imageId: cloudflareImageId,
               order: file.order,
             }),
           })

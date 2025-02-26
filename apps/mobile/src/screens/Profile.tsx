@@ -12,9 +12,6 @@ type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 const PostMedia = ({ media }: { media: any }) => {
   const { data: imageUrl, isLoading, error } = useImageUrl(media.id);
   
-  console.log('Media object:', media);
-  console.log('Image URL result:', imageUrl);
-  
   if (isLoading) {
     return <Text>Loading media...</Text>;
   }

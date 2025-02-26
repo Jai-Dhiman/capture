@@ -63,7 +63,6 @@ mediaRouter.post('/image-record', async (c) => {
 })
 
 // Get image URL
-// apps/server/src/routes/media.ts
 mediaRouter.get('/:mediaId/url', async (c) => {
   const mediaId = c.req.param('mediaId')
   const user = c.get('user')
@@ -76,48 +75,10 @@ mediaRouter.get('/:mediaId/url', async (c) => {
       return c.json({ error: 'Media not found' }, 404)
     }
 
-    // Use Cloudflare's token API
-    console.log('Requesting token for image:', media.storageKey)
-
-    const tokenResponse = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${c.env.CLOUDFLARE_ACCOUNT_ID}/images/v1/${media.storageKey}/token`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${c.env.CLOUDFLARE_IMAGES_TOKEN}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          expires: Math.floor(Date.now() / 1000) + 3600, // 1 hour
-        }),
-      }
-    )
-
-    console.log('Token response status:', tokenResponse.status)
-
-    if (!tokenResponse.ok) {
-      const errorText = await tokenResponse.text()
-      console.error('Token response error:', errorText)
-      throw new Error(`Failed to get image token: ${tokenResponse.status}`)
-    }
-
-    const tokenData = await tokenResponse.json()
-    console.log('Token data success:', tokenData.success)
-
-    if (!tokenData.success) {
-      console.error('Token data error:', JSON.stringify(tokenData))
-      throw new Error('Token API returned error')
-    }
-
-    const url = `https://imagedelivery.net/${c.env.CLOUDFLARE_ACCOUNT_ID}/${media.storageKey}/public?token=${tokenData.result.token}`
-    console.log('Generated URL with token:', url)
-
+    const url = `https://imagedelivery.net/${c.env.CLOUDFLARE_ACCOUNT_HASH}/${media.storageKey}/public`
     return c.json({ url })
   } catch (error) {
-    console.error(
-      'Error getting image URL:',
-      error instanceof Error ? error.message : 'Unknown error'
-    )
+    console.error('Error:', error instanceof Error ? error.message : 'Unknown error')
     return c.json({ error: 'Failed to get image URL' }, 500)
   }
 })

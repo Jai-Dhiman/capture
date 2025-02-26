@@ -6,7 +6,9 @@ export type Bindings = {
   SUPABASE_URL: string
   SUPABASE_KEY: string
   CLOUDFLARE_ACCOUNT_ID: string
+  CLOUDFLARE_ACCOUNT_HASH: string
   CLOUDFLARE_IMAGES_TOKEN: string
+  CLOUDFLARE_IMAGES_KEY: string
 }
 
 export type Variables = {

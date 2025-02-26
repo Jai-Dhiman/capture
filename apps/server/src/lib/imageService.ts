@@ -7,7 +7,7 @@ import { generateImageSignature } from './crypto'
 
 export interface ImageService {
   getUploadUrl: () => Promise<{ uploadURL: string; id: string }>
-  getImageUrl: (imageId: string, variant?: string) => string
+  getImageUrl: (imageId: string, variant?: string) => Promise<string>
   create: (data: { userId: string; imageId: string; [key: string]: any }) => Promise<any>
   list: (userId: string) => Promise<any[]>
   findById: (id: string, userId: string) => Promise<any>
@@ -31,7 +31,6 @@ export function createImageService(env: Bindings): ImageService {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            id: imageId,
             metadata: {},
             requireSignedURLs: false,
           }),
@@ -57,18 +56,16 @@ export function createImageService(env: Bindings): ImageService {
       }
     },
 
-    getImageUrl(imageId, variant = 'public') {
-      // const expiry = Math.floor(Date.now() / 1000) + 1800
-      // const signature = generateImageSignature(
-      //   imageId,
-      //   variant,
-      //   expiry,
-      //   env.CLOUDFLARE_IMAGES_TOKEN
-      // )
+    async getImageUrl(imageId, variant = 'public') {
+      const expiry = Math.floor(Date.now() / 1000) + 1800 // 30 minutes
+      const signature = await generateImageSignature(
+        imageId,
+        variant,
+        expiry,
+        env.CLOUDFLARE_IMAGES_KEY
+      )
 
-      // return `https://imagedelivery.net/${accountId}/${imageId}/${variant}?exp=${expiry}&sig=${signature}`
-
-      return `https://imagedelivery.net/${accountId}/${imageId}/${variant}`
+      return `https://imagedelivery.net/${accountId}/${imageId}/${variant}?exp=${expiry}&sig=${signature}`
     },
 
     async create({ userId, imageId, ...data }) {
