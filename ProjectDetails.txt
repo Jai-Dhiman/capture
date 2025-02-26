@@ -41,6 +41,59 @@ Solution:
 
     Ensure privacy and safety through robust security measures and transparent policies.
 
+
+Ad Tracking/Algorithm:
+
+In order to conquor user retention, users should be able to Toggle their algorithm on or off. 
+
+This will allow users who want to see personalized relevant content to still recieve informations, and companies to market to those users. In order to help prevent doom scrolling, every 45 minutes a user is on the application, they will see a Wellness Check message from capture on their feed reminding them to drink water, or take a break. 
+
+Customers who want to use Capture more like Facebook would be able to disable their Algorithm / Ad Tracking features and only see content from their direct followers list. 
+
+Harmful Feature Prevention:
+
+While still offering the option to have an algorithm it is important that Capture remains well moderated and safe for its users. Current social media platforms have poor safety regulation guidelines. Capture should find it important to protect users against the following: 
+- Scams / Phishing 
+- AI Content 
+- False Advertisement / Fake News 
+- Cyber Stalking / Harassment 
+
+Scams / Phishing
+Current social media like facebook and instagram have an abbundance of scam content used by individuals who pay for targeted ad content. 
+
+Solution 1) Ad content can only be promoted by verified companies and verified media outlets, this would prevent users from paying to get scam content on other users' feeds.
+
+Solution 2) If Ad content can be created by all users, capture must manually verify each promoted post before approval. 
+                     Cons of doing so include timeframe for approval, and number of posts up for review at any given time. 
+                     Pros of doing so include users such as influencers would be able to promote content for sponsors 
+
+
+User Customization:
+While Capture aims to provide stricter community guidelines, it's important that Capture has a leg up on market competition such as Instagram or Facebook. To help users feel more drawn to Capture, user customization is important. Currently no other popular user application allows the user to customize Theme, Font, or Notification Intensity. 
+
+Theme
+Themes allow users to choose from a variety of backgrounds and colors that mix well with the Capture UI. This will allow each user to have a unique accent to their profile, especially ideal for Artists and Creative Content. 
+Themes will also allow Businesses to submit custom backgrounds for their Verified pages. For example OREO would be able to have OREOs as their background rather than the generic splashes of color available to normal users. 
+
+Font
+Font customization will only be available to Verified Accounts. It will allow the company / media outlet to use fonts for their posts and bio that their userbase is used to seeing. For example Apple can use SF Pro on their profile to make them stand out. 
+
+Notifcation Intensity
+Users will be able to choose how often they recieve notifications (30m, 2hr, 6hr, 12hr or None), users will also be able to select which types of notifications they would like to recieve, ie. Following, DMs, Requested, etc. 
+
+Community Moderation:
+Community Moderation allows user accounts in good standing to apply for a Community Moderation feature. There is no benefit to the user aside from keeping Capture Safe. Community Moderation allows Moderators to view reported posts and vote which rule is being broken as a result of the post. 
+
+ie. a user reports a post for false information. 20 Community Moderators vote the reported post as False Information 
+
+The post gets flagged and a tag gets added for False Information. 
+
+If the poster feels their post has been tagged incorrectly, they can reach out to Capture Support for a review. 
+
+Community Moderators will NOT: 
+- Get access to any personal user information, DMs, account information, etc. 
+
+
 Tech Stack:
 
 ### Frontend:
@@ -56,6 +109,7 @@ Tech Stack:
   - Hono
   - Drizzle ORM for type-safe D1 queries
   - D1 Sqlite Database
+  - Image/Stream for images/videos
   - R2 for file storage
   - Durable Objects for real-time/websockets
   - KV for caching
@@ -75,7 +129,3 @@ Tech Stack:
 - Signal Protocol (E2E encrypted DMs)
 - TweetNaCl.js (crypto)
 - Zod for runtime type validation
-
-### Image Processing:
-- Workers Image Resizing API
-- Cloudflare Images for optimization and delivery
