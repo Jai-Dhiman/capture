@@ -17,7 +17,7 @@ import ViewPasswordIcon from '../../assets/icons/View Password Icon.svg'
 import HidePasswordIcon from '../../assets/icons/Dont Show Passoword Icon.svg'
 import { useSessionStore } from '../../stores/sessionStore'
 import { AuthStackParamList } from '../../types/navigation';
-import OAuth from 'components/OAuth';
+// import OAuth from 'components/OAuth';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'Signup'>
@@ -195,7 +195,7 @@ export default function SignupScreen({ navigation }: Props) {
               </TouchableOpacity>
               
               <View className="h-[1px] bg-[#7B7B7B] my-[29px]" />
-              <OAuth />
+              {/* <OAuth /> */}
             </View>
           </View>
         </View>

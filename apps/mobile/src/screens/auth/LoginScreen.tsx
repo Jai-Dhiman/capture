@@ -17,7 +17,7 @@ import ViewPasswordIcon from '../../assets/icons/View Password Icon.svg';
 import HidePasswordIcon from '../../assets/icons/Dont Show Passoword Icon.svg';
 import { useSessionStore } from '../../stores/sessionStore'
 import { AuthStackParamList } from '../../types/navigation';
-import OAuth from 'components/OAuth';
+// import OAuth from 'components/OAuth';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'Login'>
@@ -152,7 +152,7 @@ export default function LoginScreen({ navigation }: Props) {
             <View className="h-[1px] bg-[#7B7B7B] my-[29px]" />
 
             <View className="h-[1px] bg-[#7B7B7B] my-[29px]" />
-            <OAuth />
+            {/* <OAuth /> */}
 
             <View className="items-center mt-[32px]">
               <Text className="text-base font-roboto mb-[5px]">Don't have an account?</Text>
