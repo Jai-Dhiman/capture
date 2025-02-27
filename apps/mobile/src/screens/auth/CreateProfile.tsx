@@ -34,10 +34,8 @@ export default function CreateProfile() {
     }
   };
 
-  // Using the same pattern as post upload
   const uploadImage = async (token: string, imageUri: string) => {
     try {
-      // Step 1: Get upload URL
       const uploadUrlResponse = await fetch(`${API_URL}/api/media/image-upload`, {
         method: 'POST',
         headers: {
@@ -52,7 +50,6 @@ export default function CreateProfile() {
 
       const { uploadURL, id: imageId } = await uploadUrlResponse.json();
 
-      // Step 2: Prepare image data
       const formData = new FormData();
       formData.append('file', {
         uri: imageUri,
@@ -60,7 +57,6 @@ export default function CreateProfile() {
         name: 'profile-image.jpg',
       } as any);
 
-      // Step 3: Upload to Cloudflare
       const uploadResponse = await fetch(uploadURL, {
         method: 'POST',
         body: formData,
@@ -73,7 +69,6 @@ export default function CreateProfile() {
       const uploadResponseData = await uploadResponse.json();
       const cloudflareImageId = uploadResponseData.result.id;
 
-      // Step 4: Create media record
       const createRecordResponse = await fetch(`${API_URL}/api/media/image-record`, {
         method: 'POST',
         headers: {

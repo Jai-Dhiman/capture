@@ -66,9 +66,9 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     queryFn: fetchSession,
   })
 
-  // Inside the SessionProvider
 useEffect(() => {
   const updateSessionState = async () => {
+    
     if (session) {
       const authUser = {
         id: session.user.id,
@@ -77,7 +77,6 @@ useEffect(() => {
       setAuthUser(authUser);
 
       try {
-        // Check if profile exists first
         const checkResponse = await fetch(`${API_URL}/api/profile/check/${authUser.id}`, {
           headers: {
             Authorization: `Bearer ${session.access_token}`,
@@ -85,9 +84,9 @@ useEffect(() => {
         });
         
         if (checkResponse.ok) {
-          const { exists } = await checkResponse.json();
+          const checkData = await checkResponse.json();
           
-          if (exists) {
+          if (checkData.exists) {
             const profileResponse = await fetch(`${API_URL}/api/profile/${authUser.id}`, {
               headers: {
                 Authorization: `Bearer ${session.access_token}`,
@@ -104,12 +103,15 @@ useEffect(() => {
                 image: profileData.profileImage || undefined,
               });
             } else {
+              console.log("Failed to fetch profile details");
               setUserProfile(null);
             }
           } else {
+            console.log("No profile exists for this user");
             setUserProfile(null);
           }
         } else {
+          console.log("Profile check failed");
           setUserProfile(null);
         }
       } catch (error) {
@@ -119,6 +121,7 @@ useEffect(() => {
       
       setIsLoading(false);
     } else {
+      console.log("No session available, clearing user data");
       setAuthUser(null);
       setUserProfile(null);
       setIsLoading(false);

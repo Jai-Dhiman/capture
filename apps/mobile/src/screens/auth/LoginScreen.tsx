@@ -17,6 +17,7 @@ import ViewPasswordIcon from '../../assets/icons/View Password Icon.svg';
 import HidePasswordIcon from '../../assets/icons/Dont Show Passoword Icon.svg';
 import { useSessionStore } from '../../stores/sessionStore'
 import { AuthStackParamList } from '../../types/navigation';
+import { API_URL } from '@env';
 // import OAuth from 'components/OAuth';
 
 type Props = {
@@ -42,30 +43,74 @@ export default function LoginScreen({ navigation }: Props) {
         Alert.alert('Error', 'Please enter both email and password');
         return;
       }
-
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (authError) {
-      Alert.alert('Login Failed', authError.message);
-      return;
-    }
-    
-    if (!authData.user?.email_confirmed_at) {
-      Alert.alert(
-        'Email Not Verified',
-        'Please check your inbox and verify your email before logging in.'
-      );
-      return;
-    }
-    
-    setAuthUser({
-      id: authData.user.id,
-      email: authData.user.email!,
-    });
-  } catch (error) {
+  
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+  
+      if (authError) {
+        console.error("Login error:", authError);
+        Alert.alert('Login Failed', authError.message);
+        return;
+      }
+      
+      if (!authData.user?.email_confirmed_at) {
+        Alert.alert(
+          'Email Not Verified',
+          'Please check your inbox and verify your email before logging in.'
+        );
+        return;
+      }
+      
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData.session?.access_token;
+        
+        if (token) {
+          const response = await fetch(`${API_URL}/api/profile/check/${authData.user.id}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            }
+          });
+          const checkResult = await response.json();
+          
+          if (checkResult.exists) {
+            const profileResponse = await fetch(`${API_URL}/api/profile/${authData.user.id}`, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              }
+            });
+            
+            if (profileResponse.ok) {
+              const profileData = await profileResponse.json();
+              console.log("Profile data loaded:", profileData);
+              
+              const { setUserProfile } = useSessionStore.getState();
+              
+              setUserProfile({
+                id: profileData.id,
+                supabase_id: authData.user.id,
+                username: profileData.username,
+                bio: profileData.bio || undefined,
+                image: profileData.profileImage || undefined,
+              });
+            } else {
+              console.error("Failed to load profile details:", await profileResponse.text());
+            }
+          }
+        } else {
+          console.log("No token available for profile check");
+        }
+      } catch (checkError) {
+        console.error("Profile check error:", checkError);
+      }
+      
+      setAuthUser({
+        id: authData.user.id,
+        email: authData.user.email!,
+      });
+    } catch (error) {
       console.error('Unexpected error:', error);
       Alert.alert('Error', 'An unexpected error occurred');
     } finally {

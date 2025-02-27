@@ -17,10 +17,6 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 function MainNavigator() {
   const { authUser, userProfile, isLoading } = useSessionStore();
 
-  // if (isLoading) {
-  //   return <LoadingScreen />;
-  // }
-
   return (
     <Stack.Navigator
       screenOptions={{

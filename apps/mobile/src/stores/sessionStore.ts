@@ -30,16 +30,18 @@ export const useSessionStore = create<SessionState>((set) => ({
   userProfile: null,
   isLoading: true,
   isNewUser: false,
-  setAuthUser: (authUser) =>
+  setAuthUser: (authUser) => {
     set((state) => ({
       authUser,
       isNewUser: authUser ? !state.userProfile?.username : false,
-    })),
-  setUserProfile: (userProfile) =>
+    }))
+  },
+  setUserProfile: (userProfile) => {
     set((state) => ({
       userProfile,
       isNewUser: state.authUser ? !userProfile?.username : false,
-    })),
+    }))
+  },
   setIsLoading: (isLoading) => set({ isLoading }),
   clearSession: () =>
     set({
