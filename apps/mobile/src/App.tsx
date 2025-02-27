@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react';
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -8,14 +8,18 @@ import { RootStackParamList } from './types/navigation';
 import AppNavigator from 'components/Navigators/AppNavigator';
 import AuthStack from 'components/Navigators/AuthNavigator';
 import CreateProfile from './screens/auth/CreateProfile';
-import { ApolloProvider } from 'components/ApolloProvider';
+import { ApolloProvider } from './components/ApolloProvider';
 
 
 const queryClient = new QueryClient();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function MainNavigator() {
-  const { authUser } = useSessionStore();
+  const { authUser, userProfile, isLoading } = useSessionStore();
+
+  // if (isLoading) {
+  //   return <LoadingScreen />;
+  // }
 
   return (
     <Stack.Navigator
@@ -24,12 +28,13 @@ function MainNavigator() {
       }}
     >
       {authUser ? (
-        <Stack.Screen name="App" component={AppNavigator} />
-      ) : (
-        <Fragment>
-          <Stack.Screen name="Auth" component={AuthStack} />
+        userProfile ? (
+          <Stack.Screen name="App" component={AppNavigator} />
+        ) : (
           <Stack.Screen name="CreateProfile" component={CreateProfile} />
-        </Fragment>
+        )
+      ) : (
+        <Stack.Screen name="Auth" component={AuthStack} />
       )}
     </Stack.Navigator>
   );

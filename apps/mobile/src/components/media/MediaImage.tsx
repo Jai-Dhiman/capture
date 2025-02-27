@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, Text, Image } from 'react-native';
-import { useImageUrl } from '../hooks/useImageUrl';
+import { useImageUrl } from '../../hooks/useImageUrl';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface MediaImageProps {
@@ -36,7 +36,7 @@ export const MediaImage = ({ media, style = {}, expirySeconds = 1800 }: MediaIma
     <Image
       source={{ uri: imageUrl }}
       className="flex-1 rounded-lg"
-      style={{ aspectRatio: 1, ...style }}
+      style={style}
       resizeMode="cover"
     />
   );

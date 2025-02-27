@@ -15,10 +15,9 @@ import EmailIcon from '../../assets/icons/Email Icon.svg';
 import LockIcon from '../../assets/icons/Lock Icon.svg';
 import ViewPasswordIcon from '../../assets/icons/View Password Icon.svg';
 import HidePasswordIcon from '../../assets/icons/Dont Show Passoword Icon.svg';
-import GoogleIcon from '../../assets/icons/google.svg';
-import AppleIcon from '../../assets/icons/apple.svg';
 import { useSessionStore } from '../../stores/sessionStore'
 import { AuthStackParamList } from '../../types/navigation';
+import OAuth from 'components/OAuth';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'Login'>
@@ -34,7 +33,7 @@ export default function LoginScreen({ navigation }: Props) {
   const emailInputRef = useRef<TextInput>(null)
   const passwordInputRef = useRef<TextInput>(null)
 
-  const { setAuthUser, setUserProfile } = useSessionStore()
+  const { setAuthUser } = useSessionStore()
 
   const handleLogin = async () => {
     setLoading(true);
@@ -44,26 +43,29 @@ export default function LoginScreen({ navigation }: Props) {
         return;
       }
 
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: password,
-      });
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-      if (authError) {
-        Alert.alert(
-          'Login Failed', 
-          'Please check your email and password. If you haven\'t registered, please create an account first.'
-        );
-        return;
-      }
-      
-      setAuthUser({
-        id: authData.user!.id,
-        email: authData.user!.email!,
-        phone: authData.user!.phone || undefined,
-      });
-
-    } catch (error) {
+    if (authError) {
+      Alert.alert('Login Failed', authError.message);
+      return;
+    }
+    
+    if (!authData.user?.email_confirmed_at) {
+      Alert.alert(
+        'Email Not Verified',
+        'Please check your inbox and verify your email before logging in.'
+      );
+      return;
+    }
+    
+    setAuthUser({
+      id: authData.user.id,
+      email: authData.user.email!,
+    });
+  } catch (error) {
       console.error('Unexpected error:', error);
       Alert.alert('Error', 'An unexpected error occurred');
     } finally {
@@ -149,19 +151,8 @@ export default function LoginScreen({ navigation }: Props) {
 
             <View className="h-[1px] bg-[#7B7B7B] my-[29px]" />
 
-            <TouchableOpacity className="bg-white h-[56px] rounded-[30px] shadow-md flex-row items-center justify-center mb-[23px]">
-            <GoogleIcon width={24} height={24} style={{ marginRight: 7 }} />
-              <Text className="text-base font-bold font-roboto text-[#1C1C1C]">
-                Sign In with Google
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity className="bg-white h-[56px] rounded-[30px] shadow-md flex-row items-center justify-center">
-            <AppleIcon width={24} height={24} style={{ marginRight: 7 }} />
-              <Text className="text-base font-bold font-roboto text-[#1C1C1C]">
-                Sign In with Apple
-              </Text>
-            </TouchableOpacity>
+            <View className="h-[1px] bg-[#7B7B7B] my-[29px]" />
+            <OAuth />
 
             <View className="items-center mt-[32px]">
               <Text className="text-base font-roboto mb-[5px]">Don't have an account?</Text>

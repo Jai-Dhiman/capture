@@ -21,7 +21,8 @@
     "jose": "^5.9.6",
     "nanoid": "^5.0.9",
     "tweetnacl": "^1.0.3",
-    "tweetnacl-util": "^0.15.1"
+    "tweetnacl-util": "^0.15.1",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250204.0",

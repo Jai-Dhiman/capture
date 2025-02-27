@@ -11,13 +11,13 @@ import {
 } from 'react-native'
 import { supabase } from '../../lib/supabase'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
-import * as SecureStore from 'expo-secure-store'
 import EmailIcon from '../../assets/icons/Email Icon.svg'
 import LockIcon from '../../assets/icons/Lock Icon.svg'
 import ViewPasswordIcon from '../../assets/icons/View Password Icon.svg'
 import HidePasswordIcon from '../../assets/icons/Dont Show Passoword Icon.svg'
 import { useSessionStore } from '../../stores/sessionStore'
 import { AuthStackParamList } from '../../types/navigation';
+import OAuth from 'components/OAuth';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'Signup'>
@@ -55,24 +55,17 @@ export default function SignupScreen({ navigation }: Props) {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        }
       })
-
-      if (error) throw error
-
-      if (data.session) {
-        await SecureStore.setItemAsync('supabase_jwt', data.session.access_token)
-        
-        setAuthUser({
-          id: data.user!.id,
-          email: data.user!.email!,
-          phone: data.user!.phone || undefined,
-        });
-
-        // Navigate to CreateProfile within the root stack
-        navigation.getParent()?.navigate('CreateProfile');
-      }
-      else {
-        throw new Error('Session not created - check your email for verification')
+      
+      if (data.user && !data.session) {
+        Alert.alert(
+          'Check your email',
+          'We sent you a verification link. Please check your email to verify your account before logging in.'
+        )
+        navigation.navigate('Login')
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Signup failed'
@@ -200,6 +193,9 @@ export default function SignupScreen({ navigation }: Props) {
                   Login
                 </Text>
               </TouchableOpacity>
+              
+              <View className="h-[1px] bg-[#7B7B7B] my-[29px]" />
+              <OAuth />
             </View>
           </View>
         </View>

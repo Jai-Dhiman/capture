@@ -10,6 +10,7 @@ import { authMiddleware } from 'middleware/auth'
 import type { Bindings, Variables, ContextType } from 'types'
 import healthRoutes from 'routes/health'
 import mediaRouter from 'routes/media'
+import profileRouter from 'routes/profile'
 
 const app = new Hono<{
   Bindings: Bindings
@@ -67,6 +68,7 @@ app.route('/', healthRoutes)
 // Protected routes
 app.use('/api/*', authMiddleware)
 app.route('/api/media', mediaRouter)
+app.route('/api/profile', profileRouter)
 
 app.onError(errorHandler)
 

@@ -5,7 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../types/navigation';
 import { useUserPosts } from '../hooks/useUserPosts';
-import { PostItem } from '../components/PostItem';
+import { PostItem } from '../components/media/PostItem';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 

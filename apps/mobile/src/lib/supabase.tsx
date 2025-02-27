@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { AppState } from 'react-native'
 import 'react-native-url-polyfill/auto'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { SUPABASE_URL, SUPABASE_KEY } from '@env'
+import { SUPABASE_URL, SUPABASE_KEY, API_URL } from '@env'
 import { createContext, useContext, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { type AuthUser, useSessionStore } from '../stores/sessionStore'
@@ -36,6 +36,7 @@ const SessionContext = createContext<SessionContextType>({
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const setAuthUser = useSessionStore((state) => state.setAuthUser)
+  const setUserProfile = useSessionStore((state) => state.setUserProfile);
   const setIsLoading = useSessionStore((state) => state.setIsLoading)
   const sessionStore = useSessionStore((state) => ({
     authUser: state.authUser,
@@ -71,16 +72,38 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         const authUser = {
           id: session.user.id,
           email: session.user.email || '',
-        }
-        setAuthUser(authUser)
-      } else {
-        setAuthUser(null)
-      }
-      setIsLoading(isLoading)
-    }
+        };
+        setAuthUser(authUser);
 
-    updateSessionState()
-  }, [session, isLoading, setAuthUser, setIsLoading])
+        try {
+          const response = await fetch(`${API_URL}/api/profile/${authUser.id}`, {
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
+          });
+          
+          if (response.ok) {
+            const profileData = await response.json();
+            setUserProfile({
+              id: profileData.id,
+              supabase_id: authUser.id,
+              username: profileData.username,
+              bio: profileData.bio || undefined,
+              image: profileData.profileImage || undefined,
+            });
+          }
+        } catch (error) {
+          console.error('Error fetching profile:', error);
+        }
+      } else {
+        setAuthUser(null);
+        setUserProfile(null);
+      }
+      setIsLoading(false);
+    };
+  
+    updateSessionState();
+  }, [session, isLoading, setAuthUser, setUserProfile, setIsLoading]);
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange(async (_event, session) => {
