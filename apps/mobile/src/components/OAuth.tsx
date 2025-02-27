@@ -7,6 +7,7 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import { supabase } from 'lib/supabase';
 import { useSessionStore } from 'stores/sessionStore';
 import { checkProfileExists } from 'lib/api';
+import { GOOGLE_CLIENT_ID} from '@env';
 
 import GoogleIcon from '../../assets/icons/google.svg';
 import AppleIcon from '../../assets/icons/apple.svg';

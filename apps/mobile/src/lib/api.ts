@@ -1,4 +1,5 @@
 import { API_URL } from '@env'
+import { supabase } from './supabase'
 
 export async function checkProfileExists(userId: string): Promise<boolean> {
   try {
