@@ -92,4 +92,22 @@ router.get('/check/:userId', async (c) => {
   return c.json({ exists: Boolean(existingProfile) })
 })
 
+router.get('/:userId', async (c) => {
+  const userId = c.req.param('userId')
+  const db = drizzle(c.env.DB)
+
+  try {
+    const userProfile = await db.select().from(profile).where(eq(profile.userId, userId)).get()
+
+    if (!userProfile) {
+      return c.json({ message: 'Profile not found' }, 404)
+    }
+
+    return c.json(userProfile)
+  } catch (error) {
+    console.error('Error fetching profile:', error)
+    return c.json({ message: 'Failed to fetch profile' }, 500)
+  }
+})
+
 export default router

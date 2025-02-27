@@ -33,6 +33,70 @@ export default function CreateProfile() {
       setProfileImage(result.assets[0].uri);
     }
   };
+
+  // Using the same pattern as post upload
+  const uploadImage = async (token: string, imageUri: string) => {
+    try {
+      // Step 1: Get upload URL
+      const uploadUrlResponse = await fetch(`${API_URL}/api/media/image-upload`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!uploadUrlResponse.ok) {
+        throw new Error('Failed to get upload URL');
+      }
+
+      const { uploadURL, id: imageId } = await uploadUrlResponse.json();
+
+      // Step 2: Prepare image data
+      const formData = new FormData();
+      formData.append('file', {
+        uri: imageUri,
+        type: 'image/jpeg',
+        name: 'profile-image.jpg',
+      } as any);
+
+      // Step 3: Upload to Cloudflare
+      const uploadResponse = await fetch(uploadURL, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload image to Cloudflare');
+      }
+
+      const uploadResponseData = await uploadResponse.json();
+      const cloudflareImageId = uploadResponseData.result.id;
+
+      // Step 4: Create media record
+      const createRecordResponse = await fetch(`${API_URL}/api/media/image-record`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          imageId: cloudflareImageId,
+          order: 0,
+        }),
+      });
+
+      if (!createRecordResponse.ok) {
+        throw new Error('Failed to create media record');
+      }
+
+      const { media } = await createRecordResponse.json();
+      return media.storageKey;
+    } catch (error) {
+      console.error('Image upload error:', error);
+      throw error;
+    }
+  };
   
   const createProfile = async () => {
     if (!username.trim()) {
@@ -43,7 +107,12 @@ export default function CreateProfile() {
     setLoading(true);
     
     try {
-      const token = await supabase.auth.getSession().then(res => res.data.session?.access_token);
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      if (!token) {
+        throw new Error('No auth token available');
+      }
       
       const checkResponse = await fetch(`${API_URL}/api/profile/check-username?username=${username}`, {
         headers: {
@@ -59,30 +128,10 @@ export default function CreateProfile() {
         return;
       }
       
-      let imageUrl = null;
+      let storageKey = null;
       if (profileImage) {
         try {
-          const formData = new FormData();
-          formData.append('file', {
-            uri: profileImage,
-            type: 'image/jpeg',
-            name: 'profile-image.jpg'
-          } as any);
-          
-          const uploadResponse = await fetch(`${API_URL}/api/media/upload`, {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${token}`
-            },
-            body: formData
-          });
-          
-          if (!uploadResponse.ok) {
-            throw new Error('Failed to upload image');
-          }
-          
-          const uploadData = await uploadResponse.json();
-          imageUrl = uploadData.url;
+          storageKey = await uploadImage(token, profileImage);
         } catch (error) {
           console.error('Image upload error:', error);
           Alert.alert(
@@ -102,7 +151,7 @@ export default function CreateProfile() {
           userId: authUser?.id,
           username,
           bio: bio.trim() || null,
-          profileImage: imageUrl
+          profileImage: storageKey
         })
       });
       

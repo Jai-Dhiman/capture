@@ -66,44 +66,67 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     queryFn: fetchSession,
   })
 
-  useEffect(() => {
-    const updateSessionState = async () => {
-      if (session) {
-        const authUser = {
-          id: session.user.id,
-          email: session.user.email || '',
-        };
-        setAuthUser(authUser);
+  // Inside the SessionProvider
+useEffect(() => {
+  const updateSessionState = async () => {
+    if (session) {
+      const authUser = {
+        id: session.user.id,
+        email: session.user.email || '',
+      };
+      setAuthUser(authUser);
 
-        try {
-          const response = await fetch(`${API_URL}/api/profile/${authUser.id}`, {
-            headers: {
-              Authorization: `Bearer ${session.access_token}`,
-            },
-          });
+      try {
+        // Check if profile exists first
+        const checkResponse = await fetch(`${API_URL}/api/profile/check/${authUser.id}`, {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
+        
+        if (checkResponse.ok) {
+          const { exists } = await checkResponse.json();
           
-          if (response.ok) {
-            const profileData = await response.json();
-            setUserProfile({
-              id: profileData.id,
-              supabase_id: authUser.id,
-              username: profileData.username,
-              bio: profileData.bio || undefined,
-              image: profileData.profileImage || undefined,
+          if (exists) {
+            const profileResponse = await fetch(`${API_URL}/api/profile/${authUser.id}`, {
+              headers: {
+                Authorization: `Bearer ${session.access_token}`,
+              },
             });
+            
+            if (profileResponse.ok) {
+              const profileData = await profileResponse.json();
+              setUserProfile({
+                id: profileData.id,
+                supabase_id: authUser.id,
+                username: profileData.username,
+                bio: profileData.bio || undefined,
+                image: profileData.profileImage || undefined,
+              });
+            } else {
+              setUserProfile(null);
+            }
+          } else {
+            setUserProfile(null);
           }
-        } catch (error) {
-          console.error('Error fetching profile:', error);
+        } else {
+          setUserProfile(null);
         }
-      } else {
-        setAuthUser(null);
+      } catch (error) {
+        console.error('Error fetching profile:', error);
         setUserProfile(null);
       }
+      
       setIsLoading(false);
-    };
-  
-    updateSessionState();
-  }, [session, isLoading, setAuthUser, setUserProfile, setIsLoading]);
+    } else {
+      setAuthUser(null);
+      setUserProfile(null);
+      setIsLoading(false);
+    }
+  };
+
+  updateSessionState();
+}, [session, setAuthUser, setUserProfile, setIsLoading]);
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange(async (_event, session) => {
