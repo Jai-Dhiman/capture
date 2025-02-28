@@ -112,9 +112,13 @@ export default function CreateProfile() {
           onPress={createProfile}
           disabled={createProfileMutation.isPending}
         >
-          <Text className="text-base font-bold font-roboto text-center">
-          {createProfileMutation.isPending && <LoadingSpinner fullScreen message="Creating your profile..." />}
-          </Text>
+          {createProfileMutation.isPending ? (
+            <LoadingSpinner fullScreen message="Creating your profile..." />
+          ) : (
+            <Text className="text-base font-bold font-roboto text-center">
+              Create Profile
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
     </ScrollView>

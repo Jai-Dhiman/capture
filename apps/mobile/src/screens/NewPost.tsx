@@ -73,8 +73,15 @@ export default function NewPost() {
 
   return (
     <View className="flex-1 p-5">
-      <Text className="text-2xl font-bold mb-5">Create New Post</Text>
-
+      <View className="flex-row items-center mb-5">
+        <TouchableOpacity   
+          className="p-2" 
+          onPress={() => navigation.goBack()}
+        >
+        <Text className="text-blue-600 text-lg">← Back</Text>
+        </TouchableOpacity>
+      <Text className="text-2xl font-bold ml-2">Create New Post</Text>
+    </View>
       <View className="mt-5 bg-white p-4 rounded-lg shadow">
         <TextInput
           className="border border-gray-300 rounded-lg p-3 mb-3"

@@ -168,9 +168,13 @@ export default function SignupScreen({ navigation }: Props) {
           onPress={handleSignup}
           disabled={loading}
         >
-          <Text className="text-base font-bold font-roboto text-center">
-          {loading && <LoadingSpinner fullScreen message="Creating account..." />}
-          </Text>
+          {loading ? (
+            <LoadingSpinner fullScreen message="Creating account..." />
+          ) : (
+            <Text className="text-base font-bold font-roboto text-center">
+              Sign Up
+            </Text>
+          )}
         </TouchableOpacity>
 
             <View className="items-center mt-[32px]">
