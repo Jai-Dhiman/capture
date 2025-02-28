@@ -84,7 +84,6 @@ export default function LoginScreen({ navigation }: Props) {
             
             if (profileResponse.ok) {
               const profileData = await profileResponse.json();
-              console.log("Profile data loaded:", profileData);
               
               const { setUserProfile } = useSessionStore.getState();
               
