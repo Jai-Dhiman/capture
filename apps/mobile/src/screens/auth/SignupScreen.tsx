@@ -1,23 +1,15 @@
 import React, { useState, useRef } from 'react'
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  SafeAreaView,
-  ScrollView,
-  TextInput,
-  Alert,
-  Image
+  View, Text, TouchableOpacity, SafeAreaView, ScrollView, TextInput, Alert, Image
 } from 'react-native'
-import { supabase } from '../../lib/supabase'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import EmailIcon from '../../assets/icons/Email Icon.svg'
 import LockIcon from '../../assets/icons/Lock Icon.svg'
 import ViewPasswordIcon from '../../assets/icons/View Password Icon.svg'
 import HidePasswordIcon from '../../assets/icons/Dont Show Passoword Icon.svg'
-import { useSessionStore } from '../../stores/sessionStore'
-import { AuthStackParamList } from '../../types/navigation';
-// import OAuth from 'components/OAuth';
+import { AuthStackParamList } from '../../types/navigation'
+import { useAuth } from '../../hooks/auth/useAuth'
+import { LoadingSpinner } from 'components/LoadingSpinner'
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'Signup'>
@@ -27,10 +19,8 @@ export default function SignupScreen({ navigation }: Props) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [isEmailFocused, setIsEmailFocused] = useState(false)
   const [isPasswordFocused, setIsPasswordFocused] = useState(false)
   const [isConfirmPasswordFocused, setIsConfirmPasswordFocused] = useState(false)
@@ -39,41 +29,38 @@ export default function SignupScreen({ navigation }: Props) {
   const passwordInputRef = useRef<TextInput>(null)
   const confirmPasswordInputRef = useRef<TextInput>(null)
 
-  const { setAuthUser } = useSessionStore()
+  const { signup, loading } = useAuth()
 
   const handleSignup = async () => {
     if (password !== confirmPassword) {
-      setError('Passwords do not match')
       Alert.alert('Error', 'Passwords do not match')
       return
     }
 
-    setLoading(true)
-    setError(null)
-    
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+    signup.mutate(
+      { email, password },
+      {
+        onSuccess: () => {
+          Alert.alert(
+            'Check your email',
+            'We sent you a verification link. Please check your email to verify your account before logging in.',
+            [
+              { 
+                text: 'OK', 
+                onPress: () => navigation.navigate('Login') 
+              }
+            ]
+          )
+        },
+        onError: (error) => {
+          const errorMessage = error instanceof Error 
+            ? error.message 
+            : 'An unexpected error occurred'
+          
+          Alert.alert('Signup Failed', errorMessage)
         }
-      })
-      
-      if (data.user && !data.session) {
-        Alert.alert(
-          'Check your email',
-          'We sent you a verification link. Please check your email to verify your account before logging in.'
-        )
-        navigation.navigate('Login')
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Signup failed'
-      setError(errorMessage)
-      Alert.alert('Error', errorMessage)
-    } finally {
-      setLoading(false)
-    }
+    )
   }
 
   return (
@@ -174,17 +161,17 @@ export default function SignupScreen({ navigation }: Props) {
               </TouchableOpacity>
             </View>
 
-            {error && <Text className="text-red-500 mb-4 text-center">{error}</Text>}
+            {signup.error && <Text className="text-red-500 mb-4 text-center">{signup.error.message}</Text>}
 
             <TouchableOpacity
-              className="bg-[#E4CAC7] h-[56px] rounded-[30px] shadow-md justify-center mt-[29px]"
-              onPress={handleSignup}
-              disabled={loading}
-            >
-              <Text className="text-base font-bold font-roboto text-center">
-                {loading ? 'Creating Account...' : 'Create Account'}
-              </Text>
-            </TouchableOpacity>
+          className="bg-[#E4CAC7] h-[56px] rounded-[30px] shadow-md justify-center mt-[29px]"
+          onPress={handleSignup}
+          disabled={loading}
+        >
+          <Text className="text-base font-bold font-roboto text-center">
+          {loading && <LoadingSpinner fullScreen message="Creating account..." />}
+          </Text>
+        </TouchableOpacity>
 
             <View className="items-center mt-[32px]">
               <Text className="text-base font-roboto mb-[5px]">Already have an account?</Text>

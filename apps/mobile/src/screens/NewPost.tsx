@@ -5,8 +5,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as ImagePicker from 'expo-image-picker';
 import { Platform } from 'react-native';
 import { RootStackParamList } from 'types/navigation';
-import { useUploadMedia } from 'hooks/useUploadMedia';
-import { useCreatePost } from 'hooks/useCreatePost';
+import { useUploadMedia } from 'hooks/useMedia';
+import { useCreatePost } from 'hooks/usePosts';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 

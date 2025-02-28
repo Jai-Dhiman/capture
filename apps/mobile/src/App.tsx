@@ -9,13 +9,26 @@ import AppNavigator from 'components/Navigators/AppNavigator';
 import AuthStack from 'components/Navigators/AuthNavigator';
 import CreateProfile from './screens/auth/CreateProfile';
 import { ApolloProvider } from './components/ApolloProvider';
+import { SessionProvider } from './lib/SessionProvider';
+import { LoadingSpinner } from 'components/LoadingSpinner';
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
-const queryClient = new QueryClient();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function MainNavigator() {
   const { authUser, userProfile, isLoading } = useSessionStore();
+
+  if (isLoading) {
+    return <LoadingSpinner fullScreen message="Starting up..." />;
+  }
 
   return (
     <Stack.Navigator
@@ -38,12 +51,14 @@ function MainNavigator() {
 
 export default function App() {
   return (
-    <ApolloProvider>
-      <QueryClientProvider client={queryClient}>
-        <NavigationContainer>
-          <MainNavigator />
-        </NavigationContainer>
-      </QueryClientProvider>
-    </ApolloProvider>
+    <QueryClientProvider client={queryClient}>
+      <ApolloProvider>
+        <SessionProvider>
+          <NavigationContainer>
+            <MainNavigator />
+          </NavigationContainer>
+        </SessionProvider>
+      </ApolloProvider>
+    </QueryClientProvider>
   );
 }

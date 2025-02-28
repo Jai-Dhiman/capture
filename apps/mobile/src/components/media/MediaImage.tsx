@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, Text, Image } from 'react-native';
-import { useImageUrl } from '../../hooks/useImageUrl';
+import { useImageUrl } from '../../hooks/useMedia';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface MediaImageProps {

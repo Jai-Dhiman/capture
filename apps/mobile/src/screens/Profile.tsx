@@ -4,9 +4,10 @@ import { useSessionStore } from '../stores/sessionStore';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../types/navigation';
-import { useUserPosts } from '../hooks/useUserPosts';
+import { useUserPosts } from '../hooks/usePosts';
 import { MediaImage } from '../components/media/MediaImage';
 import { Ionicons } from '@expo/vector-icons';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 const { width } = Dimensions.get('window');
@@ -87,9 +88,7 @@ export default function Profile() {
         <View className="p-2">
           <Text className="text-lg font-semibold mb-2 px-2">Posts</Text>
           
-          {isLoading ? (
-            <Text className="text-center py-4 text-gray-500">Loading posts...</Text>
-          ) : posts?.length === 0 ? (
+          {isLoading ? <LoadingSpinner />: posts?.length === 0 ? (
             <Text className="text-center py-4 text-gray-500">No posts yet</Text>
           ) : (
             <>
