@@ -48,10 +48,17 @@ export default function CreateProfile() {
       },
       {
         onSuccess: () => {
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'App' as never }]
-          })
+          Alert.alert('Success', 'Your profile has been created!', [
+            {
+              text: 'Continue',
+              onPress: () => {
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'App' as never }]
+                })
+              }
+            }
+          ])
         },
         onError: (error) => {
           const errorMessage = error instanceof Error 
@@ -63,7 +70,6 @@ export default function CreateProfile() {
       }
     )
   }
-
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
       <View className="flex-1 bg-[#DCDCDE] rounded-[30px] overflow-hidden p-6">

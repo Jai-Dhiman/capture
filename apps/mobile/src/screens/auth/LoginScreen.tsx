@@ -122,10 +122,10 @@ export default function LoginScreen({ navigation }: Props) {
               disabled={loading}
             >
               {loading ? (
-                <LoadingSpinner fullScreen message="Signing in..." />
+                <LoadingSpinner fullScreen message="Logging in..." />
               ) : (
                 <Text className="text-base font-bold font-roboto text-center">
-                  Sign In
+                  Log In
                 </Text>
               )}
             </TouchableOpacity>

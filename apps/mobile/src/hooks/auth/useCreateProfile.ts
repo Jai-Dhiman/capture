@@ -79,7 +79,6 @@ export function useCreateProfile() {
     return data.available
   }
 
-  // Create profile mutation
   return useMutation({
     mutationFn: async ({
       username,
@@ -101,19 +100,20 @@ export function useCreateProfile() {
         throw new Error('No auth token available')
       }
 
-      // Check username availability
       const isAvailable = await checkUsernameAvailability(username, token)
       if (!isAvailable) {
         throw new Error('Username already taken')
       }
 
-      // Upload image if provided
       let storageKey = null
       if (profileImage) {
-        storageKey = await uploadImage(token, profileImage)
+        try {
+          storageKey = await uploadImage(token, profileImage)
+        } catch (error) {
+          console.error('Image upload failed but continuing:', error)
+        }
       }
 
-      // Create profile
       const response = await fetch(`${API_URL}/api/profile`, {
         method: 'POST',
         headers: {
