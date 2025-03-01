@@ -108,41 +108,15 @@ mediaRouter.delete('/:mediaId', async (c) => {
   }
 })
 
-mediaRouter.get('/cloudflare-url/:cloudflareId', async (c) => {
+mediaRouter.get('/cloudflare/:cloudflareId/url', async (c) => {
   const cloudflareId = c.req.param('cloudflareId')
   const expirySeconds = parseInt(c.req.query('expiry') || '1800')
-  const maxExpirySeconds = 86400 // 24 hours
+  const maxExpirySeconds = 86400
   const finalExpiry = Math.min(expirySeconds, maxExpirySeconds)
 
   try {
     const imageService = createImageService(c.env)
     const url = await imageService.getDirectCloudflareUrl(cloudflareId, 'public', finalExpiry)
-    return c.json({ url })
-  } catch (error) {
-    console.error('Error:', error instanceof Error ? error.message : 'Unknown error')
-    return c.json({ error: 'Failed to get image URL' }, 500)
-  }
-})
-
-// Add this route to handle direct Cloudflare IDs
-mediaRouter.get('/cloudflare/:cloudflareId/url', async (c) => {
-  const cloudflareId = c.req.param('cloudflareId')
-  const expirySeconds = parseInt(c.req.query('expiry') || '1800')
-  const maxExpirySeconds = 86400 // 24 hours
-  const finalExpiry = Math.min(expirySeconds, maxExpirySeconds)
-
-  try {
-    const imageService = createImageService(c.env)
-    // We'll generate the signed URL directly for Cloudflare
-    const expiry = Math.floor(Date.now() / 1000) + finalExpiry
-    const signature = await generateImageSignature(
-      cloudflareId,
-      'public',
-      expiry,
-      c.env.CLOUDFLARE_IMAGES_KEY
-    )
-
-    const url = `https://imagedelivery.net/${c.env.CLOUDFLARE_ACCOUNT_HASH}/${cloudflareId}/public?exp=${expiry}&sig=${signature}`
     return c.json({ url })
   } catch (error) {
     console.error('Error getting Cloudflare URL:', error)

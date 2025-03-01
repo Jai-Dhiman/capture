@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useSessionStore } from '../../stores/sessionStore'
 import { API_URL } from '@env'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 export function useAuth() {
   const [loading, setLoading] = useState(false)
