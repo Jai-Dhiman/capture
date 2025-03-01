@@ -6,6 +6,8 @@ export type AuthStackParamList = {
 export type AppStackParamList = {
   Feed: undefined
   NewPost: undefined
+  Profile: undefined
+  SinglePost: { post: any }
 }
 
 export type RootStackParamList = {

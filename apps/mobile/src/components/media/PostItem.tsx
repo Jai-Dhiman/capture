@@ -1,14 +1,24 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { Text, TouchableOpacity } from 'react-native';
 import { PostMediaGallery } from './PostMediaGallery';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { AppStackParamList } from '../../types/navigation';
+
+type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 
 interface PostItemProps {
   post: any;
 }
 
 export const PostItem = ({ post }: PostItemProps) => {
+  const navigation = useNavigation<NavigationProp>();
+  
   return (
-    <View className="bg-white p-4 mb-4 rounded-lg shadow">
+    <TouchableOpacity 
+      className="bg-white p-4 mb-4 rounded-lg shadow"
+      onPress={() => navigation.navigate('SinglePost', { post })}
+    >
       {post.media && post.media.length > 0 && (
         <PostMediaGallery mediaItems={post.media} />
       )}
@@ -16,6 +26,6 @@ export const PostItem = ({ post }: PostItemProps) => {
       <Text className="text-sm text-gray-500 mt-2">
         {new Date(post.createdAt).toLocaleDateString()}
       </Text>
-    </View>
+    </TouchableOpacity>
   );
 };

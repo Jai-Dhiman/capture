@@ -2,6 +2,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Feed from '../../screens/Feed';
 import NewPost from '../../screens/NewPost';
 import Profile from '../../screens/Profile';
+import SinglePost from '../../screens/SinglePost';
 import { AppStackParamList } from '../../types/navigation';
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
@@ -17,6 +18,7 @@ export default function AppNavigator() {
       <Stack.Screen name="Feed" component={Feed} />
       <Stack.Screen name="NewPost" component={NewPost} />
       <Stack.Screen name="Profile" component={Profile} />
+      <Stack.Screen name="SinglePost" component={SinglePost} />
     </Stack.Navigator>
   );
 }
