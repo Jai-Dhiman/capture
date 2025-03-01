@@ -24,6 +24,7 @@ export default function SignupScreen({ navigation }: Props) {
   const [isEmailFocused, setIsEmailFocused] = useState(false)
   const [isPasswordFocused, setIsPasswordFocused] = useState(false)
   const [isConfirmPasswordFocused, setIsConfirmPasswordFocused] = useState(false)
+  const [signupSuccess, setSignupSuccess] = useState(false)
   
   const emailInputRef = useRef<TextInput>(null)
   const passwordInputRef = useRef<TextInput>(null)
@@ -41,16 +42,7 @@ export default function SignupScreen({ navigation }: Props) {
       { email, password },
       {
         onSuccess: () => {
-          Alert.alert(
-            'Check your email',
-            'We sent you a verification link. Please check your email to verify your account before logging in.',
-            [
-              { 
-                text: 'OK', 
-                onPress: () => navigation.navigate('Login') 
-              }
-            ]
-          )
+          setSignupSuccess(true)
         },
         onError: (error) => {
           const errorMessage = error instanceof Error 
@@ -60,6 +52,39 @@ export default function SignupScreen({ navigation }: Props) {
           Alert.alert('Signup Failed', errorMessage)
         }
       }
+    )
+  }
+
+  if (signupSuccess) {
+    return (
+      <SafeAreaView style={{ flex: 1 }}>
+        <View className="flex-1 bg-[#DCDCDE] justify-center items-center px-6">
+          <Image
+            source={require('../../assets/Fluid Background Coffee.png')}
+            style={{ width: '100%', height: '100%', position: 'absolute' }}
+            resizeMode="cover"
+          />
+          <View className="bg-white/90 rounded-3xl p-8 items-center shadow-lg">
+            <Text className="text-[30px] font-roboto font-medium text-center mb-6">
+              Account Created Successfully!
+            </Text>
+            <Text className="text-lg font-roboto text-center mb-8">
+              Please check your email for a verification link to finish creating your profile.
+            </Text>
+            <Text className="text-base font-roboto text-center text-gray-600 mb-8">
+              You can safely leave this page.
+            </Text>
+            <TouchableOpacity
+              className="bg-[#E4CAC7] w-full h-[56px] rounded-[30px] shadow-md justify-center mb-4"
+              onPress={() => navigation.navigate('Login')}
+            >
+              <Text className="text-base font-bold font-roboto text-center">
+                Go to Login
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </SafeAreaView>
     )
   }
 
@@ -164,18 +189,18 @@ export default function SignupScreen({ navigation }: Props) {
             {signup.error && <Text className="text-red-500 mb-4 text-center">{signup.error.message}</Text>}
 
             <TouchableOpacity
-          className="bg-[#E4CAC7] h-[56px] rounded-[30px] shadow-md justify-center mt-[29px]"
-          onPress={handleSignup}
-          disabled={loading}
-        >
-          {loading ? (
-            <LoadingSpinner fullScreen message="Creating account..." />
-          ) : (
-            <Text className="text-base font-bold font-roboto text-center">
-              Sign Up
-            </Text>
-          )}
-        </TouchableOpacity>
+              className="bg-[#E4CAC7] h-[56px] rounded-[30px] shadow-md justify-center mt-[29px]"
+              onPress={handleSignup}
+              disabled={loading}
+            >
+              {loading ? (
+                <LoadingSpinner fullScreen message="Creating account..." />
+              ) : (
+                <Text className="text-base font-bold font-roboto text-center">
+                  Sign Up
+                </Text>
+              )}
+            </TouchableOpacity>
 
             <View className="items-center mt-[32px]">
               <Text className="text-base font-roboto mb-[5px]">Already have an account?</Text>

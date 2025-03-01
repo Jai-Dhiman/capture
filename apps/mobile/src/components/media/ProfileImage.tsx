@@ -3,6 +3,7 @@ import { View, Text, Image } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { API_URL } from '@env';
+import { LoadingSpinner } from 'components/LoadingSpinner';
 
 interface ProfileImageProps {
   cloudflareId: string;
@@ -53,7 +54,7 @@ export const ProfileImage = ({ cloudflareId, style = {}, expirySeconds = 1800 }:
   }, [imageUrl, cloudflareId, expirySeconds, isStale, queryClient]);
   
   if (isLoading) {
-    return <View className="bg-gray-200 flex-1 rounded-lg"><Text className="text-center p-2">Loading...</Text></View>;
+    <LoadingSpinner />
   }
 
   if (error || !imageUrl) {
