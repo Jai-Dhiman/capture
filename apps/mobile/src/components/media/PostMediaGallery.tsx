@@ -29,20 +29,23 @@ export const PostMediaGallery = ({ mediaItems, containerStyle = {} }: PostMediaG
   if (mediaItems.length === 2) {
     return (
       <View className="w-full h-48 mb-2 flex-row" style={containerStyle}>
-        {mediaItems.map((media, index) => (
-          <View 
-            key={media.id} 
-            className="flex-1 h-full" 
-            style={{ padding: 2 }}
-          >
-            <MediaImage media={media} />
-          </View>
-        ))}
+        <View className="flex-1 h-full">
+          <MediaImage media={mediaItems[0]} />
+        </View>
+        <View 
+          style={{ 
+            width: 2, 
+            height: '100%', 
+            backgroundColor: '#E4CAC7' 
+          }} 
+        />
+        <View className="flex-1 h-full">
+          <MediaImage media={mediaItems[1]} />
+        </View>
       </View>
     );
   }
   
-  // 3-4 images grid display
   if (mediaItems.length === 3 || mediaItems.length === 4) {
     return (
       <View className="w-full h-48 mb-2 flex-row flex-wrap" style={containerStyle}>
@@ -55,7 +58,9 @@ export const PostMediaGallery = ({ mediaItems, containerStyle = {} }: PostMediaG
               className={`${isLastInOdd ? 'w-full' : 'w-1/2'} ${index < 2 ? 'h-24' : 'h-24'}`}
               style={{ padding: 2 }}
             >
-              <MediaImage media={media} />
+              <View className="flex-1">
+                <MediaImage media={media} style={{ flex: 1, height: '100%' }} />
+              </View>
             </View>
           );
         })}
@@ -83,32 +88,30 @@ export const PostMediaGallery = ({ mediaItems, containerStyle = {} }: PostMediaG
         {mediaItems.map((media) => (
           <View 
             key={media.id} 
-            style={{ width: width - 40, padding: 2 }} 
-            className="h-full"
+            style={{ width: width, height: '100%' }} 
           >
             <MediaImage 
               media={media} 
-              style={{ aspectRatio: 1.5 }} 
               expirySeconds={3600} 
             />
           </View>
         ))}
       </ScrollView>
       
-      {/* Pagination dots */}
-      <View className="flex-row justify-center mt-2 absolute bottom-0 left-0 right-0">
+      {/* Pagination banner */}
+      <View className="h-6 bg-white/80 absolute bottom-0 left-0 right-0 flex-row justify-center items-center">
         {mediaItems.map((_, index) => (
           <TouchableOpacity 
             key={index} 
             onPress={() => {
               const scrollView = document.querySelector('ScrollView');
               if (scrollView) {
-                scrollView.scrollTo({ left: (width - 40) * index, behavior: 'smooth' });
+                scrollView.scrollTo({ left: width * index, behavior: 'smooth' });
               }
             }}
           >
             <View 
-              className={`h-2 w-2 rounded-full mx-1 ${index === activeIndex ? 'bg-blue-500' : 'bg-gray-300'}`} 
+              className={`h-2 rounded-full mx-1 ${index === activeIndex ? 'w-4 bg-[#E4CAC7]' : 'w-2 bg-gray-300'}`} 
             />
           </TouchableOpacity>
         ))}

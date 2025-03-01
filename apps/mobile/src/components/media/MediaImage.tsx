@@ -39,7 +39,7 @@ export const MediaImage = ({ media, style = {}, expirySeconds = 1800 }: MediaIma
   return (
     <Image
       source={{ uri: imageUrl }}
-      className="flex-1 rounded-lg"
+      className="flex-1 rounded-sm"
       style={style}
       resizeMode="cover"
     />
