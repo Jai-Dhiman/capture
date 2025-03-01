@@ -8,6 +8,11 @@ import { generateImageSignature, verifyImageSignature } from './crypto'
 export interface ImageService {
   getUploadUrl: () => Promise<{ uploadURL: string; id: string }>
   getImageUrl: (imageId: string, variant?: string, expirySeconds?: number) => Promise<string>
+  getDirectCloudflareUrl: (
+    cloudflareId: string,
+    variant?: string,
+    expirySeconds?: number
+  ) => Promise<string>
   create: (data: { userId: string; imageId: string; [key: string]: any }) => Promise<any>
   list: (userId: string) => Promise<any[]>
   findById: (id: string, userId: string) => Promise<any>
@@ -67,6 +72,18 @@ export function createImageService(env: Bindings): ImageService {
       )
 
       return `https://imagedelivery.net/${env.CLOUDFLARE_ACCOUNT_HASH}/${imageId}/${variant}?exp=${expiry}&sig=${signature}`
+    },
+
+    async getDirectCloudflareUrl(cloudflareId: string, variant = 'public', expirySeconds = 1800) {
+      const expiry = Math.floor(Date.now() / 1000) + expirySeconds
+      const signature = await generateImageSignature(
+        cloudflareId,
+        variant,
+        expiry,
+        env.CLOUDFLARE_IMAGES_KEY
+      )
+
+      return `https://imagedelivery.net/${env.CLOUDFLARE_ACCOUNT_HASH}/${cloudflareId}/${variant}?exp=${expiry}&sig=${signature}`
     },
 
     async validateSignedUrl(url: string) {

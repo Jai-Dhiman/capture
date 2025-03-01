@@ -5,13 +5,14 @@ import { useSessionStore } from '../../stores/sessionStore'
 import * as ImagePicker from 'expo-image-picker'
 import { useCreateProfile } from '../../hooks/auth/useCreateProfile'
 import { LoadingSpinner } from 'components/LoadingSpinner'
+import { supabase } from '../../lib/supabase'
 
 export default function CreateProfile() {
   const [username, setUsername] = useState('')
   const [bio, setBio] = useState('')
   const [profileImage, setProfileImage] = useState<string | null>(null)
   const navigation = useNavigation()
-  const { authUser } = useSessionStore()
+  const { authUser, clearSession } = useSessionStore()
   const createProfileMutation = useCreateProfile()
   
   const pickImage = async () => {
@@ -70,6 +71,21 @@ export default function CreateProfile() {
       }
     )
   }
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      clearSession();
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Auth' as never }]
+      });
+    } catch (error) {
+      console.error('Error logging out:', error);
+      Alert.alert('Error', 'Failed to log out. Please try again.');
+    }
+  };
+  
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
       <View className="flex-1 bg-[#DCDCDE] rounded-[30px] overflow-hidden p-6">
@@ -126,8 +142,14 @@ export default function CreateProfile() {
             </Text>
           )}
         </TouchableOpacity>
+        
+        <TouchableOpacity 
+          className="mt-6 items-center" 
+          onPress={handleLogout}
+        >
+          <Text className="text-blue-600 underline text-base">Log out</Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   )
 }
-          

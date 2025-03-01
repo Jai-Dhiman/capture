@@ -75,7 +75,7 @@ export function useAuth() {
           supabase_id: data.user.id,
           username: data.profile.username,
           bio: data.profile.bio || undefined,
-          image: data.profile.profileImage || undefined,
+          profileImage: data.profile.profileImage || undefined,
         })
       }
 

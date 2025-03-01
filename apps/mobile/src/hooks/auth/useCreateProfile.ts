@@ -1,4 +1,3 @@
-// src/hooks/useCreateProfile.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { useSessionStore } from '../../stores/sessionStore'
@@ -8,7 +7,6 @@ export function useCreateProfile() {
   const queryClient = useQueryClient()
   const { authUser, setUserProfile } = useSessionStore()
 
-  // Upload image hook (reusing from your existing code)
   const uploadImage = async (token: string, imageUri: string) => {
     try {
       const uploadUrlResponse = await fetch(`${API_URL}/api/media/image-upload`, {
@@ -26,11 +24,27 @@ export function useCreateProfile() {
       const { uploadURL, id: imageId } = await uploadUrlResponse.json()
 
       const formData = new FormData()
-      formData.append('file', {
-        uri: imageUri,
-        type: 'image/jpeg',
-        name: 'profile-image.jpg',
-      } as any)
+
+      if (imageUri.startsWith('data:')) {
+        console.log('Detected base64 image, converting to blob')
+        try {
+          const response = await fetch(imageUri)
+          const blob = await response.blob()
+          formData.append('file', blob, 'profile.jpg')
+        } catch (error) {
+          console.error('Error converting base64 to blob:', error)
+          throw new Error('Failed to process base64 image')
+        }
+      } else {
+        console.log('Using file URI for upload')
+        formData.append('file', {
+          uri: imageUri,
+          type: 'image/jpeg',
+          name: 'profile.jpg',
+        } as any)
+      }
+
+      console.log('Uploading to Cloudflare...')
 
       const uploadResponse = await fetch(uploadURL, {
         method: 'POST',
@@ -38,37 +52,21 @@ export function useCreateProfile() {
       })
 
       if (!uploadResponse.ok) {
-        throw new Error('Failed to upload image to Cloudflare')
+        const errorText = await uploadResponse.text()
+        console.error('Upload error response:', errorText)
+        throw new Error(`Upload failed: ${uploadResponse.status} - ${errorText}`)
       }
 
       const uploadResponseData = await uploadResponse.json()
-      const cloudflareImageId = uploadResponseData.result.id
+      console.log('Upload successful, Cloudflare ID:', uploadResponseData.result.id)
 
-      const createRecordResponse = await fetch(`${API_URL}/api/media/image-record`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          imageId: cloudflareImageId,
-          order: 0,
-        }),
-      })
-
-      if (!createRecordResponse.ok) {
-        throw new Error('Failed to create media record')
-      }
-
-      const { media } = await createRecordResponse.json()
-      return media.storageKey
+      return uploadResponseData.result.id
     } catch (error) {
       console.error('Image upload error:', error)
       throw error
     }
   }
 
-  // Username availability check
   const checkUsernameAvailability = async (username: string, token: string) => {
     const response = await fetch(`${API_URL}/api/profile/check-username?username=${username}`, {
       headers: {
@@ -105,10 +103,10 @@ export function useCreateProfile() {
         throw new Error('Username already taken')
       }
 
-      let storageKey = null
+      let cloudflareImageId = null
       if (profileImage) {
         try {
-          storageKey = await uploadImage(token, profileImage)
+          cloudflareImageId = await uploadImage(token, profileImage)
         } catch (error) {
           console.error('Image upload failed but continuing:', error)
         }
@@ -124,7 +122,7 @@ export function useCreateProfile() {
           userId: authUser.id,
           username,
           bio: bio?.trim() || null,
-          profileImage: storageKey,
+          profileImage: cloudflareImageId,
         }),
       })
 
@@ -142,7 +140,7 @@ export function useCreateProfile() {
           supabase_id: authUser.id,
           username: profileData.username,
           bio: profileData.bio || undefined,
-          image: profileData.profileImage || undefined,
+          profileImage: profileData.profileImage || undefined,
         })
       }
 

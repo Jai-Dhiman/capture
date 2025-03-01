@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, Text, Image } from 'react-native';
-import { useImageUrl } from '../../hooks/useMedia';
+import { useImageUrl, useCloudflareImageUrl } from '../../hooks/useMedia';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface MediaImageProps {
@@ -11,7 +11,11 @@ interface MediaImageProps {
 
 export const MediaImage = ({ media, style = {}, expirySeconds = 1800 }: MediaImageProps) => {
   const queryClient = useQueryClient();
-  const { data: imageUrl, isLoading, error, isStale } = useImageUrl(media.id, expirySeconds);
+  const isCloudflareDirect = typeof media === 'string';
+  const mediaId = isCloudflareDirect ? media : media.id;
+  const { data: imageUrl, isLoading, error, isStale } = isCloudflareDirect 
+    ? useCloudflareImageUrl(mediaId, expirySeconds)
+    : useImageUrl(mediaId, expirySeconds);
   
   useEffect(() => {
     if (imageUrl && !isStale) {

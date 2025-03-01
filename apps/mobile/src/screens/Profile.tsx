@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, Dimensions, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { useSessionStore } from '../stores/sessionStore';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -8,9 +8,9 @@ import { useUserPosts } from '../hooks/usePosts';
 import { MediaImage } from '../components/media/MediaImage';
 import { Ionicons } from '@expo/vector-icons';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { ProfileImage } from '../components/media/ProfileImage';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
-// const { width } = Dimensions.get('window');
 const POSTS_PER_PAGE = 4;
 
 export default function Profile() {
@@ -43,15 +43,19 @@ export default function Profile() {
       
       <ScrollView>
         <View className="p-4">
-          <View className="flex-row items-center">
-            <Image 
-              className="w-20 h-20 rounded-full bg-gray-200"
-            />
-            <View className="ml-4 flex-1">
-              <Text className="text-xl font-bold">{userProfile?.username || 'Username'}</Text>
-              <Text className="text-gray-600 mt-1">{userProfile?.bio || 'No bio yet'}</Text>
+        <View className="flex-row items-center">
+          {userProfile?.profileImage ? (
+            <View className="w-20 h-20 rounded-full overflow-hidden">
+              <ProfileImage cloudflareId={userProfile.profileImage} />
             </View>
+          ) : (
+            <View className="w-20 h-20 rounded-full bg-gray-200" />
+          )}
+          <View className="ml-4 flex-1">
+            <Text className="text-xl font-bold">{userProfile?.username || 'Username'}</Text>
+            <Text className="text-gray-600 mt-1">{userProfile?.bio || 'No bio yet'}</Text>
           </View>
+        </View>
           
           <View className="flex-row mt-4">
             {isOwnProfile ? (

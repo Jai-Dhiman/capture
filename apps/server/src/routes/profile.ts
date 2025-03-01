@@ -36,7 +36,7 @@ router.post('/', async (c) => {
     userId: z.string().uuid(),
     username: z.string().min(3).max(30),
     bio: z.string().max(160).nullable().optional(),
-    profileImage: z.string().url().nullable().optional(),
+    profileImage: z.string().nullable().optional(),
   })
 
   try {

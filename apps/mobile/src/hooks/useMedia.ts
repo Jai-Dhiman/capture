@@ -4,6 +4,7 @@ import { API_URL } from '@env'
 
 export const useImageUrl = (mediaId?: string, expirySeconds = 1800) => {
   const staleTime = Math.min(expirySeconds * 1000 * 0.8, 20 * 60 * 1000)
+  const isCloudflareId = mediaId && mediaId.includes('-')
 
   return useQuery({
     queryKey: ['imageUrl', mediaId, expirySeconds],
@@ -16,7 +17,11 @@ export const useImageUrl = (mediaId?: string, expirySeconds = 1800) => {
         throw new Error('No auth token available')
       }
 
-      const response = await fetch(`${API_URL}/api/media/${mediaId}/url?expiry=${expirySeconds}`, {
+      const endpoint = isCloudflareId
+        ? `${API_URL}/api/media/cloudflare/${mediaId}/url?expiry=${expirySeconds}`
+        : `${API_URL}/api/media/${mediaId}/url?expiry=${expirySeconds}`
+
+      const response = await fetch(endpoint, {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
@@ -111,5 +116,41 @@ export const useUploadMedia = () => {
 
       return Promise.all(uploads)
     },
+  })
+}
+
+export const useCloudflareImageUrl = (cloudflareId?: string, expirySeconds = 1800) => {
+  const staleTime = Math.min(expirySeconds * 1000 * 0.8, 20 * 60 * 1000)
+
+  return useQuery({
+    queryKey: ['cloudflareImageUrl', cloudflareId, expirySeconds],
+    queryFn: async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (!session?.access_token) {
+        throw new Error('No auth token available')
+      }
+
+      const response = await fetch(
+        `${API_URL}/api/media/cloudflare-url/${cloudflareId}?expiry=${expirySeconds}`,
+        {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch image URL')
+      }
+
+      const data = await response.json()
+      return data.url
+    },
+    enabled: !!cloudflareId,
+    staleTime: staleTime,
+    gcTime: staleTime + 5 * 60 * 1000,
   })
 }

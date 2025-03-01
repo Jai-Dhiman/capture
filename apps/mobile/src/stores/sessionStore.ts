@@ -11,7 +11,7 @@ export interface UserProfile {
   supabase_id: string
   username: string | null
   bio?: string
-  image?: string
+  profileImage?: string
 }
 
 export type SessionState = {
