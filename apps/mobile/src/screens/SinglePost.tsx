@@ -45,7 +45,7 @@ export default function SinglePost() {
       <ScrollView className="flex-1">
         <View className="flex-row items-center p-3 border-b border-gray-100 bg-white">
           <View className="w-8 h-8 rounded-full overflow-hidden mr-2">
-            {post.user?.profileImage ? (
+          {post.user?.profileImage ? (
               <ProfileImage cloudflareId={post.user.profileImage} />
             ) : (
               <View className="w-full h-full bg-gray-200" />

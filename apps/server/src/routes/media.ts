@@ -1,7 +1,6 @@
 import { Hono } from 'hono'
 import { createImageService } from '../lib/imageService'
 import type { Bindings, Variables } from 'types'
-import { generateImageSignature } from 'lib/crypto'
 
 const mediaRouter = new Hono<{
   Bindings: Bindings

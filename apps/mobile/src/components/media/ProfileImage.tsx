@@ -25,11 +25,14 @@ export const ProfileImage = ({ cloudflareId, style = {}, expirySeconds = 1800 }:
         throw new Error('No auth token available');
       }
 
-      const response = await fetch(`${API_URL}/api/media/cloudflare/${cloudflareId}/url?expiry=${expirySeconds}`, {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
+      const response = await fetch(
+        `${API_URL}/api/media/cloudflare-url/${cloudflareId}?expiry=${expirySeconds}`, 
+        {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
 
       if (!response.ok) {
         throw new Error('Failed to fetch image URL');

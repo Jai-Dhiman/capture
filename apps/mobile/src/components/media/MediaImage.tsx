@@ -11,11 +11,13 @@ interface MediaImageProps {
 
 export const MediaImage = ({ media, style = {}, expirySeconds = 1800 }: MediaImageProps) => {
   const queryClient = useQueryClient();
-  const isCloudflareDirect = typeof media === 'string';
-  const mediaId = isCloudflareDirect ? media : media.id;
-  const { data: imageUrl, isLoading, error, isStale } = isCloudflareDirect 
-    ? useCloudflareImageUrl(mediaId, expirySeconds)
-    : useImageUrl(mediaId, expirySeconds);
+  const isCloudflareDirect = typeof media === 'string' || !media.storageKey;
+const mediaId = isCloudflareDirect 
+  ? (typeof media === 'string' ? media : media.id) 
+  : media.id;
+const { data: imageUrl, isLoading, error, isStale } = isCloudflareDirect 
+  ? useCloudflareImageUrl(mediaId, expirySeconds)
+  : useImageUrl(mediaId, expirySeconds);
   
   useEffect(() => {
     if (imageUrl && !isStale) {
