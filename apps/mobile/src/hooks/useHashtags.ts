@@ -1,10 +1,10 @@
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { API_URL } from '@env'
 
-export const useUserPosts = (userId?: string) => {
+export const useSearchHashtags = (query: string, enabled = false) => {
   return useQuery({
-    queryKey: ['userPosts', userId],
+    queryKey: ['hashtags', 'search', query],
     queryFn: async () => {
       const {
         data: { session },
@@ -22,25 +22,16 @@ export const useUserPosts = (userId?: string) => {
         },
         body: JSON.stringify({
           query: `
-            query GetUserPosts($userId: ID!) {
-              profile(id: $userId) {
+            query SearchHashtags($query: String!, $limit: Int) {
+              searchHashtags(query: $query, limit: $limit) {
                 id
-                posts {
-                  id
-                  content
-                  createdAt
-                  media {
-                    id
-                    storageKey
-                    type
-                    order
-                  }
-                }
+                name
               }
             }
           `,
           variables: {
-            userId,
+            query,
+            limit: 10,
           },
         }),
       })
@@ -52,23 +43,18 @@ export const useUserPosts = (userId?: string) => {
         throw new Error(data.errors[0].message)
       }
 
-      return data.data.profile?.posts || []
+      return data.data.searchHashtags || []
     },
-    enabled: !!userId,
+    enabled: enabled && query.length > 0,
+    staleTime: 1000 * 60 * 5, // Cache results for 5 minutes
   })
 }
 
-export const useCreatePost = () => {
+export const useCreateHashtag = () => {
+  const queryClient = useQueryClient()
+
   return useMutation({
-    mutationFn: async ({
-      content,
-      mediaIds,
-      hashtagIds,
-    }: {
-      content: string
-      mediaIds: string[]
-      hashtagIds?: string[]
-    }) => {
+    mutationFn: async (name: string) => {
       const {
         data: { session },
       } = await supabase.auth.getSession()
@@ -85,35 +71,15 @@ export const useCreatePost = () => {
         },
         body: JSON.stringify({
           query: `
-            mutation CreatePost($input: PostInput!) {
-              createPost(input: $input) {
+            mutation CreateHashtag($name: String!) {
+              createHashtag(name: $name) {
                 id
-                content
-                createdAt
-                user {
-                  id
-                  username
-                  image
-                }
-                media {
-                  id
-                  storageKey
-                  type
-                  order
-                }
-                hashtags {
-                  id
-                  name
-                }
+                name
               }
             }
           `,
           variables: {
-            input: {
-              content,
-              mediaIds,
-              hashtagIds,
-            },
+            name,
           },
         }),
       })
@@ -125,7 +91,10 @@ export const useCreatePost = () => {
         throw new Error(data.errors[0].message || 'Unknown GraphQL error')
       }
 
-      return data.data.createPost
+      return data.data.createHashtag
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hashtags'] })
     },
   })
 }

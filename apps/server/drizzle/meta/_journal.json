@@ -5,50 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1738228702034,
-      "tag": "0000_tearful_outlaw_kid",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1738287643110,
-      "tag": "0001_last_puff_adder",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1738364027068,
-      "tag": "0002_careful_wrecker",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1739511200048,
-      "tag": "0003_shallow_venom",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "6",
-      "when": 1739511729842,
-      "tag": "0004_wooden_lorna_dane",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "6",
-      "when": 1739512453496,
-      "tag": "0005_shiny_natasha_romanoff",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "6",
-      "when": 1740475938935,
-      "tag": "0006_naive_the_hand",
+      "when": 1740903759935,
+      "tag": "0000_zippy_jazinda",
       "breakpoints": true
     }
   ]

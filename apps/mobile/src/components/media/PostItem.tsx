@@ -1,9 +1,10 @@
 import React from 'react';
-import { Text, TouchableOpacity } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { PostMediaGallery } from './PostMediaGallery';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../types/navigation';
+import { HashtagDisplay } from '../hashtags/HashtagDisplay';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 
@@ -23,6 +24,12 @@ export const PostItem = ({ post }: PostItemProps) => {
         <PostMediaGallery mediaItems={post.media} />
       )}
       <Text className="text-base">{post.content}</Text>
+      
+      {/* Add captag display */}
+      {post.captags && post.captags.length > 0 && (
+        <HashtagDisplay hashtags={post.hashtags} size="small" />
+      )}
+      
       <Text className="text-sm text-gray-500 mt-2">
         {new Date(post.createdAt).toLocaleDateString()}
       </Text>

@@ -3,7 +3,7 @@ export const typeDefs = `
     feed(limit: Int, offset: Int): [Post!]!
     post(id: ID!): Post
     profile(id: ID!): Profile
-    searchCaptags(query: String!): [Captag!]!
+    searchHashtags(query: String!, limit: Int, offset: Int): [Hashtag!]!
     searchUsers(query: String!): [Profile!]!
     comments(postId: ID!, limit: Int, offset: Int): [Comment!]!
   }
@@ -13,6 +13,7 @@ export const typeDefs = `
     createComment(input: CommentInput!): Comment!
     updatePost(id: ID!, input: PostInput!): Post!
     updateProfile(input: ProfileInput!): Profile!
+    createHashtag(name: String!): Hashtag!
   }
 
   type Subscription {
@@ -42,7 +43,7 @@ export const typeDefs = `
     user: Profile!
     media: [Media!]!
     comments: [Comment!]!
-    captags: [Captag!]!
+    hashtags: [Hashtag!]!
     savedBy: [Profile!]!
     createdAt: String!
   }
@@ -66,7 +67,7 @@ export const typeDefs = `
     createdAt: String!
   }
 
-  type Captag {
+  type Hashtag {
     id: ID!
     name: String!
     posts: [Post!]!
@@ -76,7 +77,7 @@ export const typeDefs = `
   input PostInput {
     content: String!
     mediaIds: [ID!]
-    captagIds: [ID!]
+    hashtagIds: [ID!]
   }
 
   input CommentInput {

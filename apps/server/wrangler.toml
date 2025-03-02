@@ -9,7 +9,7 @@ ENV = "development"
 [[d1_databases]]
 binding = "DB"
 database_name = "capture-db"
-database_id = "67b4415b-c00e-4590-bb70-28a0f7eab9d9"
+database_id = "adb1ae42-b82f-44d2-968c-0e7ac0d92200"
 migrations_dir = "drizzle"
 
 [[r2_buckets]]

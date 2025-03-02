@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, Image, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, Image, TextInput, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as ImagePicker from 'expo-image-picker';
@@ -7,6 +7,7 @@ import { Platform } from 'react-native';
 import { RootStackParamList } from 'types/navigation';
 import { useUploadMedia } from 'hooks/useMedia';
 import { useCreatePost } from 'hooks/usePosts';
+import { HashtagInput } from '../components/hashtags/HashtagInput';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -14,8 +15,10 @@ export default function NewPost() {
   const navigation = useNavigation<NavigationProp>();
   const [content, setContent] = useState('');
   const [selectedImages, setSelectedImages] = useState<any[]>([]);
+  const [selectedHashtags, setSelectedHashtags] = useState<Array<{ id: string; name: string }>>([]);
   const uploadMediaMutation = useUploadMedia();
   const createPostMutation = useCreatePost();
+
 
   const handleImageSelection = async () => {
     try {
@@ -58,7 +61,15 @@ export default function NewPost() {
       const uploadedMedia = await uploadMediaMutation.mutateAsync(selectedImages);
       
       const mediaIds = uploadedMedia.map(media => media.id);
-      await createPostMutation.mutateAsync({ content, mediaIds });
+      const hashtagIds = selectedHashtags.map(hashtag => hashtag.id);
+      
+      const createdPost = await createPostMutation.mutateAsync({ 
+        content, 
+        mediaIds,
+        hashtagIds
+      });
+      
+      console.log('Created post response:', JSON.stringify(createdPost, null, 2));
       
       Alert.alert('Success', 'Post created successfully!');
       navigation.goBack();
@@ -72,56 +83,65 @@ export default function NewPost() {
   };
 
   return (
-    <View className="flex-1 p-5">
-      <View className="flex-row items-center mb-5">
-        <TouchableOpacity   
-          className="p-2" 
-          onPress={() => navigation.goBack()}
-        >
-        <Text className="text-blue-600 text-lg">← Back</Text>
-        </TouchableOpacity>
-      <Text className="text-2xl font-bold ml-2">Create New Post</Text>
-    </View>
-      <View className="mt-5 bg-white p-4 rounded-lg shadow">
-        <TextInput
-          className="border border-gray-300 rounded-lg p-3 mb-3"
-          placeholder="caption"
-          value={content}
-          onChangeText={setContent}
-          multiline
-        />
-
-        <View className="flex-row flex-wrap mb-3">
-          {selectedImages.map((image, index) => (
-            <View key={index} className="w-20 h-20 m-1 bg-gray-200 rounded">
-              <Image
-                source={{ uri: image.uri }}
-                className="w-full h-full rounded"
-                resizeMode="cover"
-              />
-            </View>
-          ))}
+    <ScrollView className="flex-1">
+      <View className="flex-1 p-5">
+        <View className="flex-row items-center mb-5">
+          <TouchableOpacity   
+            className="p-2" 
+            onPress={() => navigation.goBack()}
+          >
+            <Text className="text-blue-600 text-lg">← Back</Text>
+          </TouchableOpacity>
+          <Text className="text-2xl font-bold ml-2">Create New Post</Text>
         </View>
+        
+        <View className="mt-5 bg-white p-4 rounded-lg shadow">
+          <TextInput
+            className="border border-gray-300 rounded-lg p-3 mb-3"
+            placeholder="caption"
+            value={content}
+            onChangeText={setContent}
+            multiline
+          />
 
-        <View className="flex-row justify-between">
-          <TouchableOpacity
-            className="bg-gray-200 p-3 rounded-lg flex-1 mr-2"
-            onPress={handleImageSelection}
-          >
-            <Text className="text-center">Add Images</Text>
-          </TouchableOpacity>
+          <HashtagInput
+            selectedHashtags={selectedHashtags}
+            onHashtagsChange={setSelectedHashtags}
+            maxHashtags={5}
+          />
 
-          <TouchableOpacity
-            className="bg-blue-600 p-3 rounded-lg flex-1 ml-2"
-            onPress={handleCreatePost}
-            disabled={createPostMutation.isPending || uploadMediaMutation.isPending}
-          >
-            <Text className="text-white text-center">
-              {createPostMutation.isPending ? 'Creating...' : 'Create Post'}
-            </Text>
-          </TouchableOpacity>
+          <View className="flex-row flex-wrap mb-3">
+            {selectedImages.map((image, index) => (
+              <View key={index} className="w-20 h-20 m-1 bg-gray-200 rounded">
+                <Image
+                  source={{ uri: image.uri }}
+                  className="w-full h-full rounded"
+                  resizeMode="cover"
+                />
+              </View>
+            ))}
+          </View>
+
+          <View className="flex-row justify-between">
+            <TouchableOpacity
+              className="bg-gray-200 p-3 rounded-lg flex-1 mr-2"
+              onPress={handleImageSelection}
+            >
+              <Text className="text-center">Add Images</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className="bg-blue-600 p-3 rounded-lg flex-1 ml-2"
+              onPress={handleCreatePost}
+              disabled={createPostMutation.isPending || uploadMediaMutation.isPending}
+            >
+              <Text className="text-white text-center">
+                {createPostMutation.isPending ? 'Creating...' : 'Create Post'}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }

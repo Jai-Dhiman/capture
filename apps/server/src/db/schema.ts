@@ -65,27 +65,27 @@ export const savedPost = sqliteTable(
   (table) => [index('user_saved_idx').on(table.userId), index('post_saved_idx').on(table.postId)]
 )
 
-export const captag = sqliteTable(
-  'captag',
+export const hashtag = sqliteTable(
+  'hashtag',
   {
     id: text('id').primaryKey(),
     name: text('name').notNull().unique(),
     createdAt: numeric('created_at').default(new Date().toISOString()).notNull(),
   },
-  (table) => [index('captag_name_idx').on(table.name)]
+  (table) => [index('hashtag_name_idx').on(table.name)]
 )
 
-export const postCaptag = sqliteTable(
-  'post_captag',
+export const postHashtag = sqliteTable(
+  'post_hashtag',
   {
     postId: text('post_id').references(() => post.id),
-    captagId: text('hashtag_id').references(() => captag.id),
+    hashtagId: text('hashtag_id').references(() => hashtag.id),
     createdAt: numeric('created_at').default(new Date().toISOString()).notNull(),
   },
   (table) => [
-    index('post_captag_idx').on(table.postId),
-    index('captag_post_idx').on(table.captagId),
-    index('post_captag_composite_idx').on(table.postId, table.captagId),
+    index('post_hashtag_idx').on(table.postId),
+    index('hashtag_post_idx').on(table.hashtagId),
+    index('post_hashtag_composite_idx').on(table.postId, table.hashtagId),
   ]
 )
 

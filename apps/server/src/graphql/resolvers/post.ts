@@ -1,5 +1,5 @@
 import { createD1Client } from '../../db'
-import { eq } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import * as schema from '../../db/schema'
 import { nanoid } from 'nanoid'
 import type { ContextType } from '../../types'
@@ -20,7 +20,7 @@ export const postResolvers = {
           user: true,
           media: true,
           comments: true,
-          captags: true,
+          hashtags: true,
           savedBy: true,
         },
       })
@@ -39,7 +39,7 @@ export const postResolvers = {
           user: true,
           media: true,
           comments: true,
-          captags: true,
+          hashtags: true,
           savedBy: true,
         },
       })
@@ -91,12 +91,12 @@ export const postResolvers = {
           )
         }
 
-        if (input.captagIds?.length) {
+        if (input.hashtagIds?.length) {
           await Promise.all(
-            input.captagIds.map((captagId: string) =>
-              db.insert(schema.postCaptag).values({
+            input.hashtagIds.map((hashtagId: string) =>
+              db.insert(schema.postHashtag).values({
                 postId,
-                captagId,
+                hashtagId,
                 createdAt: new Date().toISOString(),
               })
             )
@@ -130,12 +130,29 @@ export const postResolvers = {
         if (!userProfile) throw new Error('User profile not found')
 
         let mediaItems: Array<any> = []
-        if (input.mediaIds?.length) {
-          mediaItems = await db
+        if (input.hashtagIds?.length) {
+          await Promise.all(
+            input.hashtagIds.map((hashtagId: string) =>
+              db.insert(schema.postHashtag).values({
+                postId,
+                hashtagId,
+                createdAt: new Date().toISOString(),
+              })
+            )
+          )
+
+          console.log(`Created ${input.hashtagIds.length} hashtag associations for post ${postId}`)
+        }
+
+        let hashtagItems: Array<any> = []
+        if (input.hashtagIds?.length) {
+          hashtagItems = await db
             .select()
-            .from(schema.media)
-            .where(eq(schema.media.postId, postId))
+            .from(schema.hashtag)
+            .where(inArray(schema.hashtag.id, input.hashtagIds))
             .all()
+
+          console.log('Retrieved hashtags:', hashtagItems)
         }
 
         return {
@@ -143,7 +160,7 @@ export const postResolvers = {
           user: userProfile,
           media: mediaItems,
           comments: [],
-          captags: [],
+          hashtags: hashtagItems,
           savedBy: [],
         }
       } catch (error) {

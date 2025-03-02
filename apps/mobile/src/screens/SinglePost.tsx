@@ -8,6 +8,7 @@ import SavePostIcon from '../assets/icons/Favorites Icon.svg'
 import SettingsIcon from '../assets/icons/Settings Icon.svg'
 import { ProfileImage } from '../components/media/ProfileImage';
 import { PostMediaGallery } from '../components/media/PostMediaGallery';
+import { HashtagDisplay } from '../components/hashtags/HashtagDisplay';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 type SinglePostRouteProp = RouteProp<AppStackParamList, 'SinglePost'>;
@@ -24,7 +25,7 @@ export default function SinglePost() {
       </View>
     );
   }
-
+  console.log('Post hashtags:', post.hashtags);
   return (
     <View className="flex-1">
       <Image
@@ -72,20 +73,24 @@ export default function SinglePost() {
         )}
       </View>
       
-        <View className="p-4 border-b border-gray-200 bg-white">
-          <View className="flex-row justify-between items-start">
-            <View className="flex-1 pr-4">
-              <Text className="text-base">{post.content}</Text>
-            </View>
-            
-            <TouchableOpacity className="mr-4">
-              <Ionicons name="chatbubble-outline" size={24} color="#333" />
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <SavePostIcon width={24} height={24} />
-            </TouchableOpacity>
-          </View>
+      <View className="p-4 border-b border-gray-200 bg-white">
+      <View className="flex-row justify-between items-start">
+        <View className="flex-1 pr-4">
+          <Text className="text-base">{post.content}</Text>
+          
+          {post.hashtags && post.hashtags.length > 0 && (
+            <HashtagDisplay hashtags={post.hashptags} size="medium" />
+          )}
         </View>
+        
+        <TouchableOpacity className="mr-4">
+          <Ionicons name="chatbubble-outline" size={24} color="#333" />
+        </TouchableOpacity>
+        <TouchableOpacity>
+          <SavePostIcon width={24} height={24} />
+        </TouchableOpacity>
+      </View>
+    </View>
         
         <View className="p-4 bg-white max-h-24">
           <View className="py-1">

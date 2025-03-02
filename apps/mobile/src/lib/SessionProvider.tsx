@@ -49,7 +49,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
                 supabase_id: authUser.id,
                 username: profileData.username,
                 bio: profileData.bio || undefined,
-                image: profileData.profileImage || undefined,
+                profileImage: profileData.profileImage || undefined,
               })
             } else {
               setUserProfile(null)
