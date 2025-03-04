@@ -44,6 +44,8 @@ export default function SinglePost() {
     }
   };
 
+  console.log("Post data in SinglePost:", post);
+  console.log("Hashtags in post:", post.hashtags);
   return (
     <View className="flex-1">
       <Image

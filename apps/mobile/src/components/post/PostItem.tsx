@@ -25,8 +25,7 @@ export const PostItem = ({ post }: PostItemProps) => {
       )}
       <Text className="text-base">{post.content}</Text>
       
-      {/* Add captag display */}
-      {post.captags && post.captags.length > 0 && (
+      {post.hashtags && post.hashtags.length > 0 && (
         <HashtagDisplay hashtags={post.hashtags} size="small" />
       )}
       

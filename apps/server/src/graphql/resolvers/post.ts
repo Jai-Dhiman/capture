@@ -130,30 +130,7 @@ export const postResolvers = {
         if (!userProfile) throw new Error('User profile not found')
 
         let mediaItems: Array<any> = []
-        if (input.hashtagIds?.length) {
-          await Promise.all(
-            input.hashtagIds.map((hashtagId: string) =>
-              db.insert(schema.postHashtag).values({
-                postId,
-                hashtagId,
-                createdAt: new Date().toISOString(),
-              })
-            )
-          )
-
-          console.log(`Created ${input.hashtagIds.length} hashtag associations for post ${postId}`)
-        }
-
         let hashtagItems: Array<any> = []
-        if (input.hashtagIds?.length) {
-          hashtagItems = await db
-            .select()
-            .from(schema.hashtag)
-            .where(inArray(schema.hashtag.id, input.hashtagIds))
-            .all()
-
-          console.log('Retrieved hashtags:', hashtagItems)
-        }
 
         return {
           ...createdPost,
@@ -217,6 +194,36 @@ export const postResolvers = {
           `Failed to delete post: ${error instanceof Error ? error.message : 'Unknown error'}`
         )
       }
+    },
+  },
+
+  Post: {
+    async hashtags(parent: { id: string }, _: unknown, context: ContextType) {
+      const db = createD1Client(context.env)
+
+      const postHashtags = await db
+        .select({
+          hashtagId: schema.postHashtag.hashtagId,
+        })
+        .from(schema.postHashtag)
+        .where(eq(schema.postHashtag.postId, parent.id))
+        .all()
+
+      if (postHashtags.length === 0) {
+        return []
+      }
+
+      const hashtagIds = postHashtags
+        .map((ph) => ph.hashtagId)
+        .filter((id): id is string => id !== null && id !== undefined)
+
+      const hashtags = await db
+        .select()
+        .from(schema.hashtag)
+        .where(inArray(schema.hashtag.id, hashtagIds))
+        .all()
+
+      return hashtags
     },
   },
 }

@@ -13,4 +13,5 @@ export const resolvers = {
     ...hashtagResolvers.Mutation,
   },
   Hashtag: hashtagResolvers.Hashtag || {},
+  Post: postResolvers.Post || {},
 }
