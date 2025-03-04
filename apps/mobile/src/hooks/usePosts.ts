@@ -58,6 +58,69 @@ export const useUserPosts = (userId?: string) => {
   })
 }
 
+export const useSinglePost = (postId?: string) => {
+  return useQuery({
+    queryKey: ['post', postId],
+    queryFn: async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (!session?.access_token) {
+        throw new Error('No auth token available')
+      }
+
+      const response = await fetch(`${API_URL}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          query: `
+            query GetPost($postId: ID!) {
+              post(id: $postId) {
+                id
+                content
+                createdAt
+                userId
+                user {
+                  id
+                  username
+                  image
+                }
+                media {
+                  id
+                  storageKey
+                  type
+                  order
+                }
+                hashtags {
+                  id
+                  name
+                }
+              }
+            }
+          `,
+          variables: {
+            postId,
+          },
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.errors) {
+        console.error('GraphQL Errors:', data.errors)
+        throw new Error(data.errors[0].message)
+      }
+
+      return data.data.post
+    },
+    enabled: !!postId,
+  })
+}
+
 export const useCreatePost = () => {
   return useMutation({
     mutationFn: async ({

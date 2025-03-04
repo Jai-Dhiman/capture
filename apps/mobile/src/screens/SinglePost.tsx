@@ -1,6 +1,5 @@
-// apps/mobile/src/screens/SinglePost.tsx
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../types/navigation';
@@ -11,7 +10,7 @@ import { ProfileImage } from '../components/media/ProfileImage';
 import { PostMediaGallery } from '../components/post/PostMediaGallery';
 import { HashtagDisplay } from '../components/hashtags/HashtagDisplay';
 import { PostSettingsMenu } from '../components/post/PostSettingsMenu';
-import { useDeletePost } from '../hooks/usePosts';
+import { useDeletePost, useSinglePost } from '../hooks/usePosts';
 import { useSessionStore } from '../stores/sessionStore';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
@@ -20,16 +19,30 @@ type SinglePostRouteProp = RouteProp<AppStackParamList, 'SinglePost'>;
 export default function SinglePost() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<SinglePostRouteProp>();
-  const post = route.params.post;
+  const postId = route.params.post.id;
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const deletePostMutation = useDeletePost();
   const { authUser } = useSessionStore();
+
+  const { data: post, isLoading, error } = useSinglePost(postId);
   const isPostOwner = authUser?.id === post?.userId;
   
-  if (!post) {
+  if (isLoading) {
     return (
       <View className="flex-1 justify-center items-center">
-        <Text>Post not found</Text>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+  
+  if (error || !post) {
+    return (
+      <View className="flex-row items-center p-4 bg-transparent">
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color="black" />
+        </TouchableOpacity>
+        <Text className="text-[30px] font-light mx-auto">Post Not Found</Text>
+        <View style={{ width: 24 }} />
       </View>
     );
   }

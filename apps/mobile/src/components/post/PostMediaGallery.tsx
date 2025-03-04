@@ -24,51 +24,7 @@ export const PostMediaGallery = ({ mediaItems, containerStyle = {} }: PostMediaG
       </View>
     );
   }
-  
-  // 2 images - parallel rectangles
-  if (mediaItems.length === 2) {
-    return (
-      <View className="w-full h-48 mb-2 flex-row" style={containerStyle}>
-        <View className="flex-1 h-full">
-          <MediaImage media={mediaItems[0]} />
-        </View>
-        <View 
-          style={{ 
-            width: 2, 
-            height: '100%', 
-            backgroundColor: '#E4CAC7' 
-          }} 
-        />
-        <View className="flex-1 h-full">
-          <MediaImage media={mediaItems[1]} />
-        </View>
-      </View>
-    );
-  }
-  
-  if (mediaItems.length === 3 || mediaItems.length === 4) {
-    return (
-      <View className="w-full h-48 mb-2 flex-row flex-wrap" style={containerStyle}>
-        {mediaItems.map((media, index) => {
-          const isLastInOdd = mediaItems.length === 3 && index === 2;
-          
-          return (
-            <View 
-              key={media.id} 
-              className={`${isLastInOdd ? 'w-full' : 'w-1/2'} ${index < 2 ? 'h-24' : 'h-24'}`}
-              style={{ padding: 2 }}
-            >
-              <View className="flex-1">
-                <MediaImage media={media} style={{ flex: 1, height: '100%' }} />
-              </View>
-            </View>
-          );
-        })}
-      </View>
-    );
-  }
-  
-  // 5+ images carousel display
+
   return (
     <View className="w-full h-48 mb-2" style={containerStyle}>
       <ScrollView 
