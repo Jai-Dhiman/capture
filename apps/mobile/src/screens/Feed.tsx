@@ -6,6 +6,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CompositeNavigationProp } from '@react-navigation/native';
 import { useSessionStore } from '../stores/sessionStore';
 import { AppStackParamList, RootStackParamList } from '../types/navigation';
+import { DeleteUserButton } from '../components/DeleteUserButton';
 
 type NavigationProp = CompositeNavigationProp<
   NativeStackNavigationProp<AppStackParamList>,

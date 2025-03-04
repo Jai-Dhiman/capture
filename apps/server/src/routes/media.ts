@@ -107,7 +107,7 @@ mediaRouter.delete('/:mediaId', async (c) => {
   }
 })
 
-mediaRouter.get('/cloudflare/:cloudflareId/url', async (c) => {
+mediaRouter.get('/cloudflare-url/:cloudflareId', async (c) => {
   const cloudflareId = c.req.param('cloudflareId')
   const expirySeconds = parseInt(c.req.query('expiry') || '1800')
   const maxExpirySeconds = 86400

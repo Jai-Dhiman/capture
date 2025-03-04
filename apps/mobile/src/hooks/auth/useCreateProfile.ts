@@ -36,15 +36,12 @@ export function useCreateProfile() {
           throw new Error('Failed to process base64 image')
         }
       } else {
-        console.log('Using file URI for upload')
         formData.append('file', {
           uri: imageUri,
           type: 'image/jpeg',
           name: 'profile.jpg',
         } as any)
       }
-
-      console.log('Uploading to Cloudflare...')
 
       const uploadResponse = await fetch(uploadURL, {
         method: 'POST',
@@ -58,7 +55,6 @@ export function useCreateProfile() {
       }
 
       const uploadResponseData = await uploadResponse.json()
-      console.log('Upload successful, Cloudflare ID:', uploadResponseData.result.id)
 
       return uploadResponseData.result.id
     } catch (error) {

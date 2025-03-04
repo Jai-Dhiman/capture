@@ -110,4 +110,32 @@ router.get('/:userId', async (c) => {
   }
 })
 
+router.delete('/:userId', async (c) => {
+  const userId = c.req.param('userId')
+  const user = c.get('user')
+
+  if (userId !== user.id) {
+    return c.json({ message: 'Unauthorized' }, 403)
+  }
+
+  const db = drizzle(c.env.DB)
+
+  try {
+    const userProfile = await db.select().from(profile).where(eq(profile.userId, userId)).get()
+
+    if (!userProfile) {
+      return c.json({ message: 'Profile not found' }, 404)
+    }
+    await db.delete(profile).where(eq(profile.userId, userId))
+
+    // Note: This does not cascade delete related data like posts, comments, etc.
+    // In a production environment, you would want to handle that too
+
+    return c.json({ message: 'Profile deleted successfully' })
+  } catch (error) {
+    console.error('Error deleting profile:', error)
+    return c.json({ message: 'Failed to delete profile' }, 500)
+  }
+})
+
 export default router

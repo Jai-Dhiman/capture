@@ -154,3 +154,28 @@ export const useCloudflareImageUrl = (cloudflareId?: string, expirySeconds = 180
     gcTime: staleTime + 5 * 60 * 1000,
   })
 }
+
+export const useMediaSource = (mediaItem: any, expirySeconds = 1800) => {
+  // Case 1: Direct Cloudflare ID (string)
+  if (typeof mediaItem === 'string') {
+    return useCloudflareImageUrl(mediaItem, expirySeconds)
+  }
+
+  // Case 2: Media object with storageKey (from database)
+  if (mediaItem?.storageKey) {
+    return useCloudflareImageUrl(mediaItem.storageKey, expirySeconds)
+  }
+
+  // Case 3: Media object with internal ID (needs API lookup)
+  if (mediaItem?.id) {
+    return useImageUrl(mediaItem.id, expirySeconds)
+  }
+
+  // Default case: No valid media source
+  return {
+    data: null,
+    isLoading: false,
+    error: new Error('Invalid media source'),
+    isStale: false,
+  }
+}

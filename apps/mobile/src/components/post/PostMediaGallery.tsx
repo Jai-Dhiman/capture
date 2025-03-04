@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, ScrollView, Dimensions, TouchableOpacity } from 'react-native';
-import { MediaImage } from './MediaImage';
+import { MediaImage } from '../media/MediaImage';
 
 const { width } = Dimensions.get('window');
 

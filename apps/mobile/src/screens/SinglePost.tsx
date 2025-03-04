@@ -1,14 +1,18 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
+// apps/mobile/src/screens/SinglePost.tsx
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../types/navigation';
 import { Ionicons } from '@expo/vector-icons';
-import SavePostIcon from '../assets/icons/Favorites Icon.svg'
-import SettingsIcon from '../assets/icons/Settings Icon.svg'
+import SavePostIcon from '../assets/icons/Favorites Icon.svg';
+import SettingsIcon from '../assets/icons/Settings Icon.svg';
 import { ProfileImage } from '../components/media/ProfileImage';
-import { PostMediaGallery } from '../components/media/PostMediaGallery';
+import { PostMediaGallery } from '../components/post/PostMediaGallery';
 import { HashtagDisplay } from '../components/hashtags/HashtagDisplay';
+import { PostSettingsMenu } from '../components/post/PostSettingsMenu';
+import { useDeletePost } from '../hooks/usePosts';
+import { useSessionStore } from '../stores/sessionStore';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 type SinglePostRouteProp = RouteProp<AppStackParamList, 'SinglePost'>;
@@ -17,6 +21,10 @@ export default function SinglePost() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<SinglePostRouteProp>();
   const post = route.params.post;
+  const [isMenuVisible, setIsMenuVisible] = useState(false);
+  const deletePostMutation = useDeletePost();
+  const { authUser } = useSessionStore();
+  const isPostOwner = authUser?.id === post?.userId;
   
   if (!post) {
     return (
@@ -25,7 +33,17 @@ export default function SinglePost() {
       </View>
     );
   }
-  console.log('Post hashtags:', post.hashtags);
+
+  const handleDeletePost = async () => {
+    try {
+      await deletePostMutation.mutateAsync(post.id);
+      navigation.goBack();
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      console.log('Failed to delete post:', error.message);
+    }
+  };
+
   return (
     <View className="flex-1">
       <Image
@@ -45,7 +63,7 @@ export default function SinglePost() {
       <ScrollView className="flex-1">
         <View className="flex-row items-center p-3 border-b border-gray-100 bg-white">
           <View className="w-8 h-8 rounded-full overflow-hidden mr-2">
-          {post.user?.profileImage ? (
+            {post.user?.profileImage ? (
               <ProfileImage cloudflareId={post.user.profileImage} />
             ) : (
               <View className="w-full h-full bg-gray-200" />
@@ -53,44 +71,49 @@ export default function SinglePost() {
           </View>
           <Text className="font-medium">{post.user?.username || 'User'}</Text>
           
-          <TouchableOpacity className="ml-auto">
-            <SettingsIcon width={24} height={24} />
-          </TouchableOpacity>
+          {/* {isPostOwner && ( */}
+            <TouchableOpacity 
+              className="ml-auto"
+              onPress={() => setIsMenuVisible(true)}
+            >
+              <SettingsIcon width={24} height={24} />
+            </TouchableOpacity>
+          {/*)} */}
         </View>
         
         <View className="w-full bg-white">
-        {post.media && post.media.length > 0 ? (
-          <View className="h-[50vh]">
-            <PostMediaGallery 
-              mediaItems={post.media} 
-              containerStyle={{ height: '100%' }} 
-            />
-          </View>
-        ) : (
-          <View className="h-[50vh] bg-gray-100 justify-center items-center">
-            <Text className="text-gray-400">No image</Text>
-          </View>
-        )}
-      </View>
-      
-      <View className="p-4 border-b border-gray-200 bg-white">
-      <View className="flex-row justify-between items-start">
-        <View className="flex-1 pr-4">
-          <Text className="text-base">{post.content}</Text>
-          
-          {post.hashtags && post.hashtags.length > 0 && (
-            <HashtagDisplay hashtags={post.hashptags} size="medium" />
+          {post.media && post.media.length > 0 ? (
+            <View className="h-[50vh]">
+              <PostMediaGallery 
+                mediaItems={post.media} 
+                containerStyle={{ height: '100%' }} 
+              />
+            </View>
+          ) : (
+            <View className="h-[50vh] bg-gray-100 justify-center items-center">
+              <Text className="text-gray-400">No image</Text>
+            </View>
           )}
         </View>
-        
-        <TouchableOpacity className="mr-4">
-          <Ionicons name="chatbubble-outline" size={24} color="#333" />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <SavePostIcon width={24} height={24} />
-        </TouchableOpacity>
-      </View>
-    </View>
+      
+        <View className="p-4 border-b border-gray-200 bg-white">
+          <View className="flex-row justify-between items-start">
+            <View className="flex-1 pr-4">
+              <Text className="text-base">{post.content}</Text>
+              
+              {post.hashtags && post.hashtags.length > 0 && (
+                <HashtagDisplay hashtags={post.hashtags} size="medium" />
+              )}
+            </View>
+            
+            <TouchableOpacity className="mr-4">
+              <Ionicons name="chatbubble-outline" size={24} color="#333" />
+            </TouchableOpacity>
+            <TouchableOpacity>
+              <SavePostIcon width={24} height={24} />
+            </TouchableOpacity>
+          </View>
+        </View>
         
         <View className="p-4 bg-white max-h-24">
           <View className="py-1">
@@ -102,6 +125,13 @@ export default function SinglePost() {
           </Text>
         </View>
       </ScrollView>
+      
+      <PostSettingsMenu
+        isVisible={isMenuVisible}
+        onClose={() => setIsMenuVisible(false)}
+        onDelete={handleDeletePost}
+        isDeleting={deletePostMutation.isPending}
+      />
     </View>
   );
 }

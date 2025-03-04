@@ -171,5 +171,52 @@ export const postResolvers = {
         )
       }
     },
+    async deletePost(_parent: unknown, { id }: { id: string }, context: ContextType) {
+      if (!context?.user) {
+        throw new Error('Authentication required')
+      }
+
+      const db = createD1Client(context.env)
+
+      try {
+        const post = await db.select().from(schema.post).where(eq(schema.post.id, id)).get()
+
+        if (!post) {
+          throw new Error('Post not found')
+        }
+
+        if (post.userId !== context.user.id) {
+          throw new Error('Not authorized to delete this post')
+        }
+
+        await db.delete(schema.postHashtag).where(eq(schema.postHashtag.postId, id))
+
+        const mediaItems = await db
+          .select()
+          .from(schema.media)
+          .where(eq(schema.media.postId, id))
+          .all()
+
+        await db.delete(schema.comment).where(eq(schema.comment.postId, id))
+        await db.delete(schema.savedPost).where(eq(schema.savedPost.postId, id))
+        if (mediaItems.length > 0) {
+          await db.delete(schema.media).where(eq(schema.media.postId, id))
+
+          // Add hereL Delete the actual files from Cloudflare
+        }
+
+        await db.delete(schema.post).where(eq(schema.post.id, id))
+
+        return {
+          id,
+          success: true,
+        }
+      } catch (error) {
+        console.error('Delete post error:', error)
+        throw new Error(
+          `Failed to delete post: ${error instanceof Error ? error.message : 'Unknown error'}`
+        )
+      }
+    },
   },
 }

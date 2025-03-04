@@ -14,6 +14,7 @@ export const typeDefs = `
     updatePost(id: ID!, input: PostInput!): Post!
     updateProfile(input: ProfileInput!): Profile!
     createHashtag(name: String!): Hashtag!
+    deletePost(id: ID!): DeletePostResponse!
   }
 
   type Subscription {
@@ -91,5 +92,10 @@ export const typeDefs = `
     bio: String
     image: String
     phoneNumber: String
+  }
+
+  type DeletePostResponse {
+    id: ID!
+    success: Boolean!
   }
 `
