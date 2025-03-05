@@ -1,5 +1,5 @@
 import { createD1Client } from '../../db'
-import { eq, inArray } from 'drizzle-orm'
+import { eq, inArray, sql } from 'drizzle-orm'
 import * as schema from '../../db/schema'
 import { nanoid } from 'nanoid'
 import type { ContextType } from '../../types'
@@ -32,20 +32,63 @@ export const postResolvers = {
         throw new Error('Authentication required')
       }
 
-      const db = createD1Client(context.env)
-      const post = await db.query.post.findFirst({
-        where: (posts, { eq }) => eq(posts.id, id),
-        with: {
-          user: true,
-          media: true,
-          comments: true,
-          hashtags: true,
-          savedBy: true,
-        },
-      })
+      try {
+        const db = createD1Client(context.env)
+        const post = await db.select().from(schema.post).where(eq(schema.post.id, id)).get()
 
-      if (!post) throw new Error('Post not found')
-      return post
+        if (!post) throw new Error('Post not found')
+
+        const user = await db
+          .select()
+          .from(schema.profile)
+          .where(post.userId ? eq(schema.profile.userId, post.userId) : sql`FALSE`)
+          .get()
+
+        const media = await db
+          .select()
+          .from(schema.media)
+          .where(eq(schema.media.postId, post.id))
+          .all()
+
+        const postHashtags = await db
+          .select()
+          .from(schema.postHashtag)
+          .where(eq(schema.postHashtag.postId, post.id))
+          .all()
+
+        let hashtags: Array<{ id: string; name: string }> = []
+        if (postHashtags.length > 0) {
+          const hashtagIds = postHashtags.map((ph) => ph.hashtagId)
+          const validHashtagIds = hashtagIds.filter((id): id is string => id !== null)
+          hashtags = await db
+            .select()
+            .from(schema.hashtag)
+            .where(
+              validHashtagIds.length > 0 ? inArray(schema.hashtag.id, validHashtagIds) : sql`FALSE`
+            )
+            .all()
+        }
+
+        const comments = await db
+          .select()
+          .from(schema.comment)
+          .where(eq(schema.comment.postId, post.id))
+          .all()
+
+        return {
+          ...post,
+          user,
+          media,
+          hashtags,
+          comments,
+          savedBy: [],
+        }
+      } catch (error) {
+        console.error('Error fetching post:', error)
+        throw new Error(
+          `Failed to fetch post: ${error instanceof Error ? error.message : 'Unknown error'}`
+        )
+      }
     },
   },
 
@@ -199,31 +242,37 @@ export const postResolvers = {
 
   Post: {
     async hashtags(parent: { id: string }, _: unknown, context: ContextType) {
-      const db = createD1Client(context.env)
+      try {
+        if (!parent.id) return []
 
-      const postHashtags = await db
-        .select({
-          hashtagId: schema.postHashtag.hashtagId,
-        })
-        .from(schema.postHashtag)
-        .where(eq(schema.postHashtag.postId, parent.id))
-        .all()
+        const db = createD1Client(context.env)
 
-      if (postHashtags.length === 0) {
+        const postHashtags = await db
+          .select({ hashtagId: schema.postHashtag.hashtagId })
+          .from(schema.postHashtag)
+          .where(eq(schema.postHashtag.postId, parent.id))
+          .all()
+
+        if (!postHashtags || postHashtags.length === 0) return []
+
+        const hashtagIds = postHashtags.map((ph) => ph.hashtagId).filter(Boolean)
+        const validHashtagIds = hashtagIds.filter((id): id is string => id !== null)
+
+        if (hashtagIds.length === 0) return []
+
+        const hashtags = await db
+          .select()
+          .from(schema.hashtag)
+          .where(
+            validHashtagIds.length > 0 ? inArray(schema.hashtag.id, validHashtagIds) : sql`FALSE`
+          )
+          .all()
+
+        return hashtags || []
+      } catch (error) {
+        console.error('Error resolving hashtags:', error)
         return []
       }
-
-      const hashtagIds = postHashtags
-        .map((ph) => ph.hashtagId)
-        .filter((id): id is string => id !== null && id !== undefined)
-
-      const hashtags = await db
-        .select()
-        .from(schema.hashtag)
-        .where(inArray(schema.hashtag.id, hashtagIds))
-        .all()
-
-      return hashtags
     },
   },
 }

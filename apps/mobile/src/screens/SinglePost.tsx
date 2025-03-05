@@ -12,6 +12,7 @@ import { HashtagDisplay } from '../components/hashtags/HashtagDisplay';
 import { PostSettingsMenu } from '../components/post/PostSettingsMenu';
 import { useDeletePost, useSinglePost } from '../hooks/usePosts';
 import { useSessionStore } from '../stores/sessionStore';
+import { LoadingSpinner } from 'components/LoadingSpinner';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 type SinglePostRouteProp = RouteProp<AppStackParamList, 'SinglePost'>;
@@ -29,9 +30,7 @@ export default function SinglePost() {
   
   if (isLoading) {
     return (
-      <View className="flex-1 justify-center items-center">
-        <ActivityIndicator size="large" color="#0000ff" />
-      </View>
+      <LoadingSpinner />
     );
   }
   
@@ -116,9 +115,9 @@ export default function SinglePost() {
             <View className="flex-1 pr-4">
               <Text className="text-base">{post.content}</Text>
               
-              {post.hashtags && post.hashtags.length > 0 && (
+              {post.hashtags && post.hashtags.length > 0 ? (
                 <HashtagDisplay hashtags={post.hashtags} size="medium" />
-              )}
+              ) : null}
             </View>
             
             <TouchableOpacity className="mr-4">
