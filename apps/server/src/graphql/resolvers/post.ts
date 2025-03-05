@@ -274,5 +274,16 @@ export const postResolvers = {
         return []
       }
     },
+    _commentCount: async (parent: { id: string }, _: unknown, context: ContextType) => {
+      const db = createD1Client(context.env)
+
+      const result = await db
+        .select({ count: sql`count(*)` })
+        .from(schema.comment)
+        .where(eq(schema.comment.postId, parent.id))
+        .get()
+
+      return result?.count || 0
+    },
   },
 }

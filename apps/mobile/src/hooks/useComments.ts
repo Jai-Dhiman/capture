@@ -2,9 +2,36 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { API_URL } from '@env'
 
-export const useUserPosts = (userId?: string) => {
+export type Comment = {
+  id: string
+  content: string
+  createdAt: string
+  user?: {
+    id: string
+    username: string
+    image?: string
+  }
+  parentComment?: {
+    id: string
+  }
+  replies?: Comment[]
+}
+
+export type SortOption = 'newest' | 'oldest'
+
+export const usePostComments = (
+  postId?: string,
+  parentCommentId?: string | null,
+  options?: {
+    limit?: number
+    sortBy?: SortOption
+    enabled?: boolean
+  }
+) => {
+  const { limit = 10, sortBy = 'newest', enabled = true } = options || {}
+
   return useQuery({
-    queryKey: ['userPosts', userId],
+    queryKey: ['comments', postId, parentCommentId, sortBy],
     queryFn: async () => {
       const {
         data: { session },
@@ -22,25 +49,88 @@ export const useUserPosts = (userId?: string) => {
         },
         body: JSON.stringify({
           query: `
-            query GetUserPosts($userId: ID!) {
-              profile(id: $userId) {
+            query GetComments($postId: ID!, $parentCommentId: ID, $limit: Int, $sortBy: CommentSortOption) {
+            comments(
+              postId: $postId, 
+              parentCommentId: $parentCommentId, 
+              limit: $limit, 
+              sortBy: $sortBy
+            ) {
+              id
+              content
+              createdAt
+              user {
                 id
-                posts {
+                username
+                image
+              }
+              parentComment {
+                id
+              }
+            }
+          }
+          `,
+          variables: {
+            postId,
+            parentCommentId: parentCommentId || null,
+            limit,
+            sortBy,
+          },
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.errors) {
+        console.error('GraphQL Errors:', data.errors)
+        throw new Error(data.errors[0].message)
+      }
+
+      return data.data.comments || []
+    },
+    enabled: enabled && !!postId,
+  })
+}
+
+export const useCommentReplies = (commentId?: string, enabled = true) => {
+  return useQuery({
+    queryKey: ['commentReplies', commentId],
+    queryFn: async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (!session?.access_token) {
+        throw new Error('No auth token available')
+      }
+
+      const response = await fetch(`${API_URL}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          query: `
+            query GetComment($id: ID!) {
+              comment(id: $id) {
+                id
+                replies {
                   id
                   content
                   createdAt
-                  media {
+                  userId
+                  user {
                     id
-                    storageKey
-                    type
-                    order
+                    username
+                    profileImage
                   }
                 }
               }
             }
           `,
           variables: {
-            userId,
+            id: commentId,
           },
         }),
       })
@@ -52,16 +142,25 @@ export const useUserPosts = (userId?: string) => {
         throw new Error(data.errors[0].message)
       }
 
-      return data.data.profile?.posts || []
+      return data.data.comment?.replies || []
     },
-    enabled: !!userId,
+    enabled: enabled && !!commentId,
   })
 }
 
-export const useSinglePost = (postId?: string) => {
-  return useQuery({
-    queryKey: ['post', postId],
-    queryFn: async () => {
+export const useCreateComment = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      postId,
+      content,
+      parentCommentId,
+    }: {
+      postId: string
+      content: string
+      parentCommentId?: string
+    }) => {
       const {
         data: { session },
       } = await supabase.auth.getSession()
@@ -77,37 +176,29 @@ export const useSinglePost = (postId?: string) => {
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
-          query: `
-            query GetPost($postId: ID!) {
-              post(id: $postId) {
+          query: ` 
+            mutation CreateComment($input: CommentInput!) {
+              createComment(input: $input) {
                 id
                 content
                 createdAt
-                userId
                 user {
                   id
                   username
                   image
                 }
-                media {
-                  id
-                  storageKey
-                  type
-                  order
-                }
-                hashtags {
-                  id
-                  name
-                }
-                comments {
+                parentComment {
                   id
                 }
-                _commentCount
               }
             }
           `,
           variables: {
-            postId,
+            input: {
+              postId,
+              content,
+              parentCommentId: parentCommentId || null,
+            },
           },
         }),
       })
@@ -116,25 +207,41 @@ export const useSinglePost = (postId?: string) => {
 
       if (data.errors) {
         console.error('GraphQL Errors:', data.errors)
-        throw new Error(data.errors[0].message)
+        throw new Error(data.errors[0].message || 'Unknown GraphQL error')
       }
 
-      return data.data.post
+      return data.data.createComment
     },
-    enabled: !!postId,
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['comments', variables.postId, variables.parentCommentId],
+      })
+
+      if (variables.parentCommentId) {
+        queryClient.invalidateQueries({
+          queryKey: ['commentReplies', variables.parentCommentId],
+        })
+      }
+
+      queryClient.invalidateQueries({
+        queryKey: ['post', variables.postId],
+      })
+    },
   })
 }
 
-export const useCreatePost = () => {
+export const useDeleteComment = () => {
+  const queryClient = useQueryClient()
+
   return useMutation({
     mutationFn: async ({
-      content,
-      mediaIds,
-      hashtagIds,
+      commentId,
+      postId,
+      parentCommentId,
     }: {
-      content: string
-      mediaIds: string[]
-      hashtagIds?: string[]
+      commentId: string
+      postId: string
+      parentCommentId?: string | null
     }) => {
       const {
         data: { session },
@@ -152,81 +259,15 @@ export const useCreatePost = () => {
         },
         body: JSON.stringify({
           query: `
-            mutation CreatePost($input: PostInput!) {
-              createPost(input: $input) {
-                id
-                content
-                createdAt
-                user {
-                  id
-                  username
-                  image
-                }
-                media {
-                  id
-                  storageKey
-                  type
-                  order
-                }
-                hashtags {
-                  id
-                  name
-                }
-              }
-            }
-          `,
-          variables: {
-            input: {
-              content,
-              mediaIds,
-              hashtagIds,
-            },
-          },
-        }),
-      })
-
-      const data = await response.json()
-
-      if (data.errors) {
-        console.error('GraphQL Errors:', data.errors)
-        throw new Error(data.errors[0].message || 'Unknown GraphQL error')
-      }
-
-      return data.data.createPost
-    },
-  })
-}
-
-export const useDeletePost = () => {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: async (postId: string) => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-
-      if (!session?.access_token) {
-        throw new Error('No auth token available')
-      }
-
-      const response = await fetch(`${API_URL}/graphql`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          query: `
-            mutation DeletePost($id: ID!) {
-              deletePost(id: $id) {
+            mutation DeleteComment($id: ID!) {
+              deleteComment(id: $id) {
                 id
                 success
               }
             }
           `,
           variables: {
-            id: postId,
+            id: commentId,
           },
         }),
       })
@@ -238,12 +279,24 @@ export const useDeletePost = () => {
         throw new Error(data.errors[0].message || 'Unknown GraphQL error')
       }
 
-      return data.data.deletePost
+      return {
+        ...data.data.deleteComment,
+        postId,
+        parentCommentId,
+      }
     },
-    onSuccess: () => {
-      // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['userPosts'] })
-      queryClient.invalidateQueries({ queryKey: ['feed'] })
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({
+        queryKey: ['comments', data.postId, data.parentCommentId],
+      })
+
+      queryClient.invalidateQueries({
+        queryKey: ['commentReplies', data.id],
+      })
+
+      queryClient.invalidateQueries({
+        queryKey: ['post', data.postId],
+      })
     },
   })
 }

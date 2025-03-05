@@ -5,7 +5,7 @@ export const typeDefs = `
     profile(id: ID!): Profile
     searchHashtags(query: String!, limit: Int, offset: Int): [Hashtag!]!
     searchUsers(query: String!): [Profile!]!
-    comments(postId: ID!, limit: Int, offset: Int): [Comment!]!
+    comments(postId: ID!, parentCommentId: ID, limit: Int, offset: Int, sortBy: CommentSortOption): [Comment!]!
   }
 
   type Mutation {
@@ -15,6 +15,7 @@ export const typeDefs = `
     updateProfile(input: ProfileInput!): Profile!
     createHashtag(name: String!): Hashtag!
     deletePost(id: ID!): DeletePostResponse!
+    deleteComment(id: ID!): DeleteCommentResponse!
   }
 
   type Subscription {
@@ -47,6 +48,7 @@ export const typeDefs = `
     hashtags: [Hashtag!]!
     savedBy: [Profile!]!
     createdAt: String!
+    _commentCount: Int!
   }
 
   type Comment {
@@ -95,6 +97,16 @@ export const typeDefs = `
   }
 
   type DeletePostResponse {
+    id: ID!
+    success: Boolean!
+  }
+
+  enum CommentSortOption {
+    newest
+    oldest
+  }
+
+  type DeleteCommentResponse {
     id: ID!
     success: Boolean!
   }

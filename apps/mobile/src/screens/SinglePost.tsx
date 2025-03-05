@@ -13,6 +13,7 @@ import { PostSettingsMenu } from '../components/post/PostSettingsMenu';
 import { useDeletePost, useSinglePost } from '../hooks/usePosts';
 import { useSessionStore } from '../stores/sessionStore';
 import { LoadingSpinner } from 'components/LoadingSpinner';
+import { CommentSection } from '../components/comment/CommentSection';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 type SinglePostRouteProp = RouteProp<AppStackParamList, 'SinglePost'>;
@@ -56,8 +57,6 @@ export default function SinglePost() {
     }
   };
 
-  console.log("Post data in SinglePost:", post);
-  console.log("Hashtags in post:", post.hashtags);
   return (
     <View className="flex-1">
       <Image
@@ -132,8 +131,8 @@ export default function SinglePost() {
         </View>
         
         <View className="p-4 bg-white max-h-24">
-          <View className="py-1">
-            <Text className="text-gray-500 text-center">No comments yet</Text>
+          <View className="p-4 bg-white">
+            <CommentSection postId={post.id} commentCount={post._commentCount} />
           </View>
           
           <Text className="text-xs text-gray-500 mt-2">
