@@ -60,7 +60,7 @@ export default function Feed() {
 
       <TouchableOpacity 
         className="ml-auto"
-        onPress={() => navigation.navigate('UserSearch')}
+        onPress={() => navigation.navigate('Search')}
       >
         <Ionicons name="search" size={24} color="black" />
       </TouchableOpacity>

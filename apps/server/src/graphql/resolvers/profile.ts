@@ -1,5 +1,5 @@
 import { createD1Client } from '../../db'
-import { eq, inArray, sql } from 'drizzle-orm'
+import { eq, inArray, like } from 'drizzle-orm'
 import * as schema from '../../db/schema'
 
 export const profileResolvers = {
@@ -73,16 +73,30 @@ export const profileResolvers = {
       const db = createD1Client(context.env)
 
       try {
-        const { sql } = require('drizzle-orm')
         const likeQuery = `%${query}%`
 
-        console.log('Searching for:', query)
-        console.log('SQL query:', sql`username LIKE ${likeQuery}`)
+        const profiles = await db
+          .select()
+          .from(schema.profile)
+          .where(like(schema.profile.username, likeQuery))
+          .limit(10)
+          .all()
 
-        const profiles = await db.select().from(schema.profile).limit(5).all()
+        console.log(`Found ${profiles.length} profiles for query "${query}"`)
 
-        console.log('All profiles:', profiles)
-        return profiles || []
+        const currentUserId = context.user.id
+        const followingRelationships = await db
+          .select()
+          .from(schema.relationship)
+          .where(eq(schema.relationship.followerId, currentUserId))
+          .all()
+
+        const followingIds = new Set(followingRelationships.map((r) => r.followedId))
+
+        return profiles.map((profile) => ({
+          ...profile,
+          isFollowing: followingIds.has(profile.userId),
+        }))
       } catch (error) {
         console.error('Error searching users:', error)
         return []

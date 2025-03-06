@@ -8,7 +8,7 @@ export type AppStackParamList = {
   NewPost: undefined
   Profile: { userId?: string } | undefined
   SinglePost: { post: any }
-  UserSearch: undefined
+  Search: undefined
 }
 
 export type RootStackParamList = {

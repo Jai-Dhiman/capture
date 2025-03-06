@@ -3,7 +3,7 @@ import Feed from '../../screens/Feed';
 import NewPost from '../../screens/NewPost';
 import Profile from '../../screens/Profile';
 import SinglePost from '../../screens/SinglePost';
-import UserSearch from '../../screens/UserSearch';
+import Search from '../../screens/Search';
 import { AppStackParamList } from '../../types/navigation';
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
@@ -20,7 +20,7 @@ export default function AppNavigator() {
       <Stack.Screen name="NewPost" component={NewPost} />
       <Stack.Screen name="Profile" component={Profile} />
       <Stack.Screen name="SinglePost" component={SinglePost} />
-      <Stack.Screen name="UserSearch" component={UserSearch} />
+      <Stack.Screen name="Search" component={Search} />
     </Stack.Navigator>
   );
 }
