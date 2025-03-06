@@ -1,5 +1,5 @@
 import { createD1Client } from '../../db'
-import { eq, inArray } from 'drizzle-orm'
+import { eq, inArray, sql } from 'drizzle-orm'
 import * as schema from '../../db/schema'
 
 export const profileResolvers = {
@@ -60,5 +60,31 @@ export const profileResolvers = {
         posts: postsWithMedia,
       }
     },
+  },
+
+  async searchUsers(_: unknown, { query }: { query: string }, context: { env: any; user: any }) {
+    if (!context.user) {
+      throw new Error('Authentication required')
+    }
+
+    if (!query || query.trim() === '') {
+      return []
+    }
+
+    const db = createD1Client(context.env)
+
+    try {
+      const profiles = await db
+        .select()
+        .from(schema.profile)
+        .where(sql`username LIKE ${`%${query}%`}`)
+        .limit(20)
+        .all()
+
+      return profiles || []
+    } catch (error) {
+      console.error('Error searching users:', error)
+      throw new Error('Failed to search users')
+    }
   },
 }

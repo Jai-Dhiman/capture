@@ -2,6 +2,7 @@ import { hashtagResolvers } from './hashtag'
 import { postResolvers } from './post'
 import { profileResolvers } from './profile'
 import { commentResolvers } from './comment'
+import { relationshipResolvers } from './relationship'
 
 export const resolvers = {
   Query: {
@@ -12,10 +13,15 @@ export const resolvers = {
   },
   Mutation: {
     ...postResolvers.Mutation,
+    ...relationshipResolvers.Mutation,
     ...hashtagResolvers.Mutation,
     ...commentResolvers.Mutation,
   },
-  Hashtag: hashtagResolvers.Hashtag || {},
+
   Post: postResolvers.Post || {},
+  Profile: {
+    ...relationshipResolvers.Profile,
+  },
+  Hashtag: hashtagResolvers.Hashtag || {},
   Comment: commentResolvers.Comment,
 }

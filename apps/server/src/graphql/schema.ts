@@ -16,6 +16,8 @@ export const typeDefs = `
     createHashtag(name: String!): Hashtag!
     deletePost(id: ID!): DeletePostResponse!
     deleteComment(id: ID!): DeleteCommentResponse!
+    followUser(userId: ID!): FollowResponse!
+    unfollowUser(userId: ID!): UnfollowResponse!
   }
 
   type Subscription {
@@ -34,6 +36,9 @@ export const typeDefs = `
     posts: [Post!]!
     followers: [Profile!]!
     following: [Profile!]!
+    isFollowing: Boolean
+    followersCount: Int!
+    followingCount: Int!
     createdAt: String!
     updatedAt: String!
   }
@@ -109,5 +114,21 @@ export const typeDefs = `
   type DeleteCommentResponse {
     id: ID!
     success: Boolean!
+  }
+
+  type FollowResponse {
+    success: Boolean!
+    relationship: Relationship
+  }
+
+  type UnfollowResponse {
+    success: Boolean!
+  }
+
+  type Relationship {
+    id: ID!
+    followerId: ID!
+    followedId: ID!
+    createdAt: String!
   }
 `

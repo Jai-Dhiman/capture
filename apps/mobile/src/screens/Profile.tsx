@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Image, Dimensions } from 'react-native';
 import { useSessionStore } from '../stores/sessionStore';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../types/navigation';
 import { useUserPosts } from '../hooks/usePosts';
+import { useProfile } from '../hooks/auth/useProfile';
 import { MediaImage } from '../components/media/MediaImage';
 import { Ionicons } from '@expo/vector-icons';
 import SavedPosts from "../assets/icons/Favorites Icon.svg"
@@ -12,18 +13,24 @@ import Placeholder from "../assets/icons/View Password Icon.svg"
 import NewPost from "../assets/icons/Plus Icon.svg"
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ProfileImage } from '../components/media/ProfileImage';
+import { FollowButton } from '../components/profile/FollowButton';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
+type ProfileRouteProp = RouteProp<AppStackParamList, 'Profile'>;
 const POSTS_PER_PAGE = 4;
-const { width, height } = Dimensions.get('window');
 
 export default function Profile() {
   const navigation = useNavigation<NavigationProp>();
-  const { authUser, userProfile } = useSessionStore();
-  const { data: posts, isLoading} = useUserPosts(authUser?.id);
-  const [currentPage, setCurrentPage] = useState(0);
+  const route = useRoute<ProfileRouteProp>();
+  const { authUser } = useSessionStore();
   
-  const isOwnProfile = true;
+  // If userId is provided in route params, use that, otherwise use current user's ID
+  const userId = route.params?.userId || authUser?.id;
+  const isOwnProfile = userId === authUser?.id;
+  
+  const { data: profileData, isLoading: profileLoading } = useProfile(userId);
+  const { data: posts, isLoading: postsLoading } = useUserPosts(userId);
+  const [currentPage, setCurrentPage] = useState(0);
   
   const totalPages = posts ? Math.ceil(posts.length / POSTS_PER_PAGE) : 0;
 
@@ -34,6 +41,10 @@ export default function Profile() {
   const handlePageChange = (pageIndex: number) => {
     setCurrentPage(pageIndex);
   };
+
+  if (profileLoading) {
+    return <LoadingSpinner fullScreen message="Loading profile..." />;
+  }
 
   return (
     <View className="flex-1 bg-[#DCDCDE]">
@@ -57,24 +68,39 @@ export default function Profile() {
         {/* Top section */}
         <View className="bg-white p-4">
           <View className="flex-row">
-            {userProfile?.profileImage ? (
+            {profileData?.profileImage ? (
               <View className="w-32 h-32 rounded-full overflow-hidden">
-                <ProfileImage cloudflareId={userProfile.profileImage} />
+                <ProfileImage cloudflareId={profileData.profileImage} />
               </View>
             ) : (
               <View className="w-32 h-32 rounded-full bg-gray-200" />
             )}
             
             <View className="ml-4 flex-1">
-              <Text className="text-xl font-bold">{userProfile?.username || 'Username'}</Text>
-              <Text className="text-gray-600 mt-1">{userProfile?.bio || 'No bio yet'}</Text>
+              <Text className="text-xl font-bold">{profileData?.username || 'Username'}</Text>
+              <Text className="text-gray-600 mt-1">{profileData?.bio || 'No bio yet'}</Text>
               
-              {isOwnProfile && (
+              <View className="flex-row mt-2">
+                <Text className="mr-4">
+                  <Text className="font-bold">{profileData?.followersCount || 0}</Text> followers
+                </Text>
+                <Text>
+                  <Text className="font-bold">{profileData?.followingCount || 0}</Text> following
+                </Text>
+              </View>
+              
+              {isOwnProfile ? (
                 <TouchableOpacity 
                   className="bg-[#E4CAC7] py-2 px-4 mt-3 self-start"
                 >
                   <Text className="text-center font-semibold">Settings</Text>
                 </TouchableOpacity>
+              ) : (
+                <FollowButton 
+                  userId={userId!} 
+                  isFollowing={profileData?.isFollowing} 
+                  className="mt-3 self-start"
+                />
               )}
             </View>
           </View>
@@ -98,7 +124,7 @@ export default function Profile() {
         
         {/* Posts grid */}
         <View className="mt-2">
-          {isLoading ? (
+          {postsLoading ? (
             <LoadingSpinner />
           ): posts?.length === 0 ? (
             <Text className="text-center py-4 text-gray-500">No posts yet</Text>
@@ -157,14 +183,16 @@ export default function Profile() {
         </View>
       </ScrollView>
       
-      {/* New Post button */}
-      <TouchableOpacity 
-        className="absolute bottom-6 right-6 bg-[#E4CAC7] px-4 py-3 rounded-full flex-row items-center shadow-lg"
-        onPress={() => navigation.navigate('NewPost')}
-      >
-         <NewPost width={24} height={24}/>
-        <Text className="ml-2 font-medium text-black">New Post</Text>
-      </TouchableOpacity>
+      {/* New Post button - only show on own profile */}
+      {isOwnProfile && (
+        <TouchableOpacity 
+          className="absolute bottom-6 right-6 bg-[#E4CAC7] px-4 py-3 rounded-full flex-row items-center shadow-lg"
+          onPress={() => navigation.navigate('NewPost')}
+        >
+          <NewPost width={24} height={24}/>
+          <Text className="ml-2 font-medium text-black">New Post</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }

@@ -6,7 +6,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CompositeNavigationProp } from '@react-navigation/native';
 import { useSessionStore } from '../stores/sessionStore';
 import { AppStackParamList, RootStackParamList } from '../types/navigation';
-import { DeleteUserButton } from '../components/DeleteUserButton';
+import { Ionicons } from '@expo/vector-icons';
 
 type NavigationProp = CompositeNavigationProp<
   NativeStackNavigationProp<AppStackParamList>,
@@ -56,6 +56,13 @@ export default function Feed() {
         onPress={handleLogout}
       >
         <Text className="text-white text-base font-bold">Logout</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity 
+        className="ml-auto"
+        onPress={() => navigation.navigate('UserSearch')}
+      >
+        <Ionicons name="search" size={24} color="black" />
       </TouchableOpacity>
     </View>
   );
