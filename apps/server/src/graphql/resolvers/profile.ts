@@ -74,17 +74,19 @@ export const profileResolvers = {
     const db = createD1Client(context.env)
 
     try {
-      const profiles = await db
-        .select()
-        .from(schema.profile)
-        .where(sql`username LIKE ${`%${query}%`}`)
-        .limit(20)
-        .all()
+      const { sql } = require('drizzle-orm')
+      const likeQuery = `%${query}%`
 
+      console.log('Searching for:', query)
+      console.log('SQL query:', sql`username LIKE ${likeQuery}`)
+
+      const profiles = await db.select().from(schema.profile).limit(5).all()
+
+      console.log('All profiles:', profiles)
       return profiles || []
     } catch (error) {
       console.error('Error searching users:', error)
-      throw new Error('Failed to search users')
+      return []
     }
   },
 }

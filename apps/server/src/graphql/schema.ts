@@ -27,10 +27,11 @@ export const typeDefs = `
 
   type Profile {
     id: ID!
+    userId: String!
     username: String!
     email: String!
     phoneNumber: String
-    image: String
+    profileImage: String
     bio: String
     verifiedType: String!
     posts: [Post!]!
