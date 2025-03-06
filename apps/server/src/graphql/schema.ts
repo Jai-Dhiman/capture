@@ -29,8 +29,6 @@ export const typeDefs = `
     id: ID!
     userId: String!
     username: String!
-    email: String!
-    phoneNumber: String
     profileImage: String
     bio: String
     verifiedType: String!

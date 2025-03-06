@@ -60,33 +60,33 @@ export const profileResolvers = {
         posts: postsWithMedia,
       }
     },
-  },
 
-  async searchUsers(_: unknown, { query }: { query: string }, context: { env: any; user: any }) {
-    if (!context.user) {
-      throw new Error('Authentication required')
-    }
+    async searchUsers(_: unknown, { query }: { query: string }, context: { env: any; user: any }) {
+      if (!context.user) {
+        throw new Error('Authentication required')
+      }
 
-    if (!query || query.trim() === '') {
-      return []
-    }
+      if (!query || query.trim() === '') {
+        return []
+      }
 
-    const db = createD1Client(context.env)
+      const db = createD1Client(context.env)
 
-    try {
-      const { sql } = require('drizzle-orm')
-      const likeQuery = `%${query}%`
+      try {
+        const { sql } = require('drizzle-orm')
+        const likeQuery = `%${query}%`
 
-      console.log('Searching for:', query)
-      console.log('SQL query:', sql`username LIKE ${likeQuery}`)
+        console.log('Searching for:', query)
+        console.log('SQL query:', sql`username LIKE ${likeQuery}`)
 
-      const profiles = await db.select().from(schema.profile).limit(5).all()
+        const profiles = await db.select().from(schema.profile).limit(5).all()
 
-      console.log('All profiles:', profiles)
-      return profiles || []
-    } catch (error) {
-      console.error('Error searching users:', error)
-      return []
-    }
+        console.log('All profiles:', profiles)
+        return profiles || []
+      } catch (error) {
+        console.error('Error searching users:', error)
+        return []
+      }
+    },
   },
 }
