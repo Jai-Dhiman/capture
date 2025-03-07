@@ -16,7 +16,7 @@ type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'Signup'>
 }
 
-export default function SignupScreen({ navigation }: Props) {
+export default function EmailSignupScreen({ navigation }: Props) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')

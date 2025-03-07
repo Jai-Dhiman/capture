@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity, Text, Alert } from 'react-native';
+import { TouchableOpacity, Text, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import * as WebBrowser from 'expo-web-browser';
 import { supabase } from '../lib/supabase';
@@ -64,23 +64,21 @@ export default function OAuth() {
   };
 
   return (
-    <View>
-      <TouchableOpacity 
-        className="bg-white h-[56px] rounded-[30px] shadow-md flex-row items-center justify-center mb-[23px]"
-        onPress={handleGoogleLogin}
-        disabled={isLoading}
-      >
-        {isLoading ? (
-          <LoadingSpinner message="Connecting to Google..." />
-        ) : (
-          <>
-            <GoogleIcon width={24} height={24} style={{ marginRight: 7 }} />
-            <Text className="text-base font-bold font-roboto text-[#1C1C1C]">
-              Continue with Google
-            </Text>
-          </>
-        )}
-      </TouchableOpacity>
-    </View>
+    <TouchableOpacity 
+      className="bg-white h-[56px] rounded-[30px] shadow-md flex-row items-center justify-center mb-[23px]"
+      onPress={handleGoogleLogin}
+      disabled={isLoading}
+    >
+      {isLoading ? (
+        <LoadingSpinner />
+      ) : (
+        <>
+          <GoogleIcon width={24} height={24} style={{ marginRight: 16 }} />
+          <Text className="text-base font-bold font-roboto text-[#1C1C1C]">
+            Sign In with Google
+          </Text>
+        </>
+      )}
+    </TouchableOpacity>
   );
 }
