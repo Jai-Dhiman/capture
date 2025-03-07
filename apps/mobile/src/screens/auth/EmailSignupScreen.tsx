@@ -212,8 +212,6 @@ export default function EmailSignupScreen({ navigation }: Props) {
               </TouchableOpacity>
               
               <View className="h-[1px] bg-[#7B7B7B] my-[29px]" />
-              <OAuth />
-              <View className="h-[1px] bg-[#7B7B7B] my-[29px]" />
             </View>
           </View>
         </View>

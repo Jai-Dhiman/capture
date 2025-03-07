@@ -11,7 +11,7 @@ import { AuthStackParamList } from '../../types/navigation';
 import OAuth from '../../components/OAuth';
 import AppleIcon from '../../assets/icons/apple.svg';
 import EmailIcon from '../../assets/icons/Email Icon.svg';
-import BackIcon from '../../assets/icons/Back Icon.svg';
+import Header from '../../components/Header';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'EmailSignup'>
@@ -27,27 +27,16 @@ export default function SignupScreen({ navigation }: Props) {
           resizeMode="cover"
         />
         
-        <View className="w-[299px] h-[58px] mx-auto mt-[84px]">
-          <TouchableOpacity 
-            className="w-9 h-9 absolute left-[3%]"
-            onPress={() => navigation.goBack()}
-          >
-            <View className="w-8 h-8 bg-[#DFD2CD] rounded-full shadow-md flex justify-center items-center">
-              <BackIcon width={20} height={20} />
-            </View>
-          </TouchableOpacity>
-          
-          <Text className="text-[40px] font-roboto font-light text-center">
-            Capture
-          </Text>
-          <View className="h-[1px] bg-black/10 w-full mt-2"></View>
-        </View>
+        <Header 
+          showBackButton={true}
+          onBackPress={() => navigation.goBack()}
+        />
         <View className="px-6 mt-[120px]">
 
           {/* Email signup button */}
           <TouchableOpacity 
             className="bg-white h-[56px] rounded-[30px] shadow-md flex-row items-center justify-center mb-[23px]"
-            onPress={() => navigation.navigate('Signup')}
+            onPress={() => navigation.navigate('EmailSignup')}
           >
             <EmailIcon width={24} height={24} style={{ marginRight: 16 }} />
             <Text className="text-base font-bold font-roboto text-[#1C1C1C]">
