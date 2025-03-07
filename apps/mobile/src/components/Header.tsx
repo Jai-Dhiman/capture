@@ -19,7 +19,7 @@ const Header: React.FC<HeaderProps> = ({
           onPress={onBackPress}
         >
           <View className="w-8 h-8 bg-[#DFD2CD] rounded-full shadow-md flex justify-center items-center">
-            <BackIcon width={20} height={20} />
+            <BackIcon width={24} height={24} />
           </View>
         </TouchableOpacity>
       )}
