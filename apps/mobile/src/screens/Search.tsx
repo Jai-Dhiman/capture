@@ -33,13 +33,11 @@ export default function UserSearch() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
-  // Use the existing hook for hashtag search
   const isHashtagSearch = searchQuery.startsWith('#');
   const hashtagQuery = isHashtagSearch ? searchQuery.substring(1) : '';
   const { data: hashtagResults = [], isLoading: hashtagsLoading } = 
     useSearchHashtags(hashtagQuery, isHashtagSearch && hashtagQuery.length > 0);
 
-  // Debounce search query
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       setDebouncedQuery(searchQuery);
@@ -52,7 +50,6 @@ export default function UserSearch() {
   }, [searchQuery]);
 
   const handleSearch = async () => {
-    // Reset states
     setErrorMessage(null);
     
     if (!searchQuery.trim()) {
@@ -60,7 +57,6 @@ export default function UserSearch() {
       return;
     }
 
-    // Don't search for users if it's a hashtag search
     if (isHashtagSearch) {
       return;
     }
@@ -112,7 +108,6 @@ export default function UserSearch() {
       const users = data.data?.searchUsers || [];
       setUserResults(users);
       
-      console.log(`Found ${users.length} users matching "${searchQuery}"`);
       
     } catch (error: any) {
       console.error('Search error:', error);
@@ -128,7 +123,7 @@ export default function UserSearch() {
   };
 
   const handleHashtagPress = (hashtag: HashtagSearchResult) => {
-    // For now, just log. You can implement navigation to hashtag results later
+    // For now, this just log. Implement navigation to hashtag results later
     console.log(`Selected hashtag: #${hashtag.name}`);
     // navigation.navigate('HashtagResults', { hashtagId: hashtag.id });
   };
@@ -170,7 +165,6 @@ export default function UserSearch() {
     );
   };
 
-  // Prepare data for sectioned list
   const sections = [];
   
   if (isHashtagSearch) {

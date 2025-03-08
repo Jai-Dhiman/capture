@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { API_URL } from '@env'
 
@@ -101,5 +101,113 @@ export const useUnfollowUser = () => {
     onSuccess: (_, userId) => {
       queryClient.invalidateQueries({ queryKey: ['profile', userId] })
     },
+  })
+}
+
+export const useFollowers = (userId: string | undefined) => {
+  return useQuery({
+    queryKey: ['followers', userId],
+    queryFn: async () => {
+      if (!userId) return []
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (!session?.access_token) {
+        throw new Error('No auth token available')
+      }
+
+      const response = await fetch(`${API_URL}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          query: `
+            query GetFollowers($userId: ID!) {
+              followers(userId: $userId) {
+                id
+                userId
+                username
+                profileImage
+                isFollowing
+              }
+            }
+          `,
+          variables: {
+            userId,
+          },
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.errors) {
+        console.error('GraphQL Errors:', data.errors)
+        throw new Error(data.errors[0].message || 'Unknown GraphQL error')
+      }
+
+      return data.data.followers || []
+    },
+    enabled: !!userId,
+  })
+}
+
+export const useFollowing = (userId: string | undefined) => {
+  return useQuery({
+    queryKey: ['following', userId],
+    queryFn: async () => {
+      if (!userId) return []
+
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+
+        if (!session?.access_token) {
+          console.warn('No auth token available')
+          return []
+        }
+
+        const response = await fetch(`${API_URL}/graphql`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            query: `
+              query GetFollowing($userId: ID!) {
+                following(userId: $userId) {
+                  id
+                  userId
+                  username
+                  profileImage
+                  isFollowing
+                }
+              }
+            `,
+            variables: {
+              userId,
+            },
+          }),
+        })
+
+        const data = await response.json()
+
+        if (data.errors) {
+          console.error('GraphQL Errors:', data.errors)
+          return []
+        }
+
+        return data.data?.following || []
+      } catch (error) {
+        console.error('Error fetching following:', error)
+        return []
+      }
+    },
+    enabled: !!userId,
   })
 }

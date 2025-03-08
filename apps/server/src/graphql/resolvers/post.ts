@@ -274,6 +274,7 @@ export const postResolvers = {
         return []
       }
     },
+
     _commentCount: async (parent: { id: string }, _: unknown, context: ContextType) => {
       const db = createD1Client(context.env)
 

@@ -8,6 +8,8 @@ export const typeDefs = `
     comments(postId: ID!, parentCommentId: ID, limit: Int, offset: Int, sortBy: CommentSortOption): [Comment!]!
     comment(id: ID!): Comment
     savedPosts(limit: Int, offset: Int): [Post!]!
+    followers(userId: ID!): [Profile!]!
+    following(userId: ID!): [Profile!]!
   }
 
   type Mutation {

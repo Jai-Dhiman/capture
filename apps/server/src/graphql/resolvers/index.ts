@@ -12,6 +12,7 @@ export const resolvers = {
     ...hashtagResolvers.Query,
     ...commentResolvers.Query,
     ...savedPostResolvers.Query,
+    ...relationshipResolvers.Query,
   },
   Mutation: {
     ...postResolvers.Mutation,

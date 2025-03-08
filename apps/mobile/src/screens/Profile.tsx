@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, Modal, Dimensions } from 'react-native';
 import { useSessionStore } from '../stores/sessionStore';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../types/navigation';
 import { useUserPosts } from '../hooks/usePosts';
 import { useProfile } from '../hooks/auth/useProfile';
+import { useFollowers, useFollowing } from '../hooks/useRelationships';
 import { MediaImage } from '../components/media/MediaImage';
 import { Ionicons } from '@expo/vector-icons';
 import SavedPosts from "../assets/icons/Favorites Icon.svg"
@@ -14,6 +15,7 @@ import NewPost from "../assets/icons/Plus Icon.svg"
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ProfileImage } from '../components/media/ProfileImage';
 import { FollowButton } from '../components/profile/FollowButton';
+import { FollowList } from '../components/profile/FollowList';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 type ProfileRouteProp = RouteProp<AppStackParamList, 'Profile'>;
@@ -24,13 +26,17 @@ export default function Profile() {
   const route = useRoute<ProfileRouteProp>();
   const { authUser } = useSessionStore();
   
-  // If userId is provided in route params, use that, otherwise use current user's ID
   const userId = route.params?.userId || authUser?.id;
   const isOwnProfile = userId === authUser?.id;
   
+  const [showFollowers, setShowFollowers] = useState(false);
+  const [showFollowing, setShowFollowing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  
   const { data: profileData, isLoading: profileLoading } = useProfile(userId);
   const { data: posts, isLoading: postsLoading } = useUserPosts(userId);
-  const [currentPage, setCurrentPage] = useState(0);
+  const { data: followers, isLoading: followersLoading } = useFollowers(userId);
+  const { data: following, isLoading: followingLoading } = useFollowing(userId);
   
   const totalPages = posts ? Math.ceil(posts.length / POSTS_PER_PAGE) : 0;
 
@@ -48,14 +54,12 @@ export default function Profile() {
 
   return (
     <View className="flex-1 bg-[#DCDCDE]">
-      {/* Background Image */}
       <Image
         source={require('../assets/Fluid Background Coffee.png')}
         style={{ width: '100%', height: '100%', position: 'absolute' }}
         resizeMode="cover"
       />
       
-      {/* Header */}
       <View className="flex-row items-center p-4 bg-transparent">
         <TouchableOpacity onPress={() => navigation.navigate('Feed')}>
           <Ionicons name="arrow-back" size={28} color="black" />
@@ -65,7 +69,6 @@ export default function Profile() {
       </View>
       
       <ScrollView className="flex-1">
-        {/* Top section */}
         <View className="bg-white p-4">
           <View className="flex-row">
             {profileData?.profileImage ? (
@@ -81,12 +84,16 @@ export default function Profile() {
               <Text className="text-gray-600 mt-1">{profileData?.bio || 'No bio yet'}</Text>
               
               <View className="flex-row mt-2">
-                <Text className="mr-4">
-                  <Text className="font-bold">{profileData?.followersCount || 0}</Text> followers
-                </Text>
-                <Text>
-                  <Text className="font-bold">{profileData?.followingCount || 0}</Text> following
-                </Text>
+                <TouchableOpacity onPress={() => setShowFollowers(true)}>
+                  <Text className="mr-4">
+                    <Text className="font-bold">{profileData?.followersCount || 0}</Text> followers
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setShowFollowing(true)}>
+                  <Text>
+                    <Text className="font-bold">{profileData?.followingCount || 0}</Text> following
+                  </Text>
+                </TouchableOpacity>
               </View>
               
               {isOwnProfile ? (
@@ -122,7 +129,6 @@ export default function Profile() {
           <View className="h-[1px] bg-gray-300 w-full" />
         </View>
         
-        {/* Posts grid */}
         <View className="mt-2">
           {postsLoading ? (
             <LoadingSpinner />
@@ -158,7 +164,6 @@ export default function Profile() {
                 }
               </View>
               
-              {/* Pagination */}
               {totalPages > 1 && (
                 <View className="flex-row justify-center py-4">
                   <View className="bg-[#E4CAC7] px-4 py-2 rounded-full flex-row">
@@ -183,7 +188,6 @@ export default function Profile() {
         </View>
       </ScrollView>
       
-      {/* New Post button - only show on own profile */}
       {isOwnProfile && (
         <TouchableOpacity 
           className="absolute bottom-6 right-6 bg-[#E4CAC7] px-4 py-3 rounded-full flex-row items-center shadow-lg"
@@ -193,6 +197,34 @@ export default function Profile() {
           <Text className="ml-2 font-medium text-black">New Post</Text>
         </TouchableOpacity>
       )}
+      
+      <Modal
+        visible={showFollowers}
+        animationType="slide"
+        onRequestClose={() => setShowFollowers(false)}
+      >
+        <FollowList
+          data={followers || []}
+          loading={followersLoading}
+          title="Followers"
+          onClose={() => setShowFollowers(false)}
+          currentUserId={authUser?.id}
+        />
+      </Modal>
+
+      <Modal
+        visible={showFollowing}
+        animationType="slide"
+        onRequestClose={() => setShowFollowing(false)}
+      >
+        <FollowList
+          data={following || []}
+          loading={followingLoading}
+          title="Following"
+          onClose={() => setShowFollowing(false)}
+          currentUserId={authUser?.id}
+        />
+      </Modal>
     </View>
   );
 }

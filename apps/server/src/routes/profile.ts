@@ -111,6 +111,7 @@ router.get('/:userId', async (c) => {
   }
 })
 
+//Update Delete to Delete Posts/Comments (maybe soft delete)
 router.delete('/:userId', async (c) => {
   const userId = c.req.param('userId')
   const user = c.get('user')

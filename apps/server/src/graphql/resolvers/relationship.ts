@@ -5,6 +5,118 @@ import { nanoid } from 'nanoid'
 import type { ContextType } from '../../types'
 
 export const relationshipResolvers = {
+  Query: {
+    async followers(_: unknown, { userId }: { userId: string }, context: ContextType) {
+      if (!userId) {
+        return []
+      }
+
+      try {
+        const db = createD1Client(context.env)
+
+        const relationships = await db
+          .select()
+          .from(schema.relationship)
+          .where(eq(schema.relationship.followedId, userId))
+          .all()
+
+        const followerIds = relationships.map((r) => r.followerId)
+
+        if (followerIds.length === 0) {
+          return []
+        }
+
+        const followers = await Promise.all(
+          followerIds.map(async (followerId) => {
+            if (!followerId) return null
+
+            const profile = await db
+              .select()
+              .from(schema.profile)
+              .where(eq(schema.profile.userId, followerId))
+              .get()
+
+            if (profile) {
+              if (context.user?.id) {
+                const isFollowing = await db
+                  .select()
+                  .from(schema.relationship)
+                  .where(
+                    and(
+                      eq(schema.relationship.followerId, context.user.id),
+                      eq(schema.relationship.followedId, followerId)
+                    )
+                  )
+                  .get()
+
+                return {
+                  ...profile,
+                  isFollowing: !!isFollowing,
+                }
+              }
+              return profile
+            }
+
+            return null
+          })
+        )
+
+        return followers.filter(Boolean)
+      } catch (error) {
+        console.error('Error in followers resolver:', error)
+        return []
+      }
+    },
+
+    async following(_: unknown, { userId }: { userId: string }, context: ContextType) {
+      if (!userId) {
+        return []
+      }
+
+      try {
+        const db = createD1Client(context.env)
+
+        const relationships = await db
+          .select()
+          .from(schema.relationship)
+          .where(eq(schema.relationship.followerId, userId))
+          .all()
+
+        const followedIds = relationships.map((r) => r.followedId)
+
+        if (followedIds.length === 0) {
+          return []
+        }
+
+        const following = await Promise.all(
+          followedIds.map(async (followedId) => {
+            if (!followedId) return null
+
+            const profile = await db
+              .select()
+              .from(schema.profile)
+              .where(eq(schema.profile.userId, followedId))
+              .get()
+
+            if (profile) {
+              return {
+                ...profile,
+                isFollowing: true,
+              }
+            }
+
+            return null
+          })
+        )
+
+        return following.filter(Boolean)
+      } catch (error) {
+        console.error('Error in following resolver:', error)
+        return []
+      }
+    },
+  },
+
   Mutation: {
     async followUser(_: unknown, { userId }: { userId: string }, context: ContextType) {
       if (!context?.user) {
