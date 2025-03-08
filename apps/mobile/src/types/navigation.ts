@@ -9,6 +9,7 @@ export type AppStackParamList = {
   NewPost: undefined
   Profile: { userId?: string } | undefined
   SinglePost: { post: any }
+  SavedPosts: undefined
   Search: undefined
 }
 

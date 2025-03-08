@@ -29,7 +29,7 @@ export const useUserPosts = (userId?: string) => {
                   id
                   content
                   createdAt
-                  isSaved  // Add this field
+                  isSaved
                   media {
                     id
                     storageKey
@@ -85,7 +85,7 @@ export const useSinglePost = (postId?: string) => {
                 content
                 createdAt
                 userId
-                isSaved  // Add this field
+                isSaved
                 user {
                   id
                   username
