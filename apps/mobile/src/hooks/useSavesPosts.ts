@@ -2,9 +2,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { API_URL } from '@env'
 
-export const useUserPosts = (userId?: string) => {
+export const useSavedPosts = (limit = 10, offset = 0) => {
   return useQuery({
-    queryKey: ['userPosts', userId],
+    queryKey: ['savedPosts', limit, offset],
     queryFn: async () => {
       const {
         data: { session },
@@ -22,70 +22,11 @@ export const useUserPosts = (userId?: string) => {
         },
         body: JSON.stringify({
           query: `
-            query GetUserPosts($userId: ID!) {
-              profile(id: $userId) {
-                id
-                posts {
-                  id
-                  content
-                  createdAt
-                  isSaved  // Add this field
-                  media {
-                    id
-                    storageKey
-                    type
-                    order
-                  }
-                }
-              }
-            }
-          `,
-          variables: {
-            userId,
-          },
-        }),
-      })
-
-      const data = await response.json()
-
-      if (data.errors) {
-        console.error('GraphQL Errors:', data.errors)
-        throw new Error(data.errors[0].message)
-      }
-
-      return data.data.profile?.posts || []
-    },
-    enabled: !!userId,
-  })
-}
-
-export const useSinglePost = (postId?: string) => {
-  return useQuery({
-    queryKey: ['post', postId],
-    queryFn: async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-
-      if (!session?.access_token) {
-        throw new Error('No auth token available')
-      }
-
-      const response = await fetch(`${API_URL}/graphql`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          query: `
-            query GetPost($postId: ID!) {
-              post(id: $postId) {
+            query GetSavedPosts($limit: Int, $offset: Int) {
+              savedPosts(limit: $limit, offset: $offset) {
                 id
                 content
                 createdAt
-                userId
-                isSaved  // Add this field
                 user {
                   id
                   username
@@ -101,15 +42,14 @@ export const useSinglePost = (postId?: string) => {
                   id
                   name
                 }
-                comments {
-                  id
-                }
+                isSaved
                 _commentCount
               }
             }
           `,
           variables: {
-            postId,
+            limit,
+            offset,
           },
         }),
       })
@@ -121,85 +61,12 @@ export const useSinglePost = (postId?: string) => {
         throw new Error(data.errors[0].message)
       }
 
-      return data.data.post
-    },
-    enabled: !!postId,
-  })
-}
-
-export const useCreatePost = () => {
-  return useMutation({
-    mutationFn: async ({
-      content,
-      mediaIds,
-      hashtagIds,
-    }: {
-      content: string
-      mediaIds: string[]
-      hashtagIds?: string[]
-    }) => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-
-      if (!session?.access_token) {
-        throw new Error('No auth token available')
-      }
-
-      const response = await fetch(`${API_URL}/graphql`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          query: `
-            mutation CreatePost($input: PostInput!) {
-              createPost(input: $input) {
-                id
-                content
-                createdAt
-                user {
-                  id
-                  username
-                  profileImage
-                }
-                media {
-                  id
-                  storageKey
-                  type
-                  order
-                }
-                hashtags {
-                  id
-                  name
-                }
-              }
-            }
-          `,
-          variables: {
-            input: {
-              content,
-              mediaIds,
-              hashtagIds,
-            },
-          },
-        }),
-      })
-
-      const data = await response.json()
-
-      if (data.errors) {
-        console.error('GraphQL Errors:', data.errors)
-        throw new Error(data.errors[0].message || 'Unknown GraphQL error')
-      }
-
-      return data.data.createPost
+      return data.data.savedPosts || []
     },
   })
 }
 
-export const useDeletePost = () => {
+export const useSavePost = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -220,15 +87,17 @@ export const useDeletePost = () => {
         },
         body: JSON.stringify({
           query: `
-            mutation DeletePost($id: ID!) {
-              deletePost(id: $id) {
-                id
+            mutation SavePost($postId: ID!) {
+              savePost(postId: $postId) {
                 success
+                post {
+                  id
+                }
               }
             }
           `,
           variables: {
-            id: postId,
+            postId,
           },
         }),
       })
@@ -240,11 +109,61 @@ export const useDeletePost = () => {
         throw new Error(data.errors[0].message || 'Unknown GraphQL error')
       }
 
-      return data.data.deletePost
+      return data.data.savePost
     },
     onSuccess: () => {
-      // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['userPosts'] })
+      queryClient.invalidateQueries({ queryKey: ['savedPosts'] })
+      queryClient.invalidateQueries({ queryKey: ['post'] })
+      queryClient.invalidateQueries({ queryKey: ['feed'] })
+    },
+  })
+}
+
+export const useUnsavePost = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (postId: string) => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (!session?.access_token) {
+        throw new Error('No auth token available')
+      }
+
+      const response = await fetch(`${API_URL}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          query: `
+            mutation UnsavePost($postId: ID!) {
+              unsavePost(postId: $postId) {
+                success
+              }
+            }
+          `,
+          variables: {
+            postId,
+          },
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.errors) {
+        console.error('GraphQL Errors:', data.errors)
+        throw new Error(data.errors[0].message || 'Unknown GraphQL error')
+      }
+
+      return data.data.unsavePost
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['savedPosts'] })
+      queryClient.invalidateQueries({ queryKey: ['post'] })
       queryClient.invalidateQueries({ queryKey: ['feed'] })
     },
   })

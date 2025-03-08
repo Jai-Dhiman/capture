@@ -5,6 +5,7 @@ import { usePostComments } from '../../hooks/useComments';
 import { CommentList } from './CommentList';
 import { CommentInput } from './CommentInput';
 import { CommentSkeleton } from './CommentSkeleton';
+import { LoadingSpinner } from 'components/LoadingSpinner';
 
 interface CommentSectionProps {
   postId: string;
@@ -34,7 +35,6 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
     repliesLimit: 2
   });
   
-  // Determine if there are more comments to load
   const hasMoreComments = comments && comments.length < commentCount;
   
   const toggleComments = () => {
@@ -65,7 +65,6 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
 
   return (
     <View className="mt-2">
-      {/* Comment controls */}
       <View className="flex-row items-center justify-between px-4 py-2">
         <TouchableOpacity 
           onPress={toggleComments}
@@ -86,7 +85,6 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
         </TouchableOpacity>
       </View>
       
-      {/* Comment input */}
       {showInput && (
         <CommentInput 
           postId={postId} 
@@ -97,7 +95,6 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
         />
       )}
       
-      {/* Comments list */}
       {showComments && (
         <View className="px-4">
           {isLoading ? (
@@ -118,7 +115,6 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
                 onReplyAdded={() => refetch()}
               />
               
-              {/* Load more comments button */}
               {hasMoreComments && (
                 <TouchableOpacity 
                   onPress={loadMoreComments}
@@ -126,7 +122,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
                   disabled={isFetching}
                 >
                   {isFetching ? (
-                    <ActivityIndicator size="small" color="#0000ff" />
+                    <LoadingSpinner />
                   ) : (
                     <Text className="text-blue-500">
                       Load more comments

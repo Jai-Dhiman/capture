@@ -83,6 +83,7 @@ router.post('/', async (c) => {
   }
 })
 
+//Something to Check - does this need to exist?
 router.get('/check/:userId', async (c) => {
   const userId = c.req.param('userId')
   const db = drizzle(c.env.DB)

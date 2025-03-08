@@ -7,6 +7,7 @@ export const typeDefs = `
     searchUsers(query: String!): [Profile!]!
     comments(postId: ID!, parentCommentId: ID, limit: Int, offset: Int, sortBy: CommentSortOption): [Comment!]!
     comment(id: ID!): Comment
+    savedPosts(limit: Int, offset: Int): [Post!]!
   }
 
   type Mutation {
@@ -19,6 +20,8 @@ export const typeDefs = `
     deleteComment(id: ID!): DeleteCommentResponse!
     followUser(userId: ID!): FollowResponse!
     unfollowUser(userId: ID!): UnfollowResponse!
+    savePost(postId: ID!): SavePostResponse!
+    unsavePost(postId: ID!): UnsavePostResponse!
   }
 
   type Subscription {
@@ -52,6 +55,7 @@ export const typeDefs = `
     comments: [Comment!]!
     hashtags: [Hashtag!]!
     savedBy: [Profile!]!
+    isSaved: Boolean!
     createdAt: String!
     _commentCount: Int!
   }
@@ -131,5 +135,14 @@ export const typeDefs = `
     followerId: ID!
     followedId: ID!
     createdAt: String!
+  }
+
+  type SavePostResponse {
+    success: Boolean!
+    post: Post
+  }
+
+  type UnsavePostResponse {
+    success: Boolean!
   }
 `
