@@ -6,6 +6,7 @@ export const typeDefs = `
     searchHashtags(query: String!, limit: Int, offset: Int): [Hashtag!]!
     searchUsers(query: String!): [Profile!]!
     comments(postId: ID!, parentCommentId: ID, limit: Int, offset: Int, sortBy: CommentSortOption): [Comment!]!
+    comment(id: ID!): Comment
   }
 
   type Mutation {
@@ -61,7 +62,8 @@ export const typeDefs = `
     user: Profile!
     post: Post!
     parentComment: Comment
-    replies: [Comment!]!
+    replies(limit: Int): [Comment!]!
+    replyCount: Int!
     createdAt: String!
   }
 

@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { usePostComments } from '../../hooks/useComments';
 import { CommentList } from './CommentList';
 import { CommentInput } from './CommentInput';
+import { CommentSkeleton } from './CommentSkeleton';
 
 interface CommentSectionProps {
   postId: string;
@@ -16,19 +17,25 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
 }) => {
   const [showComments, setShowComments] = useState(false);
   const [showInput, setShowInput] = useState(false);
-  const [expandComments, setExpandComments] = useState(false);
+  const [page, setPage] = useState(1);
+  const COMMENTS_PER_PAGE = 5;
   
-  // Only fetch comments when they're being shown
   const { 
     data: comments, 
     isLoading, 
     isError, 
     error, 
-    refetch 
+    refetch,
+    isFetching
   } = usePostComments(postId, null, { 
     enabled: showComments,
-    limit: expandComments ? 50 : 2 // Fetch either 2 or 50 comments based on expansion state
+    limit: page * COMMENTS_PER_PAGE,
+    includeFirstReplies: true,
+    repliesLimit: 2
   });
+  
+  // Determine if there are more comments to load
+  const hasMoreComments = comments && comments.length < commentCount;
   
   const toggleComments = () => {
     setShowComments(!showComments);
@@ -44,8 +51,18 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
     }
   };
 
-  const remainingComments = Math.max(0, (commentCount || 0) - 2);
-  
+  const loadMoreComments = useCallback(() => {
+    if (!isFetching && hasMoreComments) {
+      setPage(prev => prev + 1);
+    }
+  }, [isFetching, hasMoreComments]);
+
+  useEffect(() => {
+    if (showComments) {
+      refetch();
+    }
+  }, [page, showComments]);
+
   return (
     <View className="mt-2">
       {/* Comment controls */}
@@ -84,7 +101,11 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
       {showComments && (
         <View className="px-4">
           {isLoading ? (
-            <ActivityIndicator size="small" color="#0000ff" className="py-4" />
+            <>
+              <CommentSkeleton replyCount={1} />
+              <CommentSkeleton />
+              <CommentSkeleton replyCount={2} />
+            </>
           ) : isError ? (
             <Text className="text-red-500 py-2">
               Error loading comments: {(error as Error)?.message || 'Unknown error'}
@@ -92,19 +113,25 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
           ) : comments && comments.length > 0 ? (
             <>
               <CommentList 
-                comments={expandComments ? comments : comments.slice(0, 2)} 
+                comments={comments} 
                 postId={postId}
                 onReplyAdded={() => refetch()}
               />
               
-              {!expandComments && remainingComments > 0 && (
+              {/* Load more comments button */}
+              {hasMoreComments && (
                 <TouchableOpacity 
-                  onPress={() => setExpandComments(true)}
-                  className="py-2"
+                  onPress={loadMoreComments}
+                  className="py-3 items-center"
+                  disabled={isFetching}
                 >
-                  <Text className="text-blue-500">
-                    See {remainingComments} more {remainingComments === 1 ? 'comment' : 'comments'}
-                  </Text>
+                  {isFetching ? (
+                    <ActivityIndicator size="small" color="#0000ff" />
+                  ) : (
+                    <Text className="text-blue-500">
+                      Load more comments
+                    </Text>
+                  )}
                 </TouchableOpacity>
               )}
             </>

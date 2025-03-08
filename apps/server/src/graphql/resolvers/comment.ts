@@ -1,5 +1,5 @@
 import { createD1Client } from '../../db'
-import { eq, desc, and, isNull, asc } from 'drizzle-orm'
+import { eq, desc, and, isNull, asc, count } from 'drizzle-orm'
 import * as schema from '../../db/schema'
 import { nanoid } from 'nanoid'
 import type { ContextType } from '../../types'
@@ -66,6 +66,33 @@ export const commentResolvers = {
         console.error('Error fetching comments:', error)
         throw new Error(
           `Failed to fetch comments: ${error instanceof Error ? error.message : 'Unknown error'}`
+        )
+      }
+    },
+
+    async comment(_: unknown, { id }: { id: string }, context: ContextType) {
+      if (!context.user) {
+        throw new Error('Authentication required')
+      }
+
+      const db = createD1Client(context.env)
+
+      try {
+        const comment = await db
+          .select()
+          .from(schema.comment)
+          .where(eq(schema.comment.id, id))
+          .get()
+
+        if (!comment) {
+          throw new Error('Comment not found')
+        }
+
+        return comment
+      } catch (error) {
+        console.error('Error fetching comment:', error)
+        throw new Error(
+          `Failed to fetch comment: ${error instanceof Error ? error.message : 'Unknown error'}`
         )
       }
     },
@@ -220,7 +247,7 @@ export const commentResolvers = {
       return post
     },
 
-    async replies(parent: { id: string }, _: unknown, context: ContextType) {
+    async replies(parent: { id: string }, { limit = 2 }: { limit?: number }, context: ContextType) {
       const db = createD1Client(context.env)
 
       const replies = await db
@@ -228,9 +255,22 @@ export const commentResolvers = {
         .from(schema.comment)
         .where(eq(schema.comment.parentCommentId, parent.id))
         .orderBy(desc(schema.comment.createdAt))
+        .limit(limit)
         .all()
 
       return replies
+    },
+
+    async replyCount(parent: { id: string }, _: unknown, context: ContextType) {
+      const db = createD1Client(context.env)
+
+      const result = await db
+        .select({ count: count() })
+        .from(schema.comment)
+        .where(eq(schema.comment.parentCommentId, parent.id))
+        .get()
+
+      return result?.count || 0
     },
 
     async parentComment(

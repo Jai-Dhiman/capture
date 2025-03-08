@@ -87,7 +87,7 @@ export const useSinglePost = (postId?: string) => {
                 user {
                   id
                   username
-                  image
+                  profileImage
                 }
                 media {
                   id
@@ -160,7 +160,7 @@ export const useCreatePost = () => {
                 user {
                   id
                   username
-                  image
+                  profileImage
                 }
                 media {
                   id

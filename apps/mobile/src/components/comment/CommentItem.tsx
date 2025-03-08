@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Comment, useCommentReplies, useDeleteComment } from '../../hooks/useComments';
 import { ProfileImage } from '../media/ProfileImage';
 import { CommentInput } from './CommentInput';
 import { useSessionStore } from '../../stores/sessionStore';
+import { CommentSkeleton } from './CommentSkeleton';
+import { LoadingSpinner } from 'components/LoadingSpinner';
 
 interface CommentItemProps {
   comment: Comment;
@@ -21,15 +23,36 @@ export const CommentItem: React.FC<CommentItemProps> = ({
 }) => {
   const [showReplyInput, setShowReplyInput] = useState(false);
   const [showReplies, setShowReplies] = useState(false);
+  const [repliesPage, setRepliesPage] = useState(1);
+  const REPLIES_PER_PAGE = 3;
   const { authUser } = useSessionStore();
   
   const deleteCommentMutation = useDeleteComment();
   
+  const hasIncludedReplies = comment.replies && Array.isArray(comment.replies);
+  const replyCount = comment.replyCount || (hasIncludedReplies ? comment.replies?.length : 0);
+  
   const { 
-    data: replies, 
+    data: fetchedReplies, 
     isLoading: repliesLoading, 
     refetch: refetchReplies 
-  } = useCommentReplies(comment.id, showReplies);
+  } = useCommentReplies(comment.id, showReplies && !hasIncludedReplies, { 
+    limit: repliesPage * REPLIES_PER_PAGE
+  });
+  
+  const replies = hasIncludedReplies ? comment.replies : fetchedReplies;
+  
+  const loadMoreReplies = useCallback(() => {
+    if (!repliesLoading) {
+      setRepliesPage(prev => prev + 1);
+    }
+  }, [repliesLoading]);
+  
+  useEffect(() => {
+    if (showReplies && !hasIncludedReplies) {
+      refetchReplies();
+    }
+  }, [repliesPage, showReplies, hasIncludedReplies]);
   
   const handleDelete = async () => {
     try {
@@ -56,8 +79,8 @@ export const CommentItem: React.FC<CommentItemProps> = ({
       <View className="flex-row">
         {/* User avatar */}
         <View className="w-8 h-8 rounded-full overflow-hidden mr-3">
-          {comment.user?.image ? (
-            <ProfileImage cloudflareId={comment.user.image} />
+          {comment.user?.profileImage ? (
+            <ProfileImage cloudflareId={comment.user.profileImage} />
           ) : (
             <View className="w-full h-full bg-gray-200 rounded-full" />
           )}
@@ -87,8 +110,8 @@ export const CommentItem: React.FC<CommentItemProps> = ({
                 onPress={() => setShowReplyInput(!showReplyInput)}
                 className="flex-row items-center"
               >
-                <Text className="text-xs text-blue-500 mr-1">Reply</Text>
-                <Ionicons name="return-down-forward-outline" size={12} color="#3b82f6" />
+                <Text className="text-xs color=#e4cac7 mr-1">Reply</Text>
+                <Ionicons name="return-down-forward-outline" size={12} color="#E4cac7" />
               </TouchableOpacity>
             )}
           </View>
@@ -131,22 +154,43 @@ export const CommentItem: React.FC<CommentItemProps> = ({
       
       {/* Replies */}
       {showReplies && (
-        <View className="mt-2">
-          {repliesLoading ? (
-            <ActivityIndicator size="small" color="#0000ff" className="ml-11" />
-          ) : replies && replies.length > 0 ? (
-            replies.map((reply: Comment) => (
-              <CommentItem 
-                key={reply.id} 
-                comment={reply} 
-                postId={postId}
-                onReplyAdded={onReplyAdded}
-                isReply
-              />
-            ))
-          ) : (
-            <Text className="text-xs text-gray-500 ml-11">No replies yet</Text>
+    <View className="mt-2">
+      {repliesLoading && !hasIncludedReplies ? (
+        <>
+          <CommentSkeleton isReply={true} />
+          <CommentSkeleton isReply={true} />
+        </>
+      ) : replies && replies.length > 0 ? (
+        <>
+          {replies.map((reply: Comment) => (
+            <CommentItem 
+              key={reply.id} 
+              comment={reply} 
+              postId={postId}
+              onReplyAdded={onReplyAdded}
+              isReply
+            />
+          ))}
+          
+          {!hasIncludedReplies && replies.length < (replyCount || 0) && (
+            <TouchableOpacity 
+              onPress={loadMoreReplies}
+              className="ml-11 mt-2 items-start"
+              disabled={repliesLoading}
+            >
+              {repliesLoading ? (
+                <LoadingSpinner />
+              ) : (
+                <Text className="text-xs color=#e4cac7">
+                  Load more replies
+                </Text>
+              )}
+            </TouchableOpacity>
           )}
+        </>
+      ) : (
+        <Text className="text-xs text-gray-500 ml-11">No replies yet</Text>
+      )}
         </View>
       )}
     </View>

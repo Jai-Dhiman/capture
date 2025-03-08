@@ -9,12 +9,13 @@ export type Comment = {
   user?: {
     id: string
     username: string
-    image?: string
+    profileImage?: string
   }
   parentComment?: {
     id: string
   }
   replies?: Comment[]
+  replyCount?: number
 }
 
 export type SortOption = 'newest' | 'oldest'
@@ -26,12 +27,28 @@ export const usePostComments = (
     limit?: number
     sortBy?: SortOption
     enabled?: boolean
+    includeFirstReplies?: boolean
+    repliesLimit?: number
   }
 ) => {
-  const { limit = 10, sortBy = 'newest', enabled = true } = options || {}
+  const {
+    limit = 10,
+    sortBy = 'newest',
+    enabled = true,
+    includeFirstReplies = true,
+    repliesLimit = 2,
+  } = options || {}
 
   return useQuery({
-    queryKey: ['comments', postId, parentCommentId, sortBy],
+    queryKey: [
+      'comments',
+      postId,
+      parentCommentId,
+      sortBy,
+      limit,
+      includeFirstReplies,
+      repliesLimit,
+    ],
     queryFn: async () => {
       const {
         data: { session },
@@ -49,32 +66,61 @@ export const usePostComments = (
         },
         body: JSON.stringify({
           query: `
-            query GetComments($postId: ID!, $parentCommentId: ID, $limit: Int, $sortBy: CommentSortOption) {
-            comments(
-              postId: $postId, 
-              parentCommentId: $parentCommentId, 
-              limit: $limit, 
-              sortBy: $sortBy
+            query GetComments(
+              $postId: ID!, 
+              $parentCommentId: ID, 
+              $limit: Int, 
+              $sortBy: CommentSortOption,
+              $includeFirstReplies: Boolean!,
+              $repliesLimit: Int!
             ) {
-              id
-              content
-              createdAt
-              user {
+              comments(
+                postId: $postId, 
+                parentCommentId: $parentCommentId, 
+                limit: $limit, 
+                sortBy: $sortBy
+              ) {
                 id
-                username
-                image
-              }
-              parentComment {
-                id
+                content
+                createdAt
+                user {
+                  id
+                  username
+                  image
+                }
+                parentComment {
+                  id
+                }
+                ${
+                  includeFirstReplies
+                    ? `
+                replies(limit: $repliesLimit) {
+                  id
+                  content
+                  createdAt
+                  user {
+                    id
+                    username
+                    image
+                  }
+                  parentComment {
+                    id
+                  }
+                }
+                replyCount
+                `
+                    : ''
+                }
               }
             }
-          }
           `,
           variables: {
             postId,
             parentCommentId: parentCommentId || null,
             limit,
             sortBy,
+            includeFirstReplies,
+            repliesLimit,
           },
         }),
       })
@@ -92,9 +138,17 @@ export const usePostComments = (
   })
 }
 
-export const useCommentReplies = (commentId?: string, enabled = true) => {
+export const useCommentReplies = (
+  commentId?: string,
+  enabled = true,
+  options?: {
+    limit?: number
+  }
+) => {
+  const { limit = 5 } = options || {}
+
   return useQuery({
-    queryKey: ['commentReplies', commentId],
+    queryKey: ['commentReplies', commentId, limit],
     queryFn: async () => {
       const {
         data: { session },
@@ -112,25 +166,30 @@ export const useCommentReplies = (commentId?: string, enabled = true) => {
         },
         body: JSON.stringify({
           query: `
-            query GetComment($id: ID!) {
+            query GetComment($id: ID!, $limit: Int!) {
               comment(id: $id) {
                 id
-                replies {
+                replies(limit: $limit) {
                   id
                   content
                   createdAt
-                  userId
                   user {
                     id
                     username
-                    profileImage
+                    image
                   }
+                  parentComment {
+                    id
+                  }
+                  replyCount
                 }
+                replyCount
               }
             }
           `,
           variables: {
             id: commentId,
+            limit,
           },
         }),
       })
@@ -185,7 +244,7 @@ export const useCreateComment = () => {
                 user {
                   id
                   username
-                  image
+                  profileImage
                 }
                 parentComment {
                   id
