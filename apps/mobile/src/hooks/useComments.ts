@@ -66,61 +66,57 @@ export const usePostComments = (
         },
         body: JSON.stringify({
           query: `
-            query GetComments(
-              $postId: ID!, 
-              $parentCommentId: ID, 
-              $limit: Int, 
-              $sortBy: CommentSortOption,
-              $includeFirstReplies: Boolean!,
-              $repliesLimit: Int!
+          query GetComments(
+            $postId: ID!, 
+            $parentCommentId: ID, 
+            $limit: Int, 
+            $sortBy: CommentSortOption
+          ) {
+            comments(
+              postId: $postId, 
+              parentCommentId: $parentCommentId, 
+              limit: $limit, 
+              sortBy: $sortBy
             ) {
-              comments(
-                postId: $postId, 
-                parentCommentId: $parentCommentId, 
-                limit: $limit, 
-                sortBy: $sortBy
-              ) {
+              id
+              content
+              createdAt
+              user {
+                id
+                username
+                profileImage
+              }
+              parentComment {
+                id
+              }
+              ${
+                includeFirstReplies
+                  ? `
+              replies(limit: ${repliesLimit}) {
                 id
                 content
                 createdAt
                 user {
                   id
                   username
-                  image
+                  profileImage
                 }
                 parentComment {
                   id
                 }
-                ${
-                  includeFirstReplies
-                    ? `
-                replies(limit: $repliesLimit) {
-                  id
-                  content
-                  createdAt
-                  user {
-                    id
-                    username
-                    image
-                  }
-                  parentComment {
-                    id
-                  }
-                }
-                replyCount
-                `
-                    : ''
-                }
+              }
+              replyCount
+              `
+                  : ''
               }
             }
-          `,
+          }
+        `,
           variables: {
             postId,
             parentCommentId: parentCommentId || null,
             limit,
             sortBy,
-            includeFirstReplies,
-            repliesLimit,
           },
         }),
       })
@@ -176,7 +172,7 @@ export const useCommentReplies = (
                   user {
                     id
                     username
-                    image
+                    profileImage
                   }
                   parentComment {
                     id
