@@ -1,0 +1,21 @@
+@import '../../styles/shared.scss';
+
+.button {
+  @include button-base;
+}
+
+.primary {
+  @include primary-button;
+}
+
+.secondary {
+  @include secondary-button;
+}
+
+.social {
+  @include social-button;
+}
+
+.icon {
+  margin-right: $spacing-md;
+}

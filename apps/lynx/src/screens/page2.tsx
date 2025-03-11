@@ -1,48 +1,49 @@
 import { useNavigate } from 'react-router'
+import styles from './Page2.module.scss'
 
 export function PageTwo() {
   const navigate = useNavigate()
   
   return (
-    <view className="container">
-      <view className="header">
-        <view className="header-back" bindtap={() => navigate('/')}>
+    <view className={styles.container}>
+      <view className={styles.header}>
+        <view className={styles.headerBack} bindtap={() => navigate('/')}>
           <text>←</text>
         </view>
-        <text className="header-title">Page 2</text>
+        <text className={styles.headerTitle}>Page 2</text>
         <view></view>
       </view>
       
-      <view className="content">
-        <view className="card">
-          <view className="card-content">
-            <text className="card-title">Your Content</text>
-            <text className="text-body">This is page 2 of your application.</text>
+      <view className={styles.content}>
+        <view className={styles.card}>
+          <view className={styles.cardContent}>
+            <text className={styles.cardTitle}>Your Content</text>
+            <text className={styles.textBody}>This is page 2 of your application.</text>
           </view>
         </view>
         
-        <view className="form-group" style={{marginTop: '20px'}}>
-          <text className="form-label">Your Input</text>
-          <view className="input-container focused">
-            <view className="input-field">
+        <view className={styles.formGroup} style={{marginTop: '20px'}}>
+          <text className={styles.formLabel}>Your Input</text>
+          <view className={`${styles.inputContainer} ${styles.inputContainerFocused}`}>
+            <view className={styles.inputField}>
               <text>Type here...</text>
             </view>
           </view>
         </view>
         
-        <view className="btn-secondary" bindtap={() => navigate('/')}>
+        <view className={styles.btnSecondary} bindtap={() => navigate('/')}>
           <text>Back to Home</text>
         </view>
       </view>
       
-      <view className="nav-bar">
-        <view className="nav-bar-item">
+      <view className={styles.navBar}>
+        <view className={styles.navBarItem}>
           <text>Home</text>
         </view>
-        <view className="nav-bar-item active">
+        <view className={`${styles.navBarItem} ${styles.navBarItemActive}`}>
           <text>Page 2</text>
         </view>
-        <view className="nav-bar-item">
+        <view className={styles.navBarItem}>
           <text>Profile</text>
         </view>
       </view>

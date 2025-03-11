@@ -12,10 +12,15 @@ export default defineConfig({
     }),
     pluginReactLynx(),
     pluginSass({
-      // Optional: custom Sass loader options
-      sassLoaderOptions: {
-        // You can customize Sass processing here
-      },
+      sassLoaderOptions: {},
     }),
   ],
+  tools: {
+    cssLoader: {
+      modules: {
+        auto: /\.module\.(css|scss|sass)$/,
+        localIdentName: '[name]__[local]--[hash:base64:5]',
+      },
+    },
+  },
 })
