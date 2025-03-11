@@ -1,0 +1,33 @@
+.container {
+  @include flex-column;
+  min-height: 100vh;
+  background-color: $background;
+  padding: $spacing-lg;
+  position: relative;
+  
+  &-fluid {
+    position: relative;
+    
+    &-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: -1;
+    }
+  }
+}
+
+.content {
+  @include flex-column;
+  flex: 1;
+  padding: 0 $spacing-lg;
+}
+
+.divider {
+  height: 1px;
+  background-color: $text-secondary;
+  margin: $spacing-lg 0;
+  opacity: 0.3;
+}

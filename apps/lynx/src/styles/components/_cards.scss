@@ -1,0 +1,25 @@
+.card {
+  background-color: white;
+  border-radius: $border-radius-md;
+  box-shadow: $shadow-md;
+  padding: $spacing-lg;
+  
+  &-header {
+    margin-bottom: $spacing-md;
+  }
+  
+  &-title {
+    font-size: 1.25rem;
+    font-weight: $font-semibold;
+    color: $text;
+  }
+  
+  &-content {
+    @include flex-column;
+  }
+  
+  &-footer {
+    margin-top: $spacing-lg;
+    @include flex-between;
+  }
+}

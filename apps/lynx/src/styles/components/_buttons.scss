@@ -9,10 +9,11 @@
     @include secondary-button;
   }
   
-  &-outline {
-    @include button-base;
-    border: 1px solid $primary;
-    color: $primary;
-    background-color: transparent;
+  &-social {
+    @include social-button;
+    
+    &-icon {
+      margin-right: $spacing-md;
+    }
   }
 }

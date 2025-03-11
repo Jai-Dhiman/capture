@@ -1,0 +1,33 @@
+.text {
+  &-title {
+    font-size: 2.5rem;
+    font-weight: $font-light;
+  }
+  
+  &-subtitle {
+    font-size: 1.25rem;
+    font-weight: $font-regular;
+  }
+  
+  &-body {
+    font-size: 1rem;
+  }
+  
+  &-small {
+    font-size: 0.75rem;
+  }
+  
+  &-link {
+    text-decoration: underline;
+    color: $text-secondary;
+    
+    &-primary {
+      color: $secondary;
+      font-weight: $font-semibold;
+    }
+  }
+  
+  &-center {
+    text-align: center;
+  }
+}

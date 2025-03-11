@@ -17,21 +17,21 @@
   flex-direction: column;
 }
 
-// Button styles
 @mixin button-base {
-  padding: $spacing-md;
-  border-radius: $border-radius-md;
-  font-weight: 600;
+  height: 3.5rem;
+  border-radius: $border-radius-lg;
+  font-weight: $font-bold;
   @include flex-center;
+  box-shadow: $shadow-md;
 }
 
 @mixin primary-button {
   @include button-base;
   background-color: $primary;
-  color: white;
+  color: $text;
   
   &:active {
-    background-color: color.adjust($primary, $lightness: -10%);
+    background-color: color.adjust($primary, $lightness: -5%);
   }
 }
 
@@ -41,6 +41,31 @@
   color: white;
   
   &:active {
-    background-color: color.adjust($secondary, $lightness: -10%);
+    background-color: color.adjust($secondary, $lightness: -5%);
+  }
+}
+
+@mixin social-button {
+  @include button-base;
+  background-color: white;
+  color: $text;
+  
+  &:active {
+    background-color: color.adjust(white, $lightness: -5%);
+  }
+}
+
+@mixin input-container {
+  background-color: white;
+  height: 3.5rem;
+  border-radius: $border-radius-md;
+  box-shadow: $shadow-md;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 0 0.5rem;
+  
+  &.focused {
+    border: 2px solid $primary;
   }
 }

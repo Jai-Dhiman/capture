@@ -1,13 +1,20 @@
 // Colors
-$primary: #3563E9;
-$secondary: #6B7280;
-$background: #F9FAFB;
-$text: #111827;
-$text-secondary: #4B5563;
-$border: #E5E7EB;
+$primary: #E4CAC7;  
+$secondary: #827B85; 
+$background: #DCDCDE;
+$text: #1C1C1C;
+$text-secondary: #7B7B7B;
+$border: #C8C8C8;
 $error: #EF4444;
 $success: #10B981;
 $warning: #F59E0B;
+
+// Font weights
+$font-light: 300;
+$font-regular: 400;
+$font-medium: 500;
+$font-semibold: 600;
+$font-bold: 700;
 
 // Spacing
 $spacing-xs: 0.25rem;
@@ -16,16 +23,13 @@ $spacing-md: 1rem;
 $spacing-lg: 1.5rem;
 $spacing-xl: 2rem;
 
-// Font sizes
-$font-xs: 0.75rem;
-$font-sm: 0.875rem;
-$font-md: 1rem;
-$font-lg: 1.125rem;
-$font-xl: 1.25rem;
-$font-2xl: 1.5rem;
-$font-3xl: 1.875rem;
+// Border radius
+$border-radius-sm: 0.5rem;
+$border-radius-md: 1rem;
+$border-radius-lg: 1.875rem; // 30px as seen in your RN app
+$border-radius-xl: 2.5rem;
 
-// Borders
-$border-radius-sm: 0.25rem;
-$border-radius-md: 0.5rem;
-$border-radius-lg: 0.75rem;
+// Shadows
+$shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+$shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+$shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);

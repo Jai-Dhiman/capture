@@ -1,32 +1,24 @@
-.container {
-  @include flex-column;
-  min-height: 100vh;
-  background-color: $background;
-  padding: $spacing-lg;
+.home {
+  &-hero {
+    @include flex-column;
+    align-items: center;
+    justify-content: center;
+    padding: $spacing-xl 0;
+  }
+  
+  &-logo {
+    width: 80px;
+    height: 80px;
+    margin-bottom: $spacing-md;
+  }
 }
 
-.content {
-  @include flex-column;
-  flex: 1;
-}
-
-.hero {
+// Make sure links in the home screen are properly styled
+.flex-center {
   @include flex-center;
-  flex: 1;
 }
 
-.title {
-  font-size: $font-2xl;
-  font-weight: bold;
-  color: $text;
-}
-
-.btn-primary {
-  @include primary-button;
-  margin: $spacing-md 0;
-}
-
-.btn-text {
-  color: white;
-  font-weight: 600;
+// Make sure social buttons have proper spacing
+.social-icon {
+  margin-right: $spacing-md;
 }
