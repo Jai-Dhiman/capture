@@ -59,6 +59,7 @@ export const typeDefs = `
     savedBy: [Profile!]!
     isSaved: Boolean!
     createdAt: String!
+    updatedAt: String!
     _commentCount: Int!
   }
 
@@ -77,7 +78,6 @@ export const typeDefs = `
     id: ID!
     type: String!
     storageKey: String!
-    thumbnailUrl: String
     order: Int!
     createdAt: String!
   }

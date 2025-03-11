@@ -7,15 +7,15 @@ export const profileSchema = z.object({
   profileImage: z.string().nullable().optional(),
   bio: z.string().nullable().optional(),
   verifiedType: z.string().default('none'),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
 })
 
 export const postSchema = z.object({
   id: z.string(),
   userId: z.string().nullable().optional(),
   content: z.string(),
-  createdAt: z.date(),
+  createdAt: z.string(),
 })
 
 export const mediaSchema = z.object({
@@ -23,10 +23,9 @@ export const mediaSchema = z.object({
   userId: z.string().nullable().optional(),
   postId: z.string().nullable().optional(),
   type: z.string(),
-  url: z.string(),
-  thumbnailUrl: z.string().nullable().optional(),
+  storageKey: z.string(),
   order: z.number(),
-  createdAt: z.date(),
+  createdAt: z.string(),
 })
 
 export const commentSchema = z.object({
@@ -35,33 +34,33 @@ export const commentSchema = z.object({
   userId: z.string().nullable().optional(),
   content: z.string(),
   parentCommentId: z.string().nullable().optional(),
-  createdAt: z.date(),
+  createdAt: z.string(),
 })
 
 export const savedPostSchema = z.object({
   id: z.string(),
   userId: z.string().nullable().optional(),
   postId: z.string().nullable().optional(),
-  createdAt: z.date(),
+  createdAt: z.string(),
 })
 
-export const captagSchema = z.object({
+export const hashtagSchema = z.object({
   id: z.string(),
   name: z.string(),
-  createdAt: z.date(),
+  createdAt: z.string(),
 })
 
-export const postCaptagSchema = z.object({
+export const postHashtagSchema = z.object({
   postId: z.string().nullable().optional(),
-  captagId: z.string().nullable().optional(),
-  createdAt: z.date(),
+  hashtagId: z.string().nullable().optional(),
+  createdAt: z.string(),
 })
 
 export const relationshipSchema = z.object({
   id: z.string(),
   followerId: z.string().nullable().optional(),
   followedId: z.string().nullable().optional(),
-  createdAt: z.date(),
+  createdAt: z.string(),
 })
 
 export type Profile = z.infer<typeof profileSchema>
@@ -69,6 +68,6 @@ export type Post = z.infer<typeof postSchema>
 export type Media = z.infer<typeof mediaSchema>
 export type Comment = z.infer<typeof commentSchema>
 export type SavedPost = z.infer<typeof savedPostSchema>
-export type Captag = z.infer<typeof captagSchema>
-export type PostCaptag = z.infer<typeof postCaptagSchema>
+export type Hashtag = z.infer<typeof hashtagSchema>
+export type PostHashtag = z.infer<typeof postHashtagSchema>
 export type Relationship = z.infer<typeof relationshipSchema>

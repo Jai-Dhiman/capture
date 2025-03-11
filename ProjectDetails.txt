@@ -15,8 +15,9 @@ Capture reimagines social media by prioritizing user privacy, safety, and mental
 - ReactLynx for cross-platform mobile development
 - TypeScript for type safety
 - React Router for routing
-- React Query for data fetching
+- Tanstack/React Query for data fetching
 - Zustand and Jotai for state management
+- SCSS Modules for Styling
 
 ### Backend/Infrastructure
 - Cloudflare Workers ecosystem:
