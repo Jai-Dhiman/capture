@@ -1,0 +1,250 @@
+# ReactLynx Reference Guide for Migration from React Native
+
+This comprehensive reference will help you transition your codebase from React Native to ReactLynx efficiently, with particular attention to using Tanstack Query, Zustand, and Jotai throughout your application.
+
+## Core ReactLynx Concepts
+
+ReactLynx is an official React framework for Lynx that enables development of native apps using the React mental model. Key features include:
+
+- **"Idiomatic" React** - Based on Preact with consistent API/behavior with React
+- **Dual-threaded architecture** - Split processing between main and background threads
+- **JSX constant folding** - Compile-time optimization to reduce runtime calculations
+- **Rspeedy** build tool for compilation
+- **PrimJS** as the main thread runtime engine (lightweight, high-performance JS engine built on QuickJS)
+
+## Basic Migration Steps
+
+### 1. Import Changes
+
+```diff
+- import { useState } from 'react';
++ import { useState } from '@lynx-js/react';
+
+- import { View, Text, Image } from 'react-native';
+- <View style={{...}} />
++ <view style={{...}} />
+```
+
+### 2. Component Naming Differences
+
+| React Native | ReactLynx |
+|--------------|-----------|
+| `<View>` | `<view>` |
+| `<Text>` | `<text>` |
+| `<Image>` | `<image>` |
+| `<ScrollView>` | `<scroll-view>` |
+| `<FlatList>` | `<list>` |
+| `<SafeAreaView>` | `<page>` |
+
+### 3. Event Handling Changes
+
+```diff
+- <button onTouchStart={handleTouch} />
++ <view bindtouchstart={handleTouch} catchtouchstart={handleTouch}/>
+```
+
+ReactLynx uses different event naming and propagation:
+- `bind{eventname}` - Regular event (bubbles up)
+- `catch{eventname}` - Stops propagation
+
+## Dual-Threaded Architecture
+
+ReactLynx operates on two threads:
+
+1. **Main Thread** - Handles rendering UI and applying updates, using PrimJS runtime
+2. **Background Thread** - Runs full React runtime, handling component lifecycles and side effects
+
+### Background-Only Code
+
+Code that only executes on the background thread:
+
+1. Event handlers (`bindtap`, `catchtap`, etc.)
+2. Effects (`useEffect`)
+3. `ref` prop
+4. Functions with `'background only'` directive
+5. Modules with `import 'background-only'` directive
+
+```jsx
+// This will run in background thread only
+function handleTap() {
+  'background only';
+  console.log('Tapped!');
+}
+
+// This is automatically background-only because it's an event handler
+const SimpleButton = () => (
+  <view bindtap={handleTap}>Click me</view>
+);
+```
+
+### Main Thread Scripts
+
+For performance-critical operations like animations:
+
+```jsx
+function animateColor(event) {
+  'main thread';
+  event.currentTarget.setStyleProperty('background-color', 'red');
+}
+
+// Using main thread event handler
+<view main-thread:bindtap={animateColor}>Tap me</view>
+```
+
+### Working with Main Thread Elements
+
+```jsx
+export default function App() {
+  const colorValue = 'blue';
+  const elementRef = useMainThreadRef();
+  
+  function updateElement(event) {
+    'main thread';
+    // Can use variables from background thread
+    elementRef.current.setStyleProperty('background-color', colorValue);
+  }
+  
+  return (
+    <view main-thread:bindtap={updateElement}>
+      <text main-thread:ref={elementRef}>This text will change color</text>
+    </view>
+  );
+}
+```
+
+## State Management Integration
+
+### Tanstack Query Implementation
+
+```jsx
+import { useState } from '@lynx-js/react';
+import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
+
+// Create a client
+const queryClient = new QueryClient();
+
+function MyComponent() {
+  const { data, isLoading } = useQuery({
+    queryKey: ['myData'],
+    queryFn: async () => {
+      // This is background-only code
+      const response = await fetch('https://api.example.com/data');
+      return response.json();
+    }
+  });
+
+  if (isLoading) return <text>Loading...</text>;
+
+  return (
+    <view>
+      <text>{data.title}</text>
+    </view>
+  );
+}
+
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <MyComponent />
+    </QueryClientProvider>
+  );
+}
+```
+
+### Zustand Implementation
+
+```jsx
+import { create } from 'zustand';
+import { useState, useEffect } from '@lynx-js/react';
+
+// Create store
+const useStore = create((set) => ({
+  count: 0,
+  increment: () => set((state) => ({ count: state.count + 1 })),
+  decrement: () => set((state) => ({ count: state.count - 1 })),
+}));
+
+function Counter() {
+  // Use store in ReactLynx component
+  const { count, increment, decrement } = useStore();
+  
+  return (
+    <view>
+      <text>Count: {count}</text>
+      <view bindtap={increment}>
+        <text>Increment</text>
+      </view>
+      <view bindtap={decrement}>
+        <text>Decrement</text>
+      </view>
+    </view>
+  );
+}
+```
+
+### Jotai Implementation
+
+```jsx
+import { atom, useAtom } from 'jotai';
+import { useState } from '@lynx-js/react';
+
+// Create atoms
+const counterAtom = atom(0);
+const doubleCountAtom = atom((get) => get(counterAtom) * 2);
+
+function AtomCounter() {
+  const [count, setCount] = useAtom(counterAtom);
+  const [doubleCount] = useAtom(doubleCountAtom);
+  
+  return (
+    <view>
+      <text>Count: {count}</text>
+      <text>Double: {doubleCount}</text>
+      <view bindtap={() => setCount(count + 1)}>
+        <text>Increment</text>
+      </view>
+    </view>
+  );
+}
+```
+
+## Component Lifecycle Considerations
+
+- ReactLynx has modified component lifecycles due to dual-threading
+- `useEffect` runs in background thread and may execute before UI elements are created
+- `ref` callbacks more accurately reflect UI element state, especially in list components
+- `useLayoutEffect` is not supported; use `main-thread:bindlayoutchange` event instead
+
+```jsx
+function MyComponent() {
+  const myRef = useRef(null);
+  
+  useEffect(() => {
+    // Runs in background thread
+    console.log('Component mounted');
+    
+    return () => {
+      console.log('Component unmounted');
+    };
+  }, []);
+  
+  // More accurate for tracking real UI element lifecycle
+  const setRef = useCallback((node) => {
+    if (node) {
+      console.log('UI element created');
+    } else {
+      console.log('UI element removed');
+    }
+  }, []);
+  
+  return <view ref={setRef}>Hello</view>;
+}
+```
+
+## Performance Optimization Tips
+
+1. Use main thread scripts for smooth animations and gestures
+2. Leverage `main-thread:ref` for direct element manipulation
+3. Keep heavy computations in the background thread
+4. Utilize JSX constant folding by extracting static elements
+5. Be mindful of serialization costs between threads

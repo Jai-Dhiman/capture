@@ -12,12 +12,11 @@ Capture reimagines social media by prioritizing user privacy, safety, and mental
 ## Technical Architecture
 
 ### Frontend
-- React Native + Expo for cross-platform mobile development
+- ReactLynx for cross-platform mobile development
 - TypeScript for type safety
-- React Navigation for routing
+- React Router for routing
 - React Query for data fetching
-- Zustand for state management
-- React Native Reanimated for smooth animations
+- Zustand and Jotai for state management
 
 ### Backend/Infrastructure
 - Cloudflare Workers ecosystem:

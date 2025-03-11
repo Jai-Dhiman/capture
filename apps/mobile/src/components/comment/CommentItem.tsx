@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Comment, useCommentReplies, useDeleteComment } from '../../hooks/useComments';
 import { ProfileImage } from '../media/ProfileImage';
@@ -63,6 +63,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
       });
     } catch (error) {
       console.error('Failed to delete comment:', error);
+      Alert.alert("Error", "Failed to delete comment");
     }
   };
   
@@ -88,15 +89,33 @@ export const CommentItem: React.FC<CommentItemProps> = ({
         
         {/* Comment content */}
         <View className="flex-1 bg-gray-50 rounded-lg p-2">
-          <View className="flex-row justify-between">
+          <View className="flex-row justify-between items-center">
             <Text className="font-medium">{comment.user?.username || 'User'}</Text>
-            {isOwner && !deleteCommentMutation.isPending && (
-              <TouchableOpacity onPress={handleDelete}>
-                <Ionicons name="trash-outline" size={16} color="#999" />
+            {deleteCommentMutation.isPending ? (
+              <ActivityIndicator size="small" color="#ef4444" />
+            ) : isOwner && (
+              <TouchableOpacity 
+                onPress={() => {
+                  Alert.alert(
+                    "Delete Comment",
+                    "Are you sure you want to delete this comment?",
+                    [
+                      {
+                        text: "Cancel",
+                        style: "cancel"
+                      },
+                      { 
+                        text: "Delete", 
+                        onPress: handleDelete,
+                        style: "destructive"
+                      }
+                    ]
+                  );
+                }}
+                className="bg-red-50 p-1 rounded-full"
+              >
+                <Ionicons name="trash-outline" size={16} color="#ef4444" />
               </TouchableOpacity>
-            )}
-            {deleteCommentMutation.isPending && (
-              <ActivityIndicator size="small" color="#999" />
             )}
           </View>
           

@@ -83,7 +83,7 @@ router.post('/', async (c) => {
   }
 })
 
-//Something to Check - does this need to exist?
+//checks if profile exists, without fetching all profile data
 router.get('/check/:userId', async (c) => {
   const userId = c.req.param('userId')
   const db = drizzle(c.env.DB)
@@ -111,7 +111,7 @@ router.get('/:userId', async (c) => {
   }
 })
 
-//Update Delete to Delete Posts/Comments (maybe soft delete)
+//Update Delete to Delete Posts/Comments (maybe add soft delete)
 router.delete('/:userId', async (c) => {
   const userId = c.req.param('userId')
   const user = c.get('user')

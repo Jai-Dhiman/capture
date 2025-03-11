@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+
+    "module": "node16",
+    "moduleResolution": "node16",
+
+    "strict": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "baseUrl": "src"
+  },
+  "include": ["src", "*.ts", "*.tsx", "*.js", "*.jsx"],
+  "exclude": ["dist/, node_modules/"]
+}
