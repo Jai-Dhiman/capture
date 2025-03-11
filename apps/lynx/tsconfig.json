@@ -14,6 +14,6 @@
     "skipLibCheck": true,
     "baseUrl": "src"
   },
-  "include": ["src", "*.ts", "*.tsx", "*.js", "*.jsx"],
+  "include": ["src", "*.ts", "*.tsx", "*.js", "*.jsx", "postcss.config.cjs"],
   "exclude": ["dist/, node_modules/"]
 }

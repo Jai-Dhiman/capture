@@ -1,5 +1,6 @@
 import { root } from '@lynx-js/react'
 import { App } from './App.js'
+import './index.css' 
 
 root.render(<App />)
 
