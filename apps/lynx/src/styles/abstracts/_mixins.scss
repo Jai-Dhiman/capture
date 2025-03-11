@@ -1,0 +1,46 @@
+@use "sass:color";
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+// Button styles
+@mixin button-base {
+  padding: $spacing-md;
+  border-radius: $border-radius-md;
+  font-weight: 600;
+  @include flex-center;
+}
+
+@mixin primary-button {
+  @include button-base;
+  background-color: $primary;
+  color: white;
+  
+  &:active {
+    background-color: color.adjust($primary, $lightness: -10%);
+  }
+}
+
+@mixin secondary-button {
+  @include button-base;
+  background-color: $secondary;
+  color: white;
+  
+  &:active {
+    background-color: color.adjust($secondary, $lightness: -10%);
+  }
+}

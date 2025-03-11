@@ -1,0 +1,32 @@
+.container {
+  @include flex-column;
+  min-height: 100vh;
+  background-color: $background;
+  padding: $spacing-lg;
+}
+
+.content {
+  @include flex-column;
+  flex: 1;
+}
+
+.hero {
+  @include flex-center;
+  flex: 1;
+}
+
+.title {
+  font-size: $font-2xl;
+  font-weight: bold;
+  color: $text;
+}
+
+.btn-primary {
+  @include primary-button;
+  margin: $spacing-md 0;
+}
+
+.btn-text {
+  color: white;
+  font-weight: 600;
+}

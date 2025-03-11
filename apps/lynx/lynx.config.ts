@@ -1,7 +1,7 @@
 import { defineConfig } from '@lynx-js/rspeedy'
 import { pluginQRCode } from '@lynx-js/qrcode-rsbuild-plugin'
 import { pluginReactLynx } from '@lynx-js/react-rsbuild-plugin'
-import { pluginTailwindCSS } from 'rsbuild-plugin-tailwindcss'
+import { pluginSass } from '@rsbuild/plugin-sass'
 
 export default defineConfig({
   plugins: [
@@ -11,9 +11,11 @@ export default defineConfig({
       },
     }),
     pluginReactLynx(),
-    pluginTailwindCSS({
-      // Custom config with safelist approach
-      config: './tailwind.lynx.config.js',
+    pluginSass({
+      // Optional: custom Sass loader options
+      sassLoaderOptions: {
+        // You can customize Sass processing here
+      },
     }),
   ],
 })

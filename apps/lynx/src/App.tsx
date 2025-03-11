@@ -1,6 +1,10 @@
-import { useState, useEffect } from '@lynx-js/react'
+import { type ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-// import './App.css'
+import './App.css'
+
+type AppProps = {
+  children?: ReactNode
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -11,15 +15,10 @@ const queryClient = new QueryClient({
   },
 })
 
-export function App() {
+export function App({ children }: AppProps) {
   return (
     <QueryClientProvider client={queryClient}>
-      <view >
-        <view >
-          <text >Hello Capture</text>
-        </view>
-        <text >Privacy-First Social Media</text>
-      </view>
+      {children}
     </QueryClientProvider>
   )
 }

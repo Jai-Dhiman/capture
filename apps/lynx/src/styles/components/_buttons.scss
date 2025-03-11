@@ -1,0 +1,18 @@
+.btn {
+  @include button-base;
+  
+  &-primary {
+    @include primary-button;
+  }
+  
+  &-secondary {
+    @include secondary-button;
+  }
+  
+  &-outline {
+    @include button-base;
+    border: 1px solid $primary;
+    color: $primary;
+    background-color: transparent;
+  }
+}
