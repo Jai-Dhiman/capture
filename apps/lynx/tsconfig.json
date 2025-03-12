@@ -9,10 +9,11 @@
     "strict": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
-
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "baseUrl": "src"
+    "baseUrl": "src",
+    "noEmit": true,
+    "allowImportingTsExtensions": true
   },
   "include": ["src", "*.ts", "*.tsx", "*.js", "*.jsx", "postcss.config.cjs"],
   "exclude": ["dist/, node_modules/"]

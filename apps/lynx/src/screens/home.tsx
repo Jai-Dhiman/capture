@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router'
 import styles from './Home.module.scss'
 
+const api_url = process.env.API_URL || 'No URL Found'
+
 export function Home() {
   const navigate = useNavigate()
   

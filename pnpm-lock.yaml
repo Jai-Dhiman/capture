@@ -23,6 +23,9 @@ importers:
       '@lynx-js/react':
         specifier: ^0.105.1
         version: 0.105.1(@lynx-js/types@3.2.0)(@types/react@18.3.18)
+      '@supabase/supabase-js':
+        specifier: ^2.49.1
+        version: 2.49.1
       '@tanstack/react-query':
         specifier: ^5.67.2
         version: 5.67.2(react@18.3.1)
@@ -54,12 +57,18 @@ importers:
       '@rsbuild/plugin-sass':
         specifier: ^1.2.2
         version: 1.2.2(@rsbuild/core@1.2.15)
+      '@types/dotenv-webpack':
+        specifier: ^7.0.8
+        version: 7.0.8
       '@types/react':
         specifier: ^18.3.18
         version: 18.3.18
       autoprefixer:
         specifier: ^10.4.20
         version: 10.4.20(postcss@8.5.2)
+      dotenv-webpack:
+        specifier: ^8.1.0
+        version: 8.1.0(webpack@5.98.0)
       postcss:
         specifier: ^8.5.1
         version: 8.5.2
@@ -2759,6 +2768,9 @@ packages:
   '@supabase/auth-js@2.67.3':
     resolution: {integrity: sha512-NJDaW8yXs49xMvWVOkSIr8j46jf+tYHV0wHhrwOaLLMZSFO4g6kKAf+MfzQ2RaD06OCUkUHIzctLAxjTgEVpzw==}
 
+  '@supabase/auth-js@2.68.0':
+    resolution: {integrity: sha512-odG7nb7aOmZPUXk6SwL2JchSsn36Ppx11i2yWMIc/meUO2B2HK9YwZHPK06utD9Ql9ke7JKDbwGin/8prHKxxQ==}
+
   '@supabase/functions-js@2.4.4':
     resolution: {integrity: sha512-WL2p6r4AXNGwop7iwvul2BvOtuJ1YQy8EbOd0dhG1oN1q8el/BIRSFCFnWAMM/vJJlHWLi4ad22sKbKr9mvjoA==}
 
@@ -2769,6 +2781,9 @@ packages:
   '@supabase/postgrest-js@1.18.1':
     resolution: {integrity: sha512-dWDnoC0MoDHKhaEOrsEKTadWQcBNknZVQcSgNE/Q2wXh05mhCL1ut/jthRUrSbYcqIw/CEjhaeIPp7dLarT0bg==}
 
+  '@supabase/postgrest-js@1.19.2':
+    resolution: {integrity: sha512-MXRbk4wpwhWl9IN6rIY1mR8uZCCG4MZAEji942ve6nMwIqnBgBnZhZlON6zTTs6fgveMnoCILpZv1+K91jN+ow==}
+
   '@supabase/realtime-js@2.11.2':
     resolution: {integrity: sha512-u/XeuL2Y0QEhXSoIPZZwR6wMXgB+RQbJzG9VErA3VghVt7uRfSVsjeqd7m5GhX3JR6dM/WRmLbVR8URpDWG4+w==}
 
@@ -2777,6 +2792,9 @@ packages:
 
   '@supabase/supabase-js@2.48.1':
     resolution: {integrity: sha512-VMD+CYk/KxfwGbI4fqwSUVA7CLr1izXpqfFerhnYPSi6LEKD8GoR4kuO5Cc8a+N43LnfSQwLJu4kVm2e4etEmA==}
+
+  '@supabase/supabase-js@2.49.1':
+    resolution: {integrity: sha512-lKaptKQB5/juEF5+jzmBeZlz69MdHZuxf+0f50NwhL+IE//m4ZnOeWlsKRjjsM0fVayZiQKqLvYdBn0RLkhGiQ==}
 
   '@svgr/babel-plugin-add-jsx-attribute@8.0.0':
     resolution: {integrity: sha512-b9MIk7yhdS1pMCZM8VeNfUlSKVRhsHZNMl5O9SfaX0l0t5wjdgu4IDzGB8bpnGBBOjGST3rRFVsaaEtI4W6f7g==}
@@ -2901,6 +2919,9 @@ packages:
 
   '@types/cors@2.8.17':
     resolution: {integrity: sha512-8CGDvrBj1zgo2qE+oS3pOCyYNqCPryMWY2bGfwA0dcfopWGgxs+78df0Rs3rc9THP4JkOhLsAa+15VdpAqkcUA==}
+
+  '@types/dotenv-webpack@7.0.8':
+    resolution: {integrity: sha512-JiLJdF2y9dW0eJjKUBlVnIwz/Raej00MOMdKcUuVxYJquvcuMgQdJw7cnN+hRZ7eejYgKr8kZsIw4nihwYYGeA==}
 
   '@types/eslint-scope@3.7.7':
     resolution: {integrity: sha512-MzMFlSLBqNF2gcHWO0G1vP/YQyfvrxZ0bF+u7mzUdZ1/xK4A4sru+nraZz5i3iEIk1l1uyicaDVTB4QbbEkAYg==}
@@ -4059,13 +4080,26 @@ packages:
   dot-case@3.0.4:
     resolution: {integrity: sha512-Kv5nKlh6yRrdrGvxeJ2e5y2eRUpkUosIW4A2AS38zwSz27zu7ufDwQPi5Jhs3XAlGNetl3bmnGhQsMtkKJnj3w==}
 
+  dotenv-defaults@2.0.2:
+    resolution: {integrity: sha512-iOIzovWfsUHU91L5i8bJce3NYK5JXeAwH50Jh6+ARUdLiiGlYWfGw6UkzsYqaXZH/hjE/eCd/PlfM/qqyK0AMg==}
+
   dotenv-expand@11.0.7:
     resolution: {integrity: sha512-zIHwmZPRshsCdpMDyVsqGmgyP0yT8GAgXUnkdAoJisxvf33k7yO6OuoKmcTGuXPWSsm8Oh88nZicRLA9Y0rUeA==}
     engines: {node: '>=12'}
 
+  dotenv-webpack@8.1.0:
+    resolution: {integrity: sha512-owK1JcsPkIobeqjVrk6h7jPED/W6ZpdFsMPR+5ursB7/SdgDyO+VzAU+szK8C8u3qUhtENyYnj8eyXMR5kkGag==}
+    engines: {node: '>=10'}
+    peerDependencies:
+      webpack: ^4 || ^5
+
   dotenv@16.4.7:
     resolution: {integrity: sha512-47qPchRCykZC03FhkYAhrvwU4xDBFIj1QPqaarj6mdM/hgUzfPHcpkHJOn3mJAufFeeAxAzeGsr5X0M4k6fLZQ==}
     engines: {node: '>=12'}
+
+  dotenv@8.6.0:
+    resolution: {integrity: sha512-IrPdXQsk2BbzvCBGBOTmmSH5SodmqZNt4ERAZDmW4CT+tL8VtvinqywuANaFu4bOMWki16nqf0e4oC0QIaDr/g==}
+    engines: {node: '>=10'}
 
   drange@1.1.1:
     resolution: {integrity: sha512-pYxfDYpued//QpnLIm4Avk7rsNtAtQkUES2cwAYSvD/wd2pKD71gN2Ebj3e7klzXwjocvE8c5vx/1fxwpqmSxA==}
@@ -10996,6 +11030,10 @@ snapshots:
     dependencies:
       '@supabase/node-fetch': 2.6.15
 
+  '@supabase/auth-js@2.68.0':
+    dependencies:
+      '@supabase/node-fetch': 2.6.15
+
   '@supabase/functions-js@2.4.4':
     dependencies:
       '@supabase/node-fetch': 2.6.15
@@ -11005,6 +11043,10 @@ snapshots:
       whatwg-url: 5.0.0
 
   '@supabase/postgrest-js@1.18.1':
+    dependencies:
+      '@supabase/node-fetch': 2.6.15
+
+  '@supabase/postgrest-js@1.19.2':
     dependencies:
       '@supabase/node-fetch': 2.6.15
 
@@ -11028,6 +11070,18 @@ snapshots:
       '@supabase/functions-js': 2.4.4
       '@supabase/node-fetch': 2.6.15
       '@supabase/postgrest-js': 1.18.1
+      '@supabase/realtime-js': 2.11.2
+      '@supabase/storage-js': 2.7.1
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
+  '@supabase/supabase-js@2.49.1':
+    dependencies:
+      '@supabase/auth-js': 2.68.0
+      '@supabase/functions-js': 2.4.4
+      '@supabase/node-fetch': 2.6.15
+      '@supabase/postgrest-js': 1.19.2
       '@supabase/realtime-js': 2.11.2
       '@supabase/storage-js': 2.7.1
     transitivePeerDependencies:
@@ -11170,6 +11224,17 @@ snapshots:
   '@types/cors@2.8.17':
     dependencies:
       '@types/node': 22.13.4
+
+  '@types/dotenv-webpack@7.0.8':
+    dependencies:
+      '@types/node': 22.13.4
+      tapable: 2.2.1
+      webpack: 5.98.0
+    transitivePeerDependencies:
+      - '@swc/core'
+      - esbuild
+      - uglify-js
+      - webpack-cli
 
   '@types/eslint-scope@3.7.7':
     dependencies:
@@ -12443,11 +12508,22 @@ snapshots:
       no-case: 3.0.4
       tslib: 2.8.1
 
+  dotenv-defaults@2.0.2:
+    dependencies:
+      dotenv: 8.6.0
+
   dotenv-expand@11.0.7:
     dependencies:
       dotenv: 16.4.7
 
+  dotenv-webpack@8.1.0(webpack@5.98.0):
+    dependencies:
+      dotenv-defaults: 2.0.2
+      webpack: 5.98.0
+
   dotenv@16.4.7: {}
+
+  dotenv@8.6.0: {}
 
   drange@1.1.1: {}
 
