@@ -4,11 +4,20 @@ import styles from './login.module.scss'
 import { useMainThreadAuth } from '../../hooks/auth/useMainThreadAuth.ts'
 import { useForm } from '@tanstack/react-form'
 import { z } from 'zod'
+import { useAtom } from 'jotai'
+import { showPasswordAtom, authErrorMessageAtom, authSuccessMessageAtom } from '../../atoms/authUIatoms.ts'
 
 export function Login() {
   const navigate = useNavigate()
-  const { login, isLoading, isLoggedIn, errorMessage, successMessage, clearMessages } = useMainThreadAuth()
-  const [showPassword, setShowPassword] = useState(false)
+  const { login, isLoading, isLoggedIn } = useMainThreadAuth()
+  const [showPassword, setShowPassword] = useAtom(showPasswordAtom)
+  const [errorMessage, setErrorMessage] = useAtom(authErrorMessageAtom)
+  const [successMessage, setSuccessMessage] = useAtom(authSuccessMessageAtom)
+  
+  const clearMessages = () => {
+    setErrorMessage('')
+    setSuccessMessage('')
+  }
   
   useEffect(() => {
     if (isLoggedIn && !isLoading) {
