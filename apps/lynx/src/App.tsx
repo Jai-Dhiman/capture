@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { SessionProvider } from './lib/SessionProvider.tsx'
 
 type AppProps = {
   children?: ReactNode
@@ -17,7 +18,9 @@ const queryClient = new QueryClient({
 export function App({ children }: AppProps) {
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
+      <SessionProvider>
+        {children}
+      </SessionProvider>
     </QueryClientProvider>
   )
 }

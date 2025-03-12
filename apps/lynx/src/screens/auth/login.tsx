@@ -3,9 +3,12 @@ import { useState, useEffect } from '@lynx-js/react'
 import styles from './login.module.scss'
 import { useForm } from '@tanstack/react-form'
 import { z } from 'zod'
+import { useAuth } from '../../hooks/auth/useAuth.ts'
 
 export function Login() {
   const navigate = useNavigate()
+  const [showPassword, setShowPassword] = useState(false)
+  const { login, isLoading, errorMessage, successMessage, clearMessages } = useAuth()
   
   const loginSchema = z.object({
     email: z.string().email('Please enter a valid email address'),
@@ -22,7 +25,7 @@ export function Login() {
       
       try {
         loginSchema.parse(value)
-        login({ email: value.email, password: value.password })
+        login.mutate({ email: value.email, password: value.password })
       } catch (error) {
         if (error instanceof z.ZodError) {
           const errorMessages = error.errors.map(err => err.message).join(', ')
@@ -34,6 +37,12 @@ export function Login() {
       }
     }
   })
+
+  useEffect(() => {
+    if (successMessage) {
+      setTimeout(() => navigate('/page2'), 1000)
+    }
+  }, [successMessage, navigate])
   
   return (
     <view className={styles.captureLogIn}>
@@ -102,7 +111,7 @@ export function Login() {
               <view className={styles.passwordPngs}>
                 {!showPassword ? (
                   <view className={styles.passwordDots}>
-                    {[...Array(form.getFieldValue('password')?.length || 0)].map((_, index: number) => (
+                    {[...Array(form.getFieldValue('password')?.length || 0)].map((_, index) => (
                       <view key={index} className={styles.dot}></view>
                     ))}
                   </view>
@@ -127,7 +136,7 @@ export function Login() {
                     <input
                       name={field.name}
                       value={field.state.value}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
+                      onChange={(e) => 
                         field.handleChange(e.target.value)
                       }
                       type={showPassword ? "text" : "password"}
@@ -170,7 +179,7 @@ export function Login() {
                     <input
                       name={field.name}
                       value={field.state.value}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
+                      onChange={(e) => 
                         field.handleChange(e.target.value)
                       }
                       type="email"
