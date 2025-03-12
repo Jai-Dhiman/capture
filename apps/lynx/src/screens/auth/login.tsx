@@ -1,36 +1,11 @@
 import { useNavigate } from 'react-router'
 import { useState, useEffect } from '@lynx-js/react'
 import styles from './login.module.scss'
-import { useMainThreadAuth } from '../../hooks/auth/useMainThreadAuth.ts'
 import { useForm } from '@tanstack/react-form'
 import { z } from 'zod'
-import { useAtom } from 'jotai'
-import { showPasswordAtom, authErrorMessageAtom, authSuccessMessageAtom } from '../../atoms/authUIatoms.ts'
 
 export function Login() {
   const navigate = useNavigate()
-  const { login, isLoading, isLoggedIn } = useMainThreadAuth()
-  const [showPassword, setShowPassword] = useAtom(showPasswordAtom)
-  const [errorMessage, setErrorMessage] = useAtom(authErrorMessageAtom)
-  const [successMessage, setSuccessMessage] = useAtom(authSuccessMessageAtom)
-  
-  const clearMessages = () => {
-    setErrorMessage('')
-    setSuccessMessage('')
-  }
-  
-  useEffect(() => {
-    if (isLoggedIn && !isLoading) {
-      navigate('/home')
-    }
-  }, [isLoggedIn, isLoading, navigate])
-  
-  useEffect(() => {
-    if (successMessage) {
-      const timer = setTimeout(() => navigate('/home'), 1000)
-      return () => clearTimeout(timer)
-    }
-  }, [successMessage, navigate])
   
   const loginSchema = z.object({
     email: z.string().email('Please enter a valid email address'),
