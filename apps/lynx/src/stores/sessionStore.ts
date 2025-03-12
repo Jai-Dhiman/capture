@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 import { z } from 'zod'
-import 'background-only'
 
 const authUserSchema = z.object({
   id: z.string(),

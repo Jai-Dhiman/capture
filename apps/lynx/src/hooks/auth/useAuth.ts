@@ -3,7 +3,6 @@ import { supabase } from '../../lib/supabase.ts'
 import { useSessionStore } from '../../stores/sessionStore.ts'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { z } from 'zod'
-import 'background-only'
 
 const api_url = process.env.API_URL || ''
 
@@ -20,7 +19,6 @@ const profileResponseSchema = z.object({
 })
 
 export function useAuth() {
-  'background only'
   const [loading, setLoading] = useState(false)
   const { setAuthUser, setUserProfile, clearSession } = useSessionStore()
   const queryClient = useQueryClient()

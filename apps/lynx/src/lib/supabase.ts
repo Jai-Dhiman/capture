@@ -1,6 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
 import LynxStorage from './lynxStorage.ts'
-import { useEffect } from '@lynx-js/react'
 
 const supabase_url = process.env.SUPABASE_URL || ''
 const supabase_key = process.env.SUPABASE_KEY || ''
@@ -14,11 +13,5 @@ export const supabase = createClient(supabase_url, supabase_key, {
 })
 
 export function initSupabaseRefresh() {
-  useEffect(() => {
-    supabase.auth.startAutoRefresh()
-
-    return () => {
-      supabase.auth.stopAutoRefresh()
-    }
-  }, [])
+  console.log('Supabase refresh is now managed by BackgroundSession component')
 }

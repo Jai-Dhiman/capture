@@ -1,5 +1,8 @@
+import 'background-only'
+
 const LynxStorage = {
   setItem: async (key: string, value: string): Promise<void> => {
+    'background-only'
     NativeModules.NativeLocalStorageModule.setStorageItem(key, value)
     return Promise.resolve()
   },

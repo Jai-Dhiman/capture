@@ -2,12 +2,10 @@ import { useEffect } from '@lynx-js/react'
 import { supabase } from './supabase.ts'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSessionStore } from '../stores/sessionStore.ts'
-import 'background-only';
 
 const api_url = process.env.API_URL || ''
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
-  'background only';
   const { setAuthUser, setUserProfile, setIsLoading } = useSessionStore()
   const queryClient = useQueryClient()
 
