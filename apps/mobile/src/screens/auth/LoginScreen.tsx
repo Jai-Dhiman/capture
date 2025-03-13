@@ -2,12 +2,11 @@ import React, { useState, useRef } from 'react'
 import {
   View, Text, TouchableOpacity, TextInput, Image, Alert, ScrollView,
 } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
-import EmailIcon from '../../assets/icons/Email Icon.svg'
-import LockIcon from '../../assets/icons/Lock Icon.svg'
-import ViewPasswordIcon from '../../assets/icons/View Password Icon.svg'
-import HidePasswordIcon from '../../assets/icons/Dont Show Passoword Icon.svg'
+import EmailIcon from '../../../assets/icons/Email Icon.svg'
+import LockIcon from '../../../assets/icons/Lock Icon.svg'
+import ViewPasswordIcon from '../../../assets/icons/View Password Icon.svg'
+import HidePasswordIcon from '../../../assets/icons/Dont Show Passoword Icon.svg'
 import { AuthStackParamList } from '../../types/navigation'
 import { useAuth } from '../../hooks/auth/useAuth'
 import { LoadingSpinner } from 'components/LoadingSpinner'
@@ -49,11 +48,11 @@ export default function LoginScreen({ navigation }: Props) {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <View style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View className="flex-1 bg-[#DCDCDE] rounded-[30px] overflow-hidden">
           <Image
-            source={require('../../assets/Fluid Background Coffee.png')}
+            source={require('../../../assets/Fluid Background Coffee.png')}
             style={{ width: '100%', height: '100%', position: 'absolute' }}
             resizeMode="cover"
           />
@@ -146,6 +145,6 @@ export default function LoginScreen({ navigation }: Props) {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   )
 }

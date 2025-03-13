@@ -3,14 +3,13 @@ import {
   View,
   Text,
   TouchableOpacity,
-  SafeAreaView,
   Image
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../types/navigation';
 import OAuth from '../../components/OAuth';
-import AppleIcon from '../../assets/icons/apple.svg';
-import EmailIcon from '../../assets/icons/Email Icon.svg';
+import AppleIcon from '../../../assets/icons/apple.svg';
+import EmailIcon from '../../../assets/icons/Email Icon.svg';
 import Header from '../../components/Header';
 
 type Props = {
@@ -19,10 +18,10 @@ type Props = {
 
 export default function SignupScreen({ navigation }: Props) {
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <View style={{ flex: 1 }}>
       <View className="flex-1 bg-[#DCDCDE] rounded-[30px] overflow-hidden">
         <Image
-          source={require('../../assets/Fluid Background Coffee.png')}
+          source={require('../../../assets/Fluid Background Coffee.png')}
           style={{ width: '100%', height: '100%', position: 'absolute' }}
           resizeMode="cover"
         />
@@ -67,6 +66,6 @@ export default function SignupScreen({ navigation }: Props) {
         </View>
         
       </View>
-    </SafeAreaView>
+    </View>
   );
 }

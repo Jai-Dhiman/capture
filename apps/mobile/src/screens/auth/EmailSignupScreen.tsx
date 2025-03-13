@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react'
 import {
-  View, Text, TouchableOpacity, SafeAreaView, ScrollView, TextInput, Alert, Image, Dimensions
+  View, Text, TouchableOpacity, ScrollView, TextInput, Alert, Image, Dimensions
 } from 'react-native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { AuthStackParamList } from '../../types/navigation'
@@ -65,7 +65,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <View style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View className="flex-1 bg-[#DCDCDE] overflow-hidden">
           <Image
@@ -217,6 +217,6 @@ export default function EmailSignupScreen({ navigation }: Props) {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   )
 }
