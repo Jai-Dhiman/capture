@@ -17,6 +17,7 @@ import { LoadingSpinner } from 'components/LoadingSpinner';
 import { LinkingOptions } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
 import { supabase } from './lib/supabase';
+import { SplashAnimation } from './components/animation/SplashAnimation';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,7 +29,12 @@ const queryClient = new QueryClient({
 });
 
 const linking: LinkingOptions<RootStackParamList> = {
-  prefixes: [Linking.createURL('/'), 'http://localhost:8081'],
+  prefixes: [
+    Linking.createURL('/'), 
+    'captureapp://', 
+    'https://captureapp.org',
+    'http://localhost:8081'
+  ],
   config: {
     screens: {
       Auth: {
@@ -75,7 +81,7 @@ function MainNavigator() {
   const navigation = useNavigation();
 
   if (isLoading) {
-    return <LoadingSpinner fullScreen message="Starting up..." />;
+    return <SplashAnimation fullScreen />;
   }
 
   useEffect(() => {

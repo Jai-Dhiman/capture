@@ -4,7 +4,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../types/navigation';
 import { Ionicons } from '@expo/vector-icons';
-import SavedPostIcon from '../../assets/icons/FavoritesIcon.svg';
+import SavedPostIcon from '../../assets/icons/FavoriteIcon.svg';
 import SavePostIcon from '../../assets/icons/PlusIcon.svg';
 import SettingsIcon from '../../assets/icons/SettingsIcon.svg';
 import { ProfileImage } from '../components/media/ProfileImage';

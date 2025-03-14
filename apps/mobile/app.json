@@ -4,11 +4,11 @@
     "slug": "capture",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/CaptureLogo.png",
     "newArchEnabled": true,
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/icon.png",
+      "image": "./assets/CaptureLogo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -21,7 +21,7 @@
     "android": {
       "softwareKeyboardLayoutmode": "pan",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
+        "foregroundImage": "./assets/CaptureLogo.png",
         "backgroundColor": "#ffffff"
       }
     },
@@ -37,12 +37,12 @@
           }
         }
       }
-    }
-  },
-  "web": {
-    "bundler": "metro"
-  },
-  "plugins": [
-    "expo-secure-store"
-  ]
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
+  }
 }

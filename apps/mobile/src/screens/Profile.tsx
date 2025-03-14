@@ -9,8 +9,8 @@ import { useProfile } from '../hooks/auth/useProfile';
 import { useFollowers, useFollowing } from '../hooks/useRelationships';
 import { MediaImage } from '../components/media/MediaImage';
 import { Ionicons } from '@expo/vector-icons';
-import SavedPosts from "../../assets/icons/FavoritesIcon.svg"
-import Placeholder from "../../assets/icons/ViewPassword Icon.svg"
+import SavedPosts from "../../assets/icons/FavoriteIcon.svg"
+import Placeholder from "../../assets/icons/ViewPasswordIcon.svg"
 import NewPost from "../../assets/icons/PlusIcon.svg"
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ProfileImage } from '../components/media/ProfileImage';
