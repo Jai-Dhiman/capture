@@ -78,17 +78,10 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function MainNavigator() {
   const { authUser, userProfile, isLoading } = useSessionStore();
-  const navigation = useNavigation();
 
   if (isLoading) {
     return <SplashAnimation fullScreen />;
   }
-
-  useEffect(() => {
-    if (authUser?.needsPhoneVerification) {
-      (navigation as any).navigate('Auth', { screen: 'EnterPhone' });
-    }
-  }, [authUser, navigation]);
 
   return (
     <Stack.Navigator
@@ -104,13 +97,30 @@ function MainNavigator() {
             <Stack.Screen name="CreateProfile" component={CreateProfile} />
           )
         ) : (
-          <Stack.Screen name="Auth" component={AuthStack} initialParams={{ showPhoneVerification: true }} />
+          <Stack.Screen 
+            name="Auth" 
+            component={AuthStack} 
+            initialParams={{ showPhoneVerification: true }} 
+          />
         )
       ) : (
         <Stack.Screen name="Auth" component={AuthStack} />
       )}
     </Stack.Navigator>
   );
+}
+
+function NavigationHandler() {
+  const { authUser, isLoading } = useSessionStore();
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    if (!isLoading && authUser?.needsPhoneVerification) {
+      (navigation as any).navigate('Auth', { screen: 'EnterPhone' });
+    }
+  }, [authUser, navigation, isLoading]);
+
+  return null;
 }
 
 export default function App() {
@@ -123,6 +133,7 @@ export default function App() {
               <StatusBar style="light" />
               <NavigationContainer linking={linking}>
                 <MainNavigator />
+                <NavigationHandler />
               </NavigationContainer>
             </View>
           </SafeAreaProvider>
