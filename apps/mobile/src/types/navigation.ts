@@ -1,7 +1,19 @@
+export type RootStackParamList = {
+  Auth: undefined
+  CreateProfile: undefined
+  App: undefined
+  Profile: undefined
+}
+
 export type AuthStackParamList = {
+  Landing: undefined
   Login: undefined
   Signup: undefined
   EmailSignup: undefined
+  EnterPhone: undefined
+  VerifyPhoneNumber: undefined
+  ResetPassword: undefined
+  CreateProfile: undefined
 }
 
 export type AppStackParamList = {
@@ -11,11 +23,4 @@ export type AppStackParamList = {
   SinglePost: { post: any }
   SavedPosts: undefined
   Search: undefined
-}
-
-export type RootStackParamList = {
-  Auth: undefined
-  CreateProfile: undefined
-  App: undefined
-  Profile: undefined
 }

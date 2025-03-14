@@ -33,7 +33,7 @@ export default function SavedPosts() {
   return (
     <View className="flex-1">
       <Image
-        source={require('../assets/Fluid Background Coffee.png')}
+        source={require('../../assets/DefaultBackground.png')}
         style={{ width: '100%', height: '100%', position: 'absolute' }}
         resizeMode="cover"
       />

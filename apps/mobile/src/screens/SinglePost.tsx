@@ -4,9 +4,9 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../types/navigation';
 import { Ionicons } from '@expo/vector-icons';
-import SavedPostIcon from '../assets/icons/Favorites Icon.svg';
-import SavePostIcon from '../assets/icons/Plus Icon.svg';
-import SettingsIcon from '../assets/icons/Settings Icon.svg';
+import SavedPostIcon from '../../assets/icons/FavoritesIcon.svg';
+import SavePostIcon from '../../assets/icons/PlusIcon.svg';
+import SettingsIcon from '../../assets/icons/SettingsIcon.svg';
 import { ProfileImage } from '../components/media/ProfileImage';
 import { PostMediaGallery } from '../components/post/PostMediaGallery';
 import { HashtagDisplay } from '../components/hashtags/HashtagDisplay';
@@ -77,7 +77,7 @@ export default function SinglePost() {
   return (
     <View className="flex-1">
       <Image
-        source={require('../assets/Fluid Background Coffee.png')}
+        source={require('../../assets/DefaultBackground.png')}
         style={{ width: '100%', height: '100%', position: 'absolute' }}
         resizeMode="cover"
       />

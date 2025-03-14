@@ -8,6 +8,7 @@ import { useAuth } from '../../hooks/auth/useAuth'
 import { LoadingSpinner } from 'components/LoadingSpinner'
 import Header from '../../components/Header'
 import { Feather, MaterialIcons } from '@expo/vector-icons'
+import { API_URL } from '@env';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'Signup'>
@@ -28,8 +29,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
   const confirmPasswordInputRef = useRef<TextInput>(null)
 
   const screenWidth = Dimensions.get('window').width
-  const inputWidth = Math.min(343, screenWidth - 40) // Ensure inputs are never wider than screen
-
+  const inputWidth = Math.min(343, screenWidth - 40) 
   const { signup, loading } = useAuth()
 
   const handleSignup = async () => {
@@ -44,7 +44,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
         onSuccess: () => {
           Alert.alert(
             'Account Created Successfully!',
-            'Please check your email for a verification link to finish creating your profile.',
+            'Please check your email for a verification link to complete your registration.',
             [
               { 
                 text: 'Go to Login', 
@@ -69,7 +69,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View className="flex-1 bg-[#DCDCDE] overflow-hidden">
           <Image
-            source={require('../../assets/Fluid Background Coffee.png')}
+            source={require('../../../assets/DefaultBackground.png')}
             style={{ width: '100%', height: '100%', position: 'absolute' }}
             resizeMode="cover"
           />
@@ -210,10 +210,6 @@ export default function EmailSignupScreen({ navigation }: Props) {
               )}
             </TouchableOpacity>
 
-            {/* Home indicator */}
-            <View className="w-full absolute bottom-0 flex justify-center items-center py-2">
-              <View className="w-[139px] h-[5px] bg-black rounded-[100px]" />
-            </View>
           </View>
         </View>
       </ScrollView>

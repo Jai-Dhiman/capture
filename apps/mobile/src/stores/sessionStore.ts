@@ -4,6 +4,8 @@ export interface AuthUser {
   id: string
   email: string
   phone?: string
+  phone_confirmed_at?: string
+  needsPhoneVerification?: boolean
 }
 
 export interface UserProfile {

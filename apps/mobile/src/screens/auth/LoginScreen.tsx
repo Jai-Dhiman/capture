@@ -3,10 +3,10 @@ import {
   View, Text, TouchableOpacity, TextInput, Image, Alert, ScrollView,
 } from 'react-native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
-import EmailIcon from '../../../assets/icons/Email Icon.svg'
-import LockIcon from '../../../assets/icons/Lock Icon.svg'
-import ViewPasswordIcon from '../../../assets/icons/View Password Icon.svg'
-import HidePasswordIcon from '../../../assets/icons/Dont Show Passoword Icon.svg'
+import EmailIcon from '../../../assets/icons/EmailIcon.svg'
+import LockIcon from '../../../assets/icons/LockIcon.svg'
+import ViewPasswordIcon from '../../../assets/icons/ViewPasswordIcon.svg'
+import HidePasswordIcon from '../../../assets/icons/HidePassowordIcon.svg'
 import { AuthStackParamList } from '../../types/navigation'
 import { useAuth } from '../../hooks/auth/useAuth'
 import { LoadingSpinner } from 'components/LoadingSpinner'
@@ -52,7 +52,7 @@ export default function LoginScreen({ navigation }: Props) {
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View className="flex-1 bg-[#DCDCDE] rounded-[30px] overflow-hidden">
           <Image
-            source={require('../../../assets/Fluid Background Coffee.png')}
+            source={require('../../../assets/DefaultBackground.png')}
             style={{ width: '100%', height: '100%', position: 'absolute' }}
             resizeMode="cover"
           />

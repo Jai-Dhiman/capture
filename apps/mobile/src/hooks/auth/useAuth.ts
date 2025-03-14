@@ -51,22 +51,29 @@ export function useAuth() {
         throw new Error('Please verify your email before logging in')
       }
 
-      const { data: sessionData } = await supabase.auth.getSession()
-      const token = sessionData.session?.access_token
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      const token = session?.access_token
 
       if (!token) throw new Error('No auth token available')
 
       const profileData = await fetchUserProfile(authData.user.id, token)
 
+      const hasVerifiedPhone = authData.user.phone && authData.user.phone_confirmed_at
+
       return {
         user: authData.user,
         profile: profileData,
+        hasVerifiedPhone,
       }
     },
     onSuccess: (data) => {
       setAuthUser({
         id: data.user.id,
         email: data.user.email || '',
+        phone: data.user.phone || undefined,
+        phone_confirmed_at: data.user.phone_confirmed_at || undefined,
       })
 
       if (data.profile) {

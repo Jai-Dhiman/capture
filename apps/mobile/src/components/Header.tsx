@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import BackIcon from '../assets/icons/Back Icon.svg';
+import BackIcon from '../../assets/icons/BackIcon.svg';
 
 type HeaderProps = {
   showBackButton?: boolean;

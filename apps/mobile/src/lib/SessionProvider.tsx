@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSessionStore } from '../stores/sessionStore'
 import { API_URL } from '@env'
 import { LoadingSpinner } from 'components/LoadingSpinner'
+import { useNavigation } from '@react-navigation/native' 
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const { setAuthUser, setUserProfile, setIsLoading } = useSessionStore()
@@ -24,10 +25,16 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true)
       
       if (session) {
+        const hasVerifiedPhone = session.user.phone && session.user.phone_confirmed_at
+        
         const authUser = {
           id: session.user.id,
           email: session.user.email || '',
+          phone: session.user.phone || '',
+          phone_confirmed_at: session.user.phone_confirmed_at || undefined,
+          needsPhoneVerification: !hasVerifiedPhone
         }
+        
         setAuthUser(authUser)
         
         try {
@@ -56,6 +63,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
             }
           } else {
             setUserProfile(null)
+            
           }
         } catch (error) {
           console.error('Error fetching profile:', error)
@@ -72,7 +80,6 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     handleSessionChange()
   }, [session, setAuthUser, setUserProfile, setIsLoading])
 
-  // Subscribe to auth changes
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
       queryClient.invalidateQueries({ queryKey: ['session'] })

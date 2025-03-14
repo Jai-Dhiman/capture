@@ -8,8 +8,8 @@ import {
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../types/navigation';
 import OAuth from '../../components/OAuth';
-import AppleIcon from '../../../assets/icons/apple.svg';
-import EmailIcon from '../../../assets/icons/Email Icon.svg';
+import AppleIcon from '../../../assets/icons/AppleLogo.svg';
+import EmailIcon from '../../../assets/icons/EmailIcon.svg';
 import Header from '../../components/Header';
 
 type Props = {
@@ -21,7 +21,7 @@ export default function SignupScreen({ navigation }: Props) {
     <View style={{ flex: 1 }}>
       <View className="flex-1 bg-[#DCDCDE] rounded-[30px] overflow-hidden">
         <Image
-          source={require('../../../assets/Fluid Background Coffee.png')}
+          source={require('../../../assets/DefaultBackground.png')}
           style={{ width: '100%', height: '100%', position: 'absolute' }}
           resizeMode="cover"
         />

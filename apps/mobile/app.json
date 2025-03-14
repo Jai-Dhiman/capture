@@ -26,11 +26,23 @@
       }
     },
     "scheme": "capture",
-    "web": {
-      "bundler": "metro"
-    },
-    "plugins": [
-      "expo-secure-store"
-    ]
-  }
+    "linking": {
+      "prefixes": ["captureapp://", "https://captureapp.org", "localhost:8081"],
+      "config": {
+        "screens": {
+          "Auth": {
+            "screens": {
+              "EnterPhone": "auth/verify-email"
+            }
+          }
+        }
+      }
+    }
+  },
+  "web": {
+    "bundler": "metro"
+  },
+  "plugins": [
+    "expo-secure-store"
+  ]
 }

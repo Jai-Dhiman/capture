@@ -9,9 +9,9 @@ import { useProfile } from '../hooks/auth/useProfile';
 import { useFollowers, useFollowing } from '../hooks/useRelationships';
 import { MediaImage } from '../components/media/MediaImage';
 import { Ionicons } from '@expo/vector-icons';
-import SavedPosts from "../assets/icons/Favorites Icon.svg"
-import Placeholder from "../assets/icons/View Password Icon.svg"
-import NewPost from "../assets/icons/Plus Icon.svg"
+import SavedPosts from "../../assets/icons/FavoritesIcon.svg"
+import Placeholder from "../../assets/icons/ViewPassword Icon.svg"
+import NewPost from "../../assets/icons/PlusIcon.svg"
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ProfileImage } from '../components/media/ProfileImage';
 import { FollowButton } from '../components/profile/FollowButton';
@@ -55,7 +55,7 @@ export default function Profile() {
   return (
     <View className="flex-1 bg-[#DCDCDE]">
       <Image
-        source={require('../assets/Fluid Background Coffee.png')}
+        source={require('../../assets/DefaultBackground.png')}
         style={{ width: '100%', height: '100%', position: 'absolute' }}
         resizeMode="cover"
       />
