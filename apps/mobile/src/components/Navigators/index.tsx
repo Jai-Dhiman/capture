@@ -85,7 +85,6 @@ export const linking: LinkingOptions<RootStackParamList> = {
 export function MainNavigator() {
   const { authUser, userProfile, isLoading } = useSessionStore();
 
-  // Add debugging log to track auth state changes
   useEffect(() => {
     console.log("Auth state updated:", { 
       isAuthenticated: !!authUser,

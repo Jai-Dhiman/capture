@@ -18,7 +18,7 @@ export default function EnterPhoneScreen({ navigation }: Props) {
   const [phone, setPhone] = useState('')
   const [loading, setLoading] = useState(false)
   const [isPhoneFocused, setIsPhoneFocused] = useState(false)
-  const { authUser, setAuthUser } = useSessionStore()
+  const { authUser, setAuthUser, clearSession } = useSessionStore()
   
   const phoneInputRef = useRef<TextInput>(null)
   const screenWidth = Dimensions.get('window').width
@@ -68,6 +68,15 @@ export default function EnterPhoneScreen({ navigation }: Props) {
       setLoading(false)
     }
   }
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      clearSession();
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
 
   return (
     <View style={{ flex: 1 }}>
@@ -133,7 +142,6 @@ export default function EnterPhoneScreen({ navigation }: Props) {
               )}
             </TouchableOpacity>
 
-            {/* Home indicator */}
             <View className="w-full absolute bottom-0 flex justify-center items-center py-2">
               <View className="w-[139px] h-[5px] bg-black rounded-[100px]" />
             </View>

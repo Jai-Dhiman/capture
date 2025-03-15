@@ -11,6 +11,7 @@ import { AuthStackParamList } from '../../components/Navigators/types/navigation
 import { useAuth } from '../../hooks/auth/useAuth'
 import { LoadingSpinner } from 'components/LoadingSpinner'
 import OAuth from '../../components/OAuth';
+import Header from 'components/Header'
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'Login'>
@@ -57,9 +58,7 @@ export default function LoginScreen({ navigation }: Props) {
             resizeMode="cover"
           />
           <View className="flex-1 px-[26px]">
-            <Text className="text-[40px] font-roboto font-light text-center mt-[84px] mb-[26px]">
-              Capture
-            </Text>
+            <Header />
             <View className="h-[1px] bg-black/10 mb-[30px]" />
 
             <View className="mb-[29px]">

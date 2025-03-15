@@ -1,4 +1,3 @@
-// src/components/OAuth.tsx
 import React from 'react';
 import { TouchableOpacity, Text, Alert } from 'react-native';
 import { supabase } from '../lib/supabase';
@@ -21,8 +20,6 @@ export default function OAuth() {
 
       if (error) throw error;
 
-      // This will trigger redirect to Google
-      // On return, handle in App.tsx or a deep link handler
     } catch (error) {
       const errorMessage = error instanceof Error 
         ? error.message 
