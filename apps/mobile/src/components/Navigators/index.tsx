@@ -6,6 +6,7 @@ import { RootStackParamList } from './types/navigation';
 import AppNavigator from './AppNavigator';
 import AuthStack from './AuthNavigator';
 import CreateProfile from '../../screens/auth/CreateProfile';
+import PhoneVerificationFlow from './PhoneVerificationFlow';
 import { useSessionStore } from '../../stores/sessionStore';
 import { useNavigation } from '@react-navigation/native';
 import { SplashAnimation } from '../animation/SplashAnimation';
@@ -33,6 +34,12 @@ export const linking: LinkingOptions<RootStackParamList> = {
           CreateProfile: 'auth/create-profile',
         }
       },
+      PhoneVerification: {
+        screens: {
+          EnterPhone: 'verify/phone',
+          VerifyPhoneNumber: 'verify/code',
+        }
+      },
       App: {
         screens: {
           Feed: 'feed',
@@ -44,7 +51,6 @@ export const linking: LinkingOptions<RootStackParamList> = {
         }
       },
       CreateProfile: 'create-profile',
-      Profile: 'profile',
     }
   },
   async getInitialURL() {
@@ -79,40 +85,50 @@ export const linking: LinkingOptions<RootStackParamList> = {
 export function MainNavigator() {
   const { authUser, userProfile, isLoading } = useSessionStore();
 
+  // Add debugging log to track auth state changes
+  useEffect(() => {
+    console.log("Auth state updated:", { 
+      isAuthenticated: !!authUser,
+      hasPhone: authUser?.phone && authUser?.phone_confirmed_at,
+      hasProfile: !!userProfile,
+      isLoading
+    });
+  }, [authUser, userProfile, isLoading]);
+
   if (isLoading) {
     return <SplashAnimation fullScreen />;
   }
 
   return (
     <Stack.Navigator
-      initialRouteName="Auth"
       screenOptions={{
         headerShown: false,
       }}
     >
-      {authUser ? (
-        authUser.phone && authUser.phone_confirmed_at ? (
-          userProfile ? (
-            <Stack.Screen 
-              name="App" 
-              component={AppNavigator} 
-              initialParams={{ screen: 'Feed' }} 
-            />
-          ) : (
-            <Stack.Screen name="CreateProfile" component={CreateProfile} />
-          )
-        ) : (
-          <Stack.Screen 
-            name="Auth" 
-            component={AuthStack} 
-            initialParams={{ screen: 'Login', params: { showPhoneVerification: true } }} 
-          />
-        )
-      ) : (
+      {!authUser ? (
+        // Not authenticated - show login/signup flow
         <Stack.Screen 
           name="Auth" 
           component={AuthStack} 
           initialParams={{ screen: 'Login' }} 
+        />
+      ) : !authUser.phone || !authUser.phone_confirmed_at ? (
+        // Authenticated but needs phone verification
+        <Stack.Screen 
+          name="PhoneVerification" 
+          component={PhoneVerificationFlow} 
+        />
+      ) : !userProfile ? (
+        // Phone verified but needs profile
+        <Stack.Screen 
+          name="CreateProfile" 
+          component={CreateProfile} 
+        />
+      ) : (
+        // Fully authenticated with profile
+        <Stack.Screen 
+          name="App" 
+          component={AppNavigator} 
         />
       )}
     </Stack.Navigator>
@@ -124,8 +140,9 @@ export function NavigationHandler() {
   const navigation = useNavigation();
 
   useEffect(() => {
-    if (!isLoading && authUser?.needsPhoneVerification) {
-      (navigation as any).navigate('Auth', { screen: 'EnterPhone' });
+    if (!isLoading && authUser?.phone === null && authUser?.phone_confirmed_at === null) {
+      console.log("NavigationHandler: Redirecting to phone verification");
+      (navigation as any).navigate('PhoneVerification', { screen: 'EnterPhone' });
     }
   }, [authUser, navigation, isLoading]);
 

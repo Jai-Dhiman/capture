@@ -39,7 +39,9 @@
       }
     },
     "web": {
-      "bundler": "metro"
+      "bundler": "metro",
+      "favicon": "./assets/CaptureLogo.png",
+      "name": "Capture"
     },
     "plugins": [
       "expo-secure-store"

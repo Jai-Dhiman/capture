@@ -69,10 +69,12 @@ export function useAuth() {
       }
     },
     onSuccess: (data) => {
+      console.log('Login success, setting auth state:', data)
+
       setAuthUser({
         id: data.user.id,
         email: data.user.email || '',
-        phone: data.user.phone || undefined,
+        phone: data.user.phone || '',
         phone_confirmed_at: data.user.phone_confirmed_at || undefined,
       })
 

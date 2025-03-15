@@ -48,52 +48,53 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const handleSessionChange = async () => {
-      setIsLoading(true)
-      
-      if (session) {
-        // Set basic auth user info
-        const authUser = {
-          id: session.user.id,
-          email: session.user.email || '',
-          phone: session.user.phone || '',
-          phone_confirmed_at: session.user.phone_confirmed_at || undefined,
-        }
+      try {
+        setIsLoading(true);
         
-        setAuthUser(authUser)
-        
-        // Only fetch profile if phone is verified
-        if (authUser.phone && authUser.phone_confirmed_at) {
-          try {
-            const profileData = await fetchUserProfile(authUser.id, session.access_token)
-            if (profileData) {
-              setUserProfile({
-                id: profileData.id,
-                supabase_id: authUser.id,
-                username: profileData.username,
-                bio: profileData.bio || undefined,
-                profileImage: profileData.profileImage || undefined,
-              })
-            } else {
-              setUserProfile(null)
+        if (session) {
+          const authUser = {
+            id: session.user.id,
+            email: session.user.email || '',
+            phone: session.user.phone || '',
+            phone_confirmed_at: session.user.phone_confirmed_at || undefined,
+          };
+          
+          setAuthUser(authUser);
+          
+          if (authUser.phone && authUser.phone_confirmed_at) {
+            try {
+              const profileData = await fetchUserProfile(authUser.id, session.access_token);
+              if (profileData) {
+                setUserProfile({
+                  id: profileData.id,
+                  supabase_id: authUser.id,
+                  username: profileData.username,
+                  bio: profileData.bio || undefined,
+                  profileImage: profileData.profileImage || undefined,
+                });
+              } else {
+                setUserProfile(null);
+              }
+            } catch (error) {
+              console.error('Error fetching profile:', error);
+              setUserProfile(null);
             }
-          } catch (error) {
-            console.error('Error fetching profile:', error)
-            setUserProfile(null)
+          } else {
+            setUserProfile(null);
           }
         } else {
-          // Don't attempt profile fetch if phone not verified
-          setUserProfile(null)
+          setAuthUser(null);
+          setUserProfile(null);
         }
-      } else {
-        setAuthUser(null)
-        setUserProfile(null)
+      } catch (error) {
+        console.error("Session handling error:", error);
+      } finally {
+        setIsLoading(false);
       }
-      
-      setIsLoading(false)
-    }
+    };
     
-    handleSessionChange()
-  }, [session, setAuthUser, setUserProfile, setIsLoading])
+    handleSessionChange();
+  }, [session, setAuthUser, setUserProfile, setIsLoading]);
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {

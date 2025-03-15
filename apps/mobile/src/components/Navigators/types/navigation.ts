@@ -4,7 +4,7 @@ export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList> | undefined
   CreateProfile: undefined
   App: NavigatorScreenParams<AppStackParamList> | undefined
-  Profile: undefined
+  PhoneVerification: NavigatorScreenParams<PhoneVerificationParamList> | undefined
 }
 
 export type AuthStackParamList = {
@@ -25,4 +25,9 @@ export type AppStackParamList = {
   SinglePost: { post: any }
   SavedPosts: undefined
   Search: undefined
+}
+
+export type PhoneVerificationParamList = {
+  EnterPhone: undefined
+  VerifyPhoneNumber: undefined
 }
