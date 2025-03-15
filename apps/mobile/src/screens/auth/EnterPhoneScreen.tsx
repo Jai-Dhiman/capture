@@ -88,10 +88,7 @@ export default function EnterPhoneScreen({ navigation }: Props) {
             resizeMode="cover"
           />
 
-          <Header 
-            showBackButton={true}
-            onBackPress={() => navigation.goBack()}
-          />
+          <Header />
 
           <View className="flex-1 px-5 items-center">
             <Text className="text-[32px] font-roboto text-center mt-12 mb-6">
@@ -140,6 +137,16 @@ export default function EnterPhoneScreen({ navigation }: Props) {
                   Send Verification Code
                 </Text>
               )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={{ width: inputWidth }}
+              className="h-14 bg-gray-300 rounded-[30px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] backdrop-blur-sm justify-center items-center mt-4"
+              onPress={() => navigation.navigate('CreateProfile')}
+            >
+              <Text className="text-center text-black text-base font-normal font-roboto leading-normal">
+                Skip for Now
+              </Text>
             </TouchableOpacity>
 
             <View className="w-full absolute bottom-0 flex justify-center items-center py-2">

@@ -67,7 +67,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
               if (profileData) {
                 setUserProfile({
                   id: profileData.id,
-                  supabase_id: authUser.id,
+                  userId: authUser.id,
                   username: profileData.username,
                   bio: profileData.bio || undefined,
                   profileImage: profileData.profileImage || undefined,

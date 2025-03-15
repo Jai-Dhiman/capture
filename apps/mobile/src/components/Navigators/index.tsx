@@ -105,26 +105,17 @@ export function MainNavigator() {
       }}
     >
       {!authUser ? (
-        // Not authenticated - show login/signup flow
         <Stack.Screen 
           name="Auth" 
           component={AuthStack} 
           initialParams={{ screen: 'Login' }} 
         />
-      ) : !authUser.phone || !authUser.phone_confirmed_at ? (
-        // Authenticated but needs phone verification
-        <Stack.Screen 
-          name="PhoneVerification" 
-          component={PhoneVerificationFlow} 
-        />
       ) : !userProfile ? (
-        // Phone verified but needs profile
         <Stack.Screen 
           name="CreateProfile" 
           component={CreateProfile} 
         />
       ) : (
-        // Fully authenticated with profile
         <Stack.Screen 
           name="App" 
           component={AppNavigator} 
@@ -135,15 +126,15 @@ export function MainNavigator() {
 }
 
 export function NavigationHandler() {
-  const { authUser, isLoading } = useSessionStore();
+  const { authUser, isLoading, userProfile } = useSessionStore();
   const navigation = useNavigation();
 
   useEffect(() => {
-    if (!isLoading && authUser?.phone === null && authUser?.phone_confirmed_at === null) {
-      console.log("NavigationHandler: Redirecting to phone verification");
-      (navigation as any).navigate('PhoneVerification', { screen: 'EnterPhone' });
+    if (!isLoading && authUser && !userProfile) {
+      console.log("NavigationHandler: Redirecting to profile creation");
+      (navigation as any).navigate('CreateProfile');
     }
-  }, [authUser, navigation, isLoading]);
+  }, [authUser, userProfile, navigation, isLoading]);
 
   return null;
 }

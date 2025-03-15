@@ -5,12 +5,11 @@ export interface AuthUser {
   email: string
   phone?: string
   phone_confirmed_at?: string
-  needsPhoneVerification?: boolean
 }
 
 export interface UserProfile {
   id: string
-  supabase_id: string
+  userId: string
   username: string | null
   bio?: string
   profileImage?: string
