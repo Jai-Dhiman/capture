@@ -1,7 +1,9 @@
+import { NavigatorScreenParams } from '@react-navigation/native'
+
 export type RootStackParamList = {
-  Auth: undefined
+  Auth: NavigatorScreenParams<AuthStackParamList> | undefined
   CreateProfile: undefined
-  App: undefined
+  App: NavigatorScreenParams<AppStackParamList> | undefined
   Profile: undefined
 }
 

@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, Image, Modal, Dimensions } fr
 import { useSessionStore } from '../stores/sessionStore';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AppStackParamList } from '../types/navigation';
+import { AppStackParamList } from '../components/Navigators/types/navigation';
 import { useUserPosts } from '../hooks/usePosts';
 import { useProfile } from '../hooks/auth/useProfile';
 import { useFollowers, useFollowing } from '../hooks/useRelationships';

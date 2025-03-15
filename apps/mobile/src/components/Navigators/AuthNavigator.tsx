@@ -1,7 +1,7 @@
 // src/components/Navigators/AuthNavigator.tsx
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { AuthStackParamList } from '../../types/navigation';
+import { AuthStackParamList } from './types/navigation';
 // import LandingScreen from '../../screens/auth/LandingScreen';
 import LoginScreen from '../../screens/auth/LoginScreen';
 import SignupScreen from '../../screens/auth/SignupScreen';

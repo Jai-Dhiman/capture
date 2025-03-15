@@ -7,7 +7,7 @@ import EmailIcon from '../../../assets/icons/EmailIcon.svg'
 import LockIcon from '../../../assets/icons/LockIcon.svg'
 import ViewPasswordIcon from '../../../assets/icons/ViewPasswordIcon.svg'
 import HidePasswordIcon from '../../../assets/icons/HidePasswordIcon.svg'
-import { AuthStackParamList } from '../../types/navigation'
+import { AuthStackParamList } from '../../components/Navigators/types/navigation'
 import { useAuth } from '../../hooks/auth/useAuth'
 import { LoadingSpinner } from 'components/LoadingSpinner'
 import OAuth from '../../components/OAuth';

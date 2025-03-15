@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Image, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AppStackParamList } from '../types/navigation';
+import { AppStackParamList } from '../components/Navigators/types/navigation';
 import { Ionicons } from '@expo/vector-icons';
 import SavedPostIcon from '../../assets/icons/FavoriteIcon.svg';
 import SavePostIcon from '../../assets/icons/PlusIcon.svg';

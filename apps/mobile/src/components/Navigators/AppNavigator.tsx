@@ -1,5 +1,5 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { AppStackParamList } from '../../types/navigation';
+import { AppStackParamList } from './types/navigation';
 import Feed from '../../screens/Feed';
 import NewPost from '../../screens/NewPost';
 import Profile from '../../screens/Profile';

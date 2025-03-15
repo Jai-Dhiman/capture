@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as ImagePicker from 'expo-image-picker';
 import { Platform } from 'react-native';
-import { RootStackParamList } from 'types/navigation';
+import { RootStackParamList } from 'components/Navigators/types/navigation';
 import { useUploadMedia } from 'hooks/useMedia';
 import { useCreatePost } from 'hooks/usePosts';
 import { HashtagInput } from '../components/hashtags/HashtagInput';

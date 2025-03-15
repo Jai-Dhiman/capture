@@ -3,7 +3,7 @@ import {
   View, Text, TouchableOpacity, ScrollView, TextInput, Alert, Image, Dimensions
 } from 'react-native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
-import { AuthStackParamList } from '../../types/navigation'
+import { AuthStackParamList } from '../../components/Navigators/types/navigation'
 import { useAuth } from '../../hooks/auth/useAuth'
 import { LoadingSpinner } from 'components/LoadingSpinner'
 import Header from '../../components/Header'

@@ -27,7 +27,7 @@
     },
     "scheme": "capture",
     "linking": {
-      "prefixes": ["captureapp://", "https://captureapp.org", "localhost:8081"],
+      "prefixes": ["captureapp://", "https://captureapp.org", "http://localhost:8081", "exp://192.168.1.64:8081"],
       "config": {
         "screens": {
           "Auth": {

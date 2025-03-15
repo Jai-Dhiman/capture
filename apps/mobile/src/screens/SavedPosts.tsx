@@ -3,7 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, Image, Dimensions } from 'react
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AppStackParamList } from '../types/navigation';
+import { AppStackParamList } from '../components/Navigators/types/navigation';
 import { useSavedPosts } from '../hooks/useSavesPosts';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { MediaImage } from '../components/media/MediaImage';

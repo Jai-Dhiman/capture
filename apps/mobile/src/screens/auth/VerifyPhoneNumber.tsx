@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, TextInput, Alert, Image, ScrollView } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AuthStackParamList } from '../../types/navigation';
+import { AuthStackParamList } from '../../components/Navigators/types/navigation';
 import Header from '../../components/Header';
 import { supabase } from '../../lib/supabase';
 import { useSessionStore } from '../../stores/sessionStore';

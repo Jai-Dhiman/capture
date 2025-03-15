@@ -5,7 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CompositeNavigationProp } from '@react-navigation/native';
 import { useSessionStore } from '../stores/sessionStore';
-import { AppStackParamList, RootStackParamList } from '../types/navigation';
+import { AppStackParamList, RootStackParamList } from '../components/Navigators/types/navigation';
 
 type NavigationProp = CompositeNavigationProp<
   NativeStackNavigationProp<AppStackParamList>,
