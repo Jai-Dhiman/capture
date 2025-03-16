@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, ActivityIndicator, Text, Keyboard } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useCreateComment } from '../../hooks/useComments';
-import { useSessionStore } from '../../stores/sessionStore';
+import { useAuthStore } from '../../stores/authStore';
+import { useProfileStore } from '../../stores/profileStore';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface CommentInputProps {
@@ -20,7 +21,8 @@ export const CommentInput: React.FC<CommentInputProps> = ({
 }) => {
   const [content, setContent] = useState('');
   const createCommentMutation = useCreateComment();
-  const { userProfile, authUser } = useSessionStore();
+  const { user, status, session } = useAuthStore();
+  const { profile } = useProfileStore();
   const queryClient = useQueryClient();
   
   const handleSubmit = async () => {
@@ -31,9 +33,9 @@ export const CommentInput: React.FC<CommentInputProps> = ({
       content: content.trim(),
       createdAt: new Date().toISOString(),
       user: {
-        id: userProfile?.id || '',
-        username: userProfile?.username || '',
-        image: userProfile?.profileImage
+        id: profile?.id || '',
+        username: profile?.username || '',
+        image: profile?.profileImage
       },
       parentComment: parentCommentId ? { id: parentCommentId } : null,
       optimistic: true

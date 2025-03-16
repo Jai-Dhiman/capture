@@ -1,26 +1,26 @@
-import React, { useState } from 'react'
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, Image } from 'react-native'
-import { useNavigation } from '@react-navigation/native'
-import { useSessionStore } from '../../stores/sessionStore'
-import * as ImagePicker from 'expo-image-picker'
-import { useCreateProfile } from '../../hooks/auth/useCreateProfile'
-import { LoadingSpinner } from 'components/LoadingSpinner'
-import { supabase } from '../../lib/supabase'
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, Image } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { LoadingSpinner } from 'components/LoadingSpinner';
+import { useAuthStore } from '../../stores/authStore';
+import { useAuth } from '../../hooks/auth/useAuth';
+import { useCreateProfile } from 'hooks/auth/useCreateProfile';
 
 export default function CreateProfile() {
-  const [username, setUsername] = useState('')
-  const [bio, setBio] = useState('')
-  const [profileImage, setProfileImage] = useState<string | null>(null)
-  const navigation = useNavigation()
-  const { authUser, clearSession } = useSessionStore()
-  const createProfileMutation = useCreateProfile()
+  const [username, setUsername] = useState('');
+  const [bio, setBio] = useState('');
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  
+  const { user } = useAuthStore();
+  const { logout } = useAuth();
+  const createProfileMutation = useCreateProfile();
   
   const pickImage = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync()
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
     
     if (permissionResult.granted === false) {
-      Alert.alert('Permission Required', 'You need to grant camera roll permissions to upload a photo.')
-      return
+      Alert.alert('Permission Required', 'You need to grant camera roll permissions to upload a photo.');
+      return;
     }
     
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -28,17 +28,17 @@ export default function CreateProfile() {
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
-    })
+    });
     
     if (!result.canceled) {
-      setProfileImage(result.assets[0].uri)
+      setProfileImage(result.assets[0].uri);
     }
-  }
+  };
   
   const createProfile = async () => {
     if (!username.trim()) {
-      Alert.alert('Error', 'Username is required')
-      return
+      Alert.alert('Error', 'Username is required');
+      return;
     }
     
     createProfileMutation.mutate(
@@ -48,42 +48,19 @@ export default function CreateProfile() {
         profileImage
       },
       {
-        onSuccess: () => {
-          Alert.alert('Success', 'Your profile has been created!', [
-            {
-              text: 'Continue',
-              onPress: () => {
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: 'App' as never }]
-                })
-              }
-            }
-          ])
-        },
         onError: (error) => {
           const errorMessage = error instanceof Error 
             ? error.message 
-            : 'Failed to create profile'
+            : 'Failed to create profile';
             
-          Alert.alert('Error', errorMessage)
+          Alert.alert('Error', errorMessage);
         }
       }
-    )
-  }
+    );
+  };
 
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      clearSession();
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Auth' as never }]
-      });
-    } catch (error) {
-      console.error('Error logging out:', error);
-      Alert.alert('Error', 'Failed to log out. Please try again.');
-    }
+  const handleLogout = () => {
+    logout.mutate();
   };
   
   return (
@@ -135,7 +112,7 @@ export default function CreateProfile() {
           disabled={createProfileMutation.isPending}
         >
           {createProfileMutation.isPending ? (
-            <LoadingSpinner fullScreen message="Creating your profile..." />
+            <LoadingSpinner />
           ) : (
             <Text className="text-base font-bold font-roboto text-center">
               Create Profile
@@ -146,10 +123,13 @@ export default function CreateProfile() {
         <TouchableOpacity 
           className="mt-6 items-center" 
           onPress={handleLogout}
+          disabled={logout.isPending}
         >
-          <Text className="text-blue-600 underline text-base">Log out</Text>
+          <Text className="text-blue-600 underline text-base">
+            {logout.isPending ? 'Logging out...' : 'Log out'}
+          </Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
-  )
+  );
 }

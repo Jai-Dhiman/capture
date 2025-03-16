@@ -1,112 +1,110 @@
-import React, { useEffect } from 'react'
+// src/lib/SessionProvider.tsx
+import React, { useEffect, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from './supabase'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useSessionStore } from '../stores/sessionStore'
-import { API_URL } from '@env'
-import { LoadingSpinner } from 'components/LoadingSpinner' 
+import { useAuthStore } from '../stores/authStore'
+import { useProfileStore } from '../stores/profileStore'
+import { useProfile } from '../hooks/auth/useProfile'
+import { SplashAnimation } from 'components/animation/SplashAnimation'
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
-  const { setAuthUser, setUserProfile, setIsLoading } = useSessionStore()
+  const [isInitializing, setIsInitializing] = useState(true)
+  const { user, setUser, setSession, status } = useAuthStore()
+  const { setProfile } = useProfileStore()
   const queryClient = useQueryClient()
-
-  const fetchUserProfile = async (userId: string, token: string) => {
-    try {
-      const checkResponse = await fetch(`${API_URL}/api/profile/check/${userId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-
-      if (!checkResponse.ok) throw new Error('Profile check failed')
-
-      const checkData = await checkResponse.json()
-
-      if (checkData.exists) {
-        const profileResponse = await fetch(`${API_URL}/api/profile/${userId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-
-        if (!profileResponse.ok) throw new Error('Failed to fetch profile')
-
-        return await profileResponse.json()
-      }
-
-      return null
-    } catch (error) {
-      console.error('Error fetching profile:', error)
-      return null
-    }
-  }
-
-  const { data: session, isLoading } = useQuery({
-    queryKey: ['session'],
-    queryFn: async () => {
-      const { data, error } = await supabase.auth.getSession()
-      if (error) throw error
-      return data.session
-    },
-    staleTime: 5 * 60 * 1000,
+  
+  // Only fetch profile if we have a user
+  const { data: profileData } = useProfile(user?.id, {
+    enabled: !!user?.id && status === 'authenticated',
   })
-
+  
+  // Set profile when available
   useEffect(() => {
-    const handleSessionChange = async () => {
+    if (profileData) {
+      setProfile(profileData)
+    }
+  }, [profileData, setProfile])
+  
+  // Initialize session
+  useEffect(() => {
+    async function initSession() {
       try {
-        setIsLoading(true);
+        // Check for existing session
+        const { data, error } = await supabase.auth.getSession()
         
-        if (session) {
-          const authUser = {
-            id: session.user.id,
-            email: session.user.email || '',
-            phone: session.user.phone || '',
-            phone_confirmed_at: session.user.phone_confirmed_at || undefined,
-          };
+        if (error) {
+          console.error('Error getting session:', error)
+          setUser(null)
+          return
+        }
+        
+        if (data.session) {
+          // Update auth store with session data
+          const { user } = data.session
           
-          setAuthUser(authUser);
+          setUser({
+            id: user.id,
+            email: user.email || '',
+            phone: user.phone || '',
+            phone_confirmed_at: user.phone_confirmed_at || undefined,
+          })
           
-          try {
-            const profileData = await fetchUserProfile(authUser.id, session.access_token);
-            if (profileData) {
-              setUserProfile({
-                id: profileData.id,
-                userId: authUser.id,
-                username: profileData.username,
-                bio: profileData.bio || undefined,
-                profileImage: profileData.profileImage || undefined,
-              });
-              console.log('Profile found and set for user after OAuth login:', profileData.username);
-            } else {
-              console.log('No profile found for user, will redirect to profile creation');
-              setUserProfile(null);
-            }
-          } catch (error) {
-            console.error('Error fetching profile:', error);
-            setUserProfile(null);
-          }
+          setSession({
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token,
+            expires_at: new Date(data.session.expires_at || 0).getTime(),
+          })
         } else {
-          setAuthUser(null);
-          setUserProfile(null);
+          setUser(null)
         }
       } catch (error) {
-        console.error("Session handling error:", error);
+        console.error('Failed to initialize session:', error)
+        setUser(null)
       } finally {
-        setIsLoading(false);
+        setIsInitializing(false)
       }
-    };
+    }
     
-    handleSessionChange();
-  }, [session, setAuthUser, setUserProfile, setIsLoading]);
-
+    initSession()
+  }, [setUser, setSession])
+  
+  // Listen for auth changes
   useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      queryClient.invalidateQueries({ queryKey: ['session'] })
+    const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event)
+      
+      if (event === 'SIGNED_IN' && session) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email || '',
+          phone: session.user.phone || '',
+          phone_confirmed_at: session.user.phone_confirmed_at || undefined,
+        })
+        
+        setSession({
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+          expires_at: new Date(session.expires_at || 0).getTime(),
+        })
+        
+        queryClient.invalidateQueries({ queryKey: ['profile'] })
+      }
+      
+      if (event === 'SIGNED_OUT') {
+        setUser(null)
+        setProfile(null)
+        queryClient.clear()
+      }
     })
     
     return () => {
       data.subscription.unsubscribe()
     }
-  }, [queryClient])
-
-  if (isLoading) {
-    return <LoadingSpinner fullScreen message="Loading your session..." />
+  }, [setUser, setSession, setProfile, queryClient])
+  
+  if (isInitializing) {
+    return <SplashAnimation fullScreen />
   }
-
+  
   return <>{children}</>
 }

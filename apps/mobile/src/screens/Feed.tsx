@@ -1,11 +1,11 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { supabase } from '../lib/supabase';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CompositeNavigationProp } from '@react-navigation/native';
-import { useSessionStore } from '../stores/sessionStore';
 import { AppStackParamList, RootStackParamList } from '../components/Navigators/types/navigation';
+import { useAuthStore } from '../stores/authStore';
+import { useAuth } from '../hooks/auth/useAuth';
 
 type NavigationProp = CompositeNavigationProp<
   NativeStackNavigationProp<AppStackParamList>,
@@ -14,24 +14,26 @@ type NavigationProp = CompositeNavigationProp<
 
 export default function Feed() {
   const navigation = useNavigation<NavigationProp>();
-  const { authUser, clearSession } = useSessionStore();
-
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      clearSession();
-    } catch (error) {
-      console.error('Error logging out:', error);
-    }
+  const { user } = useAuthStore();
+  const { logout } = useAuth(); 
+  
+  const handleLogout = () => {
+    logout.mutate();
   };
 
   return (
     <View className="flex-1 p-5">
       <Text className="text-2xl font-bold mb-5">Welcome to Capture</Text>
-      {authUser && (
+      {user && (
         <View className="mt-5">
-          <Text className="text-base mb-2.5">User ID: {authUser.id}</Text>
-          <Text className="text-base mb-2.5">Email: {authUser.email}</Text>
+          <Text className="text-base mb-2.5">User ID: {user.id}</Text>
+          <Text className="text-base mb-2.5">Email: {user.email}</Text>
+          <Text className="text-base mb-2.5">
+            Phone: {user.phone || 'Not provided'}
+          </Text>
+          <Text className="text-base mb-2.5">
+            Phone Verified: {user.phone_confirmed_at ? 'Yes' : 'No'}
+          </Text>
         </View>
       )}
 
@@ -66,8 +68,11 @@ export default function Feed() {
       <TouchableOpacity 
         className="bg-red-600 p-3 rounded-lg mt-5 items-center"
         onPress={handleLogout}
+        disabled={logout.isPending}
       >
-        <Text className="text-white text-base font-bold">Logout</Text>
+        <Text className="text-white text-base font-bold">
+          {logout.isPending ? 'Logging out...' : 'Logout'}
+        </Text>
       </TouchableOpacity>
     </View>
   );

@@ -1,39 +1,36 @@
-// src/hooks/useProfile.ts
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, UseQueryOptions } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { API_URL } from '@env'
+import { UserProfile } from '../../stores/profileStore'
 
-export function useProfile(userId?: string) {
-  return useQuery({
+export function useProfile(
+  userId?: string,
+  options?: Omit<UseQueryOptions<UserProfile | null>, 'queryKey' | 'queryFn'>
+) {
+  return useQuery<UserProfile | null>({
     queryKey: ['profile', userId],
     queryFn: async () => {
-      if (!userId) throw new Error('User ID is required')
+      if (!userId) return null
 
       const {
         data: { session },
       } = await supabase.auth.getSession()
-
-      if (!session?.access_token) {
-        throw new Error('No auth token available')
-      }
+      if (!session?.access_token) return null
 
       const response = await fetch(`${API_URL}/api/profile/${userId}`, {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
+        headers: { Authorization: `Bearer ${session.access_token}` },
       })
 
       if (!response.ok) {
-        if (response.status === 404) {
-          return null
-        }
+        if (response.status === 404) return null
         throw new Error('Failed to fetch profile')
       }
 
       return await response.json()
     },
     enabled: !!userId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
+    ...options,
   })
 }
 

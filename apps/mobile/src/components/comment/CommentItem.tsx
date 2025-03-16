@@ -4,7 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Comment, useCommentReplies, useDeleteComment } from '../../hooks/useComments';
 import { ProfileImage } from '../media/ProfileImage';
 import { CommentInput } from './CommentInput';
-import { useSessionStore } from '../../stores/sessionStore';
+import { useAuthStore } from '../../stores/authStore';
+import { useProfileStore } from '../../stores/profileStore';
 import { CommentSkeleton } from './CommentSkeleton';
 import { LoadingSpinner } from 'components/LoadingSpinner';
 
@@ -25,7 +26,8 @@ export const CommentItem: React.FC<CommentItemProps> = ({
   const [showReplies, setShowReplies] = useState(false);
   const [repliesPage, setRepliesPage] = useState(1);
   const REPLIES_PER_PAGE = 3;
-  const { authUser } = useSessionStore();
+  const { user, status, session } = useAuthStore();
+  const { profile } = useProfileStore();
   
   const deleteCommentMutation = useDeleteComment();
   
@@ -73,7 +75,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
     day: 'numeric',
   });
   
-  const isOwner = authUser?.id === comment.user?.id;
+  const isOwner = user?.id === comment.user?.id;
   
   return (
     <View className={`mb-3 ${isReply ? 'ml-8' : ''}`}>

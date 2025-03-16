@@ -7,33 +7,38 @@ import { View } from 'react-native';
 import "../global.css";
 import { ApolloProvider } from './components/ApolloProvider';
 import { SessionProvider } from './lib/SessionProvider';
-import { MainNavigator, NavigationHandler, linking } from './components/Navigators';
+import { MainNavigator, linking } from './components/Navigators';
+import { Provider as JotaiProvider } from 'jotai';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000,
     },
   },
 });
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ApolloProvider>
-        <SessionProvider>
-          <SafeAreaProvider>
-            <View className="flex-1 bg-black">
-              <StatusBar style="light" />
-              <NavigationContainer linking={linking}>
-                <MainNavigator />
-                <NavigationHandler />
-              </NavigationContainer>
-            </View>
-          </SafeAreaProvider>
-        </SessionProvider>
-      </ApolloProvider>
-    </QueryClientProvider>
+    <JotaiProvider>
+      <QueryClientProvider client={queryClient}>
+        <ApolloProvider>
+          <SessionProvider>
+            <SafeAreaProvider>
+              <View className="flex-1 bg-black">
+                <StatusBar style="light" />
+                <NavigationContainer linking={linking}>
+                  <MainNavigator />
+                </NavigationContainer>
+              </View>
+            </SafeAreaProvider>
+          </SessionProvider>
+        </ApolloProvider>
+        {__DEV__ && <ReactQueryDevtools />}
+        </QueryClientProvider>
+    </JotaiProvider>
   );
 }

@@ -1,16 +1,15 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { LinkingOptions } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
+import { useAtomValue } from 'jotai';
+import { authStageAtom } from '../../atoms/authAtoms';
 import { RootStackParamList } from './types/navigation';
 import AppNavigator from './AppNavigator';
 import AuthStack from './AuthNavigator';
 import CreateProfile from '../../screens/auth/CreateProfile';
 import PhoneVerificationFlow from './PhoneVerificationFlow';
-import { useSessionStore } from '../../stores/sessionStore';
-import { useNavigation } from '@react-navigation/native';
-import { SplashAnimation } from '../animation/SplashAnimation';
-import { supabase } from '../../lib/supabase';
+import { handleSupabaseDeepLink } from 'lib/handleDeepLinks';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -56,25 +55,11 @@ export const linking: LinkingOptions<RootStackParamList> = {
   async getInitialURL() {
     const url = await Linking.getInitialURL();
     
-    if (url != null) {
-      if (url.includes('auth/callback')) {
-        try {
-          const { data, error } = await supabase.auth.getSession();
-          
-          if (!error && data.session) {
-            const authUser = {
-              id: data.session.user.id,
-              email: data.session.user.email || '',
-              phone: data.session.user.phone || '',
-              phone_confirmed_at: data.session.user.phone_confirmed_at || undefined,
-            };
-            useSessionStore.getState().setAuthUser(authUser);
-            
-            return Linking.createURL('/auth/enter-phone');
-          }
-        } catch (error) {
-          console.error("Error getting session from URL:", error);
-        }
+    if (url) {
+      // Handle Supabase auth callbacks
+      const redirectPath = await handleSupabaseDeepLink(url);
+      if (redirectPath) {
+        return Linking.createURL(redirectPath);
       }
     }
     
@@ -83,58 +68,25 @@ export const linking: LinkingOptions<RootStackParamList> = {
 };
 
 export function MainNavigator() {
-  const { authUser, userProfile, isLoading } = useSessionStore();
-
-  useEffect(() => {
-    console.log("Auth state updated:", { 
-      isAuthenticated: !!authUser,
-      hasPhone: authUser?.phone && authUser?.phone_confirmed_at,
-      hasProfile: !!userProfile,
-      isLoading
-    });
-  }, [authUser, userProfile, isLoading]);
-
-  if (isLoading) {
-    return <SplashAnimation fullScreen />;
-  }
+  const authStage = useAtomValue(authStageAtom);
 
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
-      {!authUser ? (
-        <Stack.Screen 
-          name="Auth" 
-          component={AuthStack} 
-          initialParams={{ screen: 'Login' }} 
-        />
-      ) : !userProfile ? (
-        <Stack.Screen 
-          name="CreateProfile" 
-          component={CreateProfile} 
-        />
-      ) : (
-        <Stack.Screen 
-          name="App" 
-          component={AppNavigator} 
-        />
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {authStage === 'unauthenticated' && (
+        <Stack.Screen name="Auth" component={AuthStack} />
+      )}
+      
+      {authStage === 'profile-creation' && (
+        <Stack.Screen name="CreateProfile" component={CreateProfile} />
+      )}
+      
+      {authStage === 'phone-verification' && (
+        <Stack.Screen name="PhoneVerification" component={PhoneVerificationFlow} />
+      )}
+      
+      {authStage === 'complete' && (
+        <Stack.Screen name="App" component={AppNavigator} />
       )}
     </Stack.Navigator>
   );
-}
-
-export function NavigationHandler() {
-  const { authUser, isLoading, userProfile } = useSessionStore();
-  const navigation = useNavigation();
-
-  useEffect(() => {
-    if (!isLoading && authUser && !userProfile) {
-      console.log("NavigationHandler: Redirecting to profile creation");
-      (navigation as any).navigate('CreateProfile');
-    }
-  }, [authUser, userProfile, navigation, isLoading]);
-
-  return null;
 }

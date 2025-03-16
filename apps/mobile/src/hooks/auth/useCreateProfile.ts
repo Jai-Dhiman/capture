@@ -1,18 +1,20 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '../../lib/supabase'
-import { useSessionStore } from '../../stores/sessionStore'
+import { useMutation } from '@tanstack/react-query'
 import { API_URL } from '@env'
+import { useAuthStore } from '../../stores/authStore'
+import { useProfileStore } from 'stores/profileStore'
 
 export function useCreateProfile() {
-  const queryClient = useQueryClient()
-  const { authUser, setUserProfile } = useSessionStore()
+  const { user, session } = useAuthStore()
+  const { setProfile } = useProfileStore()
 
-  const uploadImage = async (token: string, imageUri: string) => {
+  const uploadImage = async (imageUri: string) => {
+    if (!session?.access_token) throw new Error('No auth token available')
+
     try {
       const uploadUrlResponse = await fetch(`${API_URL}/api/media/image-upload`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         },
       })
@@ -26,15 +28,9 @@ export function useCreateProfile() {
       const formData = new FormData()
 
       if (imageUri.startsWith('data:')) {
-        console.log('Detected base64 image, converting to blob')
-        try {
-          const response = await fetch(imageUri)
-          const blob = await response.blob()
-          formData.append('file', blob, 'profile.jpg')
-        } catch (error) {
-          console.error('Error converting base64 to blob:', error)
-          throw new Error('Failed to process base64 image')
-        }
+        const response = await fetch(imageUri)
+        const blob = await response.blob()
+        formData.append('file', blob, 'profile.jpg')
       } else {
         formData.append('file', {
           uri: imageUri,
@@ -49,13 +45,10 @@ export function useCreateProfile() {
       })
 
       if (!uploadResponse.ok) {
-        const errorText = await uploadResponse.text()
-        console.error('Upload error response:', errorText)
-        throw new Error(`Upload failed: ${uploadResponse.status} - ${errorText}`)
+        throw new Error(`Upload failed: ${uploadResponse.status}`)
       }
 
       const uploadResponseData = await uploadResponse.json()
-
       return uploadResponseData.result.id
     } catch (error) {
       console.error('Image upload error:', error)
@@ -63,10 +56,12 @@ export function useCreateProfile() {
     }
   }
 
-  const checkUsernameAvailability = async (username: string, token: string) => {
+  const checkUsernameAvailability = async (username: string) => {
+    if (!session?.access_token) throw new Error('No auth token available')
+
     const response = await fetch(`${API_URL}/api/profile/check-username?username=${username}`, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${session.access_token}`,
       },
     })
     const data = await response.json()
@@ -83,18 +78,10 @@ export function useCreateProfile() {
       bio?: string
       profileImage?: string | null
     }) => {
-      if (!authUser) throw new Error('Not authenticated')
+      if (!user) throw new Error('Not authenticated')
+      if (!session?.access_token) throw new Error('No auth token available')
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-      const token = session?.access_token
-
-      if (!token) {
-        throw new Error('No auth token available')
-      }
-
-      const isAvailable = await checkUsernameAvailability(username, token)
+      const isAvailable = await checkUsernameAvailability(username)
       if (!isAvailable) {
         throw new Error('Username already taken')
       }
@@ -102,7 +89,7 @@ export function useCreateProfile() {
       let cloudflareImageId = null
       if (profileImage) {
         try {
-          cloudflareImageId = await uploadImage(token, profileImage)
+          cloudflareImageId = await uploadImage(profileImage)
         } catch (error) {
           console.error('Image upload failed but continuing:', error)
         }
@@ -112,10 +99,10 @@ export function useCreateProfile() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
-          userId: authUser.id,
+          userId: user.id,
           username,
           bio: bio?.trim() || null,
           profileImage: cloudflareImageId,
@@ -130,18 +117,13 @@ export function useCreateProfile() {
       return await response.json()
     },
     onSuccess: (profileData) => {
-      if (authUser) {
-        setUserProfile({
-          id: profileData.id,
-          supabase_id: authUser.id,
-          username: profileData.username,
-          bio: profileData.bio || undefined,
-          profileImage: profileData.profileImage || undefined,
-        })
-      }
-
-      queryClient.invalidateQueries({ queryKey: ['session'] })
-      queryClient.invalidateQueries({ queryKey: ['profile'] })
+      setProfile({
+        id: profileData.id,
+        userId: profileData.userId,
+        username: profileData.username,
+        bio: profileData.bio || undefined,
+        profileImage: profileData.profileImage || undefined,
+      })
     },
   })
 }

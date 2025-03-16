@@ -1,17 +1,12 @@
 import React from 'react';
 import { TouchableOpacity, Text, Alert } from 'react-native';
 import { supabase } from '../lib/supabase';
-import { useNavigation } from '@react-navigation/native';
-import { useSessionStore } from '../stores/sessionStore';
 import GoogleIcon from '../../assets/icons/GoogleLogo.svg';
 
 export default function OAuth() {
-  const navigation = useNavigation();
-  const { setAuthUser } = useSessionStore();
-
   const handleGoogleSignIn = async () => {
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
@@ -19,7 +14,6 @@ export default function OAuth() {
       });
 
       if (error) throw error;
-
     } catch (error) {
       const errorMessage = error instanceof Error 
         ? error.message 
