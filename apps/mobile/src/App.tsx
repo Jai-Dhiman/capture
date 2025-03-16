@@ -8,7 +8,6 @@ import "../global.css";
 import { ApolloProvider } from './components/ApolloProvider';
 import { SessionProvider } from './lib/SessionProvider';
 import { MainNavigator, linking } from './components/Navigators';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,7 +33,6 @@ export default function App() {
               </View>
             </SessionProvider>
           </ApolloProvider>
-          {__DEV__ && <ReactQueryDevtools />}
         </QueryClientProvider>
     </SafeAreaProvider>
   );

@@ -38,7 +38,6 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event)
       
       if (event === 'SIGNED_IN' && session) {
         setUser({
