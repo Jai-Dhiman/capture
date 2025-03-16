@@ -108,18 +108,6 @@ export default function EmailSignupScreen({ navigation }: Props) {
               </TouchableOpacity>
             </View>
 
-            {/* Phone number field (disabled in this implementation) */}
-            <View className="mb-4 w-full items-center">
-              <View 
-                style={{ width: inputWidth }}
-                className="h-[55px] bg-white rounded-2xl shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]"
-              >
-                <View className="w-[55px] h-[55px] absolute left-0 top-0 bg-white border border-[#c7c7c7] rounded-l-2xl" />
-                <Text className="absolute left-[16px] top-[18px] text-xl font-roboto">+1</Text>
-                <Text className="absolute left-[66px] top-[20px] text-base font-semibold font-roboto text-[#c7c7c7]">Phone Number</Text>
-              </View>
-            </View>
-
             {/* Password Field */}
             <View className="mb-4 w-full items-center">
               <TouchableOpacity

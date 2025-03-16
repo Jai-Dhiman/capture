@@ -61,25 +61,23 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           
           setAuthUser(authUser);
           
-          if (authUser.phone && authUser.phone_confirmed_at) {
-            try {
-              const profileData = await fetchUserProfile(authUser.id, session.access_token);
-              if (profileData) {
-                setUserProfile({
-                  id: profileData.id,
-                  userId: authUser.id,
-                  username: profileData.username,
-                  bio: profileData.bio || undefined,
-                  profileImage: profileData.profileImage || undefined,
-                });
-              } else {
-                setUserProfile(null);
-              }
-            } catch (error) {
-              console.error('Error fetching profile:', error);
+          try {
+            const profileData = await fetchUserProfile(authUser.id, session.access_token);
+            if (profileData) {
+              setUserProfile({
+                id: profileData.id,
+                userId: authUser.id,
+                username: profileData.username,
+                bio: profileData.bio || undefined,
+                profileImage: profileData.profileImage || undefined,
+              });
+              console.log('Profile found and set for user after OAuth login:', profileData.username);
+            } else {
+              console.log('No profile found for user, will redirect to profile creation');
               setUserProfile(null);
             }
-          } else {
+          } catch (error) {
+            console.error('Error fetching profile:', error);
             setUserProfile(null);
           }
         } else {
