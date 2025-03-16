@@ -6,6 +6,8 @@ import Header from '../../components/Header';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { LoadingSpinner } from 'components/LoadingSpinner';
+import { useOnboardingStore } from '../../stores/onboardingStore';
+import { isDevelopment } from '../../config/environment';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'VerifyPhoneNumber'>;
@@ -20,6 +22,7 @@ export default function VerifyPhoneNumberScreen({ navigation }: Props) {
   const [countdown, setCountdown] = useState(0);
   const inputRefs = useRef<Array<TextInput | null>>([null, null, null, null, null, null]);
   const { user } = useAuthStore();
+  const { completeStep } = useOnboardingStore();
 
   useEffect(() => {
     const allDigitsFilled = verificationCode.every(digit => digit !== '');
@@ -73,6 +76,7 @@ export default function VerifyPhoneNumberScreen({ navigation }: Props) {
       
       if (error) throw error;
       
+      completeStep('phone-verification');
       navigation.navigate('CreateProfile');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Verification failed';
@@ -183,6 +187,29 @@ export default function VerifyPhoneNumberScreen({ navigation }: Props) {
             <View className="w-[139px] h-[5px] bg-black rounded-[100px]" />
           </View>
         </View>
+        {isDevelopment && (
+          <View className="bg-yellow-100 p-3 rounded mx-4 mb-4">
+            <Text className="text-xs text-yellow-800 text-center mb-2">
+              Development Testing Tools
+            </Text>
+            <TouchableOpacity
+              className="bg-yellow-200 p-2 rounded mb-2"
+              onPress={() => {
+                useAuthStore.getState().simulatePhoneVerification();
+                completeStep('phone-verification');
+                navigation.navigate('CreateProfile');
+              }}
+            >
+              <Text className="text-xs text-center">Simulate Successful Verification</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              className="bg-yellow-200 p-2 rounded"
+              onPress={() => navigation.goBack()}
+            >
+              <Text className="text-xs text-center">Go Back</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
     </View>
   );

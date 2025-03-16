@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from './supabase'
 import { useAuthStore } from '../stores/authStore'
 import { useProfileStore } from '../stores/profileStore'
+import { useOnboardingStore } from '../stores/onboardingStore'
 import { SplashAnimation } from 'components/animation/SplashAnimation'
 import { authService } from '../services/authService'
 
@@ -16,6 +17,15 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     async function initSession() {
       try {
         await authService.restoreSession()
+        
+        const { stage } = useAuthStore.getState()
+        const { goToStep } = useOnboardingStore.getState()
+        
+        if (stage === 'phone-verification') {
+          goToStep('phone-verification')
+        } else if (stage === 'profile-creation') {
+          goToStep('profile-setup')
+        }
       } catch (error) {
         console.error('Failed to initialize session:', error)
       } finally {
@@ -56,6 +66,15 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           
           authService.updateAuthStage()
           queryClient.invalidateQueries({ queryKey: ['profile'] })
+          
+          const { stage } = useAuthStore.getState()
+          const { goToStep } = useOnboardingStore.getState()
+          
+          if (stage === 'phone-verification') {
+            goToStep('phone-verification')
+          } else if (stage === 'profile-creation') {
+            goToStep('profile-setup')
+          }
         } catch (error) {
           console.error('Error fetching profile after sign in:', error)
         }
@@ -65,6 +84,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         setUser(null)
         setProfile(null)
         setAuthStage('unauthenticated')
+        useOnboardingStore.getState().resetOnboarding()
         queryClient.clear()
       }
     })

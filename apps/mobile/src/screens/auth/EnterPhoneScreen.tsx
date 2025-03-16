@@ -1,51 +1,54 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, TextInput, Alert, Image, Dimensions
-} from 'react-native'
-import { NativeStackNavigationProp } from '@react-navigation/native-stack'
-import { AuthStackParamList } from '../../components/Navigators/types/navigation'
+} from 'react-native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { AuthStackParamList } from '../../components/Navigators/types/navigation';
 import { useAuthStore } from '../../stores/authStore';
+import { useOnboardingStore } from '../../stores/onboardingStore';
 import { useAuth } from '../../hooks/auth/useAuth';
-import { LoadingSpinner } from 'components/LoadingSpinner'
-import Header from '../../components/Header'
-import { supabase } from '../../lib/supabase'
+import { LoadingSpinner } from 'components/LoadingSpinner';
+import Header from '../../components/Header';
+import { supabase } from '../../lib/supabase';
+import { isDevelopment, canSkipPhoneVerification } from '../../config/environment';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'EnterPhone'>
 }
 
 export default function EnterPhoneScreen({ navigation }: Props) {
-  const [phone, setPhone] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [isPhoneFocused, setIsPhoneFocused] = useState(false)
-  const { user, setUser } = useAuthStore();
+  const [phone, setPhone] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [isPhoneFocused, setIsPhoneFocused] = useState(false);
+  const { user, setUser, setOtpMessageId } = useAuthStore();
+  const { completeStep, skipStep } = useOnboardingStore();
   const { logout } = useAuth();
   
-  const phoneInputRef = useRef<TextInput>(null)
-  const screenWidth = Dimensions.get('window').width
-  const inputWidth = Math.min(343, screenWidth - 40)
+  const phoneInputRef = useRef<TextInput>(null);
+  const screenWidth = Dimensions.get('window').width;
+  const inputWidth = Math.min(343, screenWidth - 40);
 
   const handleSubmitPhone = async () => {
     if (!phone || phone.length < 10) {
-      Alert.alert('Error', 'Please enter a valid phone number')
-      return
+      Alert.alert('Error', 'Please enter a valid phone number');
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
     try {
-      const formattedPhone = `+1${phone.replace(/\D/g, '')}`  
+      const formattedPhone = `+1${phone.replace(/\D/g, '')}`;  
       
       const { error } = await supabase.auth.updateUser({
         phone: formattedPhone
-      })
+      });
       
-      if (error) throw error
+      if (error) throw error;
 
-      const { error: otpError } = await supabase.auth.signInWithOtp({
+      const { error: otpError, data } = await supabase.auth.signInWithOtp({
         phone: formattedPhone,
-      })
+      });
       
-      if (otpError) throw otpError
+      if (otpError) throw otpError;
       
       if (user) {
         setUser({
@@ -54,17 +57,28 @@ export default function EnterPhoneScreen({ navigation }: Props) {
         });
       }
       
-      navigation.navigate('VerifyPhoneNumber')
+      if (data?.messageId) {
+        setOtpMessageId(data.messageId);
+      }
+      
+      navigation.navigate('VerifyPhoneNumber');
     } catch (error) {
       const errorMessage = error instanceof Error 
         ? error.message 
-        : 'Failed to send verification code'
+        : 'Failed to send verification code';
       
-      Alert.alert('Error', errorMessage)
+      Alert.alert('Error', errorMessage);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+
+  const handleSkip = () => {
+    skipStep('phone-verification');
+    navigation.navigate('CreateProfile');
+  };
+
+  const canSkip = canSkipPhoneVerification(user?.email);
 
   return (
     <View style={{ flex: 1 }}>
@@ -76,7 +90,10 @@ export default function EnterPhoneScreen({ navigation }: Props) {
             resizeMode="cover"
           />
 
-          <Header />
+          <Header 
+            showBackButton
+            onBackPress={() => navigation.goBack()}
+          />
 
           <View className="flex-1 px-5 items-center">
             <Text className="text-[32px] font-roboto text-center mt-12 mb-6">
@@ -127,15 +144,25 @@ export default function EnterPhoneScreen({ navigation }: Props) {
               )}
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={{ width: inputWidth }}
-              className="h-14 bg-gray-300 rounded-[30px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] backdrop-blur-sm justify-center items-center mt-4"
-              onPress={() => navigation.navigate('CreateProfile')}
-            >
-              <Text className="text-center text-black text-base font-normal font-roboto leading-normal">
-                Skip for Now
-              </Text>
-            </TouchableOpacity>
+            {canSkip && (
+              <TouchableOpacity
+                style={{ width: inputWidth }}
+                className="h-14 bg-gray-300 rounded-[30px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] backdrop-blur-sm justify-center items-center mt-4"
+                onPress={handleSkip}
+              >
+                <Text className="text-center text-black text-base font-normal font-roboto leading-normal">
+                  Skip for Now
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            {isDevelopment && (
+              <View className="mt-8 bg-yellow-100 p-3 rounded" style={{ width: inputWidth }}>
+                <Text className="text-xs text-center text-yellow-800">
+                  Development Mode: Phone verification can be skipped.
+                </Text>
+              </View>
+            )}
 
             <View className="w-full absolute bottom-0 flex justify-center items-center py-2">
               <View className="w-[139px] h-[5px] bg-black rounded-[100px]" />
@@ -144,5 +171,5 @@ export default function EnterPhoneScreen({ navigation }: Props) {
         </View>
       </ScrollView>
     </View>
-  )
+  );
 }

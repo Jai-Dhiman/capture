@@ -9,6 +9,7 @@ import AuthStack from './AuthNavigator';
 import CreateProfile from '../../screens/auth/CreateProfile';
 import PhoneVerificationFlow from './PhoneVerificationFlow';
 import { handleSupabaseDeepLink } from 'lib/handleDeepLinks';
+import { useOnboardingStore } from '../../stores/onboardingStore';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -30,6 +31,8 @@ export const linking: LinkingOptions<RootStackParamList> = {
           EnterPhone: 'auth/verify-email',
           VerifyPhoneNumber: 'auth/verify-phone',
           CreateProfile: 'auth/create-profile',
+          ForgotPassword: 'auth/forgot-password',
+          ResetPassword: 'auth/reset-password',
         }
       },
       PhoneVerification: {
@@ -67,7 +70,8 @@ export const linking: LinkingOptions<RootStackParamList> = {
 };
 
 export function MainNavigator() {
-  const { stage: authStage } = useAuthStore()
+  const { stage: authStage } = useAuthStore();
+  const { currentStep } = useOnboardingStore();
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>

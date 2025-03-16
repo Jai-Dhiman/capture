@@ -112,7 +112,9 @@ export default function LoginScreen({ navigation }: Props) {
                   )}
                 </TouchableOpacity>
               </TouchableOpacity>
-              <Text className="text-xs font-roboto underline mt-[12px]">Forgot Password?</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+                <Text className="text-xs font-roboto underline mt-[12px]">Forgot Password?</Text>
+              </TouchableOpacity>
             </View>
 
             <TouchableOpacity

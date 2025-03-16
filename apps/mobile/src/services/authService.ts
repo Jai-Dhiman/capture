@@ -2,6 +2,8 @@ import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
 import { useProfileStore } from '../stores/profileStore'
 import { API_URL } from '@env'
+import { canSkipPhoneVerification, isDevelopment, TEST_EMAILS } from '../config/environment'
+import { useOnboardingStore } from '../stores/onboardingStore'
 
 export class AuthError extends Error {
   code: string
@@ -109,6 +111,13 @@ export const authService = {
 
   async verifyPhoneWithOTP(phone: string, token: string) {
     try {
+      const { user } = useAuthStore.getState()
+
+      if (isDevelopment && user?.email && TEST_EMAILS.includes(user.email)) {
+        console.log('DEV MODE: Auto-verifying test account')
+        return true
+      }
+
       const { error } = await supabase.auth.verifyOtp({
         phone,
         token,
@@ -116,7 +125,6 @@ export const authService = {
       })
 
       if (error) throw new AuthError(error.message, 'auth/verify-otp-failed')
-
       return true
     } catch (error) {
       if (error instanceof AuthError) throw error
@@ -200,9 +208,38 @@ export const authService = {
     }
   },
 
+  async resetPassword(email: string) {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      })
+
+      if (error) throw new AuthError(error.message, 'auth/reset-password-failed')
+      return true
+    } catch (error) {
+      if (error instanceof AuthError) throw error
+      throw new AuthError(
+        error instanceof Error ? error.message : 'Failed to send password reset email'
+      )
+    }
+  },
+
+  async updatePassword(password: string) {
+    try {
+      const { error } = await supabase.auth.updateUser({ password })
+
+      if (error) throw new AuthError(error.message, 'auth/update-password-failed')
+      return true
+    } catch (error) {
+      if (error instanceof AuthError) throw error
+      throw new AuthError(error instanceof Error ? error.message : 'Failed to update password')
+    }
+  },
+
   updateAuthStage() {
     const { user, setAuthStage } = useAuthStore.getState()
     const { profile } = useProfileStore.getState()
+    const { currentStep } = useOnboardingStore.getState()
 
     if (!user) {
       setAuthStage('unauthenticated')
@@ -214,7 +251,12 @@ export const authService = {
       return
     }
 
-    if (!user.phone_confirmed_at && user.phone) {
+    if (
+      user.phone &&
+      !user.phone_confirmed_at &&
+      currentStep !== 'complete' &&
+      !canSkipPhoneVerification(user.email)
+    ) {
       setAuthStage('phone-verification')
       return
     }

@@ -8,13 +8,13 @@ export type RootStackParamList = {
 }
 
 export type AuthStackParamList = {
-  Landing: undefined
   Login: undefined
   Signup: undefined
   EmailSignup: undefined
   EnterPhone: undefined
   VerifyPhoneNumber: undefined
-  ResetPassword: undefined
+  ForgotPassword: undefined
+  ResetPassword: { token?: string }
   CreateProfile: undefined
 }
 

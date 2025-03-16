@@ -24,11 +24,15 @@ export interface AuthState {
   stage: AuthStage
   user: AuthUser | null
   session: AuthSession | null
+  otpMessageId?: string
 
   setUser: (user: AuthUser | null) => void
   setSession: (session: AuthSession | null) => void
   setAuthStage: (stage: AuthStage) => void
   clearAuth: () => void
+  setOtpMessageId: (id: string | undefined) => void
+  resetPhoneVerification: () => void
+  simulatePhoneVerification: () => void
 }
 
 const secureStorage = {
@@ -63,6 +67,7 @@ export const useAuthStore = create<AuthState>()(
       stage: 'unauthenticated',
       user: null,
       session: null,
+      otpMessageId: undefined,
 
       setUser: (user) =>
         set({
@@ -82,6 +87,28 @@ export const useAuthStore = create<AuthState>()(
           stage: 'unauthenticated',
         })
       },
+      setOtpMessageId: (id) => set({ otpMessageId: id }),
+
+      resetPhoneVerification: () =>
+        set((state) => ({
+          user: state.user
+            ? {
+                ...state.user,
+                phone_confirmed_at: undefined,
+              }
+            : null,
+          otpMessageId: undefined,
+        })),
+
+      simulatePhoneVerification: () =>
+        set((state) => ({
+          user: state.user
+            ? {
+                ...state.user,
+                phone_confirmed_at: new Date().toISOString(),
+              }
+            : null,
+        })),
     }),
     {
       name: 'auth-storage',

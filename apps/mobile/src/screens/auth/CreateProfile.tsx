@@ -5,6 +5,7 @@ import { LoadingSpinner } from 'components/LoadingSpinner';
 import { useAuthStore } from '../../stores/authStore';
 import { useAuth } from '../../hooks/auth/useAuth';
 import { useCreateProfile } from 'hooks/auth/useCreateProfile';
+import { useOnboardingStore } from '../../stores/onboardingStore';
 
 export default function CreateProfile() {
   const [username, setUsername] = useState('');
@@ -13,6 +14,7 @@ export default function CreateProfile() {
   
   const { user } = useAuthStore();
   const { logout } = useAuth();
+  const { completeStep } = useOnboardingStore();
   const createProfileMutation = useCreateProfile();
   
   const pickImage = async () => {
@@ -57,6 +59,7 @@ export default function CreateProfile() {
         }
       }
     );
+    completeStep('profile-setup');
   };
 
   const handleLogout = () => {

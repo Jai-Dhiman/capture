@@ -34,7 +34,6 @@
     "expo-web-browser": "^14.0.2",
     "google": "link:expo-auth-session/providers/google",
     "graphql": "^16.10.0",
-    "jotai": "^2.12.2",
     "lodash": "^4.17.21",
     "lottie-react-native": "^7.1.0",
     "nativewind": "^4.1.23",
