@@ -23,22 +23,22 @@ const queryClient = new QueryClient({
 
 export default function App() {
   return (
-    <JotaiProvider>
-      <QueryClientProvider client={queryClient}>
-        <ApolloProvider>
-          <SessionProvider>
-            <SafeAreaProvider>
+    <SafeAreaProvider>
+      <JotaiProvider>
+        <QueryClientProvider client={queryClient}>
+          <ApolloProvider>
+            <SessionProvider>
               <View className="flex-1 bg-black">
                 <StatusBar style="light" />
                 <NavigationContainer linking={linking}>
                   <MainNavigator />
                 </NavigationContainer>
               </View>
-            </SafeAreaProvider>
-          </SessionProvider>
-        </ApolloProvider>
-        {__DEV__ && <ReactQueryDevtools />}
+            </SessionProvider>
+          </ApolloProvider>
+          {__DEV__ && <ReactQueryDevtools />}
         </QueryClientProvider>
-    </JotaiProvider>
+      </JotaiProvider>
+    </SafeAreaProvider>
   );
 }

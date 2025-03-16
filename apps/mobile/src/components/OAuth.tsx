@@ -30,7 +30,7 @@ export default function OAuth() {
     >
       <GoogleIcon width={24} height={24} style={{ marginRight: 16 }} />
       <Text className="text-base font-bold font-roboto text-[#1C1C1C]">
-        Sign In with Google
+        Log In with Google
       </Text>
     </TouchableOpacity>
   );

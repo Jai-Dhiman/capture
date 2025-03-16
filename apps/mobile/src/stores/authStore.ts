@@ -27,13 +27,26 @@ export interface AuthState {
 
 const secureStorage = {
   getItem: async (name: string): Promise<string | null> => {
-    return await SecureStore.getItemAsync(name)
+    try {
+      return await SecureStore.getItemAsync(name)
+    } catch (error) {
+      console.error('SecureStore getItem error:', error)
+      return null
+    }
   },
   setItem: async (name: string, value: string): Promise<void> => {
-    await SecureStore.setItemAsync(name, value)
+    try {
+      await SecureStore.setItemAsync(name, value)
+    } catch (error) {
+      console.error('SecureStore setItem error:', error)
+    }
   },
   removeItem: async (name: string): Promise<void> => {
-    await SecureStore.deleteItemAsync(name)
+    try {
+      await SecureStore.deleteItemAsync(name)
+    } catch (error) {
+      console.error('SecureStore removeItem error:', error)
+    }
   },
 }
 
@@ -49,13 +62,33 @@ export const useAuthStore = create<AuthState>()(
           user,
           status: user ? 'authenticated' : 'unauthenticated',
         }),
-      setSession: (session) => set({ session }),
-      clearAuth: () =>
+
+      setSession: (session) => {
+        if (session) {
+          SecureStore.setItemAsync('auth-token', session.access_token).catch((err) =>
+            console.error('Failed to store auth token:', err)
+          )
+          SecureStore.setItemAsync('refresh-token', session.refresh_token).catch((err) =>
+            console.error('Failed to store refresh token:', err)
+          )
+        } else {
+          SecureStore.deleteItemAsync('auth-token').catch(console.error)
+          SecureStore.deleteItemAsync('refresh-token').catch(console.error)
+        }
+
+        set({ session })
+      },
+
+      clearAuth: () => {
+        SecureStore.deleteItemAsync('auth-token').catch(console.error)
+        SecureStore.deleteItemAsync('refresh-token').catch(console.error)
+
         set({
           user: null,
           session: null,
           status: 'unauthenticated',
-        }),
+        })
+      },
     }),
     {
       name: 'auth-storage',
