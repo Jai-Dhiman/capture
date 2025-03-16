@@ -2,8 +2,7 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { LinkingOptions } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
-import { useAtomValue } from 'jotai';
-import { authStageAtom } from '../../atoms/authAtoms';
+import { useAuthStore } from 'stores/authStore';
 import { RootStackParamList } from './types/navigation';
 import AppNavigator from './AppNavigator';
 import AuthStack from './AuthNavigator';
@@ -68,7 +67,7 @@ export const linking: LinkingOptions<RootStackParamList> = {
 };
 
 export function MainNavigator() {
-  const authStage = useAtomValue(authStageAtom);
+  const { stage: authStage } = useAuthStore()
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>

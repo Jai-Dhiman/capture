@@ -30,7 +30,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
 
   const screenWidth = Dimensions.get('window').width
   const inputWidth = Math.min(343, screenWidth - 40) 
-  const { signup, loading } = useAuth()
+  const { signup, isLoading } = useAuth()
 
   const handleSignup = async () => {
     if (password !== confirmPassword) {
@@ -187,9 +187,9 @@ export default function EmailSignupScreen({ navigation }: Props) {
               style={{ width: inputWidth }}
               className="h-14 bg-[#e4cac7] rounded-[30px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] backdrop-blur-sm justify-center items-center mt-4"
               onPress={handleSignup}
-              disabled={loading}
+              disabled={isLoading}
             >
-              {loading ? (
+              {isLoading ? (
                 <LoadingSpinner fullScreen message="Creating account..." />
               ) : (
                 <Text className="text-center text-black text-base font-bold font-roboto leading-normal">

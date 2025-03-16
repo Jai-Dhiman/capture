@@ -26,7 +26,7 @@ export default function LoginScreen({ navigation }: Props) {
   const emailInputRef = useRef<TextInput>(null)
   const passwordInputRef = useRef<TextInput>(null)
 
-  const { login, loading } = useAuth()
+  const { login, isLoading } = useAuth()
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -118,9 +118,9 @@ export default function LoginScreen({ navigation }: Props) {
             <TouchableOpacity
               className="bg-[#E4CAC7] h-[56px] rounded-[30px] shadow-md justify-center mt-[59px]"
               onPress={handleLogin}
-              disabled={loading}
+              disabled={isLoading}
             >
-              {loading ? (
+              {isLoading ? (
                 <LoadingSpinner fullScreen message="Logging in..." />
               ) : (
                 <Text className="text-base font-bold font-roboto text-center">

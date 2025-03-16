@@ -15,13 +15,19 @@ export interface AuthUser {
   phone_confirmed_at?: string
 }
 
+export type AuthStatus = 'idle' | 'loading' | 'authenticated' | 'unauthenticated'
+
+export type AuthStage = 'unauthenticated' | 'profile-creation' | 'phone-verification' | 'complete'
+
 export interface AuthState {
-  status: 'idle' | 'loading' | 'authenticated' | 'unauthenticated'
+  status: AuthStatus
+  stage: AuthStage
   user: AuthUser | null
   session: AuthSession | null
 
   setUser: (user: AuthUser | null) => void
   setSession: (session: AuthSession | null) => void
+  setAuthStage: (stage: AuthStage) => void
   clearAuth: () => void
 }
 
@@ -54,6 +60,7 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       status: 'idle',
+      stage: 'unauthenticated',
       user: null,
       session: null,
 
@@ -63,40 +70,22 @@ export const useAuthStore = create<AuthState>()(
           status: user ? 'authenticated' : 'unauthenticated',
         }),
 
-      setSession: (session) => {
-        if (session) {
-          SecureStore.setItemAsync('auth-token', session.access_token).catch((err) =>
-            console.error('Failed to store auth token:', err)
-          )
-          SecureStore.setItemAsync('refresh-token', session.refresh_token).catch((err) =>
-            console.error('Failed to store refresh token:', err)
-          )
-        } else {
-          SecureStore.deleteItemAsync('auth-token').catch(console.error)
-          SecureStore.deleteItemAsync('refresh-token').catch(console.error)
-        }
+      setSession: (session) => set({ session }),
 
-        set({ session })
-      },
+      setAuthStage: (stage) => set({ stage }),
 
       clearAuth: () => {
-        SecureStore.deleteItemAsync('auth-token').catch(console.error)
-        SecureStore.deleteItemAsync('refresh-token').catch(console.error)
-
         set({
           user: null,
           session: null,
           status: 'unauthenticated',
+          stage: 'unauthenticated',
         })
       },
     }),
     {
       name: 'auth-storage',
       storage: createJSONStorage(() => secureStorage),
-      partialize: (state) => ({
-        user: state.user,
-        session: null,
-      }),
     }
   )
 )

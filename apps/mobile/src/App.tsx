@@ -8,7 +8,6 @@ import "../global.css";
 import { ApolloProvider } from './components/ApolloProvider';
 import { SessionProvider } from './lib/SessionProvider';
 import { MainNavigator, linking } from './components/Navigators';
-import { Provider as JotaiProvider } from 'jotai';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
 const queryClient = new QueryClient({
@@ -24,7 +23,6 @@ const queryClient = new QueryClient({
 export default function App() {
   return (
     <SafeAreaProvider>
-      <JotaiProvider>
         <QueryClientProvider client={queryClient}>
           <ApolloProvider>
             <SessionProvider>
@@ -38,7 +36,6 @@ export default function App() {
           </ApolloProvider>
           {__DEV__ && <ReactQueryDevtools />}
         </QueryClientProvider>
-      </JotaiProvider>
     </SafeAreaProvider>
   );
 }

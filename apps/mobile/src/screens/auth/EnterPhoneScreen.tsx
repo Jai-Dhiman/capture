@@ -8,7 +8,6 @@ import { useAuthStore } from '../../stores/authStore';
 import { useAuth } from '../../hooks/auth/useAuth';
 import { LoadingSpinner } from 'components/LoadingSpinner'
 import Header from '../../components/Header'
-import { Feather, MaterialIcons } from '@expo/vector-icons'
 import { supabase } from '../../lib/supabase'
 
 type Props = {
@@ -66,10 +65,6 @@ export default function EnterPhoneScreen({ navigation }: Props) {
       setLoading(false)
     }
   }
-
-  const handleLogout = () => {
-    logout.mutate();
-  };
 
   return (
     <View style={{ flex: 1 }}>

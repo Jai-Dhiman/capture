@@ -3,64 +3,28 @@ import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from './supabase'
 import { useAuthStore } from '../stores/authStore'
 import { useProfileStore } from '../stores/profileStore'
-import { useProfile } from '../hooks/auth/useProfile'
 import { SplashAnimation } from 'components/animation/SplashAnimation'
+import { authService } from '../services/authService'
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [isInitializing, setIsInitializing] = useState(true)
-  const { user, setUser, setSession, status } = useAuthStore()
+  const { setUser, setSession, setAuthStage } = useAuthStore()
   const { setProfile } = useProfileStore()
   const queryClient = useQueryClient()
-  
-  const { data: profileData } = useProfile(user?.id, {
-    enabled: !!user?.id && status === 'authenticated',
-  })
-  
-  useEffect(() => {
-    if (profileData) {
-      setProfile(profileData)
-    }
-  }, [profileData, setProfile])
   
   useEffect(() => {
     async function initSession() {
       try {
-        const { data, error } = await supabase.auth.getSession()
-        
-        if (error) {
-          console.error('Error getting session:', error)
-          setUser(null)
-          return
-        }
-        
-        if (data.session) {
-          const { user } = data.session
-          
-          setUser({
-            id: user.id,
-            email: user.email || '',
-            phone: user.phone || '',
-            phone_confirmed_at: user.phone_confirmed_at || undefined,
-          })
-          
-          setSession({
-            access_token: data.session.access_token,
-            refresh_token: data.session.refresh_token,
-            expires_at: new Date(data.session.expires_at || 0).getTime(),
-          })
-        } else {
-          setUser(null)
-        }
+        await authService.restoreSession()
       } catch (error) {
         console.error('Failed to initialize session:', error)
-        setUser(null)
       } finally {
         setIsInitializing(false)
       }
     }
     
     initSession()
-  }, [setUser, setSession])
+  }, [])
   
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -80,12 +44,27 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           expires_at: new Date(session.expires_at || 0).getTime(),
         })
         
-        queryClient.invalidateQueries({ queryKey: ['profile'] })
+        try {
+          const profileData = await authService.fetchUserProfile(
+            session.user.id,
+            session.access_token
+          )
+          
+          if (profileData) {
+            setProfile(profileData)
+          }
+          
+          authService.updateAuthStage()
+          queryClient.invalidateQueries({ queryKey: ['profile'] })
+        } catch (error) {
+          console.error('Error fetching profile after sign in:', error)
+        }
       }
       
       if (event === 'SIGNED_OUT') {
         setUser(null)
         setProfile(null)
+        setAuthStage('unauthenticated')
         queryClient.clear()
       }
     })
@@ -93,7 +72,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     return () => {
       data.subscription.unsubscribe()
     }
-  }, [setUser, setSession, setProfile, queryClient])
+  }, [setUser, setSession, setProfile, setAuthStage, queryClient])
   
   if (isInitializing) {
     return <SplashAnimation fullScreen />
