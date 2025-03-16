@@ -4,7 +4,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../components/Navigators/types/navigation';
 import Header from '../../components/Header';
 import { supabase } from '../../lib/supabase';
-import { useSessionStore } from '../../stores/sessionStore';
+import { useAuthStore } from '../../stores/authStore';
 import { LoadingSpinner } from 'components/LoadingSpinner';
 
 type Props = {
@@ -19,7 +19,7 @@ export default function VerifyPhoneNumberScreen({ navigation }: Props) {
   const [resendDisabled, setResendDisabled] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const inputRefs = useRef<Array<TextInput | null>>([null, null, null, null, null, null]);
-  const { authUser } = useSessionStore();
+  const { user } = useAuthStore();
 
   useEffect(() => {
     const allDigitsFilled = verificationCode.every(digit => digit !== '');
@@ -54,7 +54,7 @@ export default function VerifyPhoneNumberScreen({ navigation }: Props) {
   };
 
   const handleVerify = async () => {
-    if (!authUser?.phone) {
+    if (!user?.phone) {
       Alert.alert('Error', 'No phone number found to verify');
       return;
     }
@@ -66,7 +66,7 @@ export default function VerifyPhoneNumberScreen({ navigation }: Props) {
       const fullCode = verificationCode.join('');
       
       const { error } = await supabase.auth.verifyOtp({
-        phone: authUser.phone,
+        phone: user.phone,
         token: fullCode,
         type: 'sms'
       });
@@ -84,7 +84,7 @@ export default function VerifyPhoneNumberScreen({ navigation }: Props) {
   };
 
   const handleResend = async () => {
-    if (!authUser?.phone) {
+    if (!user?.phone) {
       Alert.alert('Error', 'No phone number found');
       return;
     }
@@ -93,7 +93,7 @@ export default function VerifyPhoneNumberScreen({ navigation }: Props) {
     setCountdown(60);
     try {
       const { error } = await supabase.auth.signInWithOtp({
-        phone: authUser.phone,
+        phone: user.phone,
       });
       
       if (error) throw error;
@@ -122,7 +122,7 @@ export default function VerifyPhoneNumberScreen({ navigation }: Props) {
                 Verify Your Phone Number
               </Text>
               <Text className="text-white text-[13px] font-normal font-roboto tracking-tight text-center mt-2">
-                We've sent a 6-digit code to {authUser?.phone || 'your number'}, please enter the code below
+                We've sent a 6-digit code to {user?.phone || 'your number'}, please enter the code below
               </Text>
             </View>
 

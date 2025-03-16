@@ -4,7 +4,8 @@ import {
 } from 'react-native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { AuthStackParamList } from '../../components/Navigators/types/navigation'
-import { useSessionStore } from '../../stores/sessionStore'
+import { useAuthStore } from '../../stores/authStore';
+import { useAuth } from '../../hooks/auth/useAuth';
 import { LoadingSpinner } from 'components/LoadingSpinner'
 import Header from '../../components/Header'
 import { Feather, MaterialIcons } from '@expo/vector-icons'
@@ -18,7 +19,8 @@ export default function EnterPhoneScreen({ navigation }: Props) {
   const [phone, setPhone] = useState('')
   const [loading, setLoading] = useState(false)
   const [isPhoneFocused, setIsPhoneFocused] = useState(false)
-  const { authUser, setAuthUser, clearSession } = useSessionStore()
+  const { user, setUser } = useAuthStore();
+  const { logout } = useAuth();
   
   const phoneInputRef = useRef<TextInput>(null)
   const screenWidth = Dimensions.get('window').width
@@ -32,31 +34,27 @@ export default function EnterPhoneScreen({ navigation }: Props) {
 
     setLoading(true)
     try {
-      const formattedPhone = `+1${phone.replace(/\D/g, '')}`
+      const formattedPhone = `+1${phone.replace(/\D/g, '')}`  
       
-      // Update the user with phone number in Supabase
       const { error } = await supabase.auth.updateUser({
         phone: formattedPhone
       })
       
       if (error) throw error
 
-      // Send OTP via Twilio integration
       const { error: otpError } = await supabase.auth.signInWithOtp({
         phone: formattedPhone,
       })
       
       if (otpError) throw otpError
       
-      // Update local state
-      if (authUser) {
-        setAuthUser({
-          ...authUser,
+      if (user) {
+        setUser({
+          ...user,
           phone: formattedPhone
-        })
+        });
       }
       
-      // Navigate to verification screen
       navigation.navigate('VerifyPhoneNumber')
     } catch (error) {
       const errorMessage = error instanceof Error 
@@ -69,13 +67,8 @@ export default function EnterPhoneScreen({ navigation }: Props) {
     }
   }
 
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      clearSession();
-    } catch (error) {
-      console.error('Error logging out:', error);
-    }
+  const handleLogout = () => {
+    logout.mutate();
   };
 
   return (

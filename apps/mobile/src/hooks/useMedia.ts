@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { supabase } from '../lib/supabase'
+import { useAuthStore } from 'stores/authStore'
 import { API_URL } from '@env'
 
 export const useImageUrl = (mediaId?: string, expirySeconds = 1800) => {
@@ -9,9 +9,8 @@ export const useImageUrl = (mediaId?: string, expirySeconds = 1800) => {
   return useQuery({
     queryKey: ['imageUrl', mediaId, expirySeconds],
     queryFn: async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const { session } = useAuthStore.getState()
+      const token = session?.access_token
 
       if (!session?.access_token) {
         throw new Error('No auth token available')
@@ -43,8 +42,9 @@ export const useImageUrl = (mediaId?: string, expirySeconds = 1800) => {
 export const useUploadMedia = () => {
   return useMutation({
     mutationFn: async (files: Array<any>) => {
-      const session = await supabase.auth.getSession()
-      if (!session.data.session?.access_token) {
+      const { session } = useAuthStore.getState()
+      const token = session?.access_token
+      if (!session?.access_token) {
         throw new Error('No auth token available')
       }
 
@@ -53,7 +53,7 @@ export const useUploadMedia = () => {
           const uploadUrlResponse = await fetch(`${API_URL}/api/media/image-upload`, {
             method: 'POST',
             headers: {
-              Authorization: `Bearer ${session.data.session?.access_token}`,
+              Authorization: `Bearer ${session?.access_token}`,
               'Content-Type': 'application/json',
             },
           })
@@ -93,7 +93,7 @@ export const useUploadMedia = () => {
           const createRecordResponse = await fetch(`${API_URL}/api/media/image-record`, {
             method: 'POST',
             headers: {
-              Authorization: `Bearer ${session.data.session?.access_token}`,
+              Authorization: `Bearer ${session?.access_token}`,
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -125,9 +125,8 @@ export const useCloudflareImageUrl = (cloudflareId?: string, expirySeconds = 180
   return useQuery({
     queryKey: ['cloudflareImageUrl', cloudflareId, expirySeconds],
     queryFn: async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const { session } = useAuthStore.getState()
+      const token = session?.access_token
 
       if (!session?.access_token) {
         throw new Error('No auth token available')
@@ -156,22 +155,18 @@ export const useCloudflareImageUrl = (cloudflareId?: string, expirySeconds = 180
 }
 
 export const useMediaSource = (mediaItem: any, expirySeconds = 1800) => {
-  // Case 1: Direct Cloudflare ID (string)
   if (typeof mediaItem === 'string') {
     return useCloudflareImageUrl(mediaItem, expirySeconds)
   }
 
-  // Case 2: Media object with storageKey (from database)
   if (mediaItem?.storageKey) {
     return useCloudflareImageUrl(mediaItem.storageKey, expirySeconds)
   }
 
-  // Case 3: Media object with internal ID (needs API lookup)
   if (mediaItem?.id) {
     return useImageUrl(mediaItem.id, expirySeconds)
   }
 
-  // Default case: No valid media source
   return {
     data: null,
     isLoading: false,

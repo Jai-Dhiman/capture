@@ -1,14 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '../lib/supabase'
+import { useAuthStore } from 'stores/authStore'
 import { API_URL } from '@env'
 
 export const useUserPosts = (userId?: string) => {
   return useQuery({
     queryKey: ['userPosts', userId],
     queryFn: async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const { session } = useAuthStore.getState()
+      const token = session?.access_token
 
       if (!session?.access_token) {
         throw new Error('No auth token available')
@@ -63,9 +62,8 @@ export const useSinglePost = (postId?: string) => {
   return useQuery({
     queryKey: ['post', postId],
     queryFn: async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const { session } = useAuthStore.getState()
+      const token = session?.access_token
 
       if (!session?.access_token) {
         throw new Error('No auth token available')
@@ -138,9 +136,8 @@ export const useCreatePost = () => {
       mediaIds: string[]
       hashtagIds?: string[]
     }) => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const { session } = useAuthStore.getState()
+      const token = session?.access_token
 
       if (!session?.access_token) {
         throw new Error('No auth token available')
@@ -204,9 +201,8 @@ export const useDeletePost = () => {
 
   return useMutation({
     mutationFn: async (postId: string) => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const { session } = useAuthStore.getState()
+      const token = session?.access_token
 
       if (!session?.access_token) {
         throw new Error('No auth token available')

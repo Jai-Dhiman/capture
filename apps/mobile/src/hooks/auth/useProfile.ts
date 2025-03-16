@@ -1,5 +1,5 @@
 import { useQuery, UseQueryOptions } from '@tanstack/react-query'
-import { supabase } from '../../lib/supabase'
+import { useAuthStore } from 'stores/authStore'
 import { API_URL } from '@env'
 import { UserProfile } from '../../stores/profileStore'
 
@@ -12,9 +12,8 @@ export function useProfile(
     queryFn: async () => {
       if (!userId) return null
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const { session } = useAuthStore.getState()
+      const token = session?.access_token
       if (!session?.access_token) return null
 
       const response = await fetch(`${API_URL}/api/profile/${userId}`, {
@@ -40,9 +39,8 @@ export function useCheckProfileExists(userId?: string) {
     queryFn: async () => {
       if (!userId) return false
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const { session } = useAuthStore.getState()
+      const token = session?.access_token
 
       if (!session?.access_token) return false
 

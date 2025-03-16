@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Image, Modal, Dimensions } from 'react-native';
-import { useSessionStore } from '../stores/sessionStore';
+import { useAuthStore } from '../stores/authStore';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../components/Navigators/types/navigation';
@@ -24,10 +24,9 @@ const POSTS_PER_PAGE = 4;
 export default function Profile() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<ProfileRouteProp>();
-  const { authUser } = useSessionStore();
-  
-  const userId = route.params?.userId || authUser?.id;
-  const isOwnProfile = userId === authUser?.id;
+  const { user } = useAuthStore();
+  const userId = route.params?.userId || user?.id;
+  const isOwnProfile = userId === user?.id;
   
   const [showFollowers, setShowFollowers] = useState(false);
   const [showFollowing, setShowFollowing] = useState(false);
@@ -208,7 +207,7 @@ export default function Profile() {
           loading={followersLoading}
           title="Followers"
           onClose={() => setShowFollowers(false)}
-          currentUserId={authUser?.id}
+          currentUserId={user?.id}
         />
       </Modal>
 
@@ -222,7 +221,7 @@ export default function Profile() {
           loading={followingLoading}
           title="Following"
           onClose={() => setShowFollowing(false)}
-          currentUserId={authUser?.id}
+          currentUserId={user?.id}
         />
       </Modal>
     </View>

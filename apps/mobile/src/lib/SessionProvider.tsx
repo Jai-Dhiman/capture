@@ -1,4 +1,3 @@
-// src/lib/SessionProvider.tsx
 import React, { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from './supabase'
@@ -13,23 +12,19 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const { setProfile } = useProfileStore()
   const queryClient = useQueryClient()
   
-  // Only fetch profile if we have a user
   const { data: profileData } = useProfile(user?.id, {
     enabled: !!user?.id && status === 'authenticated',
   })
   
-  // Set profile when available
   useEffect(() => {
     if (profileData) {
       setProfile(profileData)
     }
   }, [profileData, setProfile])
   
-  // Initialize session
   useEffect(() => {
     async function initSession() {
       try {
-        // Check for existing session
         const { data, error } = await supabase.auth.getSession()
         
         if (error) {
@@ -39,7 +34,6 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         }
         
         if (data.session) {
-          // Update auth store with session data
           const { user } = data.session
           
           setUser({
@@ -68,7 +62,6 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     initSession()
   }, [setUser, setSession])
   
-  // Listen for auth changes
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event)

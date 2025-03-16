@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '../lib/supabase'
+import { useAuthStore } from 'stores/authStore'
 import { API_URL } from '@env'
 
 export const useFollowUser = () => {
@@ -7,9 +7,8 @@ export const useFollowUser = () => {
 
   return useMutation({
     mutationFn: async (userId: string) => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const { session } = useAuthStore.getState()
+      const token = session?.access_token
 
       if (!session?.access_token) {
         throw new Error('No auth token available')
@@ -61,9 +60,8 @@ export const useUnfollowUser = () => {
 
   return useMutation({
     mutationFn: async (userId: string) => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const { session } = useAuthStore.getState()
+      const token = session?.access_token
 
       if (!session?.access_token) {
         throw new Error('No auth token available')
@@ -110,9 +108,8 @@ export const useFollowers = (userId: string | undefined) => {
     queryFn: async () => {
       if (!userId) return []
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const { session } = useAuthStore.getState()
+      const token = session?.access_token
 
       if (!session?.access_token) {
         throw new Error('No auth token available')
@@ -162,9 +159,8 @@ export const useFollowing = (userId: string | undefined) => {
       if (!userId) return []
 
       try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession()
+        const { session } = useAuthStore.getState()
+        const token = session?.access_token
 
         if (!session?.access_token) {
           console.warn('No auth token available')

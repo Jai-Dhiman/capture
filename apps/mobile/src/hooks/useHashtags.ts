@@ -1,14 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '../lib/supabase'
+import { useAuthStore } from 'stores/authStore'
 import { API_URL } from '@env'
 
 export const useSearchHashtags = (query: string, enabled = false) => {
   return useQuery({
     queryKey: ['hashtags', 'search', query],
     queryFn: async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const { session } = useAuthStore.getState()
+      const token = session?.access_token
 
       if (!session?.access_token) {
         throw new Error('No auth token available')
@@ -55,9 +54,8 @@ export const useCreateHashtag = () => {
 
   return useMutation({
     mutationFn: async (name: string) => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const { session } = useAuthStore.getState()
+      const token = session?.access_token
 
       if (!session?.access_token) {
         throw new Error('No auth token available')

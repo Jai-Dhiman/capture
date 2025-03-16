@@ -13,7 +13,8 @@ import { HashtagDisplay } from '../components/hashtags/HashtagDisplay';
 import { PostSettingsMenu } from '../components/post/PostSettingsMenu';
 import { useSavePost, useUnsavePost } from '../hooks/useSavesPosts';
 import { useDeletePost, useSinglePost } from '../hooks/usePosts';
-import { useSessionStore } from '../stores/sessionStore';
+import { useAuthStore } from '../stores/authStore';
+import { useProfileStore } from '../stores/profileStore';
 import { LoadingSpinner } from 'components/LoadingSpinner';
 import { CommentSection } from '../components/comment/CommentSection';
 
@@ -28,11 +29,12 @@ export default function SinglePost() {
   const deletePostMutation = useDeletePost();
   const savePostMutation = useSavePost();
   const unsavePostMutation = useUnsavePost();
-  const { authUser, userProfile } = useSessionStore();
+  const { user } = useAuthStore();
+  const { profile } = useProfileStore();
 
   const { data: post, isLoading, error } = useSinglePost(postId);
-  const isPostOwner = authUser?.id === post?.userId;
-  
+  const isPostOwner = user?.id === post?.userId;
+
   if (isLoading) {
     return (
       <LoadingSpinner />
@@ -93,9 +95,9 @@ export default function SinglePost() {
       <ScrollView className="flex-1">
         <View className="flex-row items-center p-3 border-b border-gray-100 bg-white">
           <View className="w-8 h-8 rounded-full overflow-hidden mr-2">
-          {userProfile?.profileImage ? (
+          {profile?.profileImage ? (
               <View className="w-full h-full rounded-full overflow-hidden">
-                <ProfileImage cloudflareId={userProfile.profileImage} />
+                <ProfileImage cloudflareId={profile.profileImage} />
               </View>
             ) : (
               <View className="w-full h-full bg-gray-200" />

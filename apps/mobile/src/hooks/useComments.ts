@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '../lib/supabase'
+import { useAuthStore } from '../stores/authStore'
 import { API_URL } from '@env'
 
 export type Comment = {
@@ -50,9 +50,8 @@ export const usePostComments = (
       repliesLimit,
     ],
     queryFn: async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const { session } = useAuthStore.getState()
+      const token = session?.access_token
 
       if (!session?.access_token) {
         throw new Error('No auth token available')
@@ -146,9 +145,8 @@ export const useCommentReplies = (
   return useQuery({
     queryKey: ['commentReplies', commentId, limit],
     queryFn: async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const { session } = useAuthStore.getState()
+      const token = session?.access_token
 
       if (!session?.access_token) {
         throw new Error('No auth token available')
@@ -216,9 +214,8 @@ export const useCreateComment = () => {
       content: string
       parentCommentId?: string
     }) => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const { session } = useAuthStore.getState()
+      const token = session?.access_token
 
       if (!session?.access_token) {
         throw new Error('No auth token available')
@@ -298,9 +295,8 @@ export const useDeleteComment = () => {
       postId: string
       parentCommentId?: string | null
     }) => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const { session } = useAuthStore.getState()
+      const token = session?.access_token
 
       if (!session?.access_token) {
         throw new Error('No auth token available')

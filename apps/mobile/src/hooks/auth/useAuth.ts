@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import { useSessionStore } from '../../stores/sessionStore'
+import { useAuthStore } from '../../stores/authStore'
+import { useProfileStore } from '../../stores/profileStore'
 import { API_URL } from '@env'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 export function useAuth() {
-  const [loading, setLoading] = useState(false)
-  const { setAuthUser, setUserProfile, clearSession } = useSessionStore()
+  const [isLoading, setIsLoading] = useState(false)
+  const { setUser, setSession, clearAuth } = useAuthStore()
+  const { setProfile, clearProfile } = useProfileStore()
   const queryClient = useQueryClient()
 
   const fetchUserProfile = async (userId: string, token: string) => {
@@ -38,7 +40,7 @@ export function useAuth() {
 
   const login = useMutation({
     mutationFn: async ({ email, password }: { email: string; password: string }) => {
-      setLoading(true)
+      setIsLoading(true)
 
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
@@ -54,53 +56,56 @@ export function useAuth() {
       const {
         data: { session },
       } = await supabase.auth.getSession()
-      const token = session?.access_token
 
-      if (!token) throw new Error('No auth token available')
+      if (!session?.access_token) throw new Error('No auth token available')
 
-      const profileData = await fetchUserProfile(authData.user.id, token)
-
-      const hasVerifiedPhone = authData.user.phone && authData.user.phone_confirmed_at
+      const profileData = await fetchUserProfile(authData.user.id, session.access_token)
 
       return {
         user: authData.user,
+        session,
         profile: profileData,
-        hasVerifiedPhone,
       }
     },
     onSuccess: (data) => {
-      console.log('Login success, setting auth state:', data)
+      console.log('Login success, setting auth state')
 
-      setAuthUser({
+      setUser({
         id: data.user.id,
         email: data.user.email || '',
         phone: data.user.phone || '',
         phone_confirmed_at: data.user.phone_confirmed_at || undefined,
       })
 
+      setSession({
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+        expires_at: new Date(data.session.expires_at || '').getTime(),
+      })
+
       if (data.profile) {
-        setUserProfile({
+        setProfile({
           id: data.profile.id,
-          supabase_id: data.user.id,
+          userId: data.user.id,
           username: data.profile.username,
           bio: data.profile.bio || undefined,
           profileImage: data.profile.profileImage || undefined,
         })
       }
 
-      queryClient.invalidateQueries({ queryKey: ['session'] })
+      queryClient.invalidateQueries({ queryKey: ['profile'] })
     },
     onError: (error) => {
       console.error('Login error:', error)
     },
     onSettled: () => {
-      setLoading(false)
+      setIsLoading(false)
     },
   })
 
   const signup = useMutation({
     mutationFn: async ({ email, password }: { email: string; password: string }) => {
-      setLoading(true)
+      setIsLoading(true)
 
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -115,22 +120,24 @@ export function useAuth() {
       return data
     },
     onSettled: () => {
-      setLoading(false)
+      setIsLoading(false)
     },
   })
 
   const logout = useMutation({
     mutationFn: async () => {
-      setLoading(true)
+      setIsLoading(true)
       const { error } = await supabase.auth.signOut()
       if (error) throw error
     },
     onSuccess: () => {
-      clearSession()
+      clearAuth()
+      clearProfile()
+
       queryClient.clear()
     },
     onSettled: () => {
-      setLoading(false)
+      setIsLoading(false)
     },
   })
 
@@ -138,6 +145,6 @@ export function useAuth() {
     login,
     signup,
     logout,
-    loading,
+    isLoading,
   }
 }

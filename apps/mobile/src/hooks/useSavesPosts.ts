@@ -1,15 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '../lib/supabase'
+import { useAuthStore } from 'stores/authStore'
 import { API_URL } from '@env'
 
 export const useSavedPosts = (limit = 10, offset = 0) => {
   return useQuery({
     queryKey: ['savedPosts', limit, offset],
     queryFn: async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-
+      const { session } = useAuthStore.getState()
+      const token = session?.access_token
       if (!session?.access_token) {
         throw new Error('No auth token available')
       }
@@ -71,9 +69,8 @@ export const useSavePost = () => {
 
   return useMutation({
     mutationFn: async (postId: string) => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const { session } = useAuthStore.getState()
+      const token = session?.access_token
 
       if (!session?.access_token) {
         throw new Error('No auth token available')
@@ -124,9 +121,8 @@ export const useUnsavePost = () => {
 
   return useMutation({
     mutationFn: async (postId: string) => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const { session } = useAuthStore.getState()
+      const token = session?.access_token
 
       if (!session?.access_token) {
         throw new Error('No auth token available')
