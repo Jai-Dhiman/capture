@@ -39,11 +39,9 @@ export default function ForgotPasswordScreen({ navigation }: Props) {
       
       setResetEmailSent(true);
     } catch (error) {
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : 'Failed to send password reset email';
-      
-      Alert.alert('Error', errorMessage);
+      const formattedError = errorService.handleAuthError(error);
+      const alertType = errorService.getAlertType(formattedError.category);
+      showAlert(formattedError.message, { type: alertType });
     } finally {
       setIsLoading(false);
     }

@@ -8,6 +8,8 @@ import { useAuthStore } from '../../stores/authStore';
 import { LoadingSpinner } from 'components/ui/LoadingSpinner';
 import { useOnboardingStore } from '../../stores/onboardingStore';
 import { isDevelopment } from '../../config/environment';
+import { useAlert } from '../../lib/AlertContext';
+import { errorService } from '../../services/errorService';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'VerifyPhoneNumber'>;
@@ -23,6 +25,7 @@ export default function VerifyPhoneNumberScreen({ navigation }: Props) {
   const inputRefs = useRef<Array<TextInput | null>>([null, null, null, null, null, null]);
   const { user } = useAuthStore();
   const { completeStep } = useOnboardingStore();
+  const { showAlert } = useAlert();
 
   useEffect(() => {
     const allDigitsFilled = verificationCode.every(digit => digit !== '');
@@ -58,7 +61,7 @@ export default function VerifyPhoneNumberScreen({ navigation }: Props) {
 
   const handleVerify = async () => {
     if (!user?.phone) {
-      Alert.alert('Error', 'No phone number found to verify');
+      showAlert('No phone number found to verify', { type: 'warning' });
       return;
     }
 
@@ -79,9 +82,9 @@ export default function VerifyPhoneNumberScreen({ navigation }: Props) {
       completeStep('phone-verification');
       navigation.navigate('CreateProfile');
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Verification failed';
-      setError(errorMessage);
-      Alert.alert('Error', errorMessage);
+      const formattedError = errorService.handleAuthError(error);
+      const alertType = errorService.getAlertType(formattedError.category);
+      showAlert(formattedError.message, { type: alertType });
     } finally {
       setLoading(false);
     }
@@ -89,7 +92,7 @@ export default function VerifyPhoneNumberScreen({ navigation }: Props) {
 
   const handleResend = async () => {
     if (!user?.phone) {
-      Alert.alert('Error', 'No phone number found');
+      showAlert('No phone number found', {type: 'error'});
       return;
     }
 
@@ -101,11 +104,12 @@ export default function VerifyPhoneNumberScreen({ navigation }: Props) {
       });
       
       if (error) throw error;
-      
-      Alert.alert('Code Sent', 'A new verification code has been sent to your phone number.');
+
+      showAlert('A new verification code has been sent to your phone number.', { type: 'success' });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to resend code';
-      Alert.alert('Error', errorMessage);
+      const formattedError = errorService.handleAuthError(error);
+      const alertType = errorService.getAlertType(formattedError.category);
+      showAlert(formattedError.message, { type: alertType });
     }
   };
 

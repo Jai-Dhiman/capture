@@ -7,6 +7,8 @@ import { RouteProp } from '@react-navigation/native';
 import { AuthStackParamList } from '../../components/Navigators/types/navigation';
 import { supabase } from '../../lib/supabase';
 import { LoadingSpinner } from 'components/ui/LoadingSpinner';
+import { useAlert } from '../../lib/AlertContext';
+import { errorService } from '../../services/errorService';
 import Header from 'components/ui/Header';
 import LockIcon from '../../../assets/icons/LockIcon.svg';
 import ViewPasswordIcon from '../../../assets/icons/ViewPasswordIcon.svg';
@@ -26,6 +28,7 @@ export default function ResetPasswordScreen({ navigation, route }: Props) {
   const [isConfirmPasswordFocused, setIsConfirmPasswordFocused] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [hasResetToken, setHasResetToken] = useState(false);
+  const { showAlert } = useAlert();
   
   const passwordInputRef = useRef<TextInput>(null);
   const confirmPasswordInputRef = useRef<TextInput>(null);
@@ -74,17 +77,17 @@ export default function ResetPasswordScreen({ navigation, route }: Props) {
 
   const handleResetPassword = async () => {
     if (!password) {
-      Alert.alert('Error', 'Please enter a new password');
+      showAlert('Please enter a new password', { type: 'warning' });
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      showAlert('Passwords do not match', { type: 'warning' });
       return;
     }
 
     if (password.length < 8) {
-      Alert.alert('Error', 'Password must be at least 8 characters');
+      showAlert('Password must be at least 8 characters', { type: 'warning' });
       return;
     }
 
@@ -100,11 +103,9 @@ export default function ResetPasswordScreen({ navigation, route }: Props) {
         [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
       );
     } catch (error) {
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : 'Failed to reset password';
-      
-      Alert.alert('Error', errorMessage);
+      const formattedError = errorService.handleAuthError(error);
+      const alertType = errorService.getAlertType(formattedError.category);
+      showAlert(formattedError.message, { type: alertType });
     } finally {
       setIsLoading(false);
     }

@@ -8,6 +8,8 @@ import { RootStackParamList } from 'components/Navigators/types/navigation';
 import { useUploadMedia } from 'hooks/useMedia';
 import { useCreatePost } from 'hooks/usePosts';
 import { HashtagInput } from '../components/hashtags/HashtagInput';
+import { useAlert } from '../lib/AlertContext';
+import { errorService } from '../services/errorService';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -18,13 +20,14 @@ export default function NewPost() {
   const [selectedHashtags, setSelectedHashtags] = useState<Array<{ id: string; name: string }>>([]);
   const uploadMediaMutation = useUploadMedia();
   const createPostMutation = useCreatePost();
+  const { showAlert } = useAlert();
 
 
   const handleImageSelection = async () => {
     try {
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permissionResult.granted) {
-        Alert.alert('Permission Required', 'Please allow access to your photos');
+        showAlert('Please allow access to your photos', { type: 'warning' });
         return;
       }
 
@@ -47,13 +50,13 @@ export default function NewPost() {
       }
     } catch (error) {
       console.error('Selection error:', error);
-      Alert.alert('Error', 'Failed to select images');
+      showAlert('Failed to select images', { type: 'error' });
     }
   };
 
   const handleCreatePost = async () => {
     if (!content && selectedImages.length === 0) {
-      Alert.alert('Error', 'Please add some content or images to your post');
+      showAlert('Please add some content or images to your post', { type: 'warning' });
       return;
     }
 
@@ -69,16 +72,14 @@ export default function NewPost() {
         hashtagIds
       });
       
-      console.log('Created post response:', JSON.stringify(createdPost, null, 2));
-      
-      Alert.alert('Success', 'Post created successfully!');
+      showAlert('Post created successfully!', { type: 'success' });
       navigation.goBack();
     } catch (error: any) {
       console.error('Post creation error:', {
         message: error.message,
         details: error.response?.errors || error
       });
-      Alert.alert('Error', `Failed to create post: ${error.message}`);
+      showAlert(`Failed to create post: ${error.message}`, { type: 'error' });
     }
   };
 

@@ -17,6 +17,7 @@ import { useAuthStore } from '../stores/authStore';
 import { useProfileStore } from '../stores/profileStore';
 import { LoadingSpinner } from 'components/ui/LoadingSpinner';
 import { CommentSection } from '../components/comment/CommentSection';
+import { useAlert } from '../lib/AlertContext';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 type SinglePostRouteProp = RouteProp<AppStackParamList, 'SinglePost'>;
@@ -31,6 +32,7 @@ export default function SinglePost() {
   const unsavePostMutation = useUnsavePost();
   const { user } = useAuthStore();
   const { profile } = useProfileStore();
+  const { showAlert } = useAlert();
 
   const { data: post, isLoading, error } = useSinglePost(postId);
   const isPostOwner = user?.id === post?.userId;
@@ -72,7 +74,7 @@ export default function SinglePost() {
       }
     } catch (error: any) {
       console.error('Save/Unsave error:', error);
-      Alert.alert('Error', `Failed to ${post.isSaved ? 'unsave' : 'save'} post`);
+      showAlert(`Failed to ${post.isSaved ? 'unsave' : 'save'} post`, { type: 'error' });
     }
   };
 
