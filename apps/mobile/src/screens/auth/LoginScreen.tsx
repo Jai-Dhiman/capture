@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react'
 import {
-  View, Text, TouchableOpacity, TextInput, Image, Alert, ScrollView,
+  View, Text, TouchableOpacity, TextInput, Image, ScrollView,
 } from 'react-native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import EmailIcon from '../../../assets/icons/EmailIcon.svg'
@@ -9,9 +9,11 @@ import ViewPasswordIcon from '../../../assets/icons/ViewPasswordIcon.svg'
 import HidePasswordIcon from '../../../assets/icons/HidePasswordIcon.svg'
 import { AuthStackParamList } from '../../components/Navigators/types/navigation'
 import { useAuth } from '../../hooks/auth/useAuth'
-import { LoadingSpinner } from 'components/LoadingSpinner'
+import { LoadingSpinner } from 'components/ui/LoadingSpinner'
 import OAuth from '../../components/OAuth';
-import Header from 'components/Header'
+import Header from 'components/ui/Header'
+import { useAlert } from '../../lib/AlertContext';
+import { errorService } from '../../services/errorService';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'Login'>
@@ -25,24 +27,23 @@ export default function LoginScreen({ navigation }: Props) {
   const [isPasswordFocused, setIsPasswordFocused] = useState(false)
   const emailInputRef = useRef<TextInput>(null)
   const passwordInputRef = useRef<TextInput>(null)
+  const {showAlert} = useAlert()
 
   const { login, isLoading } = useAuth()
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please enter both email and password')
-      return
+      showAlert('Please enter both email and password', { type: 'warning' });
+      return;
     }
-
+  
     login.mutate(
       { email, password },
       {
         onError: (error) => {
-          const errorMessage = error instanceof Error 
-            ? error.message 
-            : 'An unexpected error occurred'
-          
-          Alert.alert('Login Failed', errorMessage)
+          const formattedError = errorService.handleAuthError(error);
+          const alertType = errorService.getAlertType(formattedError.category);
+          showAlert(formattedError.message, { type: alertType });
         }
       }
     )

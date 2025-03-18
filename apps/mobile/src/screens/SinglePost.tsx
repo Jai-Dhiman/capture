@@ -15,7 +15,7 @@ import { useSavePost, useUnsavePost } from '../hooks/useSavesPosts';
 import { useDeletePost, useSinglePost } from '../hooks/usePosts';
 import { useAuthStore } from '../stores/authStore';
 import { useProfileStore } from '../stores/profileStore';
-import { LoadingSpinner } from 'components/LoadingSpinner';
+import { LoadingSpinner } from 'components/ui/LoadingSpinner';
 import { CommentSection } from '../components/comment/CommentSection';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;

@@ -5,7 +5,7 @@ import { usePostComments } from '../../hooks/useComments';
 import { CommentList } from './CommentList';
 import { CommentInput } from './CommentInput';
 import { CommentSkeleton } from './CommentSkeleton';
-import { LoadingSpinner } from 'components/LoadingSpinner';
+import { LoadingSpinner } from 'components/ui/LoadingSpinner';
 
 interface CommentSectionProps {
   postId: string;

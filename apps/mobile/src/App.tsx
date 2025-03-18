@@ -8,6 +8,7 @@ import "../global.css";
 import { ApolloProvider } from './components/ApolloProvider';
 import { SessionProvider } from './lib/SessionProvider';
 import { MainNavigator, linking } from './components/Navigators';
+import { AlertProvider } from './lib/AlertContext';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -25,12 +26,14 @@ export default function App() {
         <QueryClientProvider client={queryClient}>
           <ApolloProvider>
             <SessionProvider>
-              <View className="flex-1 bg-black">
-                <StatusBar style="light" />
-                <NavigationContainer linking={linking}>
-                  <MainNavigator />
-                </NavigationContainer>
-              </View>
+              <AlertProvider>
+                <View className="flex-1 bg-black">
+                  <StatusBar style="light" />
+                  <NavigationContainer linking={linking}>
+                    <MainNavigator />
+                  </NavigationContainer>
+                </View>
+              </AlertProvider>
             </SessionProvider>
           </ApolloProvider>
         </QueryClientProvider>

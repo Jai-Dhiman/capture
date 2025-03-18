@@ -5,9 +5,11 @@ import {
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../components/Navigators/types/navigation';
 import { supabase } from '../../lib/supabase';
-import { LoadingSpinner } from 'components/LoadingSpinner';
-import Header from 'components/Header';
+import { LoadingSpinner } from 'components/ui/LoadingSpinner';
+import Header from 'components/ui/Header';
 import EmailIcon from '../../../assets/icons/EmailIcon.svg';
+import { useAlert } from '../../lib/AlertContext';
+import { errorService } from '../../services/errorService';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'ForgotPassword'>
@@ -19,10 +21,11 @@ export default function ForgotPasswordScreen({ navigation }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const emailInputRef = useRef<TextInput>(null);
+  const { showAlert } = useAlert();
 
   const handleResetPassword = async () => {
     if (!email) {
-      Alert.alert('Error', 'Please enter your email address');
+      showAlert('Please enter your email address', {type: 'warning'});
       return;
     }
 

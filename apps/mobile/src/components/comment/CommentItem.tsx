@@ -7,7 +7,7 @@ import { CommentInput } from './CommentInput';
 import { useAuthStore } from '../../stores/authStore';
 import { useProfileStore } from '../../stores/profileStore';
 import { CommentSkeleton } from './CommentSkeleton';
-import { LoadingSpinner } from 'components/LoadingSpinner';
+import { LoadingSpinner } from 'components/ui/LoadingSpinner';
 
 interface CommentItemProps {
   comment: Comment;

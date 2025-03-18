@@ -1,16 +1,18 @@
 import React, { useState, useRef } from 'react';
 import {
-  View, Text, TouchableOpacity, ScrollView, TextInput, Alert, Image, Dimensions
+  View, Text, TouchableOpacity, ScrollView, TextInput, Image, Dimensions
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../components/Navigators/types/navigation';
 import { useAuthStore } from '../../stores/authStore';
 import { useOnboardingStore } from '../../stores/onboardingStore';
 import { useAuth } from '../../hooks/auth/useAuth';
-import { LoadingSpinner } from 'components/LoadingSpinner';
-import Header from '../../components/Header';
+import { LoadingSpinner } from 'components/ui/LoadingSpinner';
+import Header from '../../components/ui/Header';
 import { supabase } from '../../lib/supabase';
 import { isDevelopment, canSkipPhoneVerification } from '../../config/environment';
+import { useAlert } from '../../lib/AlertContext';
+import { errorService } from '../../services/errorService';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'EnterPhone'>
@@ -23,6 +25,7 @@ export default function EnterPhoneScreen({ navigation }: Props) {
   const { user, setUser, setOtpMessageId } = useAuthStore();
   const { completeStep, skipStep } = useOnboardingStore();
   const { logout } = useAuth();
+  const { showAlert } = useAlert();
   
   const phoneInputRef = useRef<TextInput>(null);
   const screenWidth = Dimensions.get('window').width;
@@ -30,7 +33,7 @@ export default function EnterPhoneScreen({ navigation }: Props) {
 
   const handleSubmitPhone = async () => {
     if (!phone || phone.length < 10) {
-      Alert.alert('Error', 'Please enter a valid phone number');
+      showAlert('Please enter a valid phone number', { type: 'warning' });
       return;
     }
 
@@ -63,11 +66,9 @@ export default function EnterPhoneScreen({ navigation }: Props) {
       
       navigation.navigate('VerifyPhoneNumber');
     } catch (error) {
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : 'Failed to send verification code';
-      
-      Alert.alert('Error', errorMessage);
+      const formattedError = errorService.handleAuthError(error);
+      const alertType = errorService.getAlertType(formattedError.category);
+      showAlert(formattedError.message, { type: alertType });
     } finally {
       setLoading(false);
     }

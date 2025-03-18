@@ -5,7 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../components/Navigators/types/navigation';
 import { useSavedPosts } from '../hooks/useSavesPosts';
-import { LoadingSpinner } from '../components/LoadingSpinner';
+import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { MediaImage } from '../components/media/MediaImage';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;

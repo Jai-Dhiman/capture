@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Image } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { LoadingSpinner } from 'components/LoadingSpinner';
+import { LoadingSpinner } from 'components/ui/LoadingSpinner';
 import { useAuthStore } from '../../stores/authStore';
 import { useAuth } from '../../hooks/auth/useAuth';
 import { useCreateProfile } from 'hooks/auth/useCreateProfile';
 import { useOnboardingStore } from '../../stores/onboardingStore';
+import { useAlert } from '../../lib/AlertContext';
+import { errorService } from '../../services/errorService';
 
 export default function CreateProfile() {
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const { showAlert } = useAlert();
   
   const { user } = useAuthStore();
   const { logout } = useAuth();
@@ -21,7 +24,7 @@ export default function CreateProfile() {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
     
     if (permissionResult.granted === false) {
-      Alert.alert('Permission Required', 'You need to grant camera roll permissions to upload a photo.');
+      showAlert('Permission Required, You need to grant camera roll permissions to upload a photo.');
       return;
     }
     
@@ -39,7 +42,7 @@ export default function CreateProfile() {
   
   const createProfile = async () => {
     if (!username.trim()) {
-      Alert.alert('Error', 'Username is required');
+      showAlert('Username is required', { type: 'warning' });
       return;
     }
     
@@ -50,16 +53,19 @@ export default function CreateProfile() {
         profileImage
       },
       {
+        onSuccess: () => {
+          showAlert('Profile created successfully!', { type: 'success', duration: 3000 });
+          completeStep('profile-setup');
+        },
         onError: (error) => {
           const errorMessage = error instanceof Error 
             ? error.message 
             : 'Failed to create profile';
-            
-          Alert.alert('Error', errorMessage);
+          
+          showAlert(errorMessage, { type: 'error' });
         }
       }
     );
-    completeStep('profile-setup');
   };
 
   const handleLogout = () => {

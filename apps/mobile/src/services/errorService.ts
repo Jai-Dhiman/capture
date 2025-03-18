@@ -1,3 +1,5 @@
+import { AlertType } from '../components/ui/Alert'
+
 export type ErrorCategory = 'auth' | 'network' | 'validation' | 'server' | 'unknown'
 
 export interface AppError {
@@ -14,6 +16,22 @@ export const errorService = {
     if (code.startsWith('validation/')) return 'validation'
     if (code.startsWith('server/')) return 'server'
     return 'unknown'
+  },
+
+  getAlertType(category: ErrorCategory): AlertType {
+    switch (category) {
+      case 'auth':
+        return 'warning'
+      case 'network':
+        return 'error'
+      case 'validation':
+        return 'warning'
+      case 'server':
+        return 'error'
+      case 'unknown':
+      default:
+        return 'error'
+    }
   },
 
   formatErrorMessage(error: Error | AppError | unknown): string {
@@ -60,5 +78,12 @@ export const errorService = {
 
     const message = error instanceof Error ? error.message : 'Authentication failed'
     return this.createError(message, 'auth/unknown', error instanceof Error ? error : undefined)
+  },
+
+  getPhoneVerificationAction(navigation: any) {
+    return {
+      label: 'Verify Now!',
+      onPress: () => navigation.navigate('PhoneVerification', { screen: 'EnterPhone' }),
+    }
   },
 }

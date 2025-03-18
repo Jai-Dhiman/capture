@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, Modal, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, Modal } from 'react-native';
 import { useAuthStore } from '../stores/authStore';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -12,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import SavedPosts from "../../assets/icons/FavoriteIcon.svg"
 import Placeholder from "../../assets/icons/ViewPasswordIcon.svg"
 import NewPost from "../../assets/icons/PlusIcon.svg"
-import { LoadingSpinner } from '../components/LoadingSpinner';
+import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { ProfileImage } from '../components/media/ProfileImage';
 import { FollowButton } from '../components/profile/FollowButton';
 import { FollowList } from '../components/profile/FollowList';

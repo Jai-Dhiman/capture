@@ -4,7 +4,7 @@ import { supabase } from './supabase'
 import { useAuthStore } from '../stores/authStore'
 import { useProfileStore } from '../stores/profileStore'
 import { useOnboardingStore } from '../stores/onboardingStore'
-import { SplashAnimation } from 'components/animation/SplashAnimation'
+import { SplashAnimation } from 'components/ui/SplashAnimation'
 import { authService } from '../services/authService'
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {

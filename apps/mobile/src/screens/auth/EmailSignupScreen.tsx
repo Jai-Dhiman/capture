@@ -1,14 +1,15 @@
 import React, { useState, useRef } from 'react'
 import {
-  View, Text, TouchableOpacity, ScrollView, TextInput, Alert, Image, Dimensions
+  View, Text, TouchableOpacity, ScrollView, TextInput, Image, Dimensions
 } from 'react-native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { AuthStackParamList } from '../../components/Navigators/types/navigation'
 import { useAuth } from '../../hooks/auth/useAuth'
-import { LoadingSpinner } from 'components/LoadingSpinner'
-import Header from '../../components/Header'
+import { LoadingSpinner } from 'components/ui/LoadingSpinner'
+import Header from '../../components/ui/Header'
 import { Feather, MaterialIcons } from '@expo/vector-icons'
-import { API_URL } from '@env';
+import { useAlert } from '../../lib/AlertContext';
+import { errorService } from '../../services/errorService';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'Signup'>
@@ -23,6 +24,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
   const [isEmailFocused, setIsEmailFocused] = useState(false)
   const [isPasswordFocused, setIsPasswordFocused] = useState(false)
   const [isConfirmPasswordFocused, setIsConfirmPasswordFocused] = useState(false)
+  const {showAlert} = useAlert()
   
   const emailInputRef = useRef<TextInput>(null)
   const passwordInputRef = useRef<TextInput>(null)
@@ -34,31 +36,30 @@ export default function EmailSignupScreen({ navigation }: Props) {
 
   const handleSignup = async () => {
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match')
-      return
+      showAlert('Passwords do not match', { type: 'warning' });
+      return;
     }
-
+  
     signup.mutate(
       { email, password },
       {
         onSuccess: () => {
-          Alert.alert(
-            'Account Created Successfully!',
-            'Please check your email for a verification link to complete your registration.',
-            [
-              { 
-                text: 'Go to Login', 
-                onPress: () => navigation.navigate('Login') 
-              }
-            ]
-          )
+          showAlert(
+            'Account Created Successfully! Please check your email for a verification link to complete your registration.',
+            { 
+              type: 'success',
+              action: {
+                label: 'Go to Login',
+                onPress: () => navigation.navigate('Login')
+              },
+              duration: 5000
+            }
+          );
         },
         onError: (error) => {
-          const errorMessage = error instanceof Error 
-            ? error.message 
-            : 'An unexpected error occurred'
-          
-          Alert.alert('Signup Failed', errorMessage)
+          const formattedError = errorService.handleAuthError(error);
+          const alertType = errorService.getAlertType(formattedError.category);
+          showAlert(formattedError.message, { type: alertType });
         }
       }
     )

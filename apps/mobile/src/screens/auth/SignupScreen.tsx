@@ -10,7 +10,7 @@ import { AuthStackParamList } from '../../components/Navigators/types/navigation
 import OAuth from '../../components/OAuth';
 import AppleIcon from '../../../assets/icons/AppleLogo.svg';
 import EmailIcon from '../../../assets/icons/EmailIcon.svg';
-import Header from '../../components/Header';
+import Header from '../../components/ui/Header';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'EmailSignup'>
