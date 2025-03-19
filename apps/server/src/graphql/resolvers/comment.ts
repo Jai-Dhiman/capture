@@ -1,5 +1,5 @@
 import { createD1Client } from '../../db'
-import { eq, desc, like, asc, count, or, gt, and, lt, isNull, SQL } from 'drizzle-orm'
+import { eq, desc, asc, count, or, gt, and, lt, isNull, SQL, sql } from 'drizzle-orm'
 import * as schema from '../../db/schema'
 import { nanoid } from 'nanoid'
 import type { ContextType } from '../../types'
@@ -17,7 +17,7 @@ export const commentResolvers = {
       }: {
         postId: string
         parentId?: string | null
-        sortBy?: 'newest' | 'oldest' | 'popular'
+        sortBy?: 'newest' | 'oldest'
         cursor?: string | null
         limit?: number
       },
@@ -36,7 +36,7 @@ export const commentResolvers = {
           throw new Error('Post not found')
         }
 
-        const conditions: SQL[] = [eq(schema.comment.postId, postId)]
+        const conditions: SQL<unknown>[] = [eq(schema.comment.postId, postId)]
 
         if (parentId === null) {
           conditions.push(isNull(schema.comment.parentId))
@@ -44,10 +44,7 @@ export const commentResolvers = {
           conditions.push(eq(schema.comment.parentId, parentId))
         }
 
-        let query = db
-          .select()
-          .from(schema.comment)
-          .where(and(...conditions))
+        const baseQuery = db.select().from(schema.comment)
 
         if (cursor) {
           const decodedCursor = Buffer.from(cursor, 'base64').toString('utf-8')
@@ -69,14 +66,14 @@ export const commentResolvers = {
                     gt(schema.comment.id, cursorId)
                   )
                 )
-
-          query = query.where(cursorConditions)
+          conditions.push(cursorConditions as SQL<unknown>)
         }
 
-        query =
-          sortBy === 'newest'
-            ? query.orderBy(desc(schema.comment.createdAt), desc(schema.comment.id))
-            : query.orderBy(asc(schema.comment.createdAt), asc(schema.comment.id))
+        const query = baseQuery
+          .where(sql`${and(...conditions)}`)
+          .orderBy(
+            sortBy === 'newest' ? desc(schema.comment.createdAt) : asc(schema.comment.createdAt)
+          )
 
         const countQuery = db
           .select({ count: count() })
@@ -110,7 +107,9 @@ export const commentResolvers = {
         )
       }
     },
+  },
 
+  Mutation: {
     async createComment(
       _: unknown,
       {
@@ -143,118 +142,13 @@ export const commentResolvers = {
 
         let newPath: string
         let depth: number = 0
-        let parentComment = null
 
         if (input.parentId) {
-          parentComment = await db
-            .select()
-            .from(schema.comment)
-            .where(
-              and(eq(schema.comment.id, input.parentId), eq(schema.comment.postId, input.postId))
-            )
-            .get()
-
-          if (!parentComment) {
-            throw new Error('Parent comment not found')
-          }
-
-          const siblings = await db
-            .select()
-            .from(schema.comment)
-            .where(eq(schema.comment.parentId, input.parentId))
-            .all()
-
-          const nextIndex = siblings.length + 1
-          newPath = `${parentComment.path}.${nextIndex.toString().padStart(2, '0')}`
-          depth = parentComment.depth + 1
-        } else {
-          const topLevelComments = await db
-            .select()
-            .from(schema.comment)
-            .where(and(eq(schema.comment.postId, input.postId), eq(schema.comment.parentId, null)))
-            .all()
-
-          const nextIndex = topLevelComments.length + 1
-          newPath = nextIndex.toString().padStart(2, '0')
-          depth = 0
-        }
-
-        const commentId = nanoid()
-
-        await db.insert(schema.comment).values({
-          id: commentId,
-          postId: input.postId,
-          userId: context.user.id,
-          parentId: input.parentId || null,
-          content: input.content,
-          path: newPath,
-          depth,
-          createdAt: new Date().toISOString(),
-        })
-
-        const createdComment = await db
-          .select()
-          .from(schema.comment)
-          .where(eq(schema.comment.id, commentId))
-          .get()
-
-        if (!createdComment) {
-          throw new Error('Failed to create comment')
-        }
-
-        return createdComment
-      } catch (error) {
-        console.error('Error creating comment:', error)
-        throw new Error(
-          `Failed to create comment: ${error instanceof Error ? error.message : 'Unknown error'}`
-        )
-      }
-    },
-  },
-
-  Mutation: {
-    async createComment(
-      _: unknown,
-      {
-        input,
-      }: {
-        input: {
-          postId: string
-          content: string
-          parentPath?: string | null
-        }
-      },
-      context: ContextType
-    ) {
-      if (!context.user) {
-        throw new Error('Authentication required')
-      }
-
-      const db = createD1Client(context.env)
-
-      try {
-        const post = await db
-          .select()
-          .from(schema.post)
-          .where(eq(schema.post.id, input.postId))
-          .get()
-
-        if (!post) {
-          throw new Error('Post not found')
-        }
-
-        let newPath: string
-        let depth: number = 0
-
-        if (input.parentPath) {
           const parentComment = await db
             .select()
             .from(schema.comment)
             .where(
-              and(
-                eq(schema.comment.path, input.parentPath),
-                eq(schema.comment.postId, input.postId)
-              )
+              and(eq(schema.comment.path, input.parentId), eq(schema.comment.postId, input.postId))
             )
             .get()
 
@@ -265,8 +159,11 @@ export const commentResolvers = {
           const siblings = await db
             .select()
             .from(schema.comment)
-            .where(like(schema.comment.path, `${input.parentPath}.%`))
-            .where(eq(schema.comment.depth, parentComment.depth + 1))
+            .where(
+              sql`${schema.comment.path} LIKE ${`${input.parentId}.%`} AND ${
+                schema.comment.depth
+              } = ${parentComment.depth + 1}`
+            )
             .all()
 
           const siblingPaths = siblings.map((s: { path: string }) => s.path)
@@ -276,7 +173,7 @@ export const commentResolvers = {
           })
 
           const nextIndex = childIndices.length > 0 ? Math.max(...childIndices) + 1 : 1
-          newPath = `${input.parentPath}.${nextIndex.toString().padStart(2, '0')}`
+          newPath = `${input.parentId}.${nextIndex.toString().padStart(2, '0')}`
           depth = parentComment.depth + 1
         } else {
           const topLevelComments = await db
