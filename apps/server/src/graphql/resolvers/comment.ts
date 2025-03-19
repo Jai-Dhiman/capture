@@ -348,11 +348,10 @@ export const commentResolvers = {
         }
 
         await db
-          .delete(schema.comment)
-          .where(like(schema.comment.path, `${comment.path}.%`))
+          .update(schema.comment)
+          .set({ content: '[Comment deleted]', isDeleted: true })
+          .where(eq(schema.comment.id, id))
           .execute()
-
-        await db.delete(schema.comment).where(eq(schema.comment.id, id)).execute()
 
         return {
           id,

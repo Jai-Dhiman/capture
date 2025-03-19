@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, TextInput, TouchableOpacity, Text, Keyboard } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAtom } from 'jotai';
@@ -9,10 +9,11 @@ export const CommentInput: React.FC = () => {
   const [content, setContent] = useState('');
   const [replyingTo] = useAtom(replyingToCommentAtom);
   const { createComment, cancelReply } = useCommentActions();
+  const inputRef = useRef<TextInput>(null);
   
   useEffect(() => {
-    if (replyingTo) {
-      // add useRef to focus the input
+    if (replyingTo && inputRef.current) {
+      inputRef.current.focus();
     }
   }, [replyingTo]);
   
@@ -39,6 +40,7 @@ export const CommentInput: React.FC = () => {
       
       <View className="flex-row items-center">
         <TextInput
+          ref={inputRef}
           className="flex-1 bg-white rounded-full px-4 py-2 border border-gray-200"
           placeholder={replyingTo ? "Write a reply..." : "Write a comment..."}
           value={content}

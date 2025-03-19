@@ -51,6 +51,9 @@ export const CommentList: React.FC<CommentListProps> = ({
       onEndReached={hasNextPage ? onLoadMore : undefined}
       onEndReachedThreshold={0.5}
       removeClippedSubviews={true}
+      getItemType={(item) => {
+        return item.isDeleted ? 'deleted' : 'active';
+      }}
       ListFooterComponent={
         loadingMore ? (
           <View className="py-4 items-center">

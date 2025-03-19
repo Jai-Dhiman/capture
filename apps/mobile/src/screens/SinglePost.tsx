@@ -20,6 +20,9 @@ import { useAlert } from '../lib/AlertContext';
 import { useAtom } from 'jotai';
 import { commentDrawerOpenAtom, currentPostIdAtom } from '../atoms/commentAtoms';
 import { CommentDrawer } from '../components/comment/CommentDrawer';
+import { useQueryClient } from '@tanstack/react-query';
+import { commentLimitAtom, commentSortAtom } from '../atoms/commentAtoms';
+import { useAtomValue } from 'jotai';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 type SinglePostRouteProp = RouteProp<AppStackParamList, 'SinglePost'>;
@@ -37,6 +40,9 @@ export default function SinglePost() {
   const { showAlert } = useAlert();
   const [, setCommentDrawerOpen] = useAtom(commentDrawerOpenAtom);
   const [, setCurrentPostId] = useAtom(currentPostIdAtom);
+  const queryClient = useQueryClient();
+  const defaultSort = useAtomValue(commentSortAtom);
+  const defaultLimit = useAtomValue(commentLimitAtom);
 
   const { data: post, isLoading, error } = useSinglePost(postId);
   const isPostOwner = user?.id === post?.userId;

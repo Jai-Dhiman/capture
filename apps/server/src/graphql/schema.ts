@@ -76,6 +76,7 @@ export const typeDefs = `
     path: String!
     depth: Int!
     parentId: ID
+    isDeleted: Boolean!
     user: Profile!
     post: Post!
     createdAt: String!

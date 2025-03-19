@@ -7,9 +7,9 @@ import { errorService } from '../services/errorService'
 
 export const commentDrawerOpenAtom = atom(false)
 export const currentPostIdAtom = atom<string | null>(null)
-export const commentSortAtom = atom<'newest' | 'oldest' | 'popular'>('newest')
-export const replyingToCommentAtom = atom<{ id: string; path: string } | null>(null)
-export const commentCursorAtom = atom<string | null>(null) // Using cursor instead of page
+export const commentSortAtom = atom<'newest' | 'oldest'>('newest')
+export const replyingToCommentAtom = atom<{ id: string; username: string } | null>(null)
+export const commentCursorAtom = atom<string | null>(null)
 export const commentLimitAtom = atom(10)
 
 export const commentsQueryAtom = atomWithQuery((get) => {
@@ -228,7 +228,6 @@ export const deleteCommentMutationAtom = atomWithMutation(() => {
   }
 })
 
-// Add a new atom for cursor-based pagination
 export const loadMoreCommentsAtom = atom(null, (get, set) => {
   const queryResult = get(commentsQueryAtom)
 

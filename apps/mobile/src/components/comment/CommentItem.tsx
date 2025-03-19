@@ -69,6 +69,24 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment }) => {
                 <Ionicons name="trash-outline" size={16} color="#ef4444" />
               </TouchableOpacity>
             )}
+            <Text className={`mt-1 ${comment.isDeleted ? 'text-gray-400 italic' : ''}`}>
+              {comment.isDeleted ? "[Comment deleted]" : comment.content}
+            </Text>
+
+            // And hide reply/delete options:
+            {!comment.isDeleted && (
+              <View className="flex-row justify-between mt-2">
+                <Text className="text-xs text-gray-500">{formattedDate}</Text>
+                
+                <TouchableOpacity 
+                  onPress={handleReply}
+                  className="flex-row items-center"
+                >
+                  <Text className="text-xs color=#e4cac7 mr-1">Reply</Text>
+                  <Ionicons name="return-down-forward-outline" size={12} color="#E4cac7" />
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
           
           <Text className="mt-1">{comment.content}</Text>

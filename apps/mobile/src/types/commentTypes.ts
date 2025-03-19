@@ -10,6 +10,7 @@ export type Comment = {
   path: string
   depth: number
   createdAt: string
+  isDeleted?: boolean
   user?: User
   optimistic?: boolean
   parentId?: string
