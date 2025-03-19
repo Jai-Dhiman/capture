@@ -349,7 +349,7 @@ export const commentResolvers = {
 
         await db
           .update(schema.comment)
-          .set({ content: '[Comment deleted]', isDeleted: true })
+          .set({ content: '[Comment deleted]', isDeleted: 1 })
           .where(eq(schema.comment.id, id))
           .execute()
 

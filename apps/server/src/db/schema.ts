@@ -47,7 +47,7 @@ export const comment = sqliteTable(
     content: text('content').notNull(),
     path: text('path').notNull(),
     depth: integer('depth').notNull().default(0),
-    isDeleted: boolean('is_deleted').notNull().default(false),
+    isDeleted: integer('is_deleted').notNull().default(0),
     createdAt: numeric('created_at').default(new Date().toISOString()).notNull(),
   },
   (table) => [

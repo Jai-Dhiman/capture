@@ -8,7 +8,9 @@ import { errorService } from '../services/errorService'
 export const commentDrawerOpenAtom = atom(false)
 export const currentPostIdAtom = atom<string | null>(null)
 export const commentSortAtom = atom<'newest' | 'oldest'>('newest')
-export const replyingToCommentAtom = atom<{ id: string; username: string } | null>(null)
+export const replyingToCommentAtom = atom<{ id: string; username?: string; path?: string } | null>(
+  null
+)
 export const commentCursorAtom = atom<string | null>(null)
 export const commentLimitAtom = atom(10)
 
