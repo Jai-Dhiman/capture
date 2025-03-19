@@ -75,6 +75,7 @@ export const typeDefs = `
     content: String!
     path: String!
     depth: Int!
+    parentId: ID
     user: Profile!
     post: Post!
     createdAt: String!
@@ -84,12 +85,13 @@ export const typeDefs = `
     comments: [Comment!]!
     totalCount: Int!
     hasNextPage: Boolean!
+    nextCursor: String
   }
 
   input CommentInput {
     postId: ID!
     content: String!
-    parentPath: String
+    parentId: ID
   }
 
   enum CommentSortOption {

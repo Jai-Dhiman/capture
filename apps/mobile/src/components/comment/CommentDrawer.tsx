@@ -1,5 +1,5 @@
 import React, { useRef, useMemo, useCallback } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { useAtom } from 'jotai';
 import BottomSheet from '@gorhom/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,7 +36,7 @@ export const CommentDrawer = () => {
   
   const handleLoadMore = useCallback(() => {
     if (queryResult.data?.hasNextPage && !queryResult.isFetching) {
-      setPage(prev => prev + 1);
+      setPage((prev: number) => prev + 1);
     }
   }, [queryResult, setPage]);
 
@@ -46,21 +46,27 @@ export const CommentDrawer = () => {
       index={isOpen ? 0 : -1}
       snapPoints={snapPoints}
       onChange={(index) => setIsOpen(index > -1)}
-      handleIndicatorStyle={styles.indicator}
-      backgroundStyle={styles.background}
+      handleIndicatorStyle={{ backgroundColor: '#999', width: 40 }}
+      backgroundStyle={{ backgroundColor: '#fff' }}
       enablePanDownToClose={true}
     >
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Comments</Text>
-          <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
+      <View className="flex-1 p-4">
+        <View className="flex-row justify-between items-center mb-4">
+          <Text className="text-lg font-semibold">Comments</Text>
+          <TouchableOpacity 
+            onPress={handleClose} 
+            className="p-1"
+          >
             <Ionicons name="close" size={24} color="#333" />
           </TouchableOpacity>
         </View>
         
-        <View style={styles.sortContainer}>
-          <TouchableOpacity onPress={toggleSort} style={styles.sortButton}>
-            <Text style={styles.sortText}>Sort by: {sortBy}</Text>
+        <View className="mb-3 items-end">
+          <TouchableOpacity 
+            onPress={toggleSort} 
+            className="flex-row items-center p-2"
+          >
+            <Text className="mr-2 text-gray-600">Sort by: {sortBy}</Text>
             <Ionicons 
               name={sortBy === 'newest' ? 'arrow-down' : 'arrow-up'} 
               size={16} 
@@ -82,43 +88,3 @@ export const CommentDrawer = () => {
     </BottomSheet>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  closeButton: {
-    padding: 4,
-  },
-  indicator: {
-    backgroundColor: '#999',
-    width: 40,
-  },
-  background: {
-    backgroundColor: '#fff',
-  },
-  sortContainer: {
-    marginBottom: 12,
-    alignItems: 'flex-end',
-  },
-  sortButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 8,
-  },
-  sortText: {
-    marginRight: 8,
-    color: '#666',
-  },
-});

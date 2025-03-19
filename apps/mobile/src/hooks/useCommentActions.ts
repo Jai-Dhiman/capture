@@ -9,6 +9,8 @@ import {
 } from '../atoms/commentAtoms'
 import { useProfileStore } from '../stores/profileStore'
 import { Comment } from '../types/commentTypes'
+import { errorService } from '../services/errorService'
+import { useAlert } from '../lib/AlertContext'
 
 export const useCommentActions = () => {
   const [, setOptimisticComments] = useAtom(optimisticCommentsAtom)
@@ -17,6 +19,7 @@ export const useCommentActions = () => {
   const [replyingTo, setReplyingTo] = useAtom(replyingToCommentAtom)
   const [postId] = useAtom(currentPostIdAtom)
   const { profile } = useProfileStore()
+  const { showAlert } = useAlert()
 
   const createComment = async (content: string) => {
     if (!postId || !content.trim()) return
@@ -25,25 +28,12 @@ export const useCommentActions = () => {
     const now = new Date().toISOString()
 
     const parentPath = replyingTo?.path || null
-    let newPath: string
-    let depth: number
-
-    // This is simplified - your backend would handle actual path generation
-    if (!parentPath) {
-      // This is a top-level comment - you'd need logic to determine the next available path
-      newPath = `01` // This is just a placeholder
-      depth = 0
-    } else {
-      // This is a reply - you'd need logic to determine the next child path
-      newPath = `${parentPath}.01` // This is just a placeholder
-      depth = parentPath.split('.').length
-    }
 
     const optimisticComment: Comment = {
       id: tempId,
       content: content.trim(),
-      path: newPath,
-      depth,
+      path: parentPath ? `${parentPath}.01` : '01', // Simplified path
+      depth: parentPath ? parentPath.split('.').length : 0,
       createdAt: now,
       user: {
         id: profile?.id || '',
@@ -54,18 +44,29 @@ export const useCommentActions = () => {
     }
 
     setOptimisticComments((prev) => [...prev, optimisticComment])
-
     setReplyingTo(null)
 
     try {
       await createMutation.mutateAsync({
         postId,
         content: content.trim(),
-        parentPath,
       })
     } catch (error) {
-      console.error('Failed to create comment:', error)
+      const appError = errorService.createError(
+        'Failed to post comment',
+        'network/comment-create-failed',
+        error instanceof Error ? error : undefined
+      )
 
+      showAlert(appError.message, {
+        type: errorService.getAlertType(appError.category),
+        action: {
+          label: 'Retry',
+          onPress: () => createComment(content),
+        },
+      })
+
+      console.error('Failed to create comment:', error)
       setOptimisticComments((prev) => prev.filter((c) => c.id !== tempId))
     }
   }
@@ -79,6 +80,16 @@ export const useCommentActions = () => {
         postId,
       })
     } catch (error) {
+      const appError = errorService.createError(
+        'Failed to delete comment',
+        'network/comment-delete-failed',
+        error instanceof Error ? error : undefined
+      )
+
+      showAlert(appError.message, {
+        type: errorService.getAlertType(appError.category),
+      })
+
       console.error('Failed to delete comment:', error)
     }
   }

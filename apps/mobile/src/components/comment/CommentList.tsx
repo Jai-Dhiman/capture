@@ -1,5 +1,6 @@
 import React from 'react';
-import { FlatList, View, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { Comment } from '../../types/commentTypes';
 import { CommentItem } from './CommentItem';
 import { CommentSkeleton } from './CommentSkeleton';
@@ -38,16 +39,18 @@ export const CommentList: React.FC<CommentListProps> = ({
   }
   
   return (
-    <FlatList
+    <FlashList
       data={comments}
       keyExtractor={item => item.id}
       renderItem={({ item }) => (
         <CommentItem comment={item} />
       )}
+      estimatedItemSize={100}
       contentContainerStyle={{ paddingVertical: 16 }}
-      ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+      ItemSeparatorComponent={() => <View className="h-2" />}
       onEndReached={hasNextPage ? onLoadMore : undefined}
       onEndReachedThreshold={0.5}
+      removeClippedSubviews={true}
       ListFooterComponent={
         loadingMore ? (
           <View className="py-4 items-center">

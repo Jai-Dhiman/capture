@@ -3,64 +3,82 @@ import { atomWithQuery, atomWithMutation } from 'jotai-tanstack-query'
 import { useAuthStore } from 'stores/authStore'
 import { Comment } from '../types/commentTypes'
 import { API_URL } from '@env'
+import { errorService } from '../services/errorService'
 
 export const commentDrawerOpenAtom = atom(false)
 export const currentPostIdAtom = atom<string | null>(null)
-export const commentSortAtom = atom<'newest' | 'oldest'>('newest')
+export const commentSortAtom = atom<'newest' | 'oldest' | 'popular'>('newest')
 export const replyingToCommentAtom = atom<{ id: string; path: string } | null>(null)
-export const commentPageAtom = atom(1)
+export const commentCursorAtom = atom<string | null>(null) // Using cursor instead of page
 export const commentLimitAtom = atom(10)
 
 export const commentsQueryAtom = atomWithQuery((get) => {
   const postId = get(currentPostIdAtom)
   const sort = get(commentSortAtom)
-  const page = get(commentPageAtom)
+  const cursor = get(commentCursorAtom)
   const limit = get(commentLimitAtom)
 
   return {
-    queryKey: ['comments', postId, sort, page, limit],
+    queryKey: ['comments', postId, sort, cursor, limit],
     queryFn: async ({ queryKey }) => {
       const { session } = useAuthStore.getState()
-      const token = session?.access_token
 
       if (!session?.access_token) {
-        throw new Error('No auth token available')
+        throw errorService.createError('No auth token available', 'auth/no-token')
       }
-      if (!postId) return { comments: [], totalCount: 0 }
+      if (!postId) return { comments: [], totalCount: 0, hasNextPage: false }
 
-      const response = await fetch(`${API_URL}/graphql`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          query: `
-            query GetComments($postId: ID!, $sort: CommentSortOption, $page: Int, $limit: Int) {
-              commentConnection(postId: $postId, sortBy: $sort, page: $page, limit: $limit) {
-                comments {
-                  id
-                  content
-                  path
-                  depth
-                  createdAt
-                  user {
+      try {
+        const response = await fetch(`${API_URL}/graphql`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            query: `
+              query GetComments($postId: ID!, $sort: CommentSortOption, $cursor: String, $limit: Int) {
+                commentConnection(postId: $postId, sortBy: $sort, cursor: $cursor, limit: $limit) {
+                  comments {
                     id
-                    username
-                    profileImage
+                    content
+                    path
+                    depth
+                    parentId
+                    createdAt
+                    user {
+                      id
+                      username
+                      profileImage
+                    }
                   }
+                  totalCount
+                  hasNextPage
+                  nextCursor
                 }
-                totalCount
-                hasNextPage
               }
-            }
-          `,
-          variables: { postId, sort, page, limit },
-        }),
-      })
+            `,
+            variables: { postId, sort, cursor, limit },
+          }),
+        })
 
-      const data = await response.json()
-      return data.data.commentConnection
+        const data = await response.json()
+
+        if (data.errors) {
+          throw errorService.createError(
+            data.errors[0].message || 'Failed to fetch comments',
+            'server/graphql-error'
+          )
+        }
+
+        return data.data.commentConnection
+      } catch (error) {
+        throw errorService.createError(
+          'Unable to load comments',
+          'network/fetch-failed',
+          error instanceof Error ? error : undefined
+        )
+      }
     },
     enabled: !!postId,
   }
@@ -89,53 +107,70 @@ export const createCommentMutationAtom = atomWithMutation((get) => {
     mutationFn: async ({
       postId,
       content,
-      parentPath = null,
+      parentId = null,
     }: {
       postId: string
       content: string
-      parentPath?: string | null
+      parentId?: string | null
     }) => {
       const { session } = useAuthStore.getState()
-      const token = session?.access_token
 
       if (!session?.access_token) {
-        throw new Error('No auth token available')
+        throw errorService.createError('No auth token available', 'auth/no-token')
       }
-      const response = await fetch(`${API_URL}/graphql`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          query: `
-            mutation CreateComment($input: CommentInput!) {
-              createComment(input: $input) {
-                id
-                content
-                path
-                depth
-                createdAt
-                user {
+
+      try {
+        const response = await fetch(`${API_URL}/graphql`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            query: `
+              mutation CreateComment($input: CommentInput!) {
+                createComment(input: $input) {
                   id
-                  username
-                  profileImage
+                  content
+                  path
+                  depth
+                  parentId
+                  createdAt
+                  user {
+                    id
+                    username
+                    profileImage
+                  }
                 }
               }
-            }
-          `,
-          variables: {
-            input: {
-              postId,
-              content,
-              parentPath,
+            `,
+            variables: {
+              input: {
+                postId,
+                content,
+                parentId,
+              },
             },
-          },
-        }),
-      })
+          }),
+        })
 
-      const data = await response.json()
-      return data.data.createComment
+        const data = await response.json()
+
+        if (data.errors) {
+          throw errorService.createError(
+            data.errors[0].message || 'Failed to create comment',
+            'server/graphql-error'
+          )
+        }
+
+        return data.data.createComment
+      } catch (error) {
+        throw errorService.createError(
+          'Unable to post comment',
+          'network/post-failed',
+          error instanceof Error ? error : undefined
+        )
+      }
     },
   }
 })
@@ -145,33 +180,59 @@ export const deleteCommentMutationAtom = atomWithMutation(() => {
     mutationKey: ['deleteComment'],
     mutationFn: async ({ commentId, postId }: { commentId: string; postId: string }) => {
       const { session } = useAuthStore.getState()
-      const token = session?.access_token
-      if (!session?.access_token) {
-        throw new Error('No auth token available')
-      }
-      const response = await fetch(`${API_URL}/graphql`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          query: `
-            mutation DeleteComment($id: ID!) {
-              deleteComment(id: $id) {
-                id
-                success
-              }
-            }
-          `,
-          variables: {
-            id: commentId,
-          },
-        }),
-      })
 
-      const data = await response.json()
-      return { ...data.data.deleteComment, postId }
+      if (!session?.access_token) {
+        throw errorService.createError('No auth token available', 'auth/no-token')
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/graphql`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            query: `
+              mutation DeleteComment($id: ID!) {
+                deleteComment(id: $id) {
+                  id
+                  success
+                }
+              }
+            `,
+            variables: {
+              id: commentId,
+            },
+          }),
+        })
+
+        const data = await response.json()
+
+        if (data.errors) {
+          throw errorService.createError(
+            data.errors[0].message || 'Failed to delete comment',
+            'server/graphql-error'
+          )
+        }
+
+        return { ...data.data.deleteComment, postId }
+      } catch (error) {
+        throw errorService.createError(
+          'Unable to delete comment',
+          'network/delete-failed',
+          error instanceof Error ? error : undefined
+        )
+      }
     },
+  }
+})
+
+// Add a new atom for cursor-based pagination
+export const loadMoreCommentsAtom = atom(null, (get, set) => {
+  const queryResult = get(commentsQueryAtom)
+
+  if (queryResult.data?.hasNextPage && queryResult.data?.nextCursor) {
+    set(commentCursorAtom, queryResult.data.nextCursor)
   }
 })

@@ -12,12 +12,14 @@ export type Comment = {
   createdAt: string
   user?: User
   optimistic?: boolean
+  parentId?: string
 }
 
 export type CommentConnection = {
   comments: Comment[]
   totalCount: number
   hasNextPage: boolean
+  nextCursor?: string
 }
 
-export type CommentSortOption = 'newest' | 'oldest'
+export type CommentSortOption = 'newest' | 'oldest' | 'popular'

@@ -16,7 +16,6 @@ import { useDeletePost, useSinglePost } from '../hooks/usePosts';
 import { useAuthStore } from '../stores/authStore';
 import { useProfileStore } from '../stores/profileStore';
 import { LoadingSpinner } from 'components/ui/LoadingSpinner';
-import { CommentSection } from '../components/comment/CommentSection';
 import { useAlert } from '../lib/AlertContext';
 import { useAtom } from 'jotai';
 import { commentDrawerOpenAtom, currentPostIdAtom } from '../atoms/commentAtoms';
