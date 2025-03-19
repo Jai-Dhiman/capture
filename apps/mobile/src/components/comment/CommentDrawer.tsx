@@ -1,7 +1,7 @@
 import React, { useRef, useMemo, useCallback } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useAtom } from 'jotai';
-import BottomSheet from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
 import { 
   commentDrawerOpenAtom, 
@@ -49,7 +49,7 @@ export const CommentDrawer = () => {
       backgroundStyle={{ backgroundColor: '#fff' }}
       enablePanDownToClose={true}
     >
-      <View className="flex-1 p-4">
+      <BottomSheetView className="flex-1 p-4">
         <View className="flex-row justify-between items-center mb-4">
           <Text className="text-lg font-semibold">Comments</Text>
           <TouchableOpacity 
@@ -83,7 +83,7 @@ export const CommentDrawer = () => {
           loadingMore={queryResult.isFetching}
           onLoadMore={handleLoadMore}
         />
-      </View>
+      </BottomSheetView>
     </BottomSheet>
   );
 };

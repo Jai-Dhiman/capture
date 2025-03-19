@@ -15,6 +15,13 @@
       "when": 1742360729435,
       "tag": "0001_lush_diamondback",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1742374857506,
+      "tag": "0002_hard_true_believers",
+      "breakpoints": true
     }
   ]
 }

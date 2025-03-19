@@ -9,7 +9,7 @@ import { ApolloProvider } from './components/ApolloProvider';
 import { SessionProvider } from './lib/SessionProvider';
 import { MainNavigator, linking } from './components/Navigators';
 import { AlertProvider } from './lib/AlertContext';
-import {Provider as JotaiProvider } from 'Jotai'
+import { Provider as JotaiProvider } from 'jotai'
 
 const queryClient = new QueryClient({
   defaultOptions: {

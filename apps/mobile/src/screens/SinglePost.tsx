@@ -163,7 +163,7 @@ export default function SinglePost() {
             >
               <Ionicons name="chatbubble-outline" size={24} color="#333" />
               <Text className="ml-2 text-gray-700">
-                {post._commentCount > 0 ? `${post._commentCount} Comments` : "Comments"}
+                {post._commentCount > 0 ? `${post._commentCount}` : "Comments"}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity 
