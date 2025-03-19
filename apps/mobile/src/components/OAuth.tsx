@@ -2,8 +2,12 @@ import React from 'react';
 import { TouchableOpacity, Text, Alert } from 'react-native';
 import { supabase } from '../lib/supabase';
 import GoogleIcon from '../../assets/icons/GoogleLogo.svg';
+import { useAlert } from '../lib/AlertContext';
+import { errorService } from '../services/errorService';
 
 export default function OAuth() {
+  const { showAlert } = useAlert();
+
   const handleGoogleSignIn = async () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -15,11 +19,10 @@ export default function OAuth() {
 
       if (error) throw error;
     } catch (error) {
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : 'Failed to sign in with Google'
-      
-      Alert.alert('Error', errorMessage);
+      const appError = errorService.handleAuthError(error);
+      showAlert(appError.message, {
+        type: errorService.getAlertType(appError.category)
+      });
     }
   };
 

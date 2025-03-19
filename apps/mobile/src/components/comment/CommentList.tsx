@@ -1,29 +1,67 @@
 import React from 'react';
-import { View, FlatList } from 'react-native';
-import { Comment } from '../../hooks/useComments';
+import { FlatList, View, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { Comment } from '../../types/commentTypes';
 import { CommentItem } from './CommentItem';
+import { CommentSkeleton } from './CommentSkeleton';
 
 interface CommentListProps {
   comments: Comment[];
-  postId: string;
-  onReplyAdded: () => void;
+  loading: boolean;
+  loadingMore: boolean;
+  hasNextPage: boolean;
+  onLoadMore: () => void;
 }
 
 export const CommentList: React.FC<CommentListProps> = ({ 
   comments, 
-  postId,
-  onReplyAdded
+  loading,
+  loadingMore,
+  hasNextPage,
+  onLoadMore
 }) => {
+  if (loading && comments.length === 0) {
+    return (
+      <View className="py-2">
+        <CommentSkeleton />
+        <CommentSkeleton />
+        <CommentSkeleton />
+      </View>
+    );
+  }
+  
+  if (comments.length === 0) {
+    return (
+      <View className="py-8 items-center">
+        <Text className="text-gray-500">No comments yet</Text>
+      </View>
+    );
+  }
+  
   return (
-    <View className="py-2">
-      {comments.map(comment => (
-        <CommentItem 
-          key={comment.id} 
-          comment={comment} 
-          postId={postId}
-          onReplyAdded={onReplyAdded}
-        />
-      ))}
-    </View>
+    <FlatList
+      data={comments}
+      keyExtractor={item => item.id}
+      renderItem={({ item }) => (
+        <CommentItem comment={item} />
+      )}
+      contentContainerStyle={{ paddingVertical: 16 }}
+      ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+      onEndReached={hasNextPage ? onLoadMore : undefined}
+      onEndReachedThreshold={0.5}
+      ListFooterComponent={
+        loadingMore ? (
+          <View className="py-4 items-center">
+            <ActivityIndicator size="small" color="#0000ff" />
+          </View>
+        ) : hasNextPage ? (
+          <TouchableOpacity 
+            onPress={onLoadMore}
+            className="py-4 items-center"
+          >
+            <Text className="text-blue-500">Load more comments</Text>
+          </TouchableOpacity>
+        ) : null
+      }
+    />
   );
 };

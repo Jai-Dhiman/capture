@@ -44,13 +44,14 @@ export const comment = sqliteTable(
     postId: text('post_id').references(() => post.id),
     userId: text('user_id').references(() => profile.userId),
     content: text('content').notNull(),
-    parentCommentId: text('parent_comment_id').references((): any => comment.id),
+    path: text('path').notNull(),
+    depth: integer('depth').notNull().default(0),
     createdAt: numeric('created_at').default(new Date().toISOString()).notNull(),
   },
   (table) => [
     index('post_comments_idx').on(table.postId),
     index('user_comments_idx').on(table.userId),
-    index('parent_comment_idx').on(table.parentCommentId),
+    index('comment_path_idx').on(table.path),
   ]
 )
 

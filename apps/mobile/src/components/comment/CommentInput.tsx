@@ -1,83 +1,53 @@
-import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, ActivityIndicator, Text, Keyboard } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, TextInput, TouchableOpacity, Text, Keyboard } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useCreateComment } from '../../hooks/useComments';
-import { useAuthStore } from '../../stores/authStore';
-import { useProfileStore } from '../../stores/profileStore';
-import { useQueryClient } from '@tanstack/react-query';
+import { useAtom } from 'jotai';
+import { replyingToCommentAtom } from '../../atoms/commentAtoms';
+import { useCommentActions } from '../../hooks/useCommentActions';
 
-interface CommentInputProps {
-  postId: string;
-  parentCommentId?: string;
-  isReply?: boolean;
-  onCommentAdded: () => void;
-}
-
-export const CommentInput: React.FC<CommentInputProps> = ({ 
-  postId, 
-  parentCommentId,
-  isReply = false,
-  onCommentAdded 
-}) => {
+export const CommentInput: React.FC = () => {
   const [content, setContent] = useState('');
-  const createCommentMutation = useCreateComment();
-  const { user, status, session } = useAuthStore();
-  const { profile } = useProfileStore();
-  const queryClient = useQueryClient();
+  const [replyingTo] = useAtom(replyingToCommentAtom);
+  const { createComment, cancelReply } = useCommentActions();
+  
+  useEffect(() => {
+    // Focus input when starting a reply
+    if (replyingTo) {
+      // In a real implementation, you would useRef to focus the input
+    }
+  }, [replyingTo]);
   
   const handleSubmit = async () => {
     if (!content.trim()) return;
     
-    const optimisticComment = {
-      id: `temp-${Date.now()}`,
-      content: content.trim(),
-      createdAt: new Date().toISOString(),
-      user: {
-        id: profile?.id || '',
-        username: profile?.username || '',
-        image: profile?.profileImage
-      },
-      parentComment: parentCommentId ? { id: parentCommentId } : null,
-      optimistic: true
-    };
-    
-    const queryKey = ['comments', postId, parentCommentId];
-    queryClient.setQueryData(queryKey, (oldData: any[] = []) => {
-      return [optimisticComment, ...oldData];
-    });
-    
-    try {
-      await createCommentMutation.mutateAsync({
-        postId,
-        content: content.trim(),
-        parentCommentId
-      });
-      
-      setContent('');
-      Keyboard.dismiss();
-      onCommentAdded();
-    } catch (error) {
-      queryClient.setQueryData(queryKey, (oldData: any[] = []) => {
-        return oldData.filter(comment => comment.id !== optimisticComment.id);
-      });
-      console.error('Failed to create comment:', error);
-    }
+    await createComment(content);
+    setContent('');
+    Keyboard.dismiss();
   };
   
   return (
-    <View className={`flex-row items-center p-2 bg-gray-50 rounded-lg ${isReply ? '' : 'mx-4 my-2'}`}>
-      <TextInput
-        className="flex-1 bg-white rounded-full px-4 py-2"
-        placeholder={isReply ? "Write a reply..." : "Write a comment..."}
-        value={content}
-        onChangeText={setContent}
-        multiline
-        maxLength={1000}
-      />
+    <View className="mb-4">
+      {replyingTo && (
+        <View className="flex-row items-center bg-blue-50 p-2 rounded-lg mb-2">
+          <Text className="flex-1 text-sm">
+            Replying to comment
+          </Text>
+          <TouchableOpacity onPress={cancelReply}>
+            <Ionicons name="close-circle" size={18} color="#666" />
+          </TouchableOpacity>
+        </View>
+      )}
       
-      {createCommentMutation.isPending ? (
-        <ActivityIndicator size="small" color="#0000ff" className="ml-2" />
-      ) : (
+      <View className="flex-row items-center">
+        <TextInput
+          className="flex-1 bg-white rounded-full px-4 py-2 border border-gray-200"
+          placeholder={replyingTo ? "Write a reply..." : "Write a comment..."}
+          value={content}
+          onChangeText={setContent}
+          multiline
+          maxLength={1000}
+        />
+        
         <TouchableOpacity 
           onPress={handleSubmit} 
           disabled={!content.trim()}
@@ -85,7 +55,7 @@ export const CommentInput: React.FC<CommentInputProps> = ({
         >
           <Ionicons name="send" size={24} color="#3b82f6" />
         </TouchableOpacity>
-      )}
+      </View>
     </View>
   );
 };

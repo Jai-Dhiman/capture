@@ -7,6 +7,13 @@ export const typeDefs = `
     searchUsers(query: String!): [Profile!]!
     comments(postId: ID!, parentCommentId: ID, limit: Int, offset: Int, sortBy: CommentSortOption): [Comment!]!
     comment(id: ID!): Comment
+    commentConnection(
+      postId: ID!, 
+      parentPath: String,
+      sortBy: CommentSortOption,
+      page: Int,
+      limit: Int
+    ): CommentConnection!
     savedPosts(limit: Int, offset: Int): [Post!]!
     followers(userId: ID!): [Profile!]!
     following(userId: ID!): [Profile!]!
@@ -66,12 +73,33 @@ export const typeDefs = `
   type Comment {
     id: ID!
     content: String!
+    path: String!
+    depth: Int!
     user: Profile!
     post: Post!
-    parentComment: Comment
-    replies(limit: Int): [Comment!]!
-    replyCount: Int!
     createdAt: String!
+  }
+    
+  type CommentConnection {
+    comments: [Comment!]!
+    totalCount: Int!
+    hasNextPage: Boolean!
+  }
+
+  input CommentInput {
+    postId: ID!
+    content: String!
+    parentPath: String
+  }
+
+  enum CommentSortOption {
+    newest
+    oldest
+  }
+
+  type DeleteCommentResponse {
+    id: ID!
+    success: Boolean!
   }
 
   type Media {
@@ -95,12 +123,6 @@ export const typeDefs = `
     hashtagIds: [ID!]
   }
 
-  input CommentInput {
-    postId: ID!
-    content: String!
-    parentCommentId: ID
-  }
-
   input ProfileInput {
     username: String
     bio: String
@@ -109,16 +131,6 @@ export const typeDefs = `
   }
 
   type DeletePostResponse {
-    id: ID!
-    success: Boolean!
-  }
-
-  enum CommentSortOption {
-    newest
-    oldest
-  }
-
-  type DeleteCommentResponse {
     id: ID!
     success: Boolean!
   }

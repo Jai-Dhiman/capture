@@ -9,6 +9,7 @@ import { ApolloProvider } from './components/ApolloProvider';
 import { SessionProvider } from './lib/SessionProvider';
 import { MainNavigator, linking } from './components/Navigators';
 import { AlertProvider } from './lib/AlertContext';
+import {Provider as JotaiProvider } from 'Jotai'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,6 +24,7 @@ const queryClient = new QueryClient({
 export default function App() {
   return (
     <SafeAreaProvider>
+      <JotaiProvider>
         <QueryClientProvider client={queryClient}>
           <ApolloProvider>
             <SessionProvider>
@@ -37,6 +39,7 @@ export default function App() {
             </SessionProvider>
           </ApolloProvider>
         </QueryClientProvider>
+      </JotaiProvider>
     </SafeAreaProvider>
   );
 }

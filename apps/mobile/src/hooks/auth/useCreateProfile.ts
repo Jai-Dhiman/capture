@@ -2,10 +2,13 @@ import { useMutation } from '@tanstack/react-query'
 import { API_URL } from '@env'
 import { useAuthStore } from '../../stores/authStore'
 import { useProfileStore } from 'stores/profileStore'
+import { useAlert } from '../../lib/AlertContext'
+import { errorService } from '../../services/errorService'
 
 export function useCreateProfile() {
   const { user, session } = useAuthStore()
   const { setProfile } = useProfileStore()
+  const { showAlert } = useAlert()
 
   const uploadImage = async (imageUri: string) => {
     if (!session?.access_token) throw new Error('No auth token available')
@@ -115,6 +118,26 @@ export function useCreateProfile() {
       }
 
       return await response.json()
+    },
+    onError: (error) => {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create profile'
+
+      let code = 'validation/error'
+      if (errorMessage.includes('Username already taken')) {
+        code = 'validation/username-taken'
+      } else if (errorMessage.includes('Image upload failed')) {
+        code = 'server/upload-failed'
+      }
+
+      const appError = errorService.createError(
+        errorMessage,
+        code,
+        error instanceof Error ? error : undefined
+      )
+
+      showAlert(appError.message, {
+        type: errorService.getAlertType(appError.category),
+      })
     },
     onSuccess: (profileData) => {
       setProfile({

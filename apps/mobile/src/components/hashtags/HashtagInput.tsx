@@ -10,6 +10,9 @@ import {
 } from 'react-native';
 import { useSearchHashtags, useCreateHashtag } from '../../hooks/useHashtags';
 import { debounce } from 'lodash';
+import { useAlert } from '../../lib/AlertContext';
+import { errorService } from '../../services/errorService';
+
 
 interface HashtagInputProps {
   selectedHashtags: Array<{ id: string; name: string }>;
@@ -24,6 +27,7 @@ export const HashtagInput = ({
 }: HashtagInputProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const { showAlert } = useAlert();
   
   const { 
     data: searchResults, 
@@ -33,7 +37,6 @@ export const HashtagInput = ({
   
   const createHashtagMutation = useCreateHashtag();
   
-  // Debounce search function
   const debouncedSearch = useCallback(
     debounce((query: string) => {
       if (query.trim()) {
@@ -52,16 +55,14 @@ export const HashtagInput = ({
   }, [searchQuery, debouncedSearch]);
   
   const handleSelectHashtag = (hashtag: { id: string; name: string }) => {
-    // Check if already selected
     if (selectedHashtags.some((c) => c.id === hashtag.id)) {
       return;
     }
     
-    // Check max limit
     if (selectedHashtags.length >= maxHashtags) {
-      Alert.alert(
-        'Maximum Reached',
-        `You can only add up to ${maxHashtags} hashtags per post.`
+      showAlert(
+        `You can only add up to ${maxHashtags} hashtags per post.`, 
+        { type: 'warning' }
       );
       return;
     }
@@ -82,8 +83,16 @@ export const HashtagInput = ({
       const newHashtag = await createHashtagMutation.mutateAsync(searchQuery);
       handleSelectHashtag(newHashtag);
     } catch (error) {
-      Alert.alert('Error', 'Failed to create new Hashtag');
       console.error(error);
+      const appError = errorService.createError(
+        'Failed to create new hashtag',
+        'server/hashtag-error',
+        error instanceof Error ? error : undefined
+      );
+      
+      showAlert(appError.message, {
+        type: errorService.getAlertType(appError.category)
+      });
     }
   };
   

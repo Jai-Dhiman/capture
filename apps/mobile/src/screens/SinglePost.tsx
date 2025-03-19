@@ -18,6 +18,9 @@ import { useProfileStore } from '../stores/profileStore';
 import { LoadingSpinner } from 'components/ui/LoadingSpinner';
 import { CommentSection } from '../components/comment/CommentSection';
 import { useAlert } from '../lib/AlertContext';
+import { useAtom } from 'jotai';
+import { commentDrawerOpenAtom, currentPostIdAtom } from '../atoms/commentAtoms';
+import { CommentDrawer } from '../components/comment/CommentDrawer';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 type SinglePostRouteProp = RouteProp<AppStackParamList, 'SinglePost'>;
@@ -33,6 +36,8 @@ export default function SinglePost() {
   const { user } = useAuthStore();
   const { profile } = useProfileStore();
   const { showAlert } = useAlert();
+  const [, setCommentDrawerOpen] = useAtom(commentDrawerOpenAtom);
+  const [, setCurrentPostId] = useAtom(currentPostIdAtom);
 
   const { data: post, isLoading, error } = useSinglePost(postId);
   const isPostOwner = user?.id === post?.userId;
@@ -78,6 +83,11 @@ export default function SinglePost() {
     }
   };
 
+  const handleOpenComments = () => {
+    setCurrentPostId(post.id);
+    setCommentDrawerOpen(true);
+  };
+  
   return (
     <View className="flex-1">
       <Image
@@ -142,8 +152,14 @@ export default function SinglePost() {
               ) : null}
             </View>
             
-            <TouchableOpacity className="mr-4">
+            <TouchableOpacity 
+              onPress={handleOpenComments}
+              className="flex-row items-center p-4"
+            >
               <Ionicons name="chatbubble-outline" size={24} color="#333" />
+              <Text className="ml-2 text-gray-700">
+                {post._commentCount > 0 ? `${post._commentCount} Comments` : "Comments"}
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity 
               onPress={handleToggleSavePost}
@@ -159,18 +175,9 @@ export default function SinglePost() {
             </TouchableOpacity>
           </View>
         </View>
-        
-        <View className="p-4 bg-white max-h-24">
-          <View className="p-4 bg-white">
-            <CommentSection postId={post.id} commentCount={post._commentCount} />
-          </View>
-          
-          <Text className="text-xs text-gray-500 mt-2">
-            {new Date(post.createdAt).toLocaleDateString()}
-          </Text>
-        </View>
       </ScrollView>
-      
+
+      <CommentDrawer />
       <PostSettingsMenu
         isVisible={isMenuVisible}
         onClose={() => setIsMenuVisible(false)}

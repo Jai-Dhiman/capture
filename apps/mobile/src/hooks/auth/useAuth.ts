@@ -4,12 +4,15 @@ import { useAuthStore } from '../../stores/authStore'
 import { useProfileStore } from '../../stores/profileStore'
 import { API_URL } from '@env'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useAlert } from '../../lib/AlertContext'
+import { errorService } from '../../services/errorService'
 
 export function useAuth() {
   const [isLoading, setIsLoading] = useState(false)
   const { setUser, setSession, clearAuth } = useAuthStore()
   const { setProfile, clearProfile } = useProfileStore()
   const queryClient = useQueryClient()
+  const { showAlert } = useAlert()
 
   const fetchUserProfile = async (userId: string, token: string) => {
     try {
@@ -68,8 +71,6 @@ export function useAuth() {
       }
     },
     onSuccess: (data) => {
-      console.log('Login success, setting auth state')
-
       setUser({
         id: data.user.id,
         email: data.user.email || '',
@@ -97,6 +98,10 @@ export function useAuth() {
     },
     onError: (error) => {
       console.error('Login error:', error)
+      const appError = errorService.handleAuthError(error)
+      showAlert(appError.message, {
+        type: errorService.getAlertType(appError.category),
+      })
     },
     onSettled: () => {
       setIsLoading(false)
@@ -115,9 +120,14 @@ export function useAuth() {
         },
       })
 
-      if (error) throw error
-
       return data
+    },
+    onError: (error) => {
+      console.error('Signup error:', error)
+      const appError = errorService.handleAuthError(error)
+      showAlert(appError.message, {
+        type: errorService.getAlertType(appError.category),
+      })
     },
     onSettled: () => {
       setIsLoading(false)
@@ -135,6 +145,17 @@ export function useAuth() {
       clearProfile()
 
       queryClient.clear()
+    },
+    onError: (error) => {
+      console.error('Logout error:', error)
+      const appError = errorService.createError(
+        'Failed to sign out. Please try again.',
+        'auth/logout-error',
+        error instanceof Error ? error : undefined
+      )
+      showAlert(appError.message, {
+        type: errorService.getAlertType(appError.category),
+      })
     },
     onSettled: () => {
       setIsLoading(false)

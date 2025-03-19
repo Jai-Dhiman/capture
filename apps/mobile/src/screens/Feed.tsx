@@ -6,6 +6,7 @@ import { CompositeNavigationProp } from '@react-navigation/native';
 import { AppStackParamList, RootStackParamList } from '../components/Navigators/types/navigation';
 import { useAuthStore } from '../stores/authStore';
 import { useAuth } from '../hooks/auth/useAuth';
+import Header from 'components/ui/Header';
 
 type NavigationProp = CompositeNavigationProp<
   NativeStackNavigationProp<AppStackParamList>,
@@ -22,8 +23,8 @@ export default function Feed() {
   };
 
   return (
-    <View className="flex-1 p-5">
-      <Text className="text-2xl font-bold mb-5">Welcome to Capture</Text>
+    <View className="flex-1 p-3">
+      <Header />
       {user && (
         <View className="mt-5">
           <Text className="text-base mb-2.5">User ID: {user.id}</Text>
