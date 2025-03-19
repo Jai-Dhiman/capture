@@ -27,13 +27,15 @@ export const useCommentActions = () => {
     const tempId = `temp-${nanoid()}`
     const now = new Date().toISOString()
 
-    const parentPath = replyingTo?.path || null
+    const parentId = replyingTo?.id
+    const parentPath = replyingTo?.path
 
     const optimisticComment: Comment = {
       id: tempId,
       content: content.trim(),
-      path: parentPath ? `${parentPath}.01` : '01', // Simplified path
+      path: parentPath ? `${parentPath}.01` : '01',
       depth: parentPath ? parentPath.split('.').length : 0,
+      parentId,
       createdAt: now,
       user: {
         id: profile?.id || '',
@@ -50,6 +52,7 @@ export const useCommentActions = () => {
       await createMutation.mutateAsync({
         postId,
         content: content.trim(),
+        parentId,
       })
     } catch (error) {
       const appError = errorService.createError(

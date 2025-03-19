@@ -9,7 +9,7 @@ import {
   commentSortAtom,
   combinedCommentsAtom,
   commentsQueryAtom,
-  commentPageAtom
+  loadMoreCommentsAtom
 } from '../../atoms/commentAtoms';
 import { CommentList } from './CommentList';
 import { CommentInput } from './CommentInput';
@@ -19,7 +19,7 @@ export const CommentDrawer = () => {
   const [postId] = useAtom(currentPostIdAtom);
   const [comments] = useAtom(combinedCommentsAtom);
   const [sortBy, setSortBy] = useAtom(commentSortAtom);
-  const [page, setPage] = useAtom(commentPageAtom);
+  const [, loadMoreComments] = useAtom(loadMoreCommentsAtom);
   const queryResult = useAtom(commentsQueryAtom)[0];
   
   const bottomSheetRef = useRef<BottomSheet>(null);
@@ -31,14 +31,13 @@ export const CommentDrawer = () => {
   
   const toggleSort = useCallback(() => {
     setSortBy(prev => prev === 'newest' ? 'oldest' : 'newest');
-    setPage(1); // Reset to first page on sort change
-  }, [setSortBy, setPage]);
+  }, [setSortBy]);
   
   const handleLoadMore = useCallback(() => {
     if (queryResult.data?.hasNextPage && !queryResult.isFetching) {
-      setPage((prev: number) => prev + 1);
+      loadMoreComments();
     }
-  }, [queryResult, setPage]);
+  }, [queryResult, loadMoreComments]);
 
   return (
     <BottomSheet

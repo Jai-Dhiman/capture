@@ -1,5 +1,5 @@
 import { createD1Client } from '../../db'
-import { eq, desc, like, asc, count, or, gt, and, lt } from 'drizzle-orm'
+import { eq, desc, like, asc, count, or, gt, and, lt, isNull, SQL } from 'drizzle-orm'
 import * as schema from '../../db/schema'
 import { nanoid } from 'nanoid'
 import type { ContextType } from '../../types'
@@ -36,51 +36,52 @@ export const commentResolvers = {
           throw new Error('Post not found')
         }
 
-        let query = db.select().from(schema.comment).where(eq(schema.comment.postId, postId))
+        const conditions: SQL[] = [eq(schema.comment.postId, postId)]
 
         if (parentId === null) {
-          query = query.where(eq(schema.comment.parentId, null))
+          conditions.push(isNull(schema.comment.parentId))
         } else {
-          query = query.where(eq(schema.comment.parentId, parentId))
+          conditions.push(eq(schema.comment.parentId, parentId))
         }
+
+        let query = db
+          .select()
+          .from(schema.comment)
+          .where(and(...conditions))
 
         if (cursor) {
           const decodedCursor = Buffer.from(cursor, 'base64').toString('utf-8')
           const [cursorTimestamp, cursorId] = decodedCursor.split('::')
 
-          if (sortBy === 'newest') {
-            query = query.where(
-              or(
-                lt(schema.comment.createdAt, cursorTimestamp),
-                and(eq(schema.comment.createdAt, cursorTimestamp), lt(schema.comment.id, cursorId))
-              )
-            )
-          } else {
-            query = query.where(
-              or(
-                gt(schema.comment.createdAt, cursorTimestamp),
-                and(eq(schema.comment.createdAt, cursorTimestamp), gt(schema.comment.id, cursorId))
-              )
-            )
-          }
+          const cursorConditions =
+            sortBy === 'newest'
+              ? or(
+                  lt(schema.comment.createdAt, cursorTimestamp),
+                  and(
+                    eq(schema.comment.createdAt, cursorTimestamp),
+                    lt(schema.comment.id, cursorId)
+                  )
+                )
+              : or(
+                  gt(schema.comment.createdAt, cursorTimestamp),
+                  and(
+                    eq(schema.comment.createdAt, cursorTimestamp),
+                    gt(schema.comment.id, cursorId)
+                  )
+                )
+
+          query = query.where(cursorConditions)
         }
 
-        if (sortBy === 'newest') {
-          query = query.orderBy(desc(schema.comment.createdAt), desc(schema.comment.id))
-        } else if (sortBy === 'oldest') {
-          query = query.orderBy(asc(schema.comment.createdAt), asc(schema.comment.id))
-        }
+        query =
+          sortBy === 'newest'
+            ? query.orderBy(desc(schema.comment.createdAt), desc(schema.comment.id))
+            : query.orderBy(asc(schema.comment.createdAt), asc(schema.comment.id))
 
         const countQuery = db
           .select({ count: count() })
           .from(schema.comment)
-          .where(eq(schema.comment.postId, postId))
-
-        if (parentId === null) {
-          countQuery.where(eq(schema.comment.parentId, null))
-        } else {
-          countQuery.where(eq(schema.comment.parentId, parentId))
-        }
+          .where(and(...conditions))
 
         const totalCountResult = await countQuery.get()
         const totalCount = totalCountResult?.count || 0

@@ -11,9 +11,8 @@ export const CommentInput: React.FC = () => {
   const { createComment, cancelReply } = useCommentActions();
   
   useEffect(() => {
-    // Focus input when starting a reply
     if (replyingTo) {
-      // In a real implementation, you would useRef to focus the input
+      // add useRef to focus the input
     }
   }, [replyingTo]);
   

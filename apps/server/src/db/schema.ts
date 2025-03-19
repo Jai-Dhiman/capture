@@ -43,7 +43,7 @@ export const comment = sqliteTable(
     id: text('id').primaryKey(),
     postId: text('post_id').references(() => post.id),
     userId: text('user_id').references(() => profile.userId),
-    parentId: text('parent_id').references(() => comment.id), // Added parentId for direct relationship
+    parentId: text('parent_id').references((): any => comment.id),
     content: text('content').notNull(),
     path: text('path').notNull(),
     depth: integer('depth').notNull().default(0),
@@ -53,7 +53,7 @@ export const comment = sqliteTable(
     index('post_comments_idx').on(table.postId),
     index('user_comments_idx').on(table.userId),
     index('comment_path_idx').on(table.path),
-    index('comment_parent_idx').on(table.parentId), // Added index for parentId
+    index('comment_parent_idx').on(table.parentId),
   ]
 )
 
