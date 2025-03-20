@@ -1,17 +1,28 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from './supabase'
 import { useAuthStore } from '../stores/authStore'
 import { useProfileStore } from '../stores/profileStore'
 import { useOnboardingStore } from '../stores/onboardingStore'
 import { SplashAnimation } from 'components/ui/SplashAnimation'
+import { LoadingSpinner } from 'components/ui/LoadingSpinner'
 import { authService } from '../services/authService'
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [isInitializing, setIsInitializing] = useState(true)
+  const [isAuthInitialized, setIsAuthInitialized] = useState(false)
+  const [splashMinTimeElapsed, setSplashMinTimeElapsed] = useState(false)
   const { setUser, setSession, setAuthStage } = useAuthStore()
   const { setProfile } = useProfileStore()
   const queryClient = useQueryClient()
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSplashMinTimeElapsed(true)
+    }, 5000);
+    
+    return () => clearTimeout(timer);
+  }, []);
   
   useEffect(() => {
     async function initSession() {
@@ -29,12 +40,18 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         console.error('Failed to initialize session:', error)
       } finally {
-        setIsInitializing(false)
+        setIsAuthInitialized(true)
       }
     }
     
     initSession()
   }, [])
+  
+  useEffect(() => {
+    if (isAuthInitialized && splashMinTimeElapsed) {
+      setIsInitializing(false)
+    }
+  }, [isAuthInitialized, splashMinTimeElapsed])
   
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange(async (event, session) => {

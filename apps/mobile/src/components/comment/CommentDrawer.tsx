@@ -1,7 +1,8 @@
 import React, { useRef, useMemo, useCallback } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useAtom } from 'jotai';
-import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
 import { 
   commentDrawerOpenAtom, 
@@ -48,6 +49,13 @@ export const CommentDrawer = () => {
       handleIndicatorStyle={{ backgroundColor: '#999', width: 40 }}
       backgroundStyle={{ backgroundColor: '#fff' }}
       enablePanDownToClose={true}
+      backdropComponent={(props) => (
+        <BottomSheetBackdrop
+          {...props}
+          disappearsOnIndex={-1}
+          appearsOnIndex={0}
+        />
+      )}
     >
       <BottomSheetView className="flex-1 p-4">
         <View className="flex-row justify-between items-center mb-4">

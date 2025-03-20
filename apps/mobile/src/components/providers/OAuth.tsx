@@ -1,9 +1,9 @@
 import React from 'react';
 import { TouchableOpacity, Text, Alert } from 'react-native';
-import { supabase } from '../lib/supabase';
-import GoogleIcon from '../../assets/icons/GoogleLogo.svg';
-import { useAlert } from '../lib/AlertContext';
-import { errorService } from '../services/errorService';
+import { supabase } from '../../lib/supabase';
+import GoogleIcon from '../../../assets/icons/GoogleLogo.svg';
+import { useAlert } from '../../lib/AlertContext';
+import { errorService } from '../../services/errorService';
 
 export default function OAuth() {
   const { showAlert } = useAlert();

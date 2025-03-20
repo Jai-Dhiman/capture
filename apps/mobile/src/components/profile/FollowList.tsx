@@ -1,28 +1,29 @@
-import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AppStackParamList } from '../Navigators/types/navigation';
-import { ProfileImage } from '../media/ProfileImage';
-import { FollowButton } from './FollowButton';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect } from 'react'
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native'
+import { useNavigation } from '@react-navigation/native'
+import { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import { AppStackParamList } from '../Navigators/types/navigation'
+import { ProfileImage } from '../media/ProfileImage'
+import { FollowButton } from './FollowButton'
+import { useSyncFollowingState } from '../../hooks/useRelationships'
+import Header from 'components/ui/Header'
 
-type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
+type NavigationProp = NativeStackNavigationProp<AppStackParamList>
 
 interface UserItem {
-  id: string;
-  userId: string;
-  username: string;
-  profileImage?: string;
-  isFollowing?: boolean | null;
+  id: string
+  userId: string
+  username: string
+  profileImage?: string
+  isFollowing?: boolean | null
 }
 
 interface FollowListProps {
-  data: UserItem[];
-  loading: boolean;
-  title: string;
-  onClose: () => void;
-  currentUserId: string | undefined;
+  data: UserItem[]
+  loading: boolean
+  title: string
+  onClose: () => void
+  currentUserId: string | undefined
 }
 
 export const FollowList = ({ 
@@ -32,17 +33,19 @@ export const FollowList = ({
   onClose,
   currentUserId 
 }: FollowListProps) => {
-  const navigation = useNavigation<NavigationProp>();
+  const navigation = useNavigation<NavigationProp>()
+  
+  useSyncFollowingState(data)
 
   const renderItem = ({ item }: { item: UserItem }) => {
-    const isCurrentUser = item.userId === currentUserId;
+    const isCurrentUser = item.userId === currentUserId
     
     return (
       <View className="flex-row items-center p-4 border-b border-gray-200">
         <TouchableOpacity 
           onPress={() => {
-            onClose();
-            navigation.navigate('Profile', { userId: item.userId });
+            onClose()
+            navigation.navigate('Profile', { userId: item.userId })
           }}
           className="flex-row flex-1 items-center"
         >
@@ -65,19 +68,12 @@ export const FollowList = ({
           />
         )}
       </View>
-    );
-  };
+    )
+  }
 
   return (
     <View className="flex-1 bg-white">
-      {/* Header */}
-      <View className="flex-row items-center p-4 border-b border-gray-200">
-        <TouchableOpacity onPress={onClose}>
-          <Ionicons name="close" size={24} color="black" />
-        </TouchableOpacity>
-        <Text className="text-xl font-semibold mx-auto">{title}</Text>
-        <View style={{ width: 24 }} />
-      </View>
+      <Header />
       
       {loading ? (
         <View className="flex-1 justify-center items-center">
@@ -96,5 +92,5 @@ export const FollowList = ({
         />
       )}
     </View>
-  );
-};
+  )
+}

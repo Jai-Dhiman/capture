@@ -10,7 +10,7 @@ import HidePasswordIcon from '../../../assets/icons/HidePasswordIcon.svg'
 import { AuthStackParamList } from '../../components/Navigators/types/navigation'
 import { useAuth } from '../../hooks/auth/useAuth'
 import { LoadingSpinner } from 'components/ui/LoadingSpinner'
-import OAuth from '../../components/OAuth';
+import OAuth from '../../components/providers/OAuth';
 import Header from 'components/ui/Header'
 import { useAlert } from '../../lib/AlertContext';
 import { errorService } from '../../services/errorService';

@@ -7,7 +7,7 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../components/Navigators/types/navigation';
-import OAuth from '../../components/OAuth';
+import OAuth from '../../components/providers/OAuth';
 import AppleIcon from '../../../assets/icons/AppleLogo.svg';
 import EmailIcon from '../../../assets/icons/EmailIcon.svg';
 import Header from '../../components/ui/Header';

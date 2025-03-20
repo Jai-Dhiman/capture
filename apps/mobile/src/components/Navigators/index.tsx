@@ -58,7 +58,6 @@ export const linking: LinkingOptions<RootStackParamList> = {
     const url = await Linking.getInitialURL();
     
     if (url) {
-      // Handle Supabase auth callbacks
       const redirectPath = await handleSupabaseDeepLink(url);
       if (redirectPath) {
         return Linking.createURL(redirectPath);

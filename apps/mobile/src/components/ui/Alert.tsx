@@ -52,7 +52,7 @@ export const ThemedAlert: React.FC<ThemedAlertProps> = ({
         }),
       ]).start();
 
-      if (duration) {
+      if (duration !== undefined && duration > 0) {
         const timer = setTimeout(() => {
           handleDismiss();
         }, duration);

@@ -1,23 +1,26 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useAuthStore } from 'stores/authStore'
-import { API_URL } from '@env'
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuthStore } from "../stores/authStore";
+import { API_URL } from "@env";
+import { useAtom } from "jotai";
+import { isFollowingAtom } from "../atoms/followingAtoms";
+import { useEffect } from "react";
+import { FollowingState } from "types/followingTypes";
 
-export const useFollowUser = () => {
-  const queryClient = useQueryClient()
+export const useFollowUser = (userId: string) => {
+  const queryClient = useQueryClient();
+  const [isFollowing, setIsFollowing] = useAtom(isFollowingAtom(userId));
 
   return useMutation({
-    mutationFn: async (userId: string) => {
-      const { session } = useAuthStore.getState()
-      const token = session?.access_token
-
+    mutationFn: async () => {
+      const { session } = useAuthStore.getState();
       if (!session?.access_token) {
-        throw new Error('No auth token available')
+        throw new Error("No auth token available");
       }
 
       const response = await fetch(`${API_URL}/graphql`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
@@ -34,43 +37,45 @@ export const useFollowUser = () => {
               }
             }
           `,
-          variables: {
-            userId,
-          },
+          variables: { userId },
         }),
-      })
+      });
 
-      const data = await response.json()
-
+      const data = await response.json();
       if (data.errors) {
-        console.error('GraphQL Errors:', data.errors)
-        throw new Error(data.errors[0].message || 'Unknown GraphQL error')
+        throw new Error(data.errors[0]?.message || "Failed to follow user");
       }
-
-      return data.data.followUser
+      return data.data.followUser;
     },
-    onSuccess: (_, userId) => {
-      queryClient.invalidateQueries({ queryKey: ['profile', userId] })
+    onMutate: () => {
+      setIsFollowing(true);
     },
-  })
-}
+    onError: () => {
+      setIsFollowing(false);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["profile", userId] });
+      queryClient.invalidateQueries({ queryKey: ["followers"] });
+      queryClient.invalidateQueries({ queryKey: ["following"] });
+    },
+  });
+};
 
-export const useUnfollowUser = () => {
-  const queryClient = useQueryClient()
+export const useUnfollowUser = (userId: string) => {
+  const queryClient = useQueryClient();
+  const [isFollowing, setIsFollowing] = useAtom(isFollowingAtom(userId));
 
   return useMutation({
-    mutationFn: async (userId: string) => {
-      const { session } = useAuthStore.getState()
-      const token = session?.access_token
-
+    mutationFn: async () => {
+      const { session } = useAuthStore.getState();
       if (!session?.access_token) {
-        throw new Error('No auth token available')
+        throw new Error("No auth token available");
       }
 
       const response = await fetch(`${API_URL}/graphql`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
@@ -81,44 +86,47 @@ export const useUnfollowUser = () => {
               }
             }
           `,
-          variables: {
-            userId,
-          },
+          variables: { userId },
         }),
-      })
+      });
 
-      const data = await response.json()
-
+      const data = await response.json();
       if (data.errors) {
-        console.error('GraphQL Errors:', data.errors)
-        throw new Error(data.errors[0].message || 'Unknown GraphQL error')
+        throw new Error(data.errors[0]?.message || "Failed to unfollow user");
       }
-
-      return data.data.unfollowUser
+      return data.data.unfollowUser;
     },
-    onSuccess: (_, userId) => {
-      queryClient.invalidateQueries({ queryKey: ['profile', userId] })
+    onMutate: () => {
+      setIsFollowing(false);
     },
-  })
-}
+    onError: () => {
+      setIsFollowing(true);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["profile", userId] });
+      queryClient.invalidateQueries({ queryKey: ["followers"] });
+      queryClient.invalidateQueries({ queryKey: ["following"] });
+    },
+  });
+};
 
 export const useFollowers = (userId: string | undefined) => {
-  return useQuery({
-    queryKey: ['followers', userId],
+  const queryClient = useQueryClient();
+
+  const result = useQuery({
+    queryKey: ["followers", userId],
     queryFn: async () => {
-      if (!userId) return []
+      if (!userId) return [];
 
-      const { session } = useAuthStore.getState()
-      const token = session?.access_token
-
+      const { session } = useAuthStore.getState();
       if (!session?.access_token) {
-        throw new Error('No auth token available')
+        throw new Error("No auth token available");
       }
 
       const response = await fetch(`${API_URL}/graphql`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
@@ -133,77 +141,84 @@ export const useFollowers = (userId: string | undefined) => {
               }
             }
           `,
-          variables: {
-            userId,
-          },
+          variables: { userId },
         }),
-      })
+      });
 
-      const data = await response.json()
-
+      const data = await response.json();
       if (data.errors) {
-        console.error('GraphQL Errors:', data.errors)
-        throw new Error(data.errors[0].message || 'Unknown GraphQL error')
+        throw new Error(data.errors[0]?.message || "Failed to fetch followers");
       }
-
-      return data.data.followers || []
+      return data.data.followers || [];
     },
     enabled: !!userId,
-  })
-}
+  });
+
+  return result;
+};
 
 export const useFollowing = (userId: string | undefined) => {
-  return useQuery({
-    queryKey: ['following', userId],
+  const result = useQuery({
+    queryKey: ["following", userId],
     queryFn: async () => {
-      if (!userId) return []
+      if (!userId) return [];
 
-      try {
-        const { session } = useAuthStore.getState()
-        const token = session?.access_token
-
-        if (!session?.access_token) {
-          console.warn('No auth token available')
-          return []
-        }
-
-        const response = await fetch(`${API_URL}/graphql`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            query: `
-              query GetFollowing($userId: ID!) {
-                following(userId: $userId) {
-                  id
-                  userId
-                  username
-                  profileImage
-                  isFollowing
-                }
-              }
-            `,
-            variables: {
-              userId,
-            },
-          }),
-        })
-
-        const data = await response.json()
-
-        if (data.errors) {
-          console.error('GraphQL Errors:', data.errors)
-          return []
-        }
-
-        return data.data?.following || []
-      } catch (error) {
-        console.error('Error fetching following:', error)
-        return []
+      const { session } = useAuthStore.getState();
+      if (!session?.access_token) {
+        return [];
       }
+
+      const response = await fetch(`${API_URL}/graphql`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          query: `
+            query GetFollowing($userId: ID!) {
+              following(userId: $userId) {
+                id
+                userId
+                username
+                profileImage
+                isFollowing
+              }
+            }
+          `,
+          variables: { userId },
+        }),
+      });
+
+      const data = await response.json();
+      if (data.errors) {
+        return [];
+      }
+      return data.data?.following || [];
     },
     enabled: !!userId,
-  })
-}
+  });
+
+  return result;
+};
+
+export const useSyncFollowingState = (userData: any[]) => {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!userData || !Array.isArray(userData)) return;
+
+    const jotaiStore = queryClient.getQueryData(["jotai"]) as FollowingState | undefined;
+    const followingMap = { ...(jotaiStore?.followingMap || {}) };
+
+    userData.forEach((user) => {
+      if (user?.userId && user?.isFollowing !== undefined) {
+        followingMap[user.userId] = user.isFollowing;
+      }
+    });
+
+    queryClient.setQueryData<FollowingState>(["jotai"], {
+      followingMap,
+    });
+  }, [userData, queryClient]);
+};

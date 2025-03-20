@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { ThemedAlert, AlertType } from '../components/ui/Alert';
 
+const DEFAULT_TIMEOUT = 3000;
+
 interface AlertContextProps {
   showAlert: (message: string, options?: {
     type?: AlertType;
@@ -32,7 +34,7 @@ export const AlertProvider: React.FC<AlertProviderProps> = ({ children }) => {
   const [message, setMessage] = useState('');
   const [alertType, setAlertType] = useState<AlertType>('info');
   const [action, setAction] = useState<{ label: string; onPress: () => void } | undefined>();
-  const [duration, setDuration] = useState<number | undefined>();
+  const [duration, setDuration] = useState<number | undefined>(DEFAULT_TIMEOUT);
 
   const showAlert = (msg: string, options?: {
     type?: AlertType;
@@ -45,7 +47,7 @@ export const AlertProvider: React.FC<AlertProviderProps> = ({ children }) => {
     setMessage(msg);
     setAlertType(options?.type || 'info');
     setAction(options?.action);
-    setDuration(options?.duration);
+    setDuration(options?.duration !== undefined ? options.duration : DEFAULT_TIMEOUT);
     setVisible(true);
   };
 

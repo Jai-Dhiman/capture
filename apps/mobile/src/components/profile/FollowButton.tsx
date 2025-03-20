@@ -1,38 +1,47 @@
-import React from 'react';
-import { TouchableOpacity, Text, ActivityIndicator } from 'react-native';
-import { useFollowUser, useUnfollowUser } from '../../hooks/useRelationships';
+import React, { useEffect } from 'react'
+import { TouchableOpacity, Text, ActivityIndicator } from 'react-native'
+import { useAtom } from 'jotai'
+import { isFollowingAtom } from '../../atoms/followingAtoms'
+import { useFollowUser, useUnfollowUser } from '../../hooks/useRelationships'
 
 interface FollowButtonProps {
-  userId: string;
-  isFollowing: boolean | null;
-  className?: string;
+  userId: string
+  isFollowing: boolean | null
+  className?: string
 }
 
-export const FollowButton = ({ userId, isFollowing, className = '' }: FollowButtonProps) => {
-  const followMutation = useFollowUser();
-  const unfollowMutation = useUnfollowUser();
+export const FollowButton = ({ userId, isFollowing: initialIsFollowing, className = '' }: FollowButtonProps) => {
+  const [isFollowing, setIsFollowing] = useAtom(isFollowingAtom(userId))
+  const followMutation = useFollowUser(userId)
+  const unfollowMutation = useUnfollowUser(userId)
   
-  const isLoading = followMutation.isPending || unfollowMutation.isPending;
+  const isPending = followMutation.isPending || unfollowMutation.isPending
   
-  if (isFollowing === null) {
-    return null;
-  }
+  useEffect(() => {
+    if (initialIsFollowing !== null && isFollowing !== initialIsFollowing) {
+      setIsFollowing(initialIsFollowing)
+    }
+  }, [initialIsFollowing, userId])
   
   const handlePress = () => {
     if (isFollowing) {
-      unfollowMutation.mutate(userId);
+      unfollowMutation.mutate()
     } else {
-      followMutation.mutate(userId);
+      followMutation.mutate()
     }
-  };
+  }
+  
+  if (isFollowing === null) {
+    return null
+  }
   
   return (
     <TouchableOpacity
       className={`py-2 px-4 ${isFollowing ? 'bg-gray-200' : 'bg-[#E4CAC7]'} ${className}`}
       onPress={handlePress}
-      disabled={isLoading}
+      disabled={isPending}
     >
-      {isLoading ? (
+      {isPending ? (
         <ActivityIndicator size="small" color="#000" />
       ) : (
         <Text className="text-center font-semibold">
@@ -40,5 +49,5 @@ export const FollowButton = ({ userId, isFollowing, className = '' }: FollowButt
         </Text>
       )}
     </TouchableOpacity>
-  );
-};
+  )
+}

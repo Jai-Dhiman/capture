@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Image, Modal } from 'react-native';
 import { useAuthStore } from '../stores/authStore';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -6,7 +6,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../components/Navigators/types/navigation';
 import { useUserPosts } from '../hooks/usePosts';
 import { useProfile } from '../hooks/auth/useProfile';
-import { useFollowers, useFollowing } from '../hooks/useRelationships';
+import { useFollowers, useFollowing, useSyncFollowingState } from '../hooks/useRelationships';
 import { MediaImage } from '../components/media/MediaImage';
 import { Ionicons } from '@expo/vector-icons';
 import SavedPosts from "../../assets/icons/FavoriteIcon.svg"
@@ -50,6 +50,11 @@ export default function Profile() {
   if (profileLoading) {
     return <LoadingSpinner fullScreen message="Loading profile..." />;
   }
+
+  useEffect(() => {
+    if (profileData?.userId && profileData?.isFollowing !== undefined) {
+    }
+  }, [profileData]);
 
   return (
     <View className="flex-1 bg-[#DCDCDE]">
@@ -104,7 +109,7 @@ export default function Profile() {
               ) : (
                 <FollowButton 
                   userId={userId!} 
-                  isFollowing={profileData?.isFollowing} 
+                  isFollowing={profileData?.isFollowing ?? null} 
                   className="mt-3 self-start"
                 />
               )}

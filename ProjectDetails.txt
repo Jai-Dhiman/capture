@@ -14,7 +14,6 @@ Capture reimagines social media by prioritizing user privacy, safety, and mental
 ### Frontend
 - React Native + Expo for cross-platform mobile development
 - TypeScript for type safety
-- React Router for routing
 - Tanstack/React Query for data fetching
 - Zustand and Jotai for state management
 - NativeWind/Tailwind for Styling

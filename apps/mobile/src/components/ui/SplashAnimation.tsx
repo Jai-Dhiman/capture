@@ -1,14 +1,19 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { View } from 'react-native';
 import LottieView from 'lottie-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type SplashAnimationProps = {
   fullScreen?: boolean;
+  onAnimationFinish?: () => void;
 };
 
-export const SplashAnimation: React.FC<SplashAnimationProps> = ({ fullScreen = true }) => {
+export const SplashAnimation: React.FC<SplashAnimationProps> = ({ 
+  fullScreen = true, 
+  onAnimationFinish 
+}) => {
   const insets = useSafeAreaInsets();
+  const animationRef = useRef<LottieView>(null);
   
   return (
     <View 
@@ -16,10 +21,12 @@ export const SplashAnimation: React.FC<SplashAnimationProps> = ({ fullScreen = t
       style={fullScreen ? { paddingTop: insets.top, paddingBottom: insets.bottom } : {}}
     >
       <LottieView
+        ref={animationRef}
         source={require('../../../assets/StartupAnimation.json')}
         autoPlay
-        loop
+        loop={false}
         style={{ width: 200, height: 200 }}
+        onAnimationFinish={onAnimationFinish}
       />
     </View>
   );
