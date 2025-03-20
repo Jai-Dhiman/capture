@@ -22,6 +22,13 @@
       "when": 1742374857506,
       "tag": "0002_hard_true_believers",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1742505346599,
+      "tag": "0003_abnormal_logan",
+      "breakpoints": true
     }
   ]
 }

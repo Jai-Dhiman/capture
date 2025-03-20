@@ -59,6 +59,7 @@ export const typeDefs = `
     id: ID!
     userId: String!
     content: String!
+    type: PostType!
     user: Profile!
     media: [Media!]!
     comments: [Comment!]!
@@ -68,6 +69,13 @@ export const typeDefs = `
     createdAt: String!
     updatedAt: String!
     _commentCount: Int!
+  }
+
+  input PostInput {
+    content: String!
+    type: PostType!
+    mediaIds: [ID!]
+    hashtagIds: [ID!]
   }
 
   type Comment {
@@ -120,12 +128,6 @@ export const typeDefs = `
     createdAt: String!
   }
 
-  input PostInput {
-    content: String!
-    mediaIds: [ID!]
-    hashtagIds: [ID!]
-  }
-
   input ProfileInput {
     username: String
     bio: String
@@ -162,4 +164,4 @@ export const typeDefs = `
   type UnsavePostResponse {
     success: Boolean!
   }
-`
+`;

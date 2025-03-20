@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, Image, TextInput, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Image, TextInput, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as ImagePicker from 'expo-image-picker';
@@ -12,12 +12,14 @@ import { useAlert } from '../lib/AlertContext';
 import { errorService } from '../services/errorService';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type PostType = 'post' | 'thread';
 
 export default function NewPost() {
   const navigation = useNavigation<NavigationProp>();
   const [content, setContent] = useState('');
   const [selectedImages, setSelectedImages] = useState<any[]>([]);
   const [selectedHashtags, setSelectedHashtags] = useState<Array<{ id: string; name: string }>>([]);
+  const [postType, setPostType] = useState<PostType>('post');
   const uploadMediaMutation = useUploadMedia();
   const createPostMutation = useCreatePost();
   const { showAlert } = useAlert();
@@ -54,25 +56,36 @@ export default function NewPost() {
     }
   };
 
+
   const handleCreatePost = async () => {
-    if (!content && selectedImages.length === 0) {
+    if (!content && selectedImages.length === 0 && postType === 'post') {
       showAlert('Please add some content or images to your post', { type: 'warning' });
+      return;
+    }
+    
+    if (!content && postType === 'thread') {
+      showAlert('Please add some content to your thread', { type: 'warning' });
       return;
     }
 
     try {
-      const uploadedMedia = await uploadMediaMutation.mutateAsync(selectedImages);
+      let mediaIds: string[] = [];
       
-      const mediaIds = uploadedMedia.map(media => media.id);
+      if (postType === 'post' && selectedImages.length > 0) {
+        const uploadedMedia = await uploadMediaMutation.mutateAsync(selectedImages);
+        mediaIds = uploadedMedia.map(media => media.id);
+      }
+      
       const hashtagIds = selectedHashtags.map(hashtag => hashtag.id);
       
       const createdPost = await createPostMutation.mutateAsync({ 
         content, 
+        type: postType,
         mediaIds,
         hashtagIds
       });
       
-      showAlert('Post created successfully!', { type: 'success' });
+      showAlert(`${postType === 'post' ? 'Post' : 'Thread'} created successfully!`, { type: 'success' });
       navigation.goBack();
     } catch (error: any) {
       console.error('Post creation error:', {
@@ -83,64 +96,96 @@ export default function NewPost() {
     }
   };
 
+  
+
   return (
     <ScrollView className="flex-1">
       <View className="flex-1 p-5">
+        {/* Header */}
         <View className="flex-row items-center mb-5">
-          <TouchableOpacity   
-            className="p-2" 
-            onPress={() => navigation.goBack()}
-          >
+          <TouchableOpacity className="p-2" onPress={() => navigation.goBack()}>
             <Text className="text-blue-600 text-lg">← Back</Text>
           </TouchableOpacity>
-          <Text className="text-2xl font-bold ml-2">Create New Post</Text>
+          <Text className="text-2xl font-bold ml-2">Create New {postType === 'post' ? 'Post' : 'Thread'}</Text>
+        </View>
+        
+        {/* Type Selector */}
+        <View className="w-full h-8 p-0.5 mb-5 bg-gray-200 bg-opacity-10 rounded-lg shadow inline-flex justify-center items-center overflow-hidden">
+          <TouchableOpacity 
+            className={`flex-1 self-stretch px-2.5 py-[3px] rounded-md flex justify-start items-center ${postType === 'post' ? 'bg-stone-400' : ''}`}
+            onPress={() => setPostType('post')}
+          >
+            <Text className={`text-center text-xs ${postType === 'post' ? 'text-white font-semibold' : 'text-black font-normal'}`}>
+              Photo/Video
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            className={`flex-1 self-stretch px-2.5 py-[3px] rounded-md flex justify-start items-center ${postType === 'thread' ? 'bg-stone-400' : ''}`}
+            onPress={() => setPostType('thread')}
+          >
+            <Text className={`text-center text-xs ${postType === 'thread' ? 'text-white font-semibold' : 'text-black font-normal'}`}>
+              Thread
+            </Text>
+          </TouchableOpacity>
         </View>
         
         <View className="mt-5 bg-white p-4 rounded-lg shadow">
+          {/* Content Input */}
           <TextInput
             className="border border-gray-300 rounded-lg p-3 mb-3"
-            placeholder="caption"
+            placeholder={postType === 'post' ? "Write a caption..." : "What's on your mind?"}
             value={content}
             onChangeText={setContent}
             multiline
+            maxLength={postType === 'post' ? 500 : 800}
           />
+          
+          {/* Character Count */}
+          <Text className="text-right text-gray-500 mb-2">
+            {content.length}/{postType === 'post' ? 500 : 800}
+          </Text>
 
+          {/* Hashtags */}
           <HashtagInput
             selectedHashtags={selectedHashtags}
             onHashtagsChange={setSelectedHashtags}
             maxHashtags={5}
           />
 
-          <View className="flex-row flex-wrap mb-3">
-            {selectedImages.map((image, index) => (
-              <View key={index} className="w-20 h-20 m-1 bg-gray-200 rounded">
-                <Image
-                  source={{ uri: image.uri }}
-                  className="w-full h-full rounded"
-                  resizeMode="cover"
-                />
+          {/* Media Upload (only for posts) */}
+          {postType === 'post' && (
+            <>
+              <View className="flex-row flex-wrap mb-3">
+                {selectedImages.map((image, index) => (
+                  <View key={index} className="w-20 h-20 m-1 bg-gray-200 rounded">
+                    <Image
+                      source={{ uri: image.uri }}
+                      className="w-full h-full rounded"
+                      resizeMode="cover"
+                    />
+                  </View>
+                ))}
               </View>
-            ))}
-          </View>
 
-          <View className="flex-row justify-between">
-            <TouchableOpacity
-              className="bg-gray-200 p-3 rounded-lg flex-1 mr-2"
-              onPress={handleImageSelection}
-            >
-              <Text className="text-center">Add Images</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              className="bg-blue-600 p-3 rounded-lg flex-1 ml-2"
-              onPress={handleCreatePost}
-              disabled={createPostMutation.isPending || uploadMediaMutation.isPending}
-            >
-              <Text className="text-white text-center">
-                {createPostMutation.isPending ? 'Creating...' : 'Create Post'}
-              </Text>
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity
+                className="bg-gray-200 p-3 rounded-lg mb-3"
+                onPress={handleImageSelection}
+              >
+                <Text className="text-center">Add Images</Text>
+              </TouchableOpacity>
+            </>
+          )}
+          
+          {/* Submit Button */}
+          <TouchableOpacity
+            className="bg-[#E4CAC7] p-3 rounded-lg"
+            onPress={handleCreatePost}
+            disabled={createPostMutation.isPending || uploadMediaMutation.isPending}
+          >
+            <Text className="text-black text-center font-bold">
+              {createPostMutation.isPending ? 'Creating...' : `Create ${postType === 'post' ? 'Post' : 'Thread'}`}
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
     </ScrollView>

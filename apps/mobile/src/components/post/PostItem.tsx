@@ -12,17 +12,26 @@ interface PostItemProps {
   post: any;
 }
 
+
 export const PostItem = ({ post }: PostItemProps) => {
   const navigation = useNavigation<NavigationProp>();
+  const isThread = post.type === 'thread';
   
   return (
     <TouchableOpacity 
-      className="bg-white p-4 mb-4 rounded-lg shadow"
+      className={`${isThread ? 'bg-stone-100' : 'bg-white'} p-4 mb-4 rounded-lg shadow`}
       onPress={() => navigation.navigate('SinglePost', { post })}
     >
-      {post.media && post.media.length > 0 && (
+      {isThread && (
+        <View className="mb-2">
+          <Text className="text-xs text-gray-500">{post.user?.username} • Thread</Text>
+        </View>
+      )}
+      
+      {!isThread && post.media && post.media.length > 0 && (
         <PostMediaGallery mediaItems={post.media} />
       )}
+      
       <Text className="text-base">{post.content}</Text>
       
       {post.hashtags && post.hashtags.length > 0 && (

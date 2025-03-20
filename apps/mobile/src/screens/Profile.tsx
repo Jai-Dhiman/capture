@@ -30,13 +30,28 @@ export default function Profile() {
   
   const [showFollowers, setShowFollowers] = useState(false);
   const [showFollowing, setShowFollowing] = useState(false);
+  const [postFilter, setPostFilter] = useState<'all' | 'posts' | 'threads'>('all');
   const [currentPage, setCurrentPage] = useState(0);
   
   const { data: profileData, isLoading: profileLoading } = useProfile(userId);
   const { data: posts, isLoading: postsLoading } = useUserPosts(userId);
   const { data: followers, isLoading: followersLoading } = useFollowers(userId);
   const { data: following, isLoading: followingLoading } = useFollowing(userId);
+
+  const filteredPosts = posts ? 
+  (postFilter === 'all' 
+    ? posts 
+    : posts.filter((post: { type?: string }) => 
+        postFilter === 'posts' 
+          ? post.type === 'post' || !post.type 
+          : post.type === 'thread')
+  ) : [];
   
+  useEffect(() => {
+    if (profileData?.userId && profileData?.isFollowing !== undefined) {
+    }
+  }, [profileData]);
+
   const totalPages = posts ? Math.ceil(posts.length / POSTS_PER_PAGE) : 0;
 
   const currentPosts = posts ? 
@@ -50,11 +65,6 @@ export default function Profile() {
   if (profileLoading) {
     return <LoadingSpinner fullScreen message="Loading profile..." />;
   }
-
-  useEffect(() => {
-    if (profileData?.userId && profileData?.isFollowing !== undefined) {
-    }
-  }, [profileData]);
 
   return (
     <View className="flex-1 bg-[#DCDCDE]">
@@ -117,20 +127,25 @@ export default function Profile() {
           </View>
         </View>
         
-        <View className="bg-white">
-          <View className="flex-row justify-around py-4">
-            <TouchableOpacity>
-              <Ionicons name="grid-outline" size={24} color="black" />
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <Placeholder width={24} height={24}/>
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <SavedPosts width={24} height={24}/>
-            </TouchableOpacity>
-          </View>
-          
-          <View className="h-[1px] bg-gray-300 w-full" />
+        <View className="flex-row justify-around py-4">
+          <TouchableOpacity 
+            onPress={() => setPostFilter('all')}
+            className={postFilter === 'all' ? 'opacity-100' : 'opacity-50'}
+          >
+            <Ionicons name="grid-outline" size={24} color="black" />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            onPress={() => setPostFilter('posts')}
+            className={postFilter === 'posts' ? 'opacity-100' : 'opacity-50'}
+          >
+            <Placeholder width={24} height={24}/>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            onPress={() => setPostFilter('threads')}
+            className={postFilter === 'threads' ? 'opacity-100' : 'opacity-50'}
+          >
+            <SavedPosts width={24} height={24}/>
+          </TouchableOpacity>
         </View>
         
         <View className="mt-2">
