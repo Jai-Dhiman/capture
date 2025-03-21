@@ -12,7 +12,7 @@ const Header: React.FC<HeaderProps> = ({
   onBackPress
 }) => {
   return (
-    <View className="relative px-4 mt-[84px]">
+    <View className="relative px-4 mt-[50px]">
       {showBackButton && (
         <TouchableOpacity 
           className="absolute left-8 top-1 z-15"

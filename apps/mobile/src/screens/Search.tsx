@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase';
 import { API_URL } from '@env';
 import { ProfileImage } from '../components/media/ProfileImage';
 import { useSearchHashtags } from '../hooks/useHashtags';
+import Header from 'components/ui/Header';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 
@@ -227,16 +228,11 @@ export default function UserSearch() {
 
   return (
     <View className="flex-1 bg-white">
-      <View className="flex-row items-center p-4 border-b border-gray-100">
-        <TouchableOpacity 
-          className="p-2" 
-          onPress={() => navigation.goBack()}
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="arrow-back" size={24} color="black" />
-        </TouchableOpacity>
-        <Text className="text-xl font-semibold ml-2">Find Users & Hashtags</Text>
-      </View>
+      
+      <Header 
+        showBackButton={true} 
+        onBackPress={() => navigation.goBack()} 
+      />
 
       <View className="flex-row items-center p-4 border-b border-gray-100">
         <TextInput

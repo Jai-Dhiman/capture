@@ -23,6 +23,7 @@ import { CommentDrawer } from '../components/comment/CommentDrawer';
 import { useQueryClient } from '@tanstack/react-query';
 import { commentLimitAtom, commentSortAtom } from '../atoms/commentAtoms';
 import { useAtomValue } from 'jotai';
+import Header from 'components/ui/Header'
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 type SinglePostRouteProp = RouteProp<AppStackParamList, 'SinglePost'>;
@@ -101,13 +102,11 @@ export default function SinglePost() {
         resizeMode="cover"
       />
       
-      <View className="flex-row items-center p-4 bg-transparent">
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="black" />
-        </TouchableOpacity>
-        <Text className="text-[30px] font-light mx-auto">Capture</Text>
-        <View style={{ width: 24 }} />
-      </View>
+            
+      <Header 
+        showBackButton={true} 
+        onBackPress={() => navigation.goBack()} 
+      />
       
       <ScrollView className="flex-1">
         <View className="flex-row items-center p-3 border-b border-gray-100 bg-white">

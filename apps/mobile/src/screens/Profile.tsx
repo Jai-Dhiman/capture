@@ -1,3 +1,4 @@
+// apps/mobile/src/screens/Profile.tsx (modified)
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Image, Modal, StatusBar } from 'react-native';
 import { useAuthStore } from '../stores/authStore';
@@ -8,6 +9,7 @@ import { useUserPosts } from '../hooks/usePosts';
 import { useProfile } from '../hooks/auth/useProfile';
 import { useFollowers, useFollowing } from '../hooks/useRelationships';
 import { MediaImage } from '../components/media/MediaImage';
+import { ThreadItem } from '../components/post/ThreadItem';
 import SavedPosts from "../../assets/icons/FavoriteIcon.svg"
 import PhotosIcon from "../../assets/icons/PhotosIcon.svg"
 import TextIcon from "../../assets/icons/TextIcon.svg"
@@ -19,7 +21,7 @@ import Header from '../components/ui/Header';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 type ProfileRouteProp = RouteProp<AppStackParamList, 'Profile'>;
-const POSTS_PER_PAGE = 4;
+const POSTS_PER_PAGE = 9;
 
 export default function Profile() {
   const navigation = useNavigation<NavigationProp>();
@@ -30,7 +32,7 @@ export default function Profile() {
   
   const [showFollowers, setShowFollowers] = useState(false);
   const [showFollowing, setShowFollowing] = useState(false);
-  const [postFilter, setPostFilter] = useState<'all' | 'posts' | 'threads'>(isOwnProfile ? 'posts' : 'threads');
+  const [postFilter, setPostFilter] = useState<'posts' | 'threads'>(isOwnProfile ? 'posts' : 'threads');
   const [currentPage, setCurrentPage] = useState(0);
   
   const { data: profileData, isLoading: profileLoading } = useProfile(userId);
@@ -39,12 +41,10 @@ export default function Profile() {
   const { data: following, isLoading: followingLoading } = useFollowing(userId);
 
   const filteredPosts = posts ? 
-    (postFilter === 'all' 
-      ? posts 
-      : posts.filter((post: { type?: string }) => 
-          postFilter === 'posts' 
-            ? post.type === 'post' || !post.type 
-            : post.type === 'thread')
+    posts.filter((post: { type?: string }) => 
+      postFilter === 'posts' 
+        ? post.type === 'post' || !post.type 
+        : post.type === 'thread'
     ) : [];
   
   const totalPages = filteredPosts ? Math.ceil(filteredPosts.length / POSTS_PER_PAGE) : 0;
@@ -65,7 +65,10 @@ export default function Profile() {
     <View className="flex-1 bg-zinc-300">
       <StatusBar barStyle="dark-content" />
       
-      <Header showBackButton={true} />
+      <Header 
+        showBackButton={true} 
+        onBackPress={() => navigation.goBack()} 
+      />
       
       <ScrollView className="flex-1">
         <View className="px-6 pt-4">
@@ -148,28 +151,37 @@ export default function Profile() {
           {postsLoading ? (
             <LoadingSpinner />
           ) : filteredPosts?.length === 0 ? (
-            <Text className="text-center py-4 text-gray-500">No posts yet</Text>
+            <Text className="text-center py-4 text-gray-500">No {postFilter} yet</Text>
           ) : (
             <>
-              <View className="flex-row flex-wrap mt-4">
-                {currentPosts.map((post: any) => (
-                  <TouchableOpacity 
-                    key={post.id} 
-                    className="w-[48%] aspect-square mb-3 mr-[4%] last:mr-0 odd:last:mr-[52%]"
-                    onPress={() => navigation.navigate('SinglePost', { post })}
-                  >
-                    <View className="w-full h-full bg-stone-400 rounded-[10px] overflow-hidden">
-                      {post.media && post.media.length > 0 ? (
-                        <MediaImage media={post.media[0]} />
-                      ) : (
-                        <View className="flex-1 justify-center items-center">
-                          <Text className="text-white opacity-70">No image</Text>
-                        </View>
-                      )}
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </View>
+              {/* Posts Grid (3x3) or Threads List */}
+              {postFilter === 'posts' ? (
+                <View className="flex-row flex-wrap mt-4">
+                  {currentPosts.map((post: any) => (
+                    <TouchableOpacity 
+                      key={post.id} 
+                      className="w-[32%] aspect-square mb-[2%] mr-[2%] nth-child-3n:mr-0"
+                      onPress={() => navigation.navigate('SinglePost', { post })}
+                    >
+                      <View className="w-full h-full bg-stone-400 rounded-[10px] overflow-hidden">
+                        {post.media && post.media.length > 0 ? (
+                          <MediaImage media={post.media[0]} />
+                        ) : (
+                          <View className="flex-1 justify-center items-center">
+                            <Text className="text-white opacity-70">No image</Text>
+                          </View>
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : (
+                <View className="mt-4">
+                  {currentPosts.map((thread: any) => (
+                    <ThreadItem key={thread.id} thread={thread} />
+                  ))}
+                </View>
+              )}
               
               {totalPages > 1 && (
                 <View className="flex-row justify-center py-4">

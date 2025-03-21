@@ -42,6 +42,10 @@ export const FollowList = ({
     
     return (
       <View className="flex-row items-center p-4 border-b border-gray-200">
+        <Header 
+        showBackButton={true} 
+        onBackPress={() => navigation.goBack()} 
+      />
         <TouchableOpacity 
           onPress={() => {
             onClose()

@@ -9,7 +9,7 @@ import { useUploadMedia } from 'hooks/useMedia';
 import { useCreatePost } from 'hooks/usePosts';
 import { HashtagInput } from '../components/hashtags/HashtagInput';
 import { useAlert } from '../lib/AlertContext';
-import { errorService } from '../services/errorService';
+import Header from '../components/ui/Header'
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type PostType = 'post' | 'thread';
@@ -23,7 +23,6 @@ export default function NewPost() {
   const uploadMediaMutation = useUploadMedia();
   const createPostMutation = useCreatePost();
   const { showAlert } = useAlert();
-
 
   const handleImageSelection = async () => {
     try {
@@ -96,23 +95,18 @@ export default function NewPost() {
     }
   };
 
-  
-
   return (
     <ScrollView className="flex-1">
       <View className="flex-1 p-5">
-        {/* Header */}
-        <View className="flex-row items-center mb-5">
-          <TouchableOpacity className="p-2" onPress={() => navigation.goBack()}>
-            <Text className="text-blue-600 text-lg">← Back</Text>
-          </TouchableOpacity>
-          <Text className="text-2xl font-bold ml-2">Create New {postType === 'post' ? 'Post' : 'Thread'}</Text>
-        </View>
+        <Header 
+          showBackButton={true} 
+          onBackPress={() => navigation.goBack()} 
+        />
         
         {/* Type Selector */}
-        <View className="w-full h-8 p-0.5 mb-5 bg-gray-200 bg-opacity-10 rounded-lg shadow inline-flex justify-center items-center overflow-hidden">
+        <View className="w-full h-10 p-9 mb-5 shadow rounded-lg flex-row justify-center items-center overflow-hidden">
           <TouchableOpacity 
-            className={`flex-1 self-stretch px-2.5 py-[3px] rounded-md flex justify-start items-center ${postType === 'post' ? 'bg-stone-400' : ''}`}
+            className={`flex-1 mx-1 h-8 rounded-md flex justify-center items-center ${postType === 'post' ? 'bg-stone-400' : 'bg-gray-100'}`}
             onPress={() => setPostType('post')}
           >
             <Text className={`text-center text-xs ${postType === 'post' ? 'text-white font-semibold' : 'text-black font-normal'}`}>
@@ -120,7 +114,7 @@ export default function NewPost() {
             </Text>
           </TouchableOpacity>
           <TouchableOpacity 
-            className={`flex-1 self-stretch px-2.5 py-[3px] rounded-md flex justify-start items-center ${postType === 'thread' ? 'bg-stone-400' : ''}`}
+            className={`flex-1 mx-1 h-8 rounded-md flex justify-center items-center ${postType === 'thread' ? 'bg-stone-400' : 'bg-gray-100'}`}
             onPress={() => setPostType('thread')}
           >
             <Text className={`text-center text-xs ${postType === 'thread' ? 'text-white font-semibold' : 'text-black font-normal'}`}>
