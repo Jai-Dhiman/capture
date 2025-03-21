@@ -139,6 +139,7 @@ export const postResolvers = {
           .select({
             id: schema.post.id,
             content: schema.post.content,
+            type: schema.post.type,
             createdAt: schema.post.createdAt,
             userId: schema.post.userId,
           })
@@ -166,6 +167,7 @@ export const postResolvers = {
 
         return {
           ...createdPost,
+          type: createdPost.type || "post",
           user: userProfile,
           media: mediaItems,
           comments: [],

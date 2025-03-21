@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, Modal, StatusBar } from 'react-native';
 import { useAuthStore } from '../stores/authStore';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../components/Navigators/types/navigation';
 import { useUserPosts } from '../hooks/usePosts';
 import { useProfile } from '../hooks/auth/useProfile';
-import { useFollowers, useFollowing, useSyncFollowingState } from '../hooks/useRelationships';
+import { useFollowers, useFollowing } from '../hooks/useRelationships';
 import { MediaImage } from '../components/media/MediaImage';
-import { Ionicons } from '@expo/vector-icons';
 import SavedPosts from "../../assets/icons/FavoriteIcon.svg"
-import Placeholder from "../../assets/icons/ViewPasswordIcon.svg"
+import PhotosIcon from "../../assets/icons/PhotosIcon.svg"
+import TextIcon from "../../assets/icons/TextIcon.svg"
 import NewPost from "../../assets/icons/PlusIcon.svg"
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { ProfileImage } from '../components/media/ProfileImage';
-import { FollowButton } from '../components/profile/FollowButton';
 import { FollowList } from '../components/profile/FollowList';
+import Header from '../components/ui/Header';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 type ProfileRouteProp = RouteProp<AppStackParamList, 'Profile'>;
@@ -30,7 +30,7 @@ export default function Profile() {
   
   const [showFollowers, setShowFollowers] = useState(false);
   const [showFollowing, setShowFollowing] = useState(false);
-  const [postFilter, setPostFilter] = useState<'all' | 'posts' | 'threads'>('all');
+  const [postFilter, setPostFilter] = useState<'all' | 'posts' | 'threads'>(isOwnProfile ? 'posts' : 'threads');
   const [currentPage, setCurrentPage] = useState(0);
   
   const { data: profileData, isLoading: profileLoading } = useProfile(userId);
@@ -39,23 +39,18 @@ export default function Profile() {
   const { data: following, isLoading: followingLoading } = useFollowing(userId);
 
   const filteredPosts = posts ? 
-  (postFilter === 'all' 
-    ? posts 
-    : posts.filter((post: { type?: string }) => 
-        postFilter === 'posts' 
-          ? post.type === 'post' || !post.type 
-          : post.type === 'thread')
-  ) : [];
+    (postFilter === 'all' 
+      ? posts 
+      : posts.filter((post: { type?: string }) => 
+          postFilter === 'posts' 
+            ? post.type === 'post' || !post.type 
+            : post.type === 'thread')
+    ) : [];
   
-  useEffect(() => {
-    if (profileData?.userId && profileData?.isFollowing !== undefined) {
-    }
-  }, [profileData]);
+  const totalPages = filteredPosts ? Math.ceil(filteredPosts.length / POSTS_PER_PAGE) : 0;
 
-  const totalPages = posts ? Math.ceil(posts.length / POSTS_PER_PAGE) : 0;
-
-  const currentPosts = posts ? 
-    posts.slice(currentPage * POSTS_PER_PAGE, (currentPage + 1) * POSTS_PER_PAGE) : 
+  const currentPosts = filteredPosts ? 
+    filteredPosts.slice(currentPage * POSTS_PER_PAGE, (currentPage + 1) * POSTS_PER_PAGE) : 
     [];
   
   const handlePageChange = (pageIndex: number) => {
@@ -67,134 +62,126 @@ export default function Profile() {
   }
 
   return (
-    <View className="flex-1 bg-[#DCDCDE]">
-      <Image
-        source={require('../../assets/DefaultBackground.png')}
-        style={{ width: '100%', height: '100%', position: 'absolute' }}
-        resizeMode="cover"
-      />
+    <View className="flex-1 bg-zinc-300">
+      <StatusBar barStyle="dark-content" />
       
-      <View className="flex-row items-center p-4 bg-transparent">
-        <TouchableOpacity onPress={() => navigation.navigate('Feed')}>
-          <Ionicons name="arrow-back" size={28} color="black" />
-        </TouchableOpacity>
-        <Text className="text-[36px] font-light mx-auto">Capture</Text>
-        <View style={{ width: 28 }} />
-      </View>
+      <Header showBackButton={true} />
       
       <ScrollView className="flex-1">
-        <View className="bg-white p-4">
-          <View className="flex-row">
-            {profileData?.profileImage ? (
-              <View className="w-32 h-32 rounded-full overflow-hidden">
+        <View className="px-6 pt-4">
+          <View className="flex-row mb-4">
+            <View className="w-24 h-24 rounded-full bg-red-200 shadow overflow-hidden">
+              {profileData?.profileImage ? (
                 <ProfileImage cloudflareId={profileData.profileImage} />
-              </View>
-            ) : (
-              <View className="w-32 h-32 rounded-full bg-gray-200" />
-            )}
-            
-            <View className="ml-4 flex-1">
-              <Text className="text-xl font-bold">{profileData?.username || 'Username'}</Text>
-              <Text className="text-gray-600 mt-1">{profileData?.bio || 'No bio yet'}</Text>
-              
-              <View className="flex-row mt-2">
-                <TouchableOpacity onPress={() => setShowFollowers(true)}>
-                  <Text className="mr-4">
-                    <Text className="font-bold">{profileData?.followersCount || 0}</Text> followers
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => setShowFollowing(true)}>
-                  <Text>
-                    <Text className="font-bold">{profileData?.followingCount || 0}</Text> following
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              
-              {isOwnProfile ? (
-                <TouchableOpacity 
-                  className="bg-[#E4CAC7] py-2 px-4 mt-3 self-start"
-                >
-                  <Text className="text-center font-semibold">Settings</Text>
-                </TouchableOpacity>
               ) : (
-                <FollowButton 
-                  userId={userId!} 
-                  isFollowing={profileData?.isFollowing ?? null} 
-                  className="mt-3 self-start"
-                />
+                <View className="w-full h-full bg-stone-300" />
               )}
             </View>
+            
+            <View className="ml-4 flex-1 justify-center">
+              <Text className="text-xl font-light">{profileData?.username || 'User'}</Text>
+              <Text className="text-xs font-light text-black opacity-70 mt-1">
+                {profileData?.bio || ''}
+              </Text>
+              
+              <View className="flex-row mt-4">
+                {isOwnProfile ? (
+                  <>
+                    <TouchableOpacity 
+                      className="bg-neutral-400 rounded-[30px] px-4 py-1 mr-2"
+                    >
+                      <Text className="text-white text-xs font-normal text-center">Settings</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      className="bg-stone-300 rounded-[30px] border border-stone-300 px-4 py-1"
+                      onPress={() => setShowFollowers(true)}
+                    >
+                      <Text className="text-black text-xs font-normal text-center">Followers</Text>
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  <>
+                    <TouchableOpacity 
+                      className="bg-neutral-400 rounded-[30px] px-4 py-1 mr-2"
+                      onPress={() => {/* Toggle follow */}}
+                    >
+                      <Text className="text-white text-xs font-normal text-center">Unfollow</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      className="bg-stone-300 rounded-[30px] border border-stone-300 px-4 py-1"
+                    >
+                      <Text className="text-black text-xs font-normal text-center">Message</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+              </View>
+            </View>
           </View>
-        </View>
-        
-        <View className="flex-row justify-around py-4">
-          <TouchableOpacity 
-            onPress={() => setPostFilter('all')}
-            className={postFilter === 'all' ? 'opacity-100' : 'opacity-50'}
-          >
-            <Ionicons name="grid-outline" size={24} color="black" />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            onPress={() => setPostFilter('posts')}
-            className={postFilter === 'posts' ? 'opacity-100' : 'opacity-50'}
-          >
-            <Placeholder width={24} height={24}/>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            onPress={() => setPostFilter('threads')}
-            className={postFilter === 'threads' ? 'opacity-100' : 'opacity-50'}
-          >
-            <SavedPosts width={24} height={24}/>
-          </TouchableOpacity>
-        </View>
-        
-        <View className="mt-2">
+          
+          <View className="flex-row justify-around py-2 items-center">
+            <TouchableOpacity 
+              className="items-center justify-center"
+              onPress={() => setPostFilter('posts')}
+            >
+              <View className={postFilter === 'posts' ? "bg-stone-300 bg-opacity-30 w-7 h-7 rounded-[10px] items-center justify-center" : ""}>
+                <PhotosIcon width={20} height={20}/>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              className="items-center justify-center"
+              onPress={() => setPostFilter('threads')}
+            >
+              <View className={postFilter === 'threads' ? "bg-stone-300 bg-opacity-30 w-7 h-7 rounded-[10px] items-center justify-center" : ""}>
+                <TextIcon width={20} height={20} />
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              className="items-center justify-center"
+              onPress={() => {/* Saved posts */}}
+            >
+              <SavedPosts width={20} height={20}/>
+            </TouchableOpacity>
+          </View>
+          
+          <View className="h-px bg-black opacity-10 my-2" />
+          
           {postsLoading ? (
             <LoadingSpinner />
-          ): posts?.length === 0 ? (
+          ) : filteredPosts?.length === 0 ? (
             <Text className="text-center py-4 text-gray-500">No posts yet</Text>
           ) : (
             <>
-              <View className="flex-row flex-wrap">
-                {currentPosts.map((post: any, index: number) => (
+              <View className="flex-row flex-wrap mt-4">
+                {currentPosts.map((post: any) => (
                   <TouchableOpacity 
                     key={post.id} 
-                    className="w-1/2 aspect-square p-1"
+                    className="w-[48%] aspect-square mb-3 mr-[4%] last:mr-0 odd:last:mr-[52%]"
                     onPress={() => navigation.navigate('SinglePost', { post })}
                   >
-                    <View className="w-full h-full">
+                    <View className="w-full h-full bg-stone-400 rounded-[10px] overflow-hidden">
                       {post.media && post.media.length > 0 ? (
                         <MediaImage media={post.media[0]} />
                       ) : (
                         <View className="flex-1 justify-center items-center">
-                          <Text className="text-gray-400">No image</Text>
+                          <Text className="text-white opacity-70">No image</Text>
                         </View>
                       )}
                     </View>
                   </TouchableOpacity>
                 ))}
-                
-                {currentPosts.length < POSTS_PER_PAGE && 
-                  Array(POSTS_PER_PAGE - currentPosts.length).fill(0).map((_, index) => (
-                    <View key={`empty-${index}`} className="w-1/2 aspect-square p-1">
-                      <View className="bg-transparent w-full h-full" />
-                    </View>
-                  ))
-                }
               </View>
               
               {totalPages > 1 && (
                 <View className="flex-row justify-center py-4">
-                  <View className="bg-[#E4CAC7] px-4 py-2 rounded-full flex-row">
+                  <View className="bg-blend-color-dodge bg-stone-950 rounded-[50px] backdrop-blur-[20px] p-2 flex-row">
                     {Array(totalPages).fill(0).map((_, index) => (
                       <TouchableOpacity 
                         key={index}
                         onPress={() => handlePageChange(index)}
-                        className="mx-1"
                       >
                         <View 
-                          className={`h-2 w-2 rounded-full ${
-                            index === currentPage ? 'bg-black' : 'bg-gray-600'
+                          className={`h-2 w-2 rounded-full mx-1 ${
+                            index === currentPage ? 'bg-black' : 'bg-black opacity-30'
                           }`} 
                         />
                       </TouchableOpacity>
@@ -209,11 +196,13 @@ export default function Profile() {
       
       {isOwnProfile && (
         <TouchableOpacity 
-          className="absolute bottom-6 right-6 bg-[#E4CAC7] px-4 py-3 rounded-full flex-row items-center shadow-lg"
+          className="absolute bottom-6 right-6 shadow-lg"
           onPress={() => navigation.navigate('NewPost')}
         >
-          <NewPost width={24} height={24}/>
-          <Text className="ml-2 font-medium text-black">New Post</Text>
+          <View className="bg-stone-300 rounded-[10px] border border-black flex-row items-center px-2 py-1">
+            <NewPost width={20} height={20}/>
+            <Text className="ml-2 text-xs font-normal">New Post</Text>
+          </View>
         </TouchableOpacity>
       )}
       

@@ -78,6 +78,11 @@ export const typeDefs = `
     hashtagIds: [ID!]
   }
 
+  enum PostType {
+    post
+    thread
+  }
+
   type Comment {
     id: ID!
     content: String!
