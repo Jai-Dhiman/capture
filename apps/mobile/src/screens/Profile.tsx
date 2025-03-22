@@ -1,6 +1,5 @@
-// apps/mobile/src/screens/Profile.tsx (modified)
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, Modal, StatusBar } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Modal, StatusBar } from 'react-native';
 import { useAuthStore } from '../stores/authStore';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -17,6 +16,7 @@ import NewPost from "../../assets/icons/PlusIcon.svg"
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { ProfileImage } from '../components/media/ProfileImage';
 import { FollowList } from '../components/profile/FollowList';
+import { FollowButton } from '../components/profile/FollowButton';
 import Header from '../components/ui/Header';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
@@ -104,12 +104,11 @@ export default function Profile() {
                   </>
                 ) : (
                   <>
-                    <TouchableOpacity 
+                    <FollowButton 
+                      userId={userId || ''}
+                      isFollowing={profileData?.isFollowing ?? null}
                       className="bg-neutral-400 rounded-[30px] px-4 py-1 mr-2"
-                      onPress={() => {/* Toggle follow */}}
-                    >
-                      <Text className="text-white text-xs font-normal text-center">Unfollow</Text>
-                    </TouchableOpacity>
+                    />
                     <TouchableOpacity 
                       className="bg-stone-300 rounded-[30px] border border-stone-300 px-4 py-1"
                     >

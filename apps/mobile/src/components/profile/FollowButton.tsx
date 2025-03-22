@@ -18,7 +18,7 @@ export const FollowButton = ({ userId, isFollowing: initialIsFollowing, classNam
   const isPending = followMutation.isPending || unfollowMutation.isPending
   
   useEffect(() => {
-    if (initialIsFollowing !== null && isFollowing !== initialIsFollowing) {
+    if (initialIsFollowing !== null && isFollowing === null) {
       setIsFollowing(initialIsFollowing)
     }
   }, [initialIsFollowing, userId])
