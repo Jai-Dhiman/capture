@@ -225,22 +225,7 @@ export default function Profile() {
         <FollowList
           data={followers || []}
           loading={followersLoading}
-          title="Followers"
           onClose={() => setShowFollowers(false)}
-          currentUserId={user?.id}
-        />
-      </Modal>
-
-      <Modal
-        visible={showFollowing}
-        animationType="slide"
-        onRequestClose={() => setShowFollowing(false)}
-      >
-        <FollowList
-          data={following || []}
-          loading={followingLoading}
-          title="Following"
-          onClose={() => setShowFollowing(false)}
           currentUserId={user?.id}
         />
       </Modal>

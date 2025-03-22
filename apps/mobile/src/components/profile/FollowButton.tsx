@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { TouchableOpacity, Text, ActivityIndicator } from 'react-native'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '../../stores/authStore'
@@ -12,9 +12,25 @@ interface FollowButtonProps {
 }
 
 export const FollowButton = ({ userId, isFollowing: initialIsFollowing, className = '' }: FollowButtonProps) => {
-  const [isFollowing, setIsFollowing] = useState(initialIsFollowing)
+  const [isFollowing, setIsFollowing] = useState<boolean | null>(initialIsFollowing)
   const queryClient = useQueryClient()
   
+  useEffect(() => {
+    if (initialIsFollowing !== null && isFollowing === null) {
+      setIsFollowing(initialIsFollowing)
+      
+      const jotaiStore = queryClient.getQueryData(["jotai"]) as FollowingState | undefined
+      const followingMap = { ...(jotaiStore?.followingMap || {}) }
+      
+      if (followingMap[userId] !== initialIsFollowing) {
+        followingMap[userId] = initialIsFollowing
+        queryClient.setQueryData<FollowingState>(["jotai"], {
+          followingMap,
+        })
+      }
+    }
+  }, [initialIsFollowing])
+
   const followMutation = useMutation({
     mutationFn: async () => {
       const { session } = useAuthStore.getState()
@@ -134,7 +150,14 @@ export const FollowButton = ({ userId, isFollowing: initialIsFollowing, classNam
   }
   
   if (isFollowing === null) {
-    return null
+    return (
+      <TouchableOpacity
+        className={`py-2 px-4 bg-gray-100 ${className}`}
+        disabled={true}
+      >
+        <ActivityIndicator size="small" color="#000" />
+      </TouchableOpacity>
+    )
   }
   
   return (

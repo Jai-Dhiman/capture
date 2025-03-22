@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -6,7 +6,7 @@ import { AppStackParamList } from '../Navigators/types/navigation'
 import { ProfileImage } from '../media/ProfileImage'
 import { FollowButton } from './FollowButton'
 import { useSyncFollowingState } from '../../hooks/useRelationships'
-import Header from 'components/ui/Header'
+import Header from '../ui/Header'
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>
 
@@ -21,7 +21,6 @@ interface UserItem {
 interface FollowListProps {
   data: UserItem[]
   loading: boolean
-  title: string
   onClose: () => void
   currentUserId: string | undefined
 }
@@ -29,7 +28,6 @@ interface FollowListProps {
 export const FollowList = ({ 
   data, 
   loading, 
-  title, 
   onClose,
   currentUserId 
 }: FollowListProps) => {
@@ -42,10 +40,6 @@ export const FollowList = ({
     
     return (
       <View className="flex-row items-center p-4 border-b border-gray-200">
-        <Header 
-        showBackButton={true} 
-        onBackPress={() => navigation.goBack()} 
-      />
         <TouchableOpacity 
           onPress={() => {
             onClose()
@@ -77,7 +71,10 @@ export const FollowList = ({
 
   return (
     <View className="flex-1 bg-white">
-      <Header />
+      <Header 
+        showBackButton={true} 
+        onBackPress={onClose}
+      />
       
       {loading ? (
         <View className="flex-1 justify-center items-center">
@@ -85,7 +82,7 @@ export const FollowList = ({
         </View>
       ) : data.length === 0 ? (
         <View className="flex-1 justify-center items-center p-4">
-          <Text className="text-gray-500 text-center">No users found</Text>
+          <Text className="text-gray-500 text-center">No followers yet</Text>
         </View>
       ) : (
         <FlatList
