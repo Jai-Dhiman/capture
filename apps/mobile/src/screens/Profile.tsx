@@ -106,7 +106,7 @@ export default function Profile() {
                   <>
                     <FollowButton 
                       userId={userId || ''}
-                      isFollowing={profileData?.isFollowing ?? null}
+                      isFollowing={profileData?.isFollowing ?? false}
                       className="bg-neutral-400 rounded-[30px] px-4 py-1 mr-2"
                     />
                     <TouchableOpacity 

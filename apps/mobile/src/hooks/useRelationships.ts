@@ -209,16 +209,24 @@ export const useSyncFollowingState = (userData: any[]) => {
     if (!userData || !Array.isArray(userData)) return;
 
     const jotaiStore = queryClient.getQueryData(["jotai"]) as FollowingState | undefined;
-    const followingMap = { ...(jotaiStore?.followingMap || {}) };
+    const currentMap = jotaiStore?.followingMap || {};
+    const newMap = { ...currentMap };
+
+    let hasChanges = false;
 
     userData.forEach((user) => {
       if (user?.userId && user?.isFollowing !== undefined) {
-        followingMap[user.userId] = user.isFollowing;
+        if (currentMap[user.userId] !== user.isFollowing) {
+          newMap[user.userId] = user.isFollowing;
+          hasChanges = true;
+        }
       }
     });
 
-    queryClient.setQueryData<FollowingState>(["jotai"], {
-      followingMap,
-    });
-  }, [userData, queryClient]);
+    if (hasChanges) {
+      queryClient.setQueryData<FollowingState>(["jotai"], {
+        followingMap: newMap,
+      });
+    }
+  }, [userData]);
 };
