@@ -6,7 +6,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../components/Navigators/types/navigation';
 import { useUserPosts } from '../hooks/usePosts';
 import { useProfile } from '../hooks/auth/useProfile';
-import { useFollowers, useFollowing } from '../hooks/useRelationships';
+import { useFollowers, useSyncFollowingState } from '../hooks/useRelationships';
 import { MediaImage } from '../components/media/MediaImage';
 import { ThreadItem } from '../components/post/ThreadItem';
 import SavedPosts from "../../assets/icons/FavoriteIcon.svg"
@@ -31,14 +31,17 @@ export default function Profile() {
   const isOwnProfile = userId === user?.id;
   
   const [showFollowers, setShowFollowers] = useState(false);
-  const [showFollowing, setShowFollowing] = useState(false);
   const [postFilter, setPostFilter] = useState<'posts' | 'threads'>(isOwnProfile ? 'posts' : 'threads');
   const [currentPage, setCurrentPage] = useState(0);
   
   const { data: profileData, isLoading: profileLoading } = useProfile(userId);
   const { data: posts, isLoading: postsLoading } = useUserPosts(userId);
   const { data: followers, isLoading: followersLoading } = useFollowers(userId);
-  const { data: following, isLoading: followingLoading } = useFollowing(userId);
+
+  useSyncFollowingState(profileData ? [{ 
+    userId: profileData.userId,
+    isFollowing: profileData.isFollowing 
+  }] : []);
 
   const filteredPosts = posts ? 
     posts.filter((post: { type?: string }) => 

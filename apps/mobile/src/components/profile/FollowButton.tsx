@@ -14,9 +14,11 @@ interface FollowButtonProps {
 export const FollowButton = ({ userId, isFollowing: initialIsFollowing, className = '' }: FollowButtonProps) => {
   const [isFollowing, setIsFollowing] = useState<boolean | null>(initialIsFollowing)
   const queryClient = useQueryClient()
+  console.log(`FollowButton render - userId: ${userId}, initialIsFollowing: ${initialIsFollowing}, local state: ${isFollowing}`)
   
   useEffect(() => {
-    if (initialIsFollowing !== null && isFollowing === null) {
+    if (initialIsFollowing !== null && initialIsFollowing !== isFollowing) {
+      console.log(`Setting local state to: ${initialIsFollowing}`)
       setIsFollowing(initialIsFollowing)
       
       const jotaiStore = queryClient.getQueryData(["jotai"]) as FollowingState | undefined
@@ -29,7 +31,8 @@ export const FollowButton = ({ userId, isFollowing: initialIsFollowing, classNam
         })
       }
     }
-  }, [initialIsFollowing])
+  }, [initialIsFollowing, userId]) 
+
 
   const followMutation = useMutation({
     mutationFn: async () => {
@@ -75,12 +78,7 @@ export const FollowButton = ({ userId, isFollowing: initialIsFollowing, classNam
       setIsFollowing(false)
     },
     onSuccess: () => {
-      const jotaiStore = queryClient.getQueryData(["jotai"]) as FollowingState | undefined
-      const followingMap = { ...(jotaiStore?.followingMap || {}) }
-      followingMap[userId] = true
-      queryClient.setQueryData<FollowingState>(["jotai"], {
-        followingMap,
-      })
+      setIsFollowing(true)
       
       queryClient.invalidateQueries({ queryKey: ["profile", userId] })
       queryClient.invalidateQueries({ queryKey: ["followers"] })
@@ -126,19 +124,14 @@ export const FollowButton = ({ userId, isFollowing: initialIsFollowing, classNam
       setIsFollowing(true)
     },
     onSuccess: () => {
-      const jotaiStore = queryClient.getQueryData(["jotai"]) as FollowingState | undefined
-      const followingMap = { ...(jotaiStore?.followingMap || {}) }
-      followingMap[userId] = false
-      queryClient.setQueryData<FollowingState>(["jotai"], {
-        followingMap,
-      })
+      setIsFollowing(false)
       
       queryClient.invalidateQueries({ queryKey: ["profile", userId] })
       queryClient.invalidateQueries({ queryKey: ["followers"] })
       queryClient.invalidateQueries({ queryKey: ["following"] })
     },
   })
-  
+
   const isPending = followMutation.isPending || unfollowMutation.isPending
   
   const handlePress = () => {
