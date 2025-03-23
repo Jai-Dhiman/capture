@@ -18,7 +18,6 @@ export const HashtagDisplay = ({ hashtags, size = 'medium' }: HashtagDisplayProp
   
   const handleHashtagPress = (hashtagId: string, hashtagName: string) => {
     // Add Navigation to Hashtag feed screen here
-    console.log(`hashtag pressed: ${hashtagName}`);
   };
   
   return (

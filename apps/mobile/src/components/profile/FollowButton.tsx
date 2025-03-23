@@ -14,11 +14,9 @@ interface FollowButtonProps {
 export const FollowButton = ({ userId, isFollowing: initialIsFollowing, className = '' }: FollowButtonProps) => {
   const [isFollowing, setIsFollowing] = useState<boolean | null>(initialIsFollowing)
   const queryClient = useQueryClient()
-  console.log(`FollowButton render - userId: ${userId}, initialIsFollowing: ${initialIsFollowing}, local state: ${isFollowing}`)
   
   useEffect(() => {
     if (initialIsFollowing !== null && initialIsFollowing !== isFollowing) {
-      console.log(`Setting local state to: ${initialIsFollowing}`)
       setIsFollowing(initialIsFollowing)
       
       const jotaiStore = queryClient.getQueryData(["jotai"]) as FollowingState | undefined

@@ -124,8 +124,6 @@ export default function UserSearch() {
   };
 
   const handleHashtagPress = (hashtag: HashtagSearchResult) => {
-    // For now, this just log. Implement navigation to hashtag results later
-    console.log(`Selected hashtag: #${hashtag.name}`);
     // navigation.navigate('HashtagResults', { hashtagId: hashtag.id });
   };
 

@@ -72,7 +72,6 @@ export default function SinglePost() {
       navigation.goBack();
     } catch (error: any) {
       console.error('Delete error:', error);
-      console.log('Failed to delete post:', error.message);
     }
   };
 

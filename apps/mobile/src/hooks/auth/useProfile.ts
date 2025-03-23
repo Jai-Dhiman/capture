@@ -1,7 +1,7 @@
 import { useQuery, UseQueryOptions } from "@tanstack/react-query";
 import { useAuthStore } from "stores/authStore";
 import { API_URL } from "@env";
-import { UserProfile } from "../../stores/profileStore";
+import { UserProfile } from "stores/profileStore";
 
 export function useProfile(
   userId?: string,
@@ -13,24 +13,49 @@ export function useProfile(
       if (!userId) return null;
 
       const { session } = useAuthStore.getState();
-      const token = session?.access_token;
       if (!session?.access_token) return null;
 
-      const response = await fetch(`${API_URL}/api/profile/${userId}`, {
-        headers: { Authorization: `Bearer ${session.access_token}` },
+      const response = await fetch(`${API_URL}/graphql`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          query: `
+            query GetProfile($userId: ID!) {
+              profile(id: $userId) {
+                id
+                userId
+                username
+                bio
+                profileImage
+                followersCount
+                followingCount
+                isFollowing
+              }
+            }
+          `,
+          variables: { userId },
+        }),
       });
 
       if (!response.ok) {
-        if (response.status === 404) return null;
         throw new Error("Failed to fetch profile");
       }
 
       const data = await response.json();
-      console.log("Profile API response:", data);
-      return data;
+      if (data.errors) {
+        if (data.errors.some((e: any) => e.message === "Profile not found")) {
+          return null;
+        }
+        throw new Error(data.errors[0]?.message || "Failed to fetch profile");
+      }
+
+      return data.data.profile;
     },
     enabled: !!userId,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutes
     ...options,
   });
 }

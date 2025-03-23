@@ -92,8 +92,6 @@ export const profileResolvers = {
           .limit(10)
           .all();
 
-        console.log(`Found ${profiles.length} profiles for query "${query}"`);
-
         const currentUserId = context.user.id;
         const followingRelationships = await db
           .select()
