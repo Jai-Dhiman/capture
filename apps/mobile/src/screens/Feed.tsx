@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, RefreshControl, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useFeed } from '../hooks/useFeed';
 import { PostItem } from '../components/post/PostItem';
 import { ThreadItem } from '../components/post/ThreadItem';
@@ -9,7 +9,28 @@ import type { Post, Thread } from '../types/postTypes';
 
 export default function Feed() {
   const [refreshing, setRefreshing] = useState(false);
-  const { data: posts, isLoading, isError, error, refetch } = useFeed();
+  const [timeRange, setTimeRange] = useState('month'); 
+
+  const getDateThreshold = () => {
+    const now = new Date();
+    switch (timeRange) {
+      case 'week':
+        now.setDate(now.getDate() - 7);
+        return now.toISOString();
+      case 'month':
+        now.setMonth(now.getMonth() - 1);
+        return now.toISOString();
+      case 'all':
+        return null; 
+      default:
+        now.setMonth(now.getMonth() - 1);
+        return now.toISOString();
+    }
+  };
+
+  const { data: posts, isLoading, isError, error, refetch } = useFeed({
+    dateThreshold: getDateThreshold(),
+  });
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -17,7 +38,6 @@ export default function Feed() {
     setRefreshing(false);
   };
 
-  // Sort posts chronologically (newest first)
   const sortedPosts = posts ? [...posts].sort((a, b) => {
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   }) : [];
@@ -48,7 +68,6 @@ export default function Feed() {
           <Text className="text-red-500 text-center mb-4">
             {error instanceof Error ? error.message : "An error occurred loading your feed"}
           </Text>
-          <Text className="text-center mb-4">Pull down to refresh and try again</Text>
         </View>
       </View>
     );
@@ -76,7 +95,7 @@ export default function Feed() {
         ListEmptyComponent={
           <EmptyState
             title="Your Feed is Empty"
-            message="Start following other users to see their posts here or create your first post"
+            message="Sure a blank profile is cool but tap 'New Post' to add some flair to your feed! "
             icon="feed"
           />
         }

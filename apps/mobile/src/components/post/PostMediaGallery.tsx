@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, ScrollView, Dimensions, TouchableOpacity } from 'react-native';
 import { MediaImage } from '../media/MediaImage';
 
@@ -11,12 +11,12 @@ interface PostMediaGalleryProps {
 
 export const PostMediaGallery = ({ mediaItems, containerStyle = {} }: PostMediaGalleryProps) => {
   const [activeIndex, setActiveIndex] = useState(0);
+  const scrollViewRef = useRef<ScrollView>(null);
   
   if (!mediaItems || mediaItems.length === 0) {
     return null;
   }
   
-  // Single image display
   if (mediaItems.length === 1) {
     return (
       <View className="w-full h-48 rounded-lg mb-2" style={containerStyle}>
@@ -28,6 +28,7 @@ export const PostMediaGallery = ({ mediaItems, containerStyle = {} }: PostMediaG
   return (
     <View className="w-full h-48 mb-2" style={containerStyle}>
       <ScrollView 
+        ref={scrollViewRef}
         horizontal 
         pagingEnabled 
         showsHorizontalScrollIndicator={false}
@@ -54,16 +55,15 @@ export const PostMediaGallery = ({ mediaItems, containerStyle = {} }: PostMediaG
         ))}
       </ScrollView>
       
-      {/* Pagination banner */}
       <View className="h-6 bg-white/80 absolute bottom-0 left-0 right-0 flex-row justify-center items-center">
         {mediaItems.map((_, index) => (
           <TouchableOpacity 
             key={index} 
             onPress={() => {
-              const scrollView = document.querySelector('ScrollView');
-              if (scrollView) {
-                scrollView.scrollTo({ left: width * index, behavior: 'smooth' });
-              }
+              scrollViewRef.current?.scrollTo({ 
+                x: width * index, 
+                animated: true 
+              });
             }}
           >
             <View 
