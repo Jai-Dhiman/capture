@@ -1,80 +1,86 @@
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { CompositeNavigationProp } from '@react-navigation/native';
-import { AppStackParamList, RootStackParamList } from '../components/Navigators/types/navigation';
-import { useAuthStore } from '../stores/authStore';
-import { useAuth } from '../hooks/auth/useAuth';
-import Header from 'components/ui/Header';
-
-type NavigationProp = CompositeNavigationProp<
-  NativeStackNavigationProp<AppStackParamList>,
-  NativeStackNavigationProp<RootStackParamList>
->;
+import React, { useState } from 'react';
+import { View, Text, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
+import { useFeed } from '../hooks/useFeed';
+import { PostItem } from '../components/post/PostItem';
+import { ThreadItem } from '../components/post/ThreadItem';
+import Header from '../components/ui/Header';
+import { EmptyState } from '../components/ui/EmptyState';
+import type { Post, Thread } from '../types/postTypes';
 
 export default function Feed() {
-  const navigation = useNavigation<NavigationProp>();
-  const { user } = useAuthStore();
-  const { logout } = useAuth(); 
-  
-  const handleLogout = () => {
-    logout.mutate();
+  const [refreshing, setRefreshing] = useState(false);
+  const { data: posts, isLoading, isError, error, refetch } = useFeed();
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
   };
 
-  return (
-    <View className="flex-1 p-3">
-      <Header />
-      {user && (
-        <View className="mt-5">
-          <Text className="text-base mb-2.5">User ID: {user.id}</Text>
-          <Text className="text-base mb-2.5">Email: {user.email}</Text>
-          <Text className="text-base mb-2.5">
-            Phone: {user.phone || 'Not provided'}
-          </Text>
-          <Text className="text-base mb-2.5">
-            Phone Verified: {user.phone_confirmed_at ? 'Yes' : 'No'}
-          </Text>
+  // Sort posts chronologically (newest first)
+  const sortedPosts = posts ? [...posts].sort((a, b) => {
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  }) : [];
+
+  const renderItem = ({ item }: { item: Post | Thread }) => {
+    if (item.type === 'thread') {
+      return <ThreadItem thread={item} />;
+    }
+    return <PostItem post={item} />;
+  };
+
+  if (isLoading && !refreshing) {
+    return (
+      <View className="flex-1 bg-white">
+        <Header />
+        <View className="flex-1 justify-center items-center">
+          <ActivityIndicator size="large" color="#0000ff" />
         </View>
-      )}
+      </View>
+    );
+  }
 
-      <TouchableOpacity 
-        className="bg-blue-600 p-3 rounded-lg mt-5 items-center"
-        onPress={() => navigation.navigate('Profile')}
-      >
-        <Text className="text-white text-base font-bold">Profile</Text>
-      </TouchableOpacity>
+  if (isError) {
+    return (
+      <View className="flex-1 bg-white">
+        <Header />
+        <View className="flex-1 justify-center items-center p-4">
+          <Text className="text-red-500 text-center mb-4">
+            {error instanceof Error ? error.message : "An error occurred loading your feed"}
+          </Text>
+          <Text className="text-center mb-4">Pull down to refresh and try again</Text>
+        </View>
+      </View>
+    );
+  }
 
-      <TouchableOpacity 
-        className="bg-green-600 p-3 rounded-lg mt-5 items-center"
-        onPress={() => navigation.navigate('NewPost')}
-      >
-        <Text className="text-white text-base font-bold">Create New Post</Text>
-      </TouchableOpacity>
+  return (
+    <View className="flex-1 bg-white">
+      <Header />
       
-      <TouchableOpacity 
-        className="bg-yellow-600 p-3 rounded-lg mt-5 items-center"
-        onPress={() => navigation.navigate('Search')}
-      >
-        <Text className="text-white text-base font-bold">Search</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity 
-        className="bg-purple-600 p-3 rounded-lg mt-5 items-center"
-        onPress={() => navigation.navigate('SavedPosts')}
-      >
-        <Text className="text-white text-base font-bold">Saved Posts</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity 
-        className="bg-red-600 p-3 rounded-lg mt-5 items-center"
-        onPress={handleLogout}
-        disabled={logout.isPending}
-      >
-        <Text className="text-white text-base font-bold">
-          {logout.isPending ? 'Logging out...' : 'Logout'}
-        </Text>
-      </TouchableOpacity>
+      <FlatList
+        data={sortedPosts}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{ 
+          padding: 16,
+          paddingBottom: 100,
+          flexGrow: sortedPosts.length === 0 ? 1 : undefined
+        }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+          />
+        }
+        ListEmptyComponent={
+          <EmptyState
+            title="Your Feed is Empty"
+            message="Start following other users to see their posts here or create your first post"
+            icon="feed"
+          />
+        }
+      />
     </View>
   );
 }

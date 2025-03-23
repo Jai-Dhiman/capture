@@ -12,7 +12,6 @@ interface PostItemProps {
   post: any;
 }
 
-
 export const PostItem = ({ post }: PostItemProps) => {
   const navigation = useNavigation<NavigationProp>();
   const isThread = post.type === 'thread';

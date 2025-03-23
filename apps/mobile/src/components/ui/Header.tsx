@@ -1,28 +1,34 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, Animated, StyleSheet, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, Animated, StyleSheet, Platform, Modal } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useAuthStore } from '../../stores/authStore';
 import BackIcon from '../../../assets/icons/BackIcon.svg';
-import MenuDots from '../../../assets/icons/MenuDots.svg'
-import ProfileIcon from '../../../assets/icons/ProfileIcon.svg'
-import PlusIcon from '../../../assets/icons/PlusIcon.svg'
-import SearchIcon from '../../../assets/icons/SearchIcon.svg'
-import EmptyIcon from '../../../assets/icons/EmptyIcon.svg'
+import MenuDots from '../../../assets/icons/MenuDots.svg';
+import ProfileIcon from '../../../assets/icons/ProfileIcon.svg';
+import PlusIcon from '../../../assets/icons/PlusIcon.svg';
+import SearchIcon from '../../../assets/icons/SearchIcon.svg';
+import EmptyIcon from '../../../assets/icons/EmptyIcon.svg';
 
 type HeaderProps = {
   showBackButton?: boolean;
   onBackPress?: () => void;
+  forceHideMenu?: boolean;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
   showBackButton = false,
-  onBackPress
+  onBackPress,
+  forceHideMenu = false
 }) => {
   const [menuVisible, setMenuVisible] = useState(false);
   const navigation = useNavigation();
   const menuAnimation = useRef(new Animated.Value(0)).current;
+  const { stage } = useAuthStore();
+  
+  const showMenuButton = stage === 'complete' && !forceHideMenu;
 
   const navigationItems = [
-    { name: 'Home', icon: EmptyIcon, route: 'Feed' },
+    { name: 'Feed', icon: EmptyIcon, route: 'Feed' },
     { name: 'Search', icon: SearchIcon, route: 'Search' },
     { name: 'Profile', icon: ProfileIcon, route: 'Profile' },
     { name: 'New Post', icon: PlusIcon, route: 'NewPost' },
@@ -62,7 +68,7 @@ const Header: React.FC<HeaderProps> = ({
       <View className="flex-row items-center justify-between">
         {showBackButton ? (
           <TouchableOpacity 
-            className="w-8 h-8 bg-[#DFD2CD] rounded-full shadow-md flex justify-center items-center"
+            className="w-8 h-8 bg-[#E4CAC7] rounded-full shadow-md flex justify-center items-center"
             onPress={onBackPress}
           >
             <BackIcon width={24} height={24} />
@@ -77,50 +83,68 @@ const Header: React.FC<HeaderProps> = ({
           </Text>
         </View>
         
-        <TouchableOpacity 
-          className="w-8 h-8 bg-[#DFD2CD] rounded-full shadow-md flex justify-center items-center"
-          onPress={toggleMenu}
-        >
-          <MenuDots width={24} height={24} />
-        </TouchableOpacity>
+        {showMenuButton ? (
+          <TouchableOpacity 
+            className="w-8 h-8 bg-[#E4CAC7] rounded-full shadow-md flex justify-center items-center"
+            onPress={toggleMenu}
+          >
+            <MenuDots width={24} height={24} />
+          </TouchableOpacity>
+        ) : (
+          <View className="w-8 h-8" />
+        )}
       </View>
       
       <View className="h-[1px] bg-black/10 w-full mt-2"></View>
       
-      {menuVisible && (
+      <Modal
+        transparent={true}
+        visible={menuVisible}
+        animationType="none"
+        onRequestClose={() => setMenuVisible(false)}
+      >
+        <TouchableOpacity 
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={() => setMenuVisible(false)}
+        >
+          <View style={{ flex: 1 }} />
+        </TouchableOpacity>
+        
         <Animated.View 
           style={[
             styles.menuContainer,
             {
               transform: [{ translateY: menuTranslateY }],
               opacity: menuOpacity,
-              elevation: 5, // Android elevation
             },
           ]}
         >
-          <View className="w-56 h-72 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] flex flex-col justify-start items-start">
-            <View className="w-56 h-72 pb-10 flex flex-col justify-start items-start gap-0.5">
-              {navigationItems.map((item, index) => {
-                const Icon = item.icon;
-                return (
-                  <TouchableOpacity
-                    key={index}
-                    className="self-stretch h-14 relative bg-stone-300 rounded-2xl"
-                    onPress={() => handleNavigation(item.route)}
-                  >
-                    <Text className="left-[60px] top-[16px] absolute justify-center text-neutral-900 text-base font-medium font-['Inter'] leading-normal">
-                      {item.name}
-                    </Text>
-                    <View className="w-10 h-10 left-[8px] top-[8px] absolute bg-white rounded-xl outline outline-1 outline-offset-[-1px] outline-zinc-100 flex justify-center items-center">
-                      <Icon width={16} height={16} />
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
+          <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
+            <View className="w-56 h-72 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] flex flex-col justify-start items-start">
+              <View className="w-56 h-72 pb-10 flex flex-col justify-start items-start gap-0.5">
+                {navigationItems.map((item, index) => {
+                  const Icon = item.icon;
+                  return (
+                    <TouchableOpacity
+                      key={index}
+                      className="self-stretch h-14 relative bg-stone-300 rounded-2xl"
+                      onPress={() => handleNavigation(item.route)}
+                    >
+                      <Text className="left-[60px] top-[16px] absolute justify-center text-neutral-900 text-base font-medium font-['Inter'] leading-normal">
+                        {item.name}
+                      </Text>
+                      <View className="w-10 h-10 left-[8px] top-[8px] absolute bg-white rounded-xl outline outline-1 outline-offset-[-1px] outline-zinc-100 flex justify-center items-center">
+                        <Icon width={16} height={16} />
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </View>
-          </View>
+          </TouchableOpacity>
         </Animated.View>
-      )}
+      </Modal>
     </View>
   );
 };
@@ -129,7 +153,7 @@ const styles = StyleSheet.create({
   menuContainer: {
     position: 'absolute',
     right: 16,
-    top: 70,
+    top: 120,
     zIndex: 9999,
     ...(Platform.OS === 'ios' 
       ? { 
