@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "12b954f1-d494-4e0b-a3e7-2f54477ef8c6",
+  "id": "3cccc1d7-3f7a-4120-b5aa-08228e9414ac",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "comment": {
@@ -18,11 +18,18 @@
           "name": "post_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "user_id": {
           "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "parent_id": {
+          "name": "parent_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -35,12 +42,28 @@
           "notNull": true,
           "autoincrement": false
         },
-        "parent_comment_id": {
-          "name": "parent_comment_id",
+        "path": {
+          "name": "path",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
+        },
+        "depth": {
+          "name": "depth",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "is_deleted": {
+          "name": "is_deleted",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
         },
         "created_at": {
           "name": "created_at",
@@ -48,7 +71,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-03-02T08:22:39.914Z'"
+          "default": "'2025-03-23T11:54:49.201Z'"
         }
       },
       "indexes": {
@@ -66,10 +89,17 @@
           ],
           "isUnique": false
         },
-        "parent_comment_idx": {
-          "name": "parent_comment_idx",
+        "comment_path_idx": {
+          "name": "comment_path_idx",
           "columns": [
-            "parent_comment_id"
+            "path"
+          ],
+          "isUnique": false
+        },
+        "comment_parent_idx": {
+          "name": "comment_parent_idx",
+          "columns": [
+            "parent_id"
           ],
           "isUnique": false
         }
@@ -101,12 +131,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "comment_parent_comment_id_comment_id_fk": {
-          "name": "comment_parent_comment_id_comment_id_fk",
+        "comment_parent_fkey": {
+          "name": "comment_parent_fkey",
           "tableFrom": "comment",
           "tableTo": "comment",
           "columnsFrom": [
-            "parent_comment_id"
+            "parent_id"
           ],
           "columnsTo": [
             "id"
@@ -142,7 +172,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-03-02T08:22:39.915Z'"
+          "default": "'2025-03-23T11:54:49.202Z'"
         }
       },
       "indexes": {
@@ -180,7 +210,7 @@
           "name": "user_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "post_id": {
@@ -217,7 +247,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-03-02T08:22:39.914Z'"
+          "default": "'2025-03-23T11:54:49.201Z'"
         }
       },
       "indexes": {
@@ -282,7 +312,7 @@
           "name": "user_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "content": {
@@ -292,13 +322,21 @@
           "notNull": true,
           "autoincrement": false
         },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'post'"
+        },
         "created_at": {
           "name": "created_at",
           "type": "numeric",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-03-02T08:22:39.913Z'"
+          "default": "'2025-03-23T11:54:49.200Z'"
         }
       },
       "indexes": {
@@ -343,14 +381,14 @@
           "name": "post_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "hashtag_id": {
           "name": "hashtag_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "created_at": {
@@ -359,7 +397,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-03-02T08:22:39.915Z'"
+          "default": "'2025-03-23T11:54:49.202Z'"
         }
       },
       "indexes": {
@@ -470,7 +508,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-03-02T08:22:39.907Z'"
+          "default": "'2025-03-23T11:54:49.195Z'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -478,7 +516,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-03-02T08:22:39.912Z'"
+          "default": "'2025-03-23T11:54:49.199Z'"
         }
       },
       "indexes": {
@@ -516,14 +554,14 @@
           "name": "follower_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "followed_id": {
           "name": "followed_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "created_at": {
@@ -532,7 +570,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-03-02T08:22:39.915Z'"
+          "default": "'2025-03-23T11:54:49.202Z'"
         }
       },
       "indexes": {
@@ -605,14 +643,14 @@
           "name": "user_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "post_id": {
           "name": "post_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "created_at": {
@@ -621,7 +659,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-03-02T08:22:39.915Z'"
+          "default": "'2025-03-23T11:54:49.202Z'"
         }
       },
       "indexes": {

@@ -1,6 +1,6 @@
 export const typeDefs = `
   type Query {
-    feed(limit: Int, offset: Int, dateThreshold: String): [Post!]!
+    feed(limit: Int, offset: Int): [Post!]!
     post(id: ID!): Post
     profile(id: ID!): Profile
     searchHashtags(query: String!, limit: Int, offset: Int): [Hashtag!]!

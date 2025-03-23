@@ -5,29 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1740903759935,
-      "tag": "0000_zippy_jazinda",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1742360729435,
-      "tag": "0001_lush_diamondback",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1742374857506,
-      "tag": "0002_hard_true_believers",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1742505346599,
-      "tag": "0003_abnormal_logan",
+      "when": 1742730889220,
+      "tag": "0000_soft_spiral",
       "breakpoints": true
     }
   ]

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, RefreshControl, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
 import { useFeed } from '../hooks/useFeed';
 import { PostItem } from '../components/post/PostItem';
 import { ThreadItem } from '../components/post/ThreadItem';
@@ -9,28 +9,7 @@ import type { Post, Thread } from '../types/postTypes';
 
 export default function Feed() {
   const [refreshing, setRefreshing] = useState(false);
-  const [timeRange, setTimeRange] = useState('month'); 
-
-  const getDateThreshold = () => {
-    const now = new Date();
-    switch (timeRange) {
-      case 'week':
-        now.setDate(now.getDate() - 7);
-        return now.toISOString();
-      case 'month':
-        now.setMonth(now.getMonth() - 1);
-        return now.toISOString();
-      case 'all':
-        return null; 
-      default:
-        now.setMonth(now.getMonth() - 1);
-        return now.toISOString();
-    }
-  };
-
-  const { data: posts, isLoading, isError, error, refetch } = useFeed({
-    dateThreshold: getDateThreshold(),
-  });
+  const { data: posts, isLoading, isError, error, refetch } = useFeed();
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -95,7 +74,7 @@ export default function Feed() {
         ListEmptyComponent={
           <EmptyState
             title="Your Feed is Empty"
-            message="Sure a blank profile is cool but tap 'New Post' to add some flair to your feed! "
+            message="Start following other users to see their posts here or create your first post"
             icon="feed"
           />
         }

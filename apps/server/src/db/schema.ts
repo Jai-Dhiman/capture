@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, numeric, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, numeric, index, foreignKey } from "drizzle-orm/sqlite-core";
 
 export const profile = sqliteTable("profile", {
   id: text("id").primaryKey(),
@@ -15,7 +15,9 @@ export const post = sqliteTable(
   "post",
   {
     id: text("id").primaryKey(),
-    userId: text("user_id").references(() => profile.userId),
+    userId: text("user_id")
+      .notNull()
+      .references(() => profile.userId),
     content: text("content").notNull(),
     type: text("type").default("post").notNull(),
     createdAt: numeric("created_at").default(new Date().toISOString()).notNull(),
@@ -27,7 +29,9 @@ export const media = sqliteTable(
   "media",
   {
     id: text("id").primaryKey(),
-    userId: text("user_id").references(() => profile.userId),
+    userId: text("user_id")
+      .notNull()
+      .references(() => profile.userId),
     postId: text("post_id").references(() => post.id),
     type: text("type").notNull(),
     storageKey: text("storage_key").notNull(),
@@ -37,14 +41,17 @@ export const media = sqliteTable(
   (table) => [index("post_media_idx").on(table.postId), index("user_media_idx").on(table.userId)]
 );
 
-const commentTableName = "comment" as const;
 export const comment = sqliteTable(
-  commentTableName,
+  "comment",
   {
     id: text("id").primaryKey(),
-    postId: text("post_id").references(() => post.id),
-    userId: text("user_id").references(() => profile.userId),
-    parentId: text("parent_id").references((): any => comment.id),
+    postId: text("post_id")
+      .notNull()
+      .references(() => post.id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => profile.userId),
+    parentId: text("parent_id"),
     content: text("content").notNull(),
     path: text("path").notNull(),
     depth: integer("depth").notNull().default(0),
@@ -56,6 +63,11 @@ export const comment = sqliteTable(
     index("user_comments_idx").on(table.userId),
     index("comment_path_idx").on(table.path),
     index("comment_parent_idx").on(table.parentId),
+    foreignKey({
+      columns: [table.parentId],
+      foreignColumns: [table.id],
+      name: "comment_parent_fkey",
+    }),
   ]
 );
 
@@ -63,8 +75,12 @@ export const savedPost = sqliteTable(
   "saved_posts",
   {
     id: text("id").primaryKey(),
-    userId: text("user_id").references(() => profile.userId),
-    postId: text("post_id").references(() => post.id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => profile.userId),
+    postId: text("post_id")
+      .notNull()
+      .references(() => post.id),
     createdAt: numeric("created_at").default(new Date().toISOString()).notNull(),
   },
   (table) => [index("user_saved_idx").on(table.userId), index("post_saved_idx").on(table.postId)]
@@ -83,8 +99,12 @@ export const hashtag = sqliteTable(
 export const postHashtag = sqliteTable(
   "post_hashtag",
   {
-    postId: text("post_id").references(() => post.id),
-    hashtagId: text("hashtag_id").references(() => hashtag.id),
+    postId: text("post_id")
+      .notNull()
+      .references(() => post.id),
+    hashtagId: text("hashtag_id")
+      .notNull()
+      .references(() => hashtag.id),
     createdAt: numeric("created_at").default(new Date().toISOString()).notNull(),
   },
   (table) => [
@@ -98,8 +118,12 @@ export const relationship = sqliteTable(
   "relationship",
   {
     id: text("id").primaryKey(),
-    followerId: text("follower_id").references(() => profile.userId),
-    followedId: text("followed_id").references(() => profile.userId),
+    followerId: text("follower_id")
+      .notNull()
+      .references(() => profile.userId),
+    followedId: text("followed_id")
+      .notNull()
+      .references(() => profile.userId),
     createdAt: numeric("created_at").default(new Date().toISOString()).notNull(),
   },
   (table) => [

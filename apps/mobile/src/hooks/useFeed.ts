@@ -1,19 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import { useAuthStore } from "stores/authStore";
+import { useAuthStore } from "../stores/authStore";
 import { API_URL } from "@env";
 
-export const useFeed = (options: { limit?: number; offset?: number; dateThreshold?: string | null } = {}) => {
-  const { limit = 10, offset = 0 } = options;
-
-  const oneMonthAgo = new Date();
-  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-  const dateThreshold = oneMonthAgo.toISOString();
+export const useFeed = (limit = 20) => {
+  const { session } = useAuthStore();
 
   return useQuery({
-    queryKey: ["feed", { limit, offset, dateThreshold }],
+    queryKey: ["feed"],
     queryFn: async () => {
-      const { session } = useAuthStore.getState();
-
       if (!session?.access_token) {
         throw new Error("No auth token available");
       }
@@ -26,13 +20,12 @@ export const useFeed = (options: { limit?: number; offset?: number; dateThreshol
         },
         body: JSON.stringify({
           query: `
-            query GetFeed($limit: Int, $offset: Int, $dateThreshold: String) {
-              feed(limit: $limit, offset: $offset, dateThreshold: $dateThreshold) {
+            query GetFeed($limit: Int) {
+              feed(limit: $limit) {
                 id
                 content
                 type
                 createdAt
-                isSaved
                 user {
                   id
                   username
@@ -54,8 +47,6 @@ export const useFeed = (options: { limit?: number; offset?: number; dateThreshol
           `,
           variables: {
             limit,
-            offset,
-            dateThreshold,
           },
         }),
       });
@@ -67,7 +58,8 @@ export const useFeed = (options: { limit?: number; offset?: number; dateThreshol
         throw new Error(data.errors[0].message);
       }
 
-      return data.data.feed;
+      return data.data.feed || [];
     },
+    staleTime: 1 * 60 * 1000,
   });
 };

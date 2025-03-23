@@ -6,41 +6,24 @@ import type { ContextType } from "../../types";
 
 export const postResolvers = {
   Query: {
-    async feed(
-      _: unknown,
-      { limit = 10, offset = 0, dateThreshold }: { limit?: number; offset?: number; dateThreshold?: string },
-      context: { env: any; user: any }
-    ) {
+    async feed(_: unknown, { limit = 10, offset = 0 }, context: { env: any; user: any }) {
       if (!context.user) {
         throw new Error("Authentication required");
       }
 
       const db = createD1Client(context.env);
-
-      let thresholdDate = dateThreshold ? new Date(dateThreshold) : new Date();
-
-      if (!dateThreshold) {
-        thresholdDate.setMonth(thresholdDate.getMonth() - 1);
-      }
-
-      const thresholdDateStr = thresholdDate.toISOString();
-
       const posts = await db.query.post.findMany({
         limit,
         offset,
-        where: (posts, { gt }) => gt(posts.createdAt, thresholdDateStr),
         orderBy: (posts, { desc }) => [desc(posts.createdAt)],
         with: {
           user: true,
-          media: {
-            orderBy: (media: typeof schema.media.$inferSelect, { asc }: { asc: any }) => [asc(media.order)],
-          },
+          media: true,
           comments: true,
           hashtags: true,
           savedBy: true,
         },
       });
-
       return posts;
     },
 
