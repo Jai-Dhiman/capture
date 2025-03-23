@@ -18,6 +18,7 @@ import { ProfileImage } from '../components/media/ProfileImage';
 import { FollowList } from '../components/profile/FollowList';
 import { FollowButton } from '../components/profile/FollowButton';
 import Header from '../components/ui/Header';
+import { EmbeddedPostView } from 'components/post/EmbeddedPostView';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 type ProfileRouteProp = RouteProp<AppStackParamList, 'Profile'>;
@@ -31,6 +32,7 @@ export default function Profile() {
   const isOwnProfile = userId === user?.id;
   
   const [showFollowers, setShowFollowers] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<any>(null);  
   const [postFilter, setPostFilter] = useState<'posts' | 'threads'>(isOwnProfile ? 'posts' : 'threads');
   const [currentPage, setCurrentPage] = useState(0);
   
@@ -44,11 +46,13 @@ export default function Profile() {
   }] : []);
 
   const filteredPosts = posts ? 
-    posts.filter((post: { type?: string }) => 
-      postFilter === 'posts' 
-        ? post.type === 'post' || !post.type 
-        : post.type === 'thread'
-    ) : [];
+    posts.filter((post: any) => {
+      if (postFilter === 'posts') {
+        return post.type === 'post' || post.type === undefined || post.type === null;
+      } else {
+        return post.type === 'thread';
+      }
+    }) : [];
   
   const totalPages = filteredPosts ? Math.ceil(filteredPosts.length / POSTS_PER_PAGE) : 0;
 
@@ -149,41 +153,61 @@ export default function Profile() {
           </View>
           
           <View className="h-px bg-black opacity-10 my-2" />
-          
-          {postsLoading ? (
-            <LoadingSpinner />
-          ) : filteredPosts?.length === 0 ? (
-            <Text className="text-center py-4 text-gray-500">No {postFilter} yet</Text>
-          ) : (
-            <>
-              {/* Posts Grid (3x3) or Threads List */}
-              {postFilter === 'posts' ? (
-                <View className="flex-row flex-wrap mt-4">
-                  {currentPosts.map((post: any) => (
-                    <TouchableOpacity 
-                      key={post.id} 
-                      className="w-[32%] aspect-square mb-[2%] mr-[2%] nth-child-3n:mr-0"
-                      onPress={() => navigation.navigate('SinglePost', { post })}
-                    >
-                      <View className="w-full h-full bg-stone-400 rounded-[10px] overflow-hidden">
-                        {post.media && post.media.length > 0 ? (
-                          <MediaImage media={post.media[0]} />
-                        ) : (
-                          <View className="flex-1 justify-center items-center">
-                            <Text className="text-white opacity-70">No image</Text>
+        
+        {postsLoading ? (
+          <LoadingSpinner />
+        ) : filteredPosts?.length === 0 ? (
+          <Text className="text-center py-4 text-gray-500">No {postFilter} yet</Text>
+        ) : (
+          <>
+            {selectedPost ? (
+              <View className="mt-4">
+                <TouchableOpacity 
+                  className="mb-4" 
+                  onPress={() => setSelectedPost(null)}
+                >
+                  <Text className="text-black font-medium">←</Text>
+                </TouchableOpacity>
+                
+                <EmbeddedPostView 
+                  post={selectedPost} 
+                  onClose={() => setSelectedPost(null)}
+                />
+              </View>
+            ) : (
+              <>
+                {postFilter === 'posts' ? (
+                  <View className="flex-row flex-wrap mt-4">
+                    {currentPosts.map((post: any) => (
+                      <TouchableOpacity 
+                        key={post.id} 
+                        className="w-[32%] aspect-square mb-[2%] mr-[2%] nth-child-3n:mr-0"
+                        onPress={() => setSelectedPost(post)}
+                      >
+                        <View className="w-full h-full bg-stone-400 rounded-[10px] overflow-hidden">
+                            {post.media && post.media.length > 0 ? (
+                              <MediaImage media={post.media[0]} />
+                            ) : (
+                              <View className="flex-1 justify-center items-center">
+                                <Text className="text-white opacity-70">No image</Text>
+                              </View>
+                            )}
                           </View>
-                        )}
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              ) : (
-                <View className="mt-4">
-                  {currentPosts.map((thread: any) => (
-                    <ThreadItem key={thread.id} thread={thread} />
-                  ))}
-                </View>
-              )}
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  ) : (
+                    <View className="mt-4">
+                      {currentPosts.map((thread: any) => (
+                        <TouchableOpacity
+                          key={thread.id}
+                          onPress={() => setSelectedPost(thread)}
+                        >
+                          <ThreadItem thread={thread} />
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
               
               {totalPages > 1 && (
                 <View className="flex-row justify-center py-4">
@@ -205,6 +229,8 @@ export default function Profile() {
               )}
             </>
           )}
+        </>
+        )}
         </View>
       </ScrollView>
       
@@ -213,7 +239,7 @@ export default function Profile() {
           className="absolute bottom-6 right-6 shadow-lg"
           onPress={() => navigation.navigate('NewPost')}
         >
-          <View className="bg-stone-300 rounded-[10px] border border-black flex-row items-center px-2 py-1">
+          <View className="color=#e4CAC7 rounded-[10px] border border-black flex-row items-center px-2 py-1">
             <NewPost width={20} height={20}/>
             <Text className="ml-2 text-xs font-normal">New Post</Text>
           </View>

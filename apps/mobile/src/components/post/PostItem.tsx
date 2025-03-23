@@ -19,7 +19,6 @@ export const PostItem = ({ post }: PostItemProps) => {
   return (
     <TouchableOpacity 
       className={`${isThread ? 'bg-stone-100' : 'bg-white'} p-4 mb-4 rounded-lg shadow`}
-      onPress={() => navigation.navigate('SinglePost', { post })}
     >
       {isThread && (
         <View className="mb-2">
