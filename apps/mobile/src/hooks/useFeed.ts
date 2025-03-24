@@ -12,54 +12,61 @@ export const useFeed = (limit = 20) => {
         throw new Error("No auth token available");
       }
 
-      const response = await fetch(`${API_URL}/graphql`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          query: `
-            query GetFeed($limit: Int) {
-              feed(limit: $limit) {
-                id
-                content
-                type
-                createdAt
-                user {
-                  id
-                  username
-                  profileImage
-                }
-                media {
-                  id
-                  storageKey
-                  type
-                  order
-                }
-                hashtags {
-                  id
-                  name
-                }
-                _commentCount
-              }
-            }
-          `,
-          variables: {
-            limit,
+      try {
+        const response = await fetch(`${API_URL}/graphql`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
           },
-        }),
-      });
+          body: JSON.stringify({
+            query: `
+              query GetFeed($limit: Int) {
+                feed(limit: $limit) {
+                  id
+                  content
+                  type
+                  createdAt
+                  user {
+                    id
+                    username
+                    profileImage
+                  }
+                  media {
+                    id
+                    storageKey
+                    type
+                    order
+                  }
+                  hashtags {
+                    id
+                    name
+                  }
+                  isSaved
+                  _commentCount
+                }
+              }
+            `,
+            variables: {
+              limit,
+            },
+          }),
+        });
 
-      const data = await response.json();
+        const data = await response.json();
 
-      if (data.errors) {
-        console.error("GraphQL Errors:", data.errors);
-        throw new Error(data.errors[0].message);
+        if (data.errors) {
+          console.error("GraphQL Errors:", data.errors);
+          throw new Error(data.errors[0].message || "Unknown GraphQL error");
+        }
+
+        return data.data.feed || [];
+      } catch (error) {
+        console.error("Feed fetch error:", error);
+        throw error;
       }
-
-      return data.data.feed || [];
     },
     staleTime: 1 * 60 * 1000,
+    retry: 1,
   });
 };

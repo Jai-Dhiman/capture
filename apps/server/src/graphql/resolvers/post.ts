@@ -1,5 +1,5 @@
 import { createD1Client } from "../../db";
-import { eq, inArray, sql } from "drizzle-orm";
+import { eq, inArray, sql, and } from "drizzle-orm";
 import * as schema from "../../db/schema";
 import { nanoid } from "nanoid";
 import type { ContextType } from "../../types";
@@ -12,19 +12,55 @@ export const postResolvers = {
       }
 
       const db = createD1Client(context.env);
-      const posts = await db.query.post.findMany({
-        limit,
-        offset,
-        orderBy: (posts, { desc }) => [desc(posts.createdAt)],
-        with: {
-          user: true,
-          media: true,
-          comments: true,
-          hashtags: true,
-          savedBy: true,
-        },
-      });
-      return posts;
+
+      const posts = await db
+        .select()
+        .from(schema.post)
+        .limit(limit)
+        .offset(offset)
+        .orderBy(sql`${schema.post.createdAt} DESC`)
+        .all();
+
+      const enhancedPosts = await Promise.all(
+        posts.map(async (post) => {
+          const user = await db.select().from(schema.profile).where(eq(schema.profile.userId, post.userId)).get();
+
+          const media = await db.select().from(schema.media).where(eq(schema.media.postId, post.id)).all();
+
+          const postHashtags = await db
+            .select()
+            .from(schema.postHashtag)
+            .where(eq(schema.postHashtag.postId, post.id))
+            .all();
+
+          let hashtags: Array<{ id: string; name: string }> = [];
+          if (postHashtags.length > 0) {
+            const hashtagIds = postHashtags.map((ph) => ph.hashtagId).filter(Boolean);
+            if (hashtagIds.length > 0) {
+              hashtags = await db.select().from(schema.hashtag).where(inArray(schema.hashtag.id, hashtagIds)).all();
+            }
+          }
+
+          const comments = await db.select().from(schema.comment).where(eq(schema.comment.postId, post.id)).all();
+
+          const saved = await db
+            .select()
+            .from(schema.savedPost)
+            .where(and(eq(schema.savedPost.postId, post.id), eq(schema.savedPost.userId, context.user.id)))
+            .get();
+
+          return {
+            ...post,
+            user,
+            media,
+            hashtags,
+            comments: [],
+            isSaved: !!saved,
+          };
+        })
+      );
+
+      return enhancedPosts;
     },
 
     async post(_parent: unknown, { id }: { id: string }, context: { env: any; user: any }) {
@@ -244,7 +280,7 @@ export const postResolvers = {
 
         if (hashtagIds.length === 0) return [];
 
-        const hashtags = await db
+        const hashtags: Array<{ id: string; name: string }> = await db
           .select()
           .from(schema.hashtag)
           .where(validHashtagIds.length > 0 ? inArray(schema.hashtag.id, validHashtagIds) : sql`FALSE`)

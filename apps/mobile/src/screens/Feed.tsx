@@ -30,10 +30,10 @@ export default function Feed() {
 
   if (isLoading && !refreshing) {
     return (
-      <View className="flex-1 bg-white">
+      <View className="flex-1 bg-zinc-300">
         <Header />
         <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#0000ff" />
+          <ActivityIndicator size="large" color="#E4CAC7" />
         </View>
       </View>
     );
@@ -41,7 +41,7 @@ export default function Feed() {
 
   if (isError) {
     return (
-      <View className="flex-1 bg-white">
+      <View className="flex-1 bg-zinc-300">
         <Header />
         <View className="flex-1 justify-center items-center p-4">
           <Text className="text-red-500 text-center mb-4">
@@ -53,7 +53,7 @@ export default function Feed() {
   }
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bg-zinc-300">
       <Header />
       
       <FlatList
