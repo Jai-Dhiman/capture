@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../Navigators/types/navigation';
@@ -64,32 +64,26 @@ export const ThreadItem = ({ thread }: ThreadItemProps) => {
   };
   
   return (
-    <View className="bg-zinc-300 p-4 mb-4 rounded-lg relative">
-      <View className="flex-row items-center mb-2">
-        <View className="w-10 h-10 mr-3">
-          {thread.user?.profileImage ? (
-            <ProfileImage 
-              cloudflareId={thread.user.profileImage} 
-              style={{ borderRadius: 999, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 4 }} 
-            />
-          ) : (
-            <View className="w-10 h-10 bg-stone-300 rounded-full shadow-md" />
-          )}
-        </View>
-        
-        <Text className="text-black text-xl font-light">
-          {thread.user?.username || 'User'}
-        </Text>
-        
-        <View className="flex-1" />
-        
-        <TouchableOpacity 
-          className="w-5 h-5 justify-center items-center"
-          onPress={() => setSettingsVisible(true)}
-        >
-          <SettingsIcon width={20} height={20} />
-        </TouchableOpacity>
+    <View className="bg-zinc-300 rounded-lg overflow-hidden mb-4">
+    <View className="flex-row items-center p-3">
+      <View className="w-10 h-10 mr-3">
+        {thread.user?.profileImage ? (
+          <ProfileImage cloudflareId={thread.user.profileImage} style={{ borderRadius: 20 }} />
+        ) : (
+          <View className="w-10 h-10 bg-stone-300 rounded-full" />
+        )}
       </View>
+      <Text className="text-black font-medium text-base">{thread.user?.username || 'User'}</Text>
+      
+      <View className="flex-1" />
+      
+      <TouchableOpacity 
+        className="w-6 h-6 justify-center items-center"
+        onPress={() => setSettingsVisible(true)}
+      >
+        <SettingsIcon width={24} height={24} />
+      </TouchableOpacity>
+    </View>
     
       <View className="mt-2 mb-6">
         <Text className="text-black text-base font-light leading-snug">
@@ -103,29 +97,29 @@ export const ThreadItem = ({ thread }: ThreadItemProps) => {
           </Text>
         </View>
 
-      <View className="flex-row items-center justify-between">
-        <View className="flex-row space-x-8">
-          <TouchableOpacity 
-            className="overflow-hidden" 
-            onPress={handleOpenComments}
-          >
-            <CommentIcon width={20} height={20} />
-          </TouchableOpacity>
+        <View className="flex-row justify-between items-center">
+          <View className="flex-row space-x-8">
+            <TouchableOpacity onPress={handleOpenComments}>
+              <CommentIcon width={20} height={20} />
+            </TouchableOpacity>
+            
+            <TouchableOpacity>
+              <ShareIcon width={20} height={20} />
+            </TouchableOpacity>
+          </View>
           
-          <ShareIcon width={20} height={20} />
-        </View>
-      
-        <TouchableOpacity 
-            className="overflow-hidden"
+          <TouchableOpacity 
             onPress={handleToggleSavePost}
           >
-            {thread.isSaved ? (
+            {savePostMutation.isPending || unsavePostMutation.isPending ? (
+              <ActivityIndicator size="small" color="#E4CAC7" />
+            ) : thread.isSaved ? (
               <FavoriteIcon width={20} height={20} />
             ) : (
               <SavePostIcon width={20} height={20} />
             )}
           </TouchableOpacity>
-      </View>
+        </View>
       
       <PostSettingsMenu 
         isVisible={settingsVisible}

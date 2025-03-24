@@ -58,7 +58,7 @@ export const EmbeddedPostView = ({ post, onClose }: EmbeddedPostViewProps) => {
   };
 
   return (
-    <View className="bg-white rounded-lg overflow-hidden shadow-md">
+    <View className="bg-zinc-300 rounded-lg overflow-hidden mb-4">
       <View className="flex-row justify-end items-center p-2">
         <TouchableOpacity 
           onPress={() => setIsMenuVisible(true)}

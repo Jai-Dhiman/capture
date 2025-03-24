@@ -1,1 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0,0,256,256" width="48px" height="48px" fill-rule="nonzero"><g fill-opacity="0" fill="#dddddd" fill-rule="nonzero" stroke="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="10" stroke-dasharray="" stroke-dashoffset="0" font-family="none" font-weight="none" font-size="none" text-anchor="none" style="mix-blend-mode: normal"><path d="M0,256v-256h256v256z" id="bgRectangle"></path></g><g fill="none" fill-rule="nonzero" stroke="#000000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-dasharray="" stroke-dashoffset="0" font-family="none" font-weight="none" font-size="none" text-anchor="none" style="mix-blend-mode: normal"><g transform="scale(5.33333,5.33333)"><path d="M24,28c-2.2,0 -4,-1.8 -4,-4c0,-2.2 1.8,-4 4,-4c2.2,0 4,1.8 4,4"></path><path d="M24,5c2.2,0 4,1.8 4,4c0,2.2 -1.8,4 -4,4c-2.2,0 -4,-1.8 -4,-4"></path><path d="M20,39c0,-2.2 1.8,-4 4,-4c2.2,0 4,1.8 4,4c0,2.2 -1.8,4 -4,4"></path></g></g></svg>
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Menu Dots 1" clip-path="url(#clip0_901_920)">
+<g id="Group">
+<g id="Group_2">
+<path id="Vector" d="M11.6667 9.99984C11.6667 10.9165 10.9167 11.6665 10 11.6665C9.08337 11.6665 8.33337 10.9165 8.33337 9.99984C8.33337 9.08317 9.08337 8.33317 10 8.33317" stroke="black" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_2" d="M2.08337 9.99984C2.08337 9.08317 2.83337 8.33317 3.75004 8.33317C4.66671 8.33317 5.41671 9.08317 5.41671 9.99984C5.41671 10.9165 4.66671 11.6665 3.75004 11.6665" stroke="black" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_3" d="M16.25 11.6665C15.3334 11.6665 14.5834 10.9165 14.5834 9.99984C14.5834 9.08317 15.3334 8.33317 16.25 8.33317C17.1667 8.33317 17.9167 9.08317 17.9167 9.99984" stroke="black" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_901_920">
+<rect width="20" height="20" fill="white" transform="matrix(0 -1 1 0 0 20)"/>
+</clipPath>
+</defs>
+</svg>

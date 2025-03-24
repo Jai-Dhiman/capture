@@ -53,37 +53,8 @@ export const PostItem = ({ post }: PostItemProps) => {
     }
   };
 
-  if (isThread) {
-    return (
-      <TouchableOpacity 
-        className="bg-stone-100 p-4 mb-4 rounded-lg shadow"
-      >
-        <View className="mb-2 flex-row items-center">
-          <View className="w-10 h-10 mr-3">
-            {post.user?.profileImage ? (
-              <ProfileImage cloudflareId={post.user.profileImage} style={{ borderRadius: 20 }} />
-            ) : (
-              <View className="w-10 h-10 bg-stone-300 rounded-full" />
-            )}
-          </View>
-          <Text className="text-base font-medium">{post.user?.username || 'User'}</Text>
-        </View>
-        
-        <Text className="text-base">{post.content}</Text>
-        
-        {post.hashtags && post.hashtags.length > 0 && (
-          <HashtagDisplay hashtags={post.hashtags} size="small" />
-        )}
-        
-        <Text className="text-sm text-gray-500 mt-2">
-          {formattedDate}
-        </Text>
-      </TouchableOpacity>
-    );
-  }
-
   return (
-    <View className="bg-white rounded-lg overflow-hidden shadow-md mb-4">
+    <View className="bg-zinc-300 rounded-lg overflow-hidden mb-4">
       <View className="flex-row items-center p-3">
         <View className="w-10 h-10 mr-3">
           {post.user?.profileImage ? (
@@ -101,7 +72,6 @@ export const PostItem = ({ post }: PostItemProps) => {
         </TouchableOpacity>
       </View>
       
-      {/* Media Gallery */}
       <View className="w-full h-[350px]">
         {post.media && post.media.length > 0 ? (
           <PostMediaGallery 
@@ -116,9 +86,9 @@ export const PostItem = ({ post }: PostItemProps) => {
       </View>
       
       <View className="p-4">
-        {post.content && (
+        {/* {post.content && (
           <Text className="text-base mb-2">{post.content}</Text>
-        )}
+        )} */}
       
         <View className="flex-row justify-end mb-2">
           <Text className="text-center text-black text-[10px] font-light leading-3">
