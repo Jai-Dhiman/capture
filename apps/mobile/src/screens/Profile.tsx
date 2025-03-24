@@ -40,19 +40,27 @@ export default function Profile() {
   const { data: posts, isLoading: postsLoading } = useUserPosts(userId);
   const { data: followers, isLoading: followersLoading } = useFollowers(userId);
 
+  console.log("Raw posts from API:", posts);
+  console.log("User ID being used:", userId);
+
   useSyncFollowingState(profileData ? [{ 
     userId: profileData.userId,
     isFollowing: profileData.isFollowing 
   }] : []);
 
+  console.log("Before filtering - posts:", posts);
+
   const filteredPosts = posts ? 
     posts.filter((post: any) => {
+      console.log(`Post ${post.id} has type: "${post.type}"`);
       if (postFilter === 'posts') {
-        return post.type === 'post' || post.type === undefined || post.type === null;
+        return post.type === 'post';
       } else {
         return post.type === 'thread';
       }
     }) : [];
+
+  console.log("After filtering - filteredPosts:", filteredPosts);
   
   const totalPages = filteredPosts ? Math.ceil(filteredPosts.length / POSTS_PER_PAGE) : 0;
 

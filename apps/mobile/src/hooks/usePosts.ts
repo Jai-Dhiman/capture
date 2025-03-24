@@ -27,6 +27,7 @@ export const useUserPosts = (userId?: string) => {
                 posts {
                   id
                   content
+                  type
                   createdAt
                   isSaved
                   media {
@@ -81,6 +82,7 @@ export const useSinglePost = (postId?: string) => {
               post(id: $postId) {
                 id
                 content
+                type
                 createdAt
                 userId
                 isSaved

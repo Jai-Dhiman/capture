@@ -34,6 +34,7 @@ export const profileResolvers = {
           content: schema.post.content,
           createdAt: schema.post.createdAt,
           userId: schema.post.userId,
+          type: schema.post.type,
         })
         .from(schema.post)
         .where(eq(schema.post.userId, id))
