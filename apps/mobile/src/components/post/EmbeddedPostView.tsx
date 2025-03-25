@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useState, useRef, memo } from 'react';
+import { View, Text, TouchableOpacity, ActivityIndicator, FlatList, Dimensions } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { PostMediaGallery } from '../post/PostMediaGallery';
 import { PostSettingsMenu } from '../post/PostSettingsMenu';
 import { useDeletePost } from '../../hooks/usePosts';
@@ -12,15 +13,21 @@ import SavePostIcon from '../../../assets/icons/PlusIcon.svg';
 import CommentIcon from '../../../assets/icons/CommentsIcon.svg';
 import ShareIcon from '../../../assets/icons/PaperPlaneIcon.svg';
 import SettingsIcon from '../../../assets/icons/MenuDots.svg';
+import ProfileIcon from '../../../assets/icons/ProfileIcon.svg';
 
+const { width } = Dimensions.get('window');
 
 interface EmbeddedPostViewProps {
-  post: any;
+  posts: any[];
+  initialPostIndex: number;
   onClose: () => void;
 }
 
-export const EmbeddedPostView = ({ post, onClose }: EmbeddedPostViewProps) => {
+export const EmbeddedPostView = memo(({ posts, initialPostIndex, onClose }: EmbeddedPostViewProps) => {
+  const [currentIndex, setCurrentIndex] = useState(initialPostIndex);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
+  const flashListRef = useRef<FlashList<any>>(null);
+  
   const deletePostMutation = useDeletePost();
   const savePostMutation = useSavePost();
   const unsavePostMutation = useUnsavePost();
@@ -28,11 +35,11 @@ export const EmbeddedPostView = ({ post, onClose }: EmbeddedPostViewProps) => {
   const [, setCommentDrawerOpen] = useAtom(commentDrawerOpenAtom);
   const [, setCurrentPostId] = useAtom(currentPostIdAtom);
   
-  const formattedDate = new Date(post.createdAt).toLocaleDateString();
+  const currentPost = posts[currentIndex];
   
   const handleDeletePost = async () => {
     try {
-      await deletePostMutation.mutateAsync(post.id);
+      await deletePostMutation.mutateAsync(currentPost.id);
       onClose();
     } catch (error: any) {
       console.error('Delete error:', error);
@@ -41,85 +48,151 @@ export const EmbeddedPostView = ({ post, onClose }: EmbeddedPostViewProps) => {
   
   const handleToggleSavePost = async () => {
     try {
-      if (post.isSaved) {
-        await unsavePostMutation.mutateAsync(post.id);
+      if (currentPost.isSaved) {
+        await unsavePostMutation.mutateAsync(currentPost.id);
       } else {
-        await savePostMutation.mutateAsync(post.id);
+        await savePostMutation.mutateAsync(currentPost.id);
       }
     } catch (error: any) {
       console.error('Save/Unsave error:', error);
-      showAlert(`Failed to ${post.isSaved ? 'unsave' : 'save'} post`, { type: 'error' });
+      showAlert(`Failed to ${currentPost.isSaved ? 'unsave' : 'save'} post`, { type: 'error' });
     }
   };
   
   const handleOpenComments = () => {
-    setCurrentPostId(post.id);
+    setCurrentPostId(currentPost.id);
     setCommentDrawerOpen(true);
   };
 
+  const renderPost = ({ item: post }: { item: any }) => {
+  const formattedDate = new Date(post.createdAt).toLocaleDateString();
+  
   return (
-    <View className="bg-zinc-300 rounded-lg overflow-hidden mb-4">
-      <View className="flex-row justify-end items-center p-2">
-        <TouchableOpacity 
-          onPress={() => setIsMenuVisible(true)}
-          className="w-6 h-6 justify-center items-center"
-        >
-          <SettingsIcon width={24} height={24} />
-        </TouchableOpacity>
-      </View>
-      
-      <View className="w-full h-[350px]">
-        {post.media && post.media.length > 0 ? (
-          <PostMediaGallery 
-            mediaItems={post.media} 
-            containerStyle={{ height: '100%' }} 
-          />
-        ) : (
-          <View className="w-full h-full bg-gray-200 justify-center items-center">
-            <Text className="text-gray-500">No image</Text>
-          </View>
-        )}
-      </View>
-      
-      <View className="p-4">
-        <View className="flex-row justify-end mb-2">
-          <Text className="text-center text-black text-[10px] font-light leading-3">
-            {formattedDate}
-          </Text>
-        </View>
-        
-        <View className="flex-row justify-between items-center">
-          <View className="flex-row space-x-8">
-            <TouchableOpacity onPress={handleOpenComments}>
-              <CommentIcon width={20} height={20} />
-            </TouchableOpacity>
-            
-            <TouchableOpacity>
-              <ShareIcon width={20} height={20} />
-            </TouchableOpacity>
-          </View>
+    <View style={{ width, padding: 16 }}>
+      <View className="bg-zinc-300 rounded-lg overflow-hidden mb-4">
+        <View className="flex-row justify-between items-center p-2">
+          <TouchableOpacity onPress={onClose} className="w-8 h-8 justify-center items-center">
+            <ProfileIcon width={24} height={24} />
+          </TouchableOpacity>
           
           <TouchableOpacity 
-            onPress={handleToggleSavePost}
-            disabled={savePostMutation.isPending || unsavePostMutation.isPending}
+            onPress={() => setIsMenuVisible(true)}
+            className="w-6 h-6 justify-center items-center"
           >
-            {savePostMutation.isPending || unsavePostMutation.isPending ? (
-              <ActivityIndicator size="small" color="#E4CAC7" />
-            ) : post.isSaved ? (
-              <FavoriteIcon width={20} height={20} />
-            ) : (
-              <SavePostIcon width={20} height={20} />
-            )}
+            <SettingsIcon width={24} height={24} />
           </TouchableOpacity>
         </View>
+        
+        <View className="w-full h-[350px]">
+          {post.media && post.media.length > 0 ? (
+            <PostMediaGallery 
+              mediaItems={post.media} 
+              containerStyle={{ height: '100%' }} 
+            />
+          ) : (
+            <View className="w-full h-full bg-gray-200 justify-center items-center">
+              <Text className="text-gray-500">Image Not Found</Text>
+            </View>
+          )}
+        </View>
+        
+        <View className="p-4">
+          <View className="flex-row justify-end mb-2">
+            <Text className="text-center text-black text-[10px] font-light leading-3">
+              {formattedDate}
+            </Text>
+          </View>
+          
+          <View className="flex-row justify-between items-center">
+            <View className="flex-row space-x-8">
+              <TouchableOpacity onPress={handleOpenComments}>
+                <CommentIcon width={20} height={20} />
+              </TouchableOpacity>
+              
+              <TouchableOpacity>
+                <ShareIcon width={20} height={20} />
+              </TouchableOpacity>
+            </View>
+            
+            <TouchableOpacity 
+              onPress={handleToggleSavePost}
+              disabled={savePostMutation.isPending || unsavePostMutation.isPending}
+            >
+              {savePostMutation.isPending || unsavePostMutation.isPending ? (
+                <ActivityIndicator size="small" color="#E4CAC7" />
+              ) : post.isSaved ? (
+                <FavoriteIcon width={20} height={20} />
+              ) : (
+                <SavePostIcon width={20} height={20} />
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
-      
-      <PostSettingsMenu
-        isVisible={isMenuVisible}
-        onClose={() => setIsMenuVisible(false)}
-        onDelete={handleDeletePost}
-        isDeleting={deletePostMutation.isPending}
-      />
     </View>
   );
 };
+
+const handleScroll = (event: any) => {
+  const contentOffset = event.nativeEvent.contentOffset;
+  const viewSize = event.nativeEvent.layoutMeasurement;
+  const newIndex = Math.floor(contentOffset.x / viewSize.width);
+  if (newIndex !== currentIndex) {
+    setCurrentIndex(newIndex);
+  }
+};
+
+const scrollToIndex = (index: number) => {
+  if (index >= 0 && index < posts.length) {
+    flashListRef.current?.scrollToIndex({ index, animated: true });
+    setCurrentIndex(index);
+  }
+};
+
+return (
+  <View className="flex-1">
+    <FlashList
+        ref={flashListRef}
+        data={posts}
+        renderItem={renderPost}
+        keyExtractor={(item) => item.id}
+        estimatedItemSize={400}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        initialScrollIndex={initialPostIndex}
+        contentContainerStyle={{ paddingBottom: 48 }}
+      />
+    
+    {/* Pagination dots */}
+    {posts.length > 1 && (
+      <View className="h-8 absolute bottom-4 left-0 right-0 flex-row justify-center items-center">
+        <View className="bg-stone-300 bg-opacity-80 px-3 py-2 rounded-full flex-row">
+          {posts.map((_, index) => (
+            <TouchableOpacity 
+              key={index} 
+              onPress={() => scrollToIndex(index)}
+              className="mx-1"
+            >
+              <View 
+                className={`h-2 rounded-full ${
+                  index === currentIndex ? 'w-4 bg-[#E4CAC7]' : 'w-2 bg-gray-400'
+                }`} 
+              />
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    )}
+    
+    <PostSettingsMenu
+      isVisible={isMenuVisible}
+      onClose={() => setIsMenuVisible(false)}
+      onDelete={handleDeletePost}
+      isDeleting={deletePostMutation.isPending}
+    />
+  </View>
+);
+});

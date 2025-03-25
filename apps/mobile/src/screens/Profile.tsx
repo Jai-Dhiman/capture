@@ -8,7 +8,7 @@ import { useUserPosts } from '../hooks/usePosts';
 import { useProfile } from '../hooks/auth/useProfile';
 import { useFollowers, useSyncFollowingState } from '../hooks/useRelationships';
 import { MediaImage } from '../components/media/MediaImage';
-import { ThreadItem } from '../components/post/ThreadItem';
+import { ProfileThreadItem } from '../components/post/ProfileThreadItem';
 import SavedPosts from "../../assets/icons/FavoriteIcon.svg"
 import PhotosIcon from "../../assets/icons/PhotosIcon.svg"
 import TextIcon from "../../assets/icons/TextIcon.svg"
@@ -35,20 +35,17 @@ export default function Profile() {
   const [selectedPost, setSelectedPost] = useState<any>(null);  
   const [postFilter, setPostFilter] = useState<'posts' | 'threads'>(isOwnProfile ? 'posts' : 'threads');
   const [currentPage, setCurrentPage] = useState(0);
+  const [showPostCarousel, setShowPostCarousel] = useState(false);
+  const [initialPostIndex, setInitialPostIndex] = useState(0);
   
   const { data: profileData, isLoading: profileLoading } = useProfile(userId);
   const { data: posts, isLoading: postsLoading } = useUserPosts(userId);
   const { data: followers, isLoading: followersLoading } = useFollowers(userId);
 
-  console.log("Raw posts from API:", posts);
-  console.log("User ID being used:", userId);
-
   useSyncFollowingState(profileData ? [{ 
     userId: profileData.userId,
     isFollowing: profileData.isFollowing 
   }] : []);
-
-  console.log("Before filtering - posts:", posts);
 
   const filteredPosts = posts ? 
     posts.filter((post: any) => {
@@ -59,10 +56,11 @@ export default function Profile() {
         return post.type === 'thread';
       }
     }) : [];
-
-  console.log("After filtering - filteredPosts:", filteredPosts);
   
   const totalPages = filteredPosts ? Math.ceil(filteredPosts.length / POSTS_PER_PAGE) : 0;
+  const carouselPosts = filteredPosts ? 
+  filteredPosts.filter((post: any) => post.type === 'post') : 
+  [];
 
   const currentPosts = filteredPosts ? 
     filteredPosts.slice(currentPage * POSTS_PER_PAGE, (currentPage + 1) * POSTS_PER_PAGE) : 
@@ -160,85 +158,79 @@ export default function Profile() {
             </TouchableOpacity>
           </View>
           
-          <View className="h-px bg-black opacity-10 my-2" />
-        
-        {postsLoading ? (
-          <LoadingSpinner />
-        ) : filteredPosts?.length === 0 ? (
-          <Text className="text-center py-4 text-gray-500">No {postFilter} yet</Text>
-        ) : (
-          <>
-            {selectedPost ? (
-              <View className="mt-4">
-                <TouchableOpacity 
-                  className="mb-4" 
-                  onPress={() => setSelectedPost(null)}
-                >
-                  <Text className="text-black font-medium">←</Text>
-                </TouchableOpacity>
-                
-                <EmbeddedPostView 
-                  post={selectedPost} 
-                  onClose={() => setSelectedPost(null)}
-                />
-              </View>
-            ) : (
-              <>
-                {postFilter === 'posts' ? (
-                  <View className="flex-row flex-wrap mt-4">
-                    {currentPosts.map((post: any) => (
-                      <TouchableOpacity 
-                        key={post.id} 
-                        className="w-[32%] aspect-square mb-[2%] mr-[2%] nth-child-3n:mr-0"
-                        onPress={() => setSelectedPost(post)}
-                      >
-                        <View className="w-full h-full bg-stone-400 rounded-[10px] overflow-hidden">
-                            {post.media && post.media.length > 0 ? (
-                              <MediaImage media={post.media[0]} />
-                            ) : (
-                              <View className="flex-1 justify-center items-center">
-                                <Text className="text-white opacity-70">No image</Text>
-                              </View>
-                            )}
-                          </View>
-                        </TouchableOpacity>
+          <View className="h-px bg-black opacity-10 my-2" />               
+          {postsLoading ? (
+            <LoadingSpinner />
+          ) : filteredPosts?.length === 0 ? (
+            <Text className="text-center py-4 text-gray-500">No {postFilter} yet</Text>
+          ) : (
+            <>
+              {showPostCarousel && postFilter === 'posts' ? (
+                <View className="mt-4 flex-1">
+                  <EmbeddedPostView 
+                    posts={carouselPosts}
+                    initialPostIndex={initialPostIndex}
+                    onClose={() => setShowPostCarousel(false)}
+                  />
+                </View>
+              ) : (
+                <>
+                  {postFilter === 'posts' ? (
+                    <View className="flex-row flex-wrap mt-4">
+                      {currentPosts.map((post: any, index: number) => (
+                        post.type === 'post' && (
+                          <TouchableOpacity 
+                            key={post.id} 
+                            className="w-[32%] aspect-square mb-[2%] mr-[2%] nth-child-3n:mr-0"
+                            onPress={() => {
+                              const postIndex = carouselPosts.findIndex((p: any) => p.id === post.id);
+                              setInitialPostIndex(postIndex >= 0 ? postIndex : 0);
+                              setShowPostCarousel(true);
+                            }}
+                          >
+                            <View className="w-full h-full bg-stone-400 rounded-[10px] overflow-hidden">
+                              {post.media && post.media.length > 0 ? (
+                                <MediaImage media={post.media[0]} />
+                              ) : (
+                                <View className="flex-1 justify-center items-center">
+                                  <Text className="text-white opacity-70">No image</Text>
+                                </View>
+                              )}
+                            </View>
+                          </TouchableOpacity>
+                        )
                       ))}
                     </View>
                   ) : (
                     <View className="mt-4">
                       {currentPosts.map((thread: any) => (
-                        <TouchableOpacity
-                          key={thread.id}
-                          onPress={() => setSelectedPost(thread)}
-                        >
-                          <ThreadItem thread={thread} />
-                        </TouchableOpacity>
+                        <ProfileThreadItem key={thread.id} thread={thread} />
                       ))}
                     </View>
                   )}
-              
-              {totalPages > 1 && (
-                <View className="flex-row justify-center py-4">
-                  <View className="bg-blend-color-dodge bg-stone-950 rounded-[50px] backdrop-blur-[20px] p-2 flex-row">
-                    {Array(totalPages).fill(0).map((_, index) => (
-                      <TouchableOpacity 
-                        key={index}
-                        onPress={() => handlePageChange(index)}
-                      >
-                        <View 
-                          className={`h-2 w-2 rounded-full mx-1 ${
-                            index === currentPage ? 'bg-black' : 'bg-black opacity-30'
-                          }`} 
-                        />
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
+                
+                  {totalPages > 1 && (
+                    <View className="flex-row justify-center py-4">
+                      <View className="bg-blend-color-dodge bg-stone-950 rounded-[50px] backdrop-blur-[20px] p-2 flex-row">
+                        {Array(totalPages).fill(0).map((_, index) => (
+                          <TouchableOpacity 
+                            key={index}
+                            onPress={() => handlePageChange(index)}
+                          >
+                            <View 
+                              className={`h-2 w-2 rounded-full mx-1 ${
+                                index === currentPage ? 'bg-black' : 'bg-black opacity-30'
+                              }`} 
+                            />
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </View>
+                  )}
+                </>
               )}
             </>
           )}
-        </>
-        )}
         </View>
       </ScrollView>
       
