@@ -34,7 +34,6 @@ export default function Profile() {
   
   const [showFollowers, setShowFollowers] = useState(false);
   const [postFilter, setPostFilter] = useState<'posts' | 'threads'>(isOwnProfile ? 'posts' : 'threads');
-  const [currentPage, setCurrentPage] = useState(0);
   const [showPostCarousel, setShowPostCarousel] = useState(false);
   const [initialPostIndex, setInitialPostIndex] = useState(0);
   
@@ -49,24 +48,15 @@ export default function Profile() {
   }] : []);
 
   const filteredPosts = posts ? 
-    posts.filter((post: any) => {
-      if (postFilter === 'posts') {
-        return post.type === 'post';
-      } else {
-        return post.type === 'thread';
-      }
-    }) : [];
+  posts.filter((post: any) => {
+    if (postFilter === 'posts') {
+      return post.type === 'post';
+    } else {
+      return post.type === 'thread';
+    }
+  }) : [];
   
-  const totalPages = filteredPosts ? Math.ceil(filteredPosts.length / POSTS_PER_PAGE) : 0;
   const carouselPosts = filteredPosts ? filteredPosts.filter((post: any) => post.type === 'post') : [];
-  const currentPosts = filteredPosts ? 
-    filteredPosts.slice(currentPage * POSTS_PER_PAGE, (currentPage + 1) * POSTS_PER_PAGE) : 
-    [];
-  
-  const handlePageChange = (pageIndex: number) => {
-    setCurrentPage(pageIndex);
-  };
-
   const handlePhotoIconClick = () => {
     setPostFilter('posts');
     setShowPostCarousel(false);
@@ -81,21 +71,24 @@ export default function Profile() {
   };
 
   const getGridItemSize = useCallback(() => {
-    const minItemSize = 100; 
-    const spacing = width * 0.02; 
+    // Force 3 columns regardless of screen size
+    const columnsCount = 3;
     
-    const columnsCount = width < 320 ? 2 : 3;
+    // Calculate with fixed margins to ensure consistent spacing
+    const horizontalMargin = 8; // Fixed margin size
+    const totalMargins = horizontalMargin * (columnsCount + 1);
     
-    const availableWidth = width - (spacing * (columnsCount + 1));
-    const itemSize = Math.max(minItemSize, availableWidth / columnsCount);
+    // Calculate item size with a buffer of 2 pixels per item
+    const availableWidth = width - totalMargins;
+    const itemSize = Math.floor((availableWidth / columnsCount) - 2);
     
     return {
       itemSize,
-      spacing
+      horizontalMargin
     };
   }, [width]);
 
-  const { itemSize, spacing } = getGridItemSize();
+  const { itemSize, horizontalMargin } = getGridItemSize();
 
   if (profileLoading) {
     return <LoadingSpinner fullScreen message="Loading profile..." />;
@@ -207,57 +200,40 @@ export default function Profile() {
               ) : (
                 <>
                   {postFilter === 'posts' ? (
-                    <View className="flex-row flex-wrap mt-4" style={{ marginHorizontal: -spacing / 2 }}>
-                      {currentPosts.map((post: any, index: number) => (
-                        post.type === 'post' && (
-                          <TouchableOpacity 
-                            key={post.id} 
-                            style={{
-                              width: itemSize, 
-                              height: itemSize,
-                              margin: spacing / 2,
-                            }}
-                            onPress={() => openCarouselAtPhoto(post)}
-                          >
-                            <View className="w-full h-full bg-stone-400 rounded-[10px] overflow-hidden">
-                              {post.media && post.media.length > 0 ? (
-                                <MediaImage media={post.media[0]} />
-                              ) : (
-                                <View className="flex-1 justify-center items-center">
-                                  <Text className="text-white opacity-70">No image</Text>
-                                </View>
-                              )}
-                            </View>
-                          </TouchableOpacity>
-                        )
-                      ))}
-                    </View>
-                  ) : (
-                    <View className="mt-4">
-                      {currentPosts.map((thread: any) => (
-                        <ProfileThreadItem key={thread.id} thread={thread} />
-                      ))}
-                    </View>
-                  )}
-                
-                  {totalPages > 1 && (
-                    <View className="flex-row justify-center py-4">
-                      <View className="bg-blend-color-dodge bg-stone-950 rounded-[50px] backdrop-blur-[20px] p-2 flex-row">
-                        {Array(totalPages).fill(0).map((_, index) => (
-                          <TouchableOpacity 
-                            key={index}
-                            onPress={() => handlePageChange(index)}
-                          >
-                            <View 
-                              className={`h-2 w-2 rounded-full mx-1 ${
-                                index === currentPage ? 'bg-black' : 'bg-black opacity-30'
-                              }`} 
-                            />
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                    </View>
-                  )}
+                  <View className="flex-row flex-wrap mt-4" style={{ paddingHorizontal: horizontalMargin }}>
+                  {filteredPosts.map((post: any, index: number) => (
+                    post.type === 'post' && (
+                      <TouchableOpacity 
+                        key={post.id} 
+                        style={{
+                          width: itemSize, 
+                          height: itemSize,
+                          marginHorizontal: horizontalMargin / 2,
+                          marginBottom: horizontalMargin,
+                        }}
+                        onPress={() => openCarouselAtPhoto(post)}
+                      >
+                          <View className="w-full h-full bg-stone-400 rounded-[10px] overflow-hidden">
+                            {post.media && post.media.length > 0 ? (
+                              <MediaImage media={post.media[0]} />
+                            ) : (
+                              <View className="flex-1 justify-center items-center">
+                                <Text className="text-white opacity-70">No image</Text>
+                              </View>
+                            )}
+                          </View>
+                        </TouchableOpacity>
+                      )
+                    ))}
+                  </View>
+                ) : (
+                  // Thread view remains unchanged
+                  <View className="mt-4">
+                    {filteredPosts.map((thread: any) => (
+                      <ProfileThreadItem key={thread.id} thread={thread} />
+                    ))}
+                  </View>
+                )}
                 </>
               )}
             </>

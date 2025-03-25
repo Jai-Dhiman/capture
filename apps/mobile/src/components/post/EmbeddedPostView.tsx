@@ -26,6 +26,8 @@ export const EmbeddedPostView = memo(({ posts, initialPostIndex, onClose }: Embe
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const flashListRef = useRef<FlashList<any>>(null);
   
+  const postWidth = width - 24; 
+  
   const deletePostMutation = useDeletePost();
   const savePostMutation = useSavePost();
   const unsavePostMutation = useUnsavePost();
@@ -36,10 +38,17 @@ export const EmbeddedPostView = memo(({ posts, initialPostIndex, onClose }: Embe
   const currentPost = posts[currentIndex];
   
   const calculateMediaHeight = useCallback(() => {
-    const isSmallScreen = width < 375;
-    const mediaHeightPercentage = isSmallScreen ? 0.35 : 0.42;
-    return Math.round(height * mediaHeightPercentage);
-  }, [width, height]);
+    // Calculate height to fit on screen properly
+    const headerHeight = 40; // Height of the top section with settings icon
+    const footerHeight = 100; // Height of bottom section with date and icons
+    const containerPadding = 24; // Total vertical padding
+    
+    // Calculate available height
+    const availableHeight = height - headerHeight - footerHeight - containerPadding;
+    
+    // Use a percentage that works well across devices
+    return Math.min(availableHeight, height * 0.55);
+  }, [height]);
   
   const mediaHeight = calculateMediaHeight();
   
@@ -84,11 +93,18 @@ export const EmbeddedPostView = memo(({ posts, initialPostIndex, onClose }: Embe
   const renderPost = ({ item: post }: { item: any }) => {
     const formattedDate = new Date(post.createdAt).toLocaleDateString();
     
-    const containerWidth = width;
-    
     return (
-      <View style={{ width: containerWidth, padding: 12 }}>
-        <View className="bg-zinc-300 rounded-lg overflow-hidden mb-4">
+      <View 
+        style={{ 
+          width: postWidth,
+          height: '100%',
+          paddingHorizontal: 0, // Remove horizontal padding at this level
+          paddingVertical: 0,
+          marginLeft: 12, // Add margin instead of padding
+          marginRight: 12
+        }}
+      >
+        <View className="bg-zinc-300 rounded-lg overflow-hidden mb-4 h-full">
           <View className="flex-row justify-between items-center p-2">
             <View className="flex-1" />
             
@@ -100,7 +116,11 @@ export const EmbeddedPostView = memo(({ posts, initialPostIndex, onClose }: Embe
             </TouchableOpacity>
           </View>
           
-          <View style={{ width: '100%', height: mediaHeight }}>
+          <View style={{ 
+            width: '100%', 
+            height: mediaHeight,
+            maxHeight: '65%'
+          }}>
             {post.media && post.media.length > 0 ? (
               <PostMediaGallery 
                 mediaItems={post.media} 
@@ -113,7 +133,7 @@ export const EmbeddedPostView = memo(({ posts, initialPostIndex, onClose }: Embe
             )}
           </View>
           
-          <View className="p-4">
+          <View className="p-4 flex-1">
             <View className="flex-row justify-end mb-2">
               <Text className="text-center text-black text-[10px] font-light leading-3">
                 {formattedDate}
@@ -173,15 +193,18 @@ export const EmbeddedPostView = memo(({ posts, initialPostIndex, onClose }: Embe
         data={posts}
         renderItem={renderPost}
         keyExtractor={(item) => item.id}
-        estimatedItemSize={mediaHeight + 150}
+        estimatedItemSize={height - 50}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         onScroll={handleScroll}
         scrollEventThrottle={16}
         initialScrollIndex={initialPostIndex}
-        contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 48 : 24 }}
-        snapToInterval={width}
+        contentContainerStyle={{ 
+          paddingVertical: 0,
+          paddingHorizontal: 0
+        }}
+        snapToInterval={width} // Keep snapToInterval as the full width
         decelerationRate="fast"
       />
       
