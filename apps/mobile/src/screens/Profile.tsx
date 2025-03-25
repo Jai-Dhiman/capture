@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, StatusBar } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Modal, StatusBar, Dimensions } from 'react-native';
 import { useAuthStore } from '../stores/authStore';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -30,9 +30,9 @@ export default function Profile() {
   const { user } = useAuthStore();
   const userId = route.params?.userId || user?.id;
   const isOwnProfile = userId === user?.id;
+  const { width, height } = Dimensions.get('window');
   
   const [showFollowers, setShowFollowers] = useState(false);
-  const [selectedPost, setSelectedPost] = useState<any>(null);  
   const [postFilter, setPostFilter] = useState<'posts' | 'threads'>(isOwnProfile ? 'posts' : 'threads');
   const [currentPage, setCurrentPage] = useState(0);
   const [showPostCarousel, setShowPostCarousel] = useState(false);
@@ -49,7 +49,6 @@ export default function Profile() {
 
   const filteredPosts = posts ? 
     posts.filter((post: any) => {
-      console.log(`Post ${post.id} has type: "${post.type}"`);
       if (postFilter === 'posts') {
         return post.type === 'post';
       } else {
@@ -58,10 +57,7 @@ export default function Profile() {
     }) : [];
   
   const totalPages = filteredPosts ? Math.ceil(filteredPosts.length / POSTS_PER_PAGE) : 0;
-  const carouselPosts = filteredPosts ? 
-  filteredPosts.filter((post: any) => post.type === 'post') : 
-  [];
-
+  const carouselPosts = filteredPosts ? filteredPosts.filter((post: any) => post.type === 'post') : [];
   const currentPosts = filteredPosts ? 
     filteredPosts.slice(currentPage * POSTS_PER_PAGE, (currentPage + 1) * POSTS_PER_PAGE) : 
     [];
@@ -69,6 +65,19 @@ export default function Profile() {
   const handlePageChange = (pageIndex: number) => {
     setCurrentPage(pageIndex);
   };
+
+  const togglePostView = () => {
+    if (postFilter === 'posts') {
+      setShowPostCarousel(!showPostCarousel);
+    } else {
+      setPostFilter('posts');
+      setShowPostCarousel(false);
+    }
+  };
+
+  const gridItemMargin = width * 0.02;
+  const gridItemWidth = (width - (gridItemMargin * 4)) / 3;
+  
 
   if (profileLoading) {
     return <LoadingSpinner fullScreen message="Loading profile..." />;
@@ -136,7 +145,7 @@ export default function Profile() {
           <View className="flex-row justify-around py-2 items-center">
             <TouchableOpacity 
               className="items-center justify-center"
-              onPress={() => setPostFilter('posts')}
+              onPress={togglePostView}
             >
               <View className={postFilter === 'posts' ? "bg-stone-300 bg-opacity-30 w-7 h-7 rounded-[10px] items-center justify-center" : ""}>
                 <PhotosIcon width={20} height={20}/>
@@ -144,7 +153,10 @@ export default function Profile() {
             </TouchableOpacity>
             <TouchableOpacity 
               className="items-center justify-center"
-              onPress={() => setPostFilter('threads')}
+              onPress={() => {
+                setPostFilter('threads');
+                setShowPostCarousel(false);
+              }}
             >
               <View className={postFilter === 'threads' ? "bg-stone-300 bg-opacity-30 w-7 h-7 rounded-[10px] items-center justify-center" : ""}>
                 <TextIcon width={20} height={20} />
@@ -159,6 +171,7 @@ export default function Profile() {
           </View>
           
           <View className="h-px bg-black opacity-10 my-2" />               
+          
           {postsLoading ? (
             <LoadingSpinner />
           ) : filteredPosts?.length === 0 ? (
@@ -166,7 +179,7 @@ export default function Profile() {
           ) : (
             <>
               {showPostCarousel && postFilter === 'posts' ? (
-                <View className="mt-4 flex-1">
+                <View className="mt-4 flex-1" style={{ height: height * 0.7 }}>
                   <EmbeddedPostView 
                     posts={carouselPosts}
                     initialPostIndex={initialPostIndex}
@@ -181,7 +194,12 @@ export default function Profile() {
                         post.type === 'post' && (
                           <TouchableOpacity 
                             key={post.id} 
-                            className="w-[32%] aspect-square mb-[2%] mr-[2%] nth-child-3n:mr-0"
+                            style={{
+                              width: gridItemWidth, 
+                              height: gridItemWidth,
+                              marginRight: (index + 1) % 3 === 0 ? 0 : gridItemMargin,
+                              marginBottom: gridItemMargin
+                            }}
                             onPress={() => {
                               const postIndex = carouselPosts.findIndex((p: any) => p.id === post.id);
                               setInitialPostIndex(postIndex >= 0 ? postIndex : 0);
