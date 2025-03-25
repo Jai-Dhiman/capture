@@ -5,8 +5,7 @@ import { commentDrawerOpenAtom, currentPostIdAtom } from '../../atoms/commentAto
 import { useSavePost, useUnsavePost } from '../../hooks/useSavesPosts';
 import { useAlert } from '../../lib/AlertContext';
 import { useDeletePost } from '../../hooks/usePosts';
-import { PostSettingsMenu } from './PostSettingsMenu';
-import { HashtagDisplay } from '../hashtags/HashtagDisplay';
+import { PostSettingsMenu } from '../post/PostSettingsMenu';
 import FavoriteIcon from '../../../assets/icons/FavoriteIcon.svg';
 import SavePostIcon from '../../../assets/icons/PlusIcon.svg';
 import CommentIcon from '../../../assets/icons/CommentsIcon.svg';

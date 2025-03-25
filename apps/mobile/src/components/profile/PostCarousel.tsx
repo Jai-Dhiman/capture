@@ -1,0 +1,143 @@
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, ActivityIndicator, Dimensions, useWindowDimensions } from 'react-native';
+import Carousel from 'react-native-reanimated-carousel';
+import { PostMediaGallery } from '../post/PostMediaGallery';
+import SettingsIcon from "../../../assets/icons/MenuDots.svg";
+import CommentIcon from "../../../assets/icons/CommentsIcon.svg";
+import ShareIcon from "../../../assets/icons/PaperPlaneIcon.svg";
+import SavePostIcon from "../../../assets/icons/PlusIcon.svg";
+import FavoriteIcon from "../../../assets/icons/FavoriteIcon.svg";
+
+interface PostReanimatedCarouselProps {
+  posts: any[];
+  initialIndex: number;
+  onSettingsPress: (post: any) => void;
+  onToggleSave: (post: any) => void;
+  onOpenComments: (postId: string) => void;
+  isSaving: boolean;
+}
+
+export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
+  posts,
+  initialIndex,
+  onSettingsPress,
+  onToggleSave,
+  onOpenComments,
+  isSaving
+}) => {
+  const { width, height } = useWindowDimensions();
+  const [activeIndex, setActiveIndex] = useState(initialIndex);
+  
+  // Use full width minus padding
+  const ITEM_WIDTH = width - 32;
+  
+  const calculateMediaHeight = () => {
+    // Better height calculation
+    const headerHeight = 40;
+    const footerHeight = 80;
+    const paginationHeight = 30;
+    const topMargin = 8;
+    
+    const availableHeight = height * 0.65;
+    return availableHeight - headerHeight - footerHeight - paginationHeight - topMargin;
+  };
+  
+  const mediaHeight = calculateMediaHeight();
+  
+  const renderItem = ({ item: post, index }: { item: any; index: number }) => {
+    const formattedDate = new Date(post.createdAt).toLocaleDateString();
+    
+    return (
+      <View className="bg-zinc-300 rounded-lg overflow-hidden mb-2 h-full mx-0">
+        <View className="flex-row justify-between items-center p-2">
+          <View className="flex-1" />
+          
+          <TouchableOpacity 
+            onPress={() => onSettingsPress(post)}
+            className="w-6 h-6 justify-center items-center"
+          >
+            <SettingsIcon width={24} height={24} />
+          </TouchableOpacity>
+        </View>
+        
+        <View style={{ width: '100%', height: mediaHeight }}>
+          {post.media && post.media.length > 0 ? (
+            <PostMediaGallery 
+              mediaItems={post.media} 
+              containerStyle={{ height: '100%' }} 
+            />
+          ) : (
+            <View className="w-full h-full bg-gray-200 justify-center items-center">
+              <Text className="text-gray-500">Image Not Found</Text>
+            </View>
+          )}
+        </View>
+        
+        <View className="p-4">
+          <View className="flex-row justify-end mb-2">
+            <Text className="text-center text-black text-[10px] font-light leading-3">
+              {formattedDate}
+            </Text>
+          </View>
+          
+          <View className="flex-row justify-between items-center">
+            <View className="flex-row space-x-8">
+              <TouchableOpacity onPress={() => onOpenComments(post.id)}>
+                <CommentIcon width={20} height={20} />
+              </TouchableOpacity>
+              
+              <TouchableOpacity>
+                <ShareIcon width={20} height={20} />
+              </TouchableOpacity>
+            </View>
+            
+            <TouchableOpacity 
+              onPress={() => onToggleSave(post)}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <ActivityIndicator size="small" color="#E4CAC7" />
+              ) : post.isSaved ? (
+                <FavoriteIcon width={20} height={20} />
+              ) : (
+                <SavePostIcon width={20} height={20} />
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  };
+  
+  return (
+    <View className="flex-1 mt-2">
+      <Carousel
+        loop={false}
+        width={ITEM_WIDTH}
+        height={height * 0.65}
+        data={posts}
+        renderItem={renderItem}
+        defaultIndex={initialIndex}
+        onSnapToItem={(index) => setActiveIndex(index)}
+        mode="horizontal-stack"
+        snapEnabled={true}
+        overscrollEnabled={false}
+        windowSize={1}
+      />
+      
+      {/* Custom Pagination */}
+      <View className="flex-row justify-center mt-2">
+        {posts.map((_, index) => (
+          <View
+            key={index}
+            className={`mx-1 rounded-full ${
+              index === activeIndex
+                ? 'w-4 h-2 bg-[#E4CAC7]'
+                : 'w-2 h-2 bg-gray-400'
+            }`}
+          />
+        ))}
+      </View>
+    </View>
+  );
+};

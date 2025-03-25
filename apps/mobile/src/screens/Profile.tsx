@@ -1,34 +1,36 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, StatusBar, Dimensions, useWindowDimensions } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, ScrollView, Modal, StatusBar, useWindowDimensions, Text } from 'react-native';
 import { useAuthStore } from '../stores/authStore';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../components/Navigators/types/navigation';
-import { useUserPosts } from '../hooks/usePosts';
+import { useUserPosts, useDeletePost } from '../hooks/usePosts';
 import { useProfile } from '../hooks/auth/useProfile';
 import { useFollowers, useSyncFollowingState } from '../hooks/useRelationships';
-import { MediaImage } from '../components/media/MediaImage';
-import { ProfileThreadItem } from '../components/post/ProfileThreadItem';
-import SavedPosts from "../../assets/icons/FavoriteIcon.svg"
-import PhotosIcon from "../../assets/icons/PhotosIcon.svg"
-import TextIcon from "../../assets/icons/TextIcon.svg"
-import NewPost from "../../assets/icons/PlusIcon.svg"
+import { useSavePost, useUnsavePost } from '../hooks/useSavesPosts';
+import { ProfileThreadItem } from '../components/profile/ProfileThreadItem';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
-import { ProfileImage } from '../components/media/ProfileImage';
 import { FollowList } from '../components/profile/FollowList';
-import { FollowButton } from '../components/profile/FollowButton';
 import Header from '../components/ui/Header';
-import { EmbeddedPostView } from '../components/post/EmbeddedPostView';
+import { PostSettingsMenu } from '../components/post/PostSettingsMenu';
+import { useAlert } from '../lib/AlertContext';
+import { useAtom } from 'jotai';
+import { commentDrawerOpenAtom, currentPostIdAtom } from '../atoms/commentAtoms';
+import { ProfileHeader } from '../components/profile/ProfileHeader';
+import { FilterTabs } from '../components/profile/FilterTabs';
+import { PostsGrid } from '../components/profile/PostsGrid';
+import { PostCarousel } from '../components/profile/PostCarousel';
+import { NewPostButton } from '../components/profile/NewPostButton';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 type ProfileRouteProp = RouteProp<AppStackParamList, 'Profile'>;
-const POSTS_PER_PAGE = 9;
 
 export default function Profile() {
-  const { width, height } = useWindowDimensions();
+  const { width } = useWindowDimensions();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<ProfileRouteProp>();
   const { user } = useAuthStore();
+  const { showAlert } = useAlert();
   const userId = route.params?.userId || user?.id;
   const isOwnProfile = userId === user?.id;
   
@@ -36,11 +38,17 @@ export default function Profile() {
   const [postFilter, setPostFilter] = useState<'posts' | 'threads'>(isOwnProfile ? 'posts' : 'threads');
   const [showPostCarousel, setShowPostCarousel] = useState(false);
   const [initialPostIndex, setInitialPostIndex] = useState(0);
+  const [isMenuVisible, setIsMenuVisible] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<any>(null);
   
+  const [, setCommentDrawerOpen] = useAtom(commentDrawerOpenAtom);
+  const [, setCurrentPostId] = useAtom(currentPostIdAtom);
   const { data: profileData, isLoading: profileLoading } = useProfile(userId);
   const { data: posts, isLoading: postsLoading } = useUserPosts(userId);
   const { data: followers, isLoading: followersLoading } = useFollowers(userId);
-
+  const deletePostMutation = useDeletePost();
+  const savePostMutation = useSavePost();
+  const unsavePostMutation = useUnsavePost();
 
   useSyncFollowingState(profileData ? [{ 
     userId: profileData.userId,
@@ -48,20 +56,33 @@ export default function Profile() {
   }] : []);
 
   const filteredPosts = posts ? 
-  posts.filter((post: any) => {
-    if (postFilter === 'posts') {
-      return post.type === 'post';
-    } else {
-      return post.type === 'thread';
-    }
-  }) : [];
+    posts.filter((post: any) => {
+      if (postFilter === 'posts') {
+        return post.type === 'post';
+      } else {
+        return post.type === 'thread';
+      }
+    }) : [];
   
   const carouselPosts = filteredPosts ? filteredPosts.filter((post: any) => post.type === 'post') : [];
-  const handlePhotoIconClick = () => {
-    setPostFilter('posts');
+  
+  const getGridItemSize = useCallback(() => {
+    // Calculate exact size for 3 columns with padding
+    const contentWidth = width - 32; // Account for container padding (16px on each side)
+    const itemSize = (contentWidth - 16) / 3; // 8px spacing between items
+    return {
+      itemSize,
+      horizontalMargin: 8
+    };
+  }, [width]);
+
+  const { itemSize, horizontalMargin } = getGridItemSize();
+  
+  const handleFilterChange = (filter: 'posts' | 'threads') => {
+    setPostFilter(filter);
     setShowPostCarousel(false);
   };
-
+  
   const openCarouselAtPhoto = (post: any) => {
     const postIndex = carouselPosts.findIndex((p: any) => p.id === post.id);
     if (postIndex >= 0) {
@@ -69,26 +90,41 @@ export default function Profile() {
       setShowPostCarousel(true);
     }
   };
+  
+  const handlePostSettings = (post: any) => {
+    setSelectedPost(post);
+    setIsMenuVisible(true);
+  };
 
-  const getGridItemSize = useCallback(() => {
-    // Force 3 columns regardless of screen size
-    const columnsCount = 3;
+  const handleDeletePost = async () => {
+    if (!selectedPost) return;
     
-    // Calculate with fixed margins to ensure consistent spacing
-    const horizontalMargin = 8; // Fixed margin size
-    const totalMargins = horizontalMargin * (columnsCount + 1);
-    
-    // Calculate item size with a buffer of 2 pixels per item
-    const availableWidth = width - totalMargins;
-    const itemSize = Math.floor((availableWidth / columnsCount) - 2);
-    
-    return {
-      itemSize,
-      horizontalMargin
-    };
-  }, [width]);
+    try {
+      await deletePostMutation.mutateAsync(selectedPost.id);
+      setIsMenuVisible(false);
+      setShowPostCarousel(false);
+    } catch (error: any) {
+      console.error('Delete error:', error);
+    }
+  };
 
-  const { itemSize, horizontalMargin } = getGridItemSize();
+  const handleToggleSavePost = async (post: any) => {
+    try {
+      if (post.isSaved) {
+        await unsavePostMutation.mutateAsync(post.id);
+      } else {
+        await savePostMutation.mutateAsync(post.id);
+      }
+    } catch (error: any) {
+      console.error('Save/Unsave error:', error);
+      showAlert(`Failed to ${post.isSaved ? 'unsave' : 'save'} post`, { type: 'error' });
+    }
+  };
+  
+  const handleOpenComments = (postId: string) => {
+    setCurrentPostId(postId);
+    setCommentDrawerOpen(true);
+  };
 
   if (profileLoading) {
     return <LoadingSpinner fullScreen message="Loading profile..." />;
@@ -105,81 +141,17 @@ export default function Profile() {
       
       <ScrollView className="flex-1">
         <View className="px-6 pt-4">
-          <View className="flex-row mb-4">
-            <View className="w-24 h-24 rounded-full bg-red-200 shadow overflow-hidden">
-              {profileData?.profileImage ? (
-                <ProfileImage cloudflareId={profileData.profileImage} />
-              ) : (
-                <View className="w-full h-full bg-stone-300" />
-              )}
-            </View>
-            
-            <View className="ml-4 flex-1 justify-center">
-              <Text className="text-xl font-light">{profileData?.username || 'User'}</Text>
-              <Text className="text-xs font-light text-black opacity-70 mt-1">
-                {profileData?.bio || ''}
-              </Text>
-              
-              <View className="flex-row mt-4">
-                {isOwnProfile ? (
-                  <>
-                    <TouchableOpacity 
-                      className="bg-neutral-400 rounded-[30px] px-4 py-1 mr-2"
-                    >
-                      <Text className="text-white text-xs font-normal text-center">Settings</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      className="bg-stone-300 rounded-[30px] border border-stone-300 px-4 py-1"
-                      onPress={() => setShowFollowers(true)}
-                    >
-                      <Text className="text-black text-xs font-normal text-center">Followers</Text>
-                    </TouchableOpacity>
-                  </>
-                ) : (
-                  <>
-                    <FollowButton 
-                      userId={userId || ''}
-                      isFollowing={profileData?.isFollowing ?? false}
-                      className="bg-neutral-400 rounded-[30px] px-4 py-1 mr-2"
-                    />
-                    <TouchableOpacity 
-                      className="bg-stone-300 rounded-[30px] border border-stone-300 px-4 py-1"
-                    >
-                      <Text className="text-black text-xs font-normal text-center">Message</Text>
-                    </TouchableOpacity>
-                  </>
-                )}
-              </View>
-            </View>
-          </View>
+          <ProfileHeader 
+            profileData={profileData}
+            isOwnProfile={isOwnProfile}
+            userId={userId || ''}
+            onFollowersPress={() => setShowFollowers(true)}
+          />
           
-          <View className="flex-row justify-around py-2 items-center">
-            <TouchableOpacity 
-              className="items-center justify-center"
-              onPress={handlePhotoIconClick}
-            >
-              <View className={postFilter === 'posts' ? "bg-stone-300 bg-opacity-30 w-7 h-7 rounded-[10px] items-center justify-center" : ""}>
-                <PhotosIcon width={20} height={20}/>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              className="items-center justify-center"
-              onPress={() => {
-                setPostFilter('threads');
-                setShowPostCarousel(false);
-              }}
-            >
-              <View className={postFilter === 'threads' ? "bg-stone-300 bg-opacity-30 w-7 h-7 rounded-[10px] items-center justify-center" : ""}>
-                <TextIcon width={20} height={20} />
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              className="items-center justify-center"
-              onPress={() => {/* Saved posts */}}
-            >
-              <SavedPosts width={20} height={20}/>
-            </TouchableOpacity>
-          </View>
+          <FilterTabs 
+            postFilter={postFilter}
+            onFilterChange={handleFilterChange}
+          />
           
           <View className="h-px bg-black opacity-10 my-2" />               
           
@@ -190,50 +162,32 @@ export default function Profile() {
           ) : (
             <>
               {showPostCarousel && postFilter === 'posts' ? (
-                <View className="mt-4 flex-1" style={{ height: height * 0.7 }}>
-                  <EmbeddedPostView 
-                    posts={carouselPosts}
-                    initialPostIndex={initialPostIndex}
-                    onClose={() => setShowPostCarousel(false)}
-                  />
-                </View>
+                <View className="mt-2 pb-2">
+                <PostCarousel 
+                  posts={carouselPosts}
+                  initialIndex={initialPostIndex}
+                  onSettingsPress={handlePostSettings}
+                  onToggleSave={handleToggleSavePost}
+                  onOpenComments={handleOpenComments}
+                  isSaving={savePostMutation.isPending || unsavePostMutation.isPending}
+                />
+              </View>
               ) : (
                 <>
                   {postFilter === 'posts' ? (
-                  <View className="flex-row flex-wrap mt-4" style={{ paddingHorizontal: horizontalMargin }}>
-                  {filteredPosts.map((post: any, index: number) => (
-                    post.type === 'post' && (
-                      <TouchableOpacity 
-                        key={post.id} 
-                        style={{
-                          width: itemSize, 
-                          height: itemSize,
-                          marginHorizontal: horizontalMargin / 2,
-                          marginBottom: horizontalMargin,
-                        }}
-                        onPress={() => openCarouselAtPhoto(post)}
-                      >
-                          <View className="w-full h-full bg-stone-400 rounded-[10px] overflow-hidden">
-                            {post.media && post.media.length > 0 ? (
-                              <MediaImage media={post.media[0]} />
-                            ) : (
-                              <View className="flex-1 justify-center items-center">
-                                <Text className="text-white opacity-70">No image</Text>
-                              </View>
-                            )}
-                          </View>
-                        </TouchableOpacity>
-                      )
-                    ))}
-                  </View>
-                ) : (
-                  // Thread view remains unchanged
-                  <View className="mt-4">
-                    {filteredPosts.map((thread: any) => (
-                      <ProfileThreadItem key={thread.id} thread={thread} />
-                    ))}
-                  </View>
-                )}
+                    <PostsGrid 
+                      posts={filteredPosts.filter((post: { type: string }) => post.type === 'post')}
+                      itemSize={itemSize}
+                      spacing={horizontalMargin}
+                      onPostPress={openCarouselAtPhoto}
+                    />
+                  ) : (
+                    <View className="mt-4">
+                      {filteredPosts.map((thread: any) => (
+                        <ProfileThreadItem key={thread.id} thread={thread} />
+                      ))}
+                    </View>
+                  )}
                 </>
               )}
             </>
@@ -242,15 +196,7 @@ export default function Profile() {
       </ScrollView>
       
       {isOwnProfile && (
-        <TouchableOpacity 
-          className="absolute bottom-6 right-6 shadow-lg"
-          onPress={() => navigation.navigate('NewPost')}
-        >
-          <View className="color=#e4CAC7 rounded-[10px] border border-black flex-row items-center px-2 py-1">
-            <NewPost width={20} height={20}/>
-            <Text className="ml-2 text-xs font-normal">New Post</Text>
-          </View>
-        </TouchableOpacity>
+        <NewPostButton onPress={() => navigation.navigate('NewPost')} />
       )}
       
       <Modal
@@ -265,6 +211,13 @@ export default function Profile() {
           currentUserId={user?.id}
         />
       </Modal>
+      
+      <PostSettingsMenu
+        isVisible={isMenuVisible}
+        onClose={() => setIsMenuVisible(false)}
+        onDelete={handleDeletePost}
+        isDeleting={deletePostMutation.isPending}
+      />
     </View>
   );
 }

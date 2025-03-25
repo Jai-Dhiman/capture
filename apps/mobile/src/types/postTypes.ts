@@ -7,19 +7,41 @@ export type Post = {
     id: string;
     username: string;
     profileImage?: string;
+    bio?: string;
+    verifiedType: string;
+    followersCount: number;
+    followingCount: number;
+    isFollowing?: boolean;
+    createdAt: string;
+    updatedAt: string;
   };
   media: Array<{
     id: string;
     type: string;
     storageKey: string;
     order: number;
+    createdAt: string;
   }>;
-  createdAt: string;
-  updatedAt: string;
+  comments: Array<{
+    id: string;
+    content: string;
+    path: string;
+    depth: number;
+    parentId?: string;
+    isDeleted: boolean;
+    user: Post["user"];
+    createdAt: string;
+  }>;
   hashtags?: Array<{
     id: string;
     name: string;
+    createdAt: string;
   }>;
+  savedBy: Array<Post["user"]>;
+  isSaved: boolean;
+  createdAt: string;
+  updatedAt: string;
+  _commentCount: number;
 };
 
 export type Thread = Post & {
