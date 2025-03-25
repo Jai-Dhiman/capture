@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, StatusBar, Dimensions } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Modal, StatusBar, Dimensions, useWindowDimensions } from 'react-native';
 import { useAuthStore } from '../stores/authStore';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -18,19 +18,19 @@ import { ProfileImage } from '../components/media/ProfileImage';
 import { FollowList } from '../components/profile/FollowList';
 import { FollowButton } from '../components/profile/FollowButton';
 import Header from '../components/ui/Header';
-import { EmbeddedPostView } from 'components/post/EmbeddedPostView';
+import { EmbeddedPostView } from '../components/post/EmbeddedPostView';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 type ProfileRouteProp = RouteProp<AppStackParamList, 'Profile'>;
 const POSTS_PER_PAGE = 9;
 
 export default function Profile() {
+  const { width, height } = useWindowDimensions();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<ProfileRouteProp>();
   const { user } = useAuthStore();
   const userId = route.params?.userId || user?.id;
   const isOwnProfile = userId === user?.id;
-  const { width, height } = Dimensions.get('window');
   
   const [showFollowers, setShowFollowers] = useState(false);
   const [postFilter, setPostFilter] = useState<'posts' | 'threads'>(isOwnProfile ? 'posts' : 'threads');
@@ -41,6 +41,7 @@ export default function Profile() {
   const { data: profileData, isLoading: profileLoading } = useProfile(userId);
   const { data: posts, isLoading: postsLoading } = useUserPosts(userId);
   const { data: followers, isLoading: followersLoading } = useFollowers(userId);
+
 
   useSyncFollowingState(profileData ? [{ 
     userId: profileData.userId,
@@ -66,18 +67,35 @@ export default function Profile() {
     setCurrentPage(pageIndex);
   };
 
-  const togglePostView = () => {
-    if (postFilter === 'posts') {
-      setShowPostCarousel(!showPostCarousel);
-    } else {
-      setPostFilter('posts');
-      setShowPostCarousel(false);
+  const handlePhotoIconClick = () => {
+    setPostFilter('posts');
+    setShowPostCarousel(false);
+  };
+
+  const openCarouselAtPhoto = (post: any) => {
+    const postIndex = carouselPosts.findIndex((p: any) => p.id === post.id);
+    if (postIndex >= 0) {
+      setInitialPostIndex(postIndex);
+      setShowPostCarousel(true);
     }
   };
 
-  const gridItemMargin = width * 0.02;
-  const gridItemWidth = (width - (gridItemMargin * 4)) / 3;
-  
+  const getGridItemSize = useCallback(() => {
+    const minItemSize = 100; 
+    const spacing = width * 0.02; 
+    
+    const columnsCount = width < 320 ? 2 : 3;
+    
+    const availableWidth = width - (spacing * (columnsCount + 1));
+    const itemSize = Math.max(minItemSize, availableWidth / columnsCount);
+    
+    return {
+      itemSize,
+      spacing
+    };
+  }, [width]);
+
+  const { itemSize, spacing } = getGridItemSize();
 
   if (profileLoading) {
     return <LoadingSpinner fullScreen message="Loading profile..." />;
@@ -145,7 +163,7 @@ export default function Profile() {
           <View className="flex-row justify-around py-2 items-center">
             <TouchableOpacity 
               className="items-center justify-center"
-              onPress={togglePostView}
+              onPress={handlePhotoIconClick}
             >
               <View className={postFilter === 'posts' ? "bg-stone-300 bg-opacity-30 w-7 h-7 rounded-[10px] items-center justify-center" : ""}>
                 <PhotosIcon width={20} height={20}/>
@@ -189,22 +207,17 @@ export default function Profile() {
               ) : (
                 <>
                   {postFilter === 'posts' ? (
-                    <View className="flex-row flex-wrap mt-4">
+                    <View className="flex-row flex-wrap mt-4" style={{ marginHorizontal: -spacing / 2 }}>
                       {currentPosts.map((post: any, index: number) => (
                         post.type === 'post' && (
                           <TouchableOpacity 
                             key={post.id} 
                             style={{
-                              width: gridItemWidth, 
-                              height: gridItemWidth,
-                              marginRight: (index + 1) % 3 === 0 ? 0 : gridItemMargin,
-                              marginBottom: gridItemMargin
+                              width: itemSize, 
+                              height: itemSize,
+                              margin: spacing / 2,
                             }}
-                            onPress={() => {
-                              const postIndex = carouselPosts.findIndex((p: any) => p.id === post.id);
-                              setInitialPostIndex(postIndex >= 0 ? postIndex : 0);
-                              setShowPostCarousel(true);
-                            }}
+                            onPress={() => openCarouselAtPhoto(post)}
                           >
                             <View className="w-full h-full bg-stone-400 rounded-[10px] overflow-hidden">
                               {post.media && post.media.length > 0 ? (

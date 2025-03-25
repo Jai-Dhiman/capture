@@ -1,5 +1,5 @@
-import React, { useState, useRef, memo, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, Dimensions, Platform } from 'react-native';
+import React, { useState, useRef, memo, useEffect, useCallback } from 'react';
+import { View, Text, TouchableOpacity, ActivityIndicator, Platform, useWindowDimensions } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { PostMediaGallery } from '../post/PostMediaGallery';
 import { PostSettingsMenu } from '../post/PostSettingsMenu';
@@ -21,7 +21,7 @@ interface EmbeddedPostViewProps {
 }
 
 export const EmbeddedPostView = memo(({ posts, initialPostIndex, onClose }: EmbeddedPostViewProps) => {
-  const { width, height } = Dimensions.get('window');
+  const { width, height } = useWindowDimensions();
   const [currentIndex, setCurrentIndex] = useState(initialPostIndex);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const flashListRef = useRef<FlashList<any>>(null);
@@ -35,12 +35,16 @@ export const EmbeddedPostView = memo(({ posts, initialPostIndex, onClose }: Embe
   
   const currentPost = posts[currentIndex];
   
-  const isSmallScreen = width < 375;
-  const mediaHeightPercentage = 0.45; 
-  const mediaHeight = Math.round(height * mediaHeightPercentage);
+  const calculateMediaHeight = useCallback(() => {
+    const isSmallScreen = width < 375;
+    const mediaHeightPercentage = isSmallScreen ? 0.35 : 0.42;
+    return Math.round(height * mediaHeightPercentage);
+  }, [width, height]);
+  
+  const mediaHeight = calculateMediaHeight();
   
   useEffect(() => {
-    if (flashListRef.current && initialPostIndex > 0) {
+    if (flashListRef.current && initialPostIndex >= 0) {
       setTimeout(() => {
         flashListRef.current?.scrollToIndex({
           index: initialPostIndex,
@@ -80,8 +84,10 @@ export const EmbeddedPostView = memo(({ posts, initialPostIndex, onClose }: Embe
   const renderPost = ({ item: post }: { item: any }) => {
     const formattedDate = new Date(post.createdAt).toLocaleDateString();
     
+    const containerWidth = width;
+    
     return (
-      <View style={{ width, padding: isSmallScreen ? 8 : 16 }}>
+      <View style={{ width: containerWidth, padding: 12 }}>
         <View className="bg-zinc-300 rounded-lg overflow-hidden mb-4">
           <View className="flex-row justify-between items-center p-2">
             <View className="flex-1" />
@@ -147,8 +153,8 @@ export const EmbeddedPostView = memo(({ posts, initialPostIndex, onClose }: Embe
   const handleScroll = (event: any) => {
     const contentOffset = event.nativeEvent.contentOffset;
     const viewSize = event.nativeEvent.layoutMeasurement;
-    const newIndex = Math.floor(contentOffset.x / viewSize.width);
-    if (newIndex !== currentIndex) {
+    const newIndex = Math.round(contentOffset.x / viewSize.width);
+    if (newIndex !== currentIndex && newIndex >= 0 && newIndex < posts.length) {
       setCurrentIndex(newIndex);
     }
   };
@@ -175,9 +181,10 @@ export const EmbeddedPostView = memo(({ posts, initialPostIndex, onClose }: Embe
         scrollEventThrottle={16}
         initialScrollIndex={initialPostIndex}
         contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 48 : 24 }}
+        snapToInterval={width}
+        decelerationRate="fast"
       />
       
-      {/* Pagination dots */}
       {posts.length > 1 && (
         <View className="h-8 absolute bottom-4 left-0 right-0 flex-row justify-center items-center">
           <View className="bg-stone-300 bg-opacity-80 px-3 py-2 rounded-full flex-row">
