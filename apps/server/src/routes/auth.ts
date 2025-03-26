@@ -1,7 +1,8 @@
 import { Hono } from "hono";
 import { createClient } from "@supabase/supabase-js";
 import type { Bindings, Variables } from "../types";
-import { z } from "zod"; // For validation
+import { z } from "zod";
+import { authRateLimiter, passwordResetRateLimiter, otpRateLimiter } from "../middleware/rateLimit";
 
 const router = new Hono<{
   Bindings: Bindings;
@@ -41,17 +42,20 @@ const verifyOTPSchema = z.object({
 
 const oauthSchema = z.object({
   provider: z.enum(["google", "apple"]),
+  code_challenge: z.string(),
+  code_challenge_method: z.enum(["S256"]),
 });
 
 const callbackSchema = z.object({
   url: z.string().url(),
+  code_verifier: z.string().optional(),
 });
 
 function getSupabaseClient(c: any) {
   return createClient(c.env.SUPABASE_URL, c.env.SUPABASE_KEY);
 }
 
-router.post("/signin", async (c) => {
+router.post("/signin", authRateLimiter, async (c) => {
   try {
     const body = await c.req.json();
     const validation = signInSchema.safeParse(body);
@@ -86,7 +90,7 @@ router.post("/signin", async (c) => {
   }
 });
 
-router.post("/signup", async (c) => {
+router.post("/signup", authRateLimiter, async (c) => {
   try {
     const body = await c.req.json();
     const validation = signUpSchema.safeParse(body);
@@ -124,7 +128,7 @@ router.post("/signup", async (c) => {
   }
 });
 
-router.post("/refresh", async (c) => {
+router.post("/refresh", authRateLimiter, async (c) => {
   try {
     const body = await c.req.json();
     const validation = refreshTokenSchema.safeParse(body);
@@ -165,7 +169,7 @@ router.post("/refresh", async (c) => {
   }
 });
 
-router.post("/reset-password", async (c) => {
+router.post("/reset-password", passwordResetRateLimiter, async (c) => {
   try {
     const body = await c.req.json();
     const validation = resetPasswordSchema.safeParse(body);
@@ -198,7 +202,7 @@ router.post("/reset-password", async (c) => {
   }
 });
 
-router.post("/update-password", async (c) => {
+router.post("/update-password", authRateLimiter, async (c) => {
   try {
     const body = await c.req.json();
     const validation = updatePasswordSchema.safeParse(body);
@@ -238,7 +242,7 @@ router.post("/update-password", async (c) => {
   }
 });
 
-router.post("/send-otp", async (c) => {
+router.post("/send-otp", otpRateLimiter, async (c) => {
   try {
     const body = await c.req.json();
     const validation = sendOTPSchema.safeParse(body);
@@ -287,7 +291,7 @@ router.post("/send-otp", async (c) => {
   }
 });
 
-router.post("/verify-otp", async (c) => {
+router.post("/verify-otp", otpRateLimiter, async (c) => {
   try {
     const body = await c.req.json();
     const validation = verifyOTPSchema.safeParse(body);
@@ -322,7 +326,7 @@ router.post("/verify-otp", async (c) => {
   }
 });
 
-router.post("/oauth", async (c) => {
+router.post("/oauth", authRateLimiter, async (c) => {
   try {
     const body = await c.req.json();
     const validation = oauthSchema.safeParse(body);
@@ -337,13 +341,17 @@ router.post("/oauth", async (c) => {
       );
     }
 
-    const { provider } = validation.data;
+    const { provider, code_challenge, code_challenge_method } = validation.data;
     const supabase = getSupabaseClient(c);
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
         redirectTo: `${c.req.header("origin") || ""}/auth/callback`,
+        queryParams: {
+          code_challenge: code_challenge,
+          code_challenge_method: code_challenge_method,
+        },
       },
     });
 
@@ -358,7 +366,7 @@ router.post("/oauth", async (c) => {
   }
 });
 
-router.post("/handle-callback", async (c) => {
+router.post("/handle-callback", authRateLimiter, async (c) => {
   try {
     const body = await c.req.json();
     const validation = callbackSchema.safeParse(body);
@@ -373,7 +381,7 @@ router.post("/handle-callback", async (c) => {
       );
     }
 
-    const { url } = validation.data;
+    const { url, code_verifier } = validation.data;
     const supabase = getSupabaseClient(c);
 
     if (url.includes("#")) {
@@ -418,6 +426,7 @@ router.post("/handle-callback", async (c) => {
 
     if (code) {
       try {
+        const options = code_verifier ? { codeVerifier: code_verifier } : undefined;
         const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
         if (error) {

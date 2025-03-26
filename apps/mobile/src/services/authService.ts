@@ -1,4 +1,8 @@
 import { API_URL } from "@env";
+import crypto from "crypto-js";
+import * as SecureStore from "expo-secure-store";
+import * as Random from "expo-random";
+import { encode as base64encode } from "base-64";
 
 export class AuthError extends Error {
   code: string;
@@ -7,6 +11,32 @@ export class AuthError extends Error {
     this.name = "AuthError";
     this.code = code;
   }
+}
+
+async function generateCodeVerifier(): Promise<string> {
+  const randomBytes = await Random.getRandomBytesAsync(32);
+  const verifier = base64encode(String.fromCharCode(...new Uint8Array(randomBytes)))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");
+  return verifier.substring(0, 128);
+}
+
+async function generateCodeChallenge(verifier: string): Promise<string> {
+  const hash = crypto.SHA256(verifier);
+  return base64encode(hash.toString(crypto.enc.Base64)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+}
+
+async function storeCodeVerifier(verifier: string): Promise<void> {
+  await SecureStore.setItemAsync("pkce_code_verifier", verifier);
+}
+
+async function getStoredCodeVerifier(): Promise<string | null> {
+  return await SecureStore.getItemAsync("pkce_code_verifier");
+}
+
+async function clearCodeVerifier(): Promise<void> {
+  await SecureStore.deleteItemAsync("pkce_code_verifier");
 }
 
 export const authService = {
@@ -158,10 +188,19 @@ export const authService = {
 
   async signInWithProvider(provider: "google" | "apple") {
     try {
+      const codeVerifier = await generateCodeVerifier();
+      await storeCodeVerifier(codeVerifier);
+
+      const codeChallenge = await generateCodeChallenge(codeVerifier);
+
       const response = await fetch(`${API_URL}/auth/oauth`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ provider }),
+        body: JSON.stringify({
+          provider,
+          code_challenge: codeChallenge,
+          code_challenge_method: "S256",
+        }),
       });
 
       const data = await response.json();
@@ -178,11 +217,18 @@ export const authService = {
 
   async handleAuthCallback(url: string) {
     try {
+      const codeVerifier = await getStoredCodeVerifier();
+
       const response = await fetch(`${API_URL}/auth/handle-callback`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({
+          url,
+          code_verifier: codeVerifier,
+        }),
       });
+
+      await clearCodeVerifier(); // Clear it after use
 
       const data = await response.json();
       if (!response.ok) {
@@ -191,8 +237,75 @@ export const authService = {
 
       return data;
     } catch (error) {
+      await clearCodeVerifier(); // Clear on error too
       if (error instanceof AuthError) throw error;
       throw new AuthError(error instanceof Error ? error.message : "Authentication callback failed");
     }
+  },
+
+  async fetchUserProfile(userId: string, token: string) {
+    try {
+      const checkResponse = await fetch(`${API_URL}/api/profile/check/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!checkResponse.ok) throw new Error("Profile check failed");
+
+      const checkData = await checkResponse.json();
+
+      if (checkData.exists) {
+        const profileResponse = await fetch(`${API_URL}/graphql`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            query: `
+              query GetProfile($userId: ID!) {
+                profile(id: $userId) {
+                  id
+                  userId
+                  username
+                  bio
+                  profileImage
+                }
+              }
+            `,
+            variables: { userId },
+          }),
+        });
+
+        if (!profileResponse.ok) throw new Error("Failed to fetch profile");
+
+        const data = await profileResponse.json();
+        if (data.errors) {
+          throw new Error(data.errors[0]?.message || "Failed to fetch profile");
+        }
+
+        return data.data.profile;
+      }
+
+      return null;
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      return null;
+    }
+  },
+
+  async restoreSession() {
+    try {
+      // This would be a placeholder for any session restoration logic
+      // It could involve checking secure storage, etc.
+      return true;
+    } catch (error) {
+      console.error("Failed to restore session:", error);
+      return false;
+    }
+  },
+
+  updateAuthStage() {
+    // This would be implementation specific
+    // The idea is to check the current user state and update the auth stage
   },
 };

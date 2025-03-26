@@ -7,7 +7,6 @@ import { View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import "../global.css";
 import { ApolloProvider } from './components/providers/ApolloProvider';
-import { SessionProvider } from './lib/SessionProvider';
 import { MainNavigator, linking } from './components/Navigators';
 import { AlertProvider } from './lib/AlertContext';
 import { Provider as JotaiProvider } from 'jotai'
@@ -33,7 +32,6 @@ export default function App() {
             <JotaiInitializer />
             <ApolloProvider>
               <AuthProvider>
-                <SessionProvider>
                   <AlertProvider>
                     <View className="flex-1 bg-black">
                       <StatusBar style="light" />
@@ -42,7 +40,6 @@ export default function App() {
                       </NavigationContainer>
                     </View>
                   </AlertProvider>
-                </SessionProvider>
               </AuthProvider>
             </ApolloProvider>
           </QueryClientProvider>

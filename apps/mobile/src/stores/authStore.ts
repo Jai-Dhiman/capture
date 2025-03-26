@@ -25,6 +25,9 @@ export interface AuthState {
   user: AuthUser | null;
   session: AuthSession | null;
   otpMessageId?: string;
+  isRefreshing: boolean;
+  lastRefreshError?: string;
+  offlineRequests: Array<() => Promise<void>>;
 
   setUser: (user: AuthUser | null) => void;
   setSession: (session: AuthSession | null) => void;
@@ -34,6 +37,10 @@ export interface AuthState {
   resetPhoneVerification: () => void;
   simulatePhoneVerification: () => void;
   refreshSession: () => Promise<AuthSession | null>;
+  queueOfflineRequest: (request: () => Promise<void>) => void;
+  processOfflineQueue: () => Promise<void>;
+  setIsRefreshing: (value: boolean) => void;
+  setLastRefreshError: (error: string | undefined) => void;
 }
 
 const secureStorage = {
@@ -69,6 +76,9 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       session: null,
       otpMessageId: undefined,
+      isRefreshing: false,
+      lastRefreshError: undefined,
+      offlineRequests: [],
 
       setUser: (user) =>
         set({
@@ -112,16 +122,46 @@ export const useAuthStore = create<AuthState>()(
             : null,
         })),
 
+      setIsRefreshing: (value) => set({ isRefreshing: value }),
+
+      setLastRefreshError: (error) => set({ lastRefreshError: error }),
+
+      queueOfflineRequest: (request) =>
+        set((state) => ({
+          offlineRequests: [...state.offlineRequests, request],
+        })),
+
+      processOfflineQueue: async () => {
+        const { offlineRequests } = get();
+        if (offlineRequests.length === 0) return;
+
+        const requests = [...offlineRequests];
+        set({ offlineRequests: [] });
+
+        for (const request of requests) {
+          try {
+            await request();
+          } catch (error) {
+            console.error("Failed to process offline request:", error);
+          }
+        }
+      },
+
       refreshSession: async () => {
         const currentSession = get().session;
         if (!currentSession?.refresh_token) return null;
+
+        set({ isRefreshing: true, lastRefreshError: undefined });
 
         try {
           const now = Date.now();
           const expiresAt = currentSession.expires_at;
           const shouldRefresh = expiresAt - now < 5 * 60 * 1000;
 
-          if (!shouldRefresh) return currentSession;
+          if (!shouldRefresh) {
+            set({ isRefreshing: false });
+            return currentSession;
+          }
 
           const refreshedSession = await authService.refreshToken(currentSession.refresh_token);
 
@@ -131,12 +171,15 @@ export const useAuthStore = create<AuthState>()(
               refresh_token: refreshedSession.refresh_token,
               expires_at: new Date(refreshedSession.expires_at).getTime(),
             },
+            isRefreshing: false,
           });
 
           return refreshedSession;
         } catch (error) {
           console.error("Failed to refresh session:", error);
-          get().clearAuth();
+          const errorMessage = error instanceof Error ? error.message : "Unknown error";
+          set({ lastRefreshError: errorMessage, isRefreshing: false });
+
           return null;
         }
       },
