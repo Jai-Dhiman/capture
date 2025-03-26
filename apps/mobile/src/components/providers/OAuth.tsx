@@ -1,23 +1,16 @@
 import React from 'react';
-import { TouchableOpacity, Text, Alert } from 'react-native';
-import { supabase } from '../../lib/supabase';
+import { TouchableOpacity, Text } from 'react-native';
 import GoogleIcon from '../../../assets/icons/GoogleLogo.svg';
 import { useAlert } from '../../lib/AlertContext';
 import { errorService } from '../../services/errorService';
+import { authService } from '../../services/authService';
 
 export default function OAuth() {
   const { showAlert } = useAlert();
 
   const handleGoogleSignIn = async () => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-
-      if (error) throw error;
+      await authService.signInWithProvider('google');
     } catch (error) {
       const appError = errorService.handleAuthError(error);
       showAlert(appError.message, {

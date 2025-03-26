@@ -12,7 +12,7 @@ import { MainNavigator, linking } from './components/Navigators';
 import { AlertProvider } from './lib/AlertContext';
 import { Provider as JotaiProvider } from 'jotai'
 import { JotaiInitializer } from './components/providers/JotaiProvider';
-
+import { AuthProvider } from './components/providers/AuthProvider';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,18 +30,20 @@ export default function App() {
       <SafeAreaProvider>
         <JotaiProvider>
           <QueryClientProvider client={queryClient}>
-          <JotaiInitializer />
+            <JotaiInitializer />
             <ApolloProvider>
-              <SessionProvider>
-                <AlertProvider>
-                  <View className="flex-1 bg-black">
-                    <StatusBar style="light" />
-                    <NavigationContainer linking={linking}>
-                      <MainNavigator />
-                    </NavigationContainer>
-                  </View>
-                </AlertProvider>
-              </SessionProvider>
+              <AuthProvider>
+                <SessionProvider>
+                  <AlertProvider>
+                    <View className="flex-1 bg-black">
+                      <StatusBar style="light" />
+                      <NavigationContainer linking={linking}>
+                        <MainNavigator />
+                      </NavigationContainer>
+                    </View>
+                  </AlertProvider>
+                </SessionProvider>
+              </AuthProvider>
             </ApolloProvider>
           </QueryClientProvider>
         </JotaiProvider>

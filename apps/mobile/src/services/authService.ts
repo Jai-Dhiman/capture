@@ -1,13 +1,7 @@
-import { supabase } from "../lib/supabase";
-import { useAuthStore } from "../stores/authStore";
-import { useProfileStore } from "../stores/profileStore";
 import { API_URL } from "@env";
-import { canSkipPhoneVerification, isDevelopment, TEST_EMAILS } from "../config/environment";
-import { useOnboardingStore } from "../stores/onboardingStore";
 
 export class AuthError extends Error {
   code: string;
-
   constructor(message: string, code: string = "auth/unknown") {
     super(message);
     this.name = "AuthError";
@@ -16,46 +10,39 @@ export class AuthError extends Error {
 }
 
 export const authService = {
-  async signInWithEmailPassword(email: string, password: string) {
+  async signIn(email: string, password: string) {
     try {
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const response = await fetch(`${API_URL}/auth/signin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
 
-      if (authError) throw new AuthError(authError.message, "auth/sign-in-failed");
-
-      if (!authData.user?.email_confirmed_at) {
-        throw new AuthError("Please verify your email before logging in", "auth/email-not-verified");
+      const data = await response.json();
+      if (!response.ok) {
+        throw new AuthError(data.error || "Authentication failed", data.code || "auth/sign-in-failed");
       }
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        throw new AuthError("No auth token available", "auth/no-token");
-      }
-
-      const profileData = await this.fetchUserProfile(authData.user.id, session.access_token);
-
-      return { user: authData.user, session, profile: profileData };
+      return data;
     } catch (error) {
       if (error instanceof AuthError) throw error;
       throw new AuthError(error instanceof Error ? error.message : "Authentication failed");
     }
   },
 
-  async signUpWithEmailPassword(email: string, password: string) {
+  async signUp(email: string, password: string) {
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
+      const response = await fetch(`${API_URL}/auth/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
 
-      if (error) throw new AuthError(error.message, "auth/sign-up-failed");
+      const data = await response.json();
+      if (!response.ok) {
+        throw new AuthError(data.error || "Registration failed", data.code || "auth/sign-up-failed");
+      }
+
       return data;
     } catch (error) {
       if (error instanceof AuthError) throw error;
@@ -63,218 +50,149 @@ export const authService = {
     }
   },
 
-  async signInWithOAuth(provider: "google" | "apple") {
+  async refreshToken(refreshToken: string) {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
+      const response = await fetch(`${API_URL}/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: refreshToken }),
       });
 
-      if (error) throw new AuthError(error.message, "auth/oauth-failed");
+      const data = await response.json();
+      if (!response.ok) {
+        throw new AuthError(data.error || "Failed to refresh token", data.code || "auth/refresh-failed");
+      }
+
+      return data;
     } catch (error) {
       if (error instanceof AuthError) throw error;
-      throw new AuthError(error instanceof Error ? error.message : "OAuth authentication failed");
+      throw new AuthError(error instanceof Error ? error.message : "Token refresh failed");
     }
   },
 
-  async signOut() {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw new AuthError(error.message, "auth/sign-out-failed");
+  async resetPassword(email: string) {
+    try {
+      const response = await fetch(`${API_URL}/auth/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new AuthError(data.error || "Failed to reset password", data.code || "auth/reset-failed");
+      }
+
+      return data;
+    } catch (error) {
+      if (error instanceof AuthError) throw error;
+      throw new AuthError(error instanceof Error ? error.message : "Password reset failed");
+    }
   },
 
-  async sendPhoneVerification(phone: string) {
+  async updatePassword(password: string, token: string) {
     try {
-      const formattedPhone = phone.startsWith("+") ? phone : `+1${phone.replace(/\D/g, "")}`;
-
-      const { error: updateError } = await supabase.auth.updateUser({
-        phone: formattedPhone,
+      const response = await fetch(`${API_URL}/auth/update-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ password }),
       });
 
-      if (updateError) throw new AuthError(updateError.message, "auth/update-phone-failed");
+      const data = await response.json();
+      if (!response.ok) {
+        throw new AuthError(data.error || "Failed to update password", data.code || "auth/update-failed");
+      }
 
-      const { error: otpError } = await supabase.auth.signInWithOtp({
-        phone: formattedPhone,
+      return data;
+    } catch (error) {
+      if (error instanceof AuthError) throw error;
+      throw new AuthError(error instanceof Error ? error.message : "Password update failed");
+    }
+  },
+
+  async sendOTP(phone: string, token: string) {
+    try {
+      const response = await fetch(`${API_URL}/auth/send-otp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ phone }),
       });
 
-      if (otpError) throw new AuthError(otpError.message, "auth/send-otp-failed");
+      const data = await response.json();
+      if (!response.ok) {
+        throw new AuthError(data.error || "Failed to send verification code", data.code || "auth/otp-failed");
+      }
 
-      return formattedPhone;
+      return data;
     } catch (error) {
       if (error instanceof AuthError) throw error;
       throw new AuthError(error instanceof Error ? error.message : "Failed to send verification code");
     }
   },
 
-  async verifyPhoneWithOTP(phone: string, token: string) {
+  async verifyOTP(phone: string, code: string) {
     try {
-      const { user } = useAuthStore.getState();
-
-      if (isDevelopment && user?.email && TEST_EMAILS.includes(user.email)) {
-        console.log("DEV MODE: Auto-verifying test account");
-        return true;
-      }
-
-      const { error } = await supabase.auth.verifyOtp({
-        phone,
-        token,
-        type: "sms",
+      const response = await fetch(`${API_URL}/auth/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, token: code }),
       });
 
-      if (error) throw new AuthError(error.message, "auth/verify-otp-failed");
-      return true;
+      const data = await response.json();
+      if (!response.ok) {
+        throw new AuthError(data.error || "Failed to verify code", data.code || "auth/verify-failed");
+      }
+
+      return data;
     } catch (error) {
       if (error instanceof AuthError) throw error;
-      throw new AuthError(error instanceof Error ? error.message : "Phone verification failed");
+      throw new AuthError(error instanceof Error ? error.message : "Failed to verify code");
     }
   },
 
-  async fetchUserProfile(userId: string, token: string) {
+  async signInWithProvider(provider: "google" | "apple") {
     try {
-      const checkResponse = await fetch(`${API_URL}/api/profile/check/${userId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await fetch(`${API_URL}/auth/oauth`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider }),
       });
 
-      if (!checkResponse.ok) {
-        throw new AuthError("Profile check failed", "profile/check-failed");
+      const data = await response.json();
+      if (!response.ok) {
+        throw new AuthError(data.error || "OAuth authentication failed", data.code || "auth/oauth-failed");
       }
 
-      const checkData = await checkResponse.json();
-
-      if (checkData.exists) {
-        const profileResponse = await fetch(`${API_URL}/graphql`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            query: `
-              query GetProfile($userId: ID!) {
-                profile(id: $userId) {
-                  id
-                  userId
-                  username
-                  bio
-                  profileImage
-                }
-              }
-            `,
-            variables: { userId },
-          }),
-        });
-
-        if (!profileResponse.ok) {
-          throw new AuthError("Failed to fetch profile", "profile/fetch-failed");
-        }
-
-        const data = await profileResponse.json();
-        if (data.errors) {
-          throw new AuthError(data.errors[0]?.message || "Failed to fetch profile", "profile/fetch-failed");
-        }
-
-        return data.data.profile;
-      }
-
-      return null;
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-      return null;
-    }
-  },
-
-  async restoreSession() {
-    try {
-      const { data, error } = await supabase.auth.getSession();
-
-      if (error) throw new AuthError(error.message, "auth/get-session-failed");
-
-      if (!data.session) return null;
-
-      const { user } = data.session;
-
-      const { setUser, setSession, setAuthStage } = useAuthStore.getState();
-      const { setProfile } = useProfileStore.getState();
-
-      setUser({
-        id: user.id,
-        email: user.email || "",
-        phone: user.phone || "",
-        phone_confirmed_at: user.phone_confirmed_at || undefined,
-      });
-
-      setSession({
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
-        expires_at: new Date(data.session.expires_at || 0).getTime(),
-      });
-
-      const profileData = await this.fetchUserProfile(user.id, data.session.access_token);
-
-      if (profileData) {
-        setProfile(profileData);
-      }
-
-      this.updateAuthStage();
-
-      return {
-        user,
-        session: data.session,
-        profile: profileData,
-      };
-    } catch (error) {
-      console.error("Failed to restore session:", error);
-      return null;
-    }
-  },
-
-  async resetPassword(email: string) {
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
-      });
-
-      if (error) throw new AuthError(error.message, "auth/reset-password-failed");
-      return true;
+      return data;
     } catch (error) {
       if (error instanceof AuthError) throw error;
-      throw new AuthError(error instanceof Error ? error.message : "Failed to send password reset email");
+      throw new AuthError(error instanceof Error ? error.message : "OAuth authentication failed");
     }
   },
 
-  async updatePassword(password: string) {
+  async handleAuthCallback(url: string) {
     try {
-      const { error } = await supabase.auth.updateUser({ password });
+      const response = await fetch(`${API_URL}/auth/handle-callback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
 
-      if (error) throw new AuthError(error.message, "auth/update-password-failed");
-      return true;
+      const data = await response.json();
+      if (!response.ok) {
+        throw new AuthError(data.error || "Failed to process authentication", data.code || "auth/callback-failed");
+      }
+
+      return data;
     } catch (error) {
       if (error instanceof AuthError) throw error;
-      throw new AuthError(error instanceof Error ? error.message : "Failed to update password");
+      throw new AuthError(error instanceof Error ? error.message : "Authentication callback failed");
     }
-  },
-
-  updateAuthStage() {
-    const { user, setAuthStage } = useAuthStore.getState();
-    const { profile } = useProfileStore.getState();
-    const { currentStep } = useOnboardingStore.getState();
-
-    if (!user) {
-      setAuthStage("unauthenticated");
-      return;
-    }
-
-    if (!profile) {
-      setAuthStage("profile-creation");
-      return;
-    }
-
-    if (user.phone && !user.phone_confirmed_at && currentStep !== "complete" && !canSkipPhoneVerification(user.email)) {
-      setAuthStage("phone-verification");
-      return;
-    }
-
-    setAuthStage("complete");
   },
 };

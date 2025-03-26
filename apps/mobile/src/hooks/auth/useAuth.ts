@@ -1,14 +1,12 @@
-import { useState } from "react";
-import { supabase } from "../../lib/supabase";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "../../stores/authStore";
 import { useProfileStore } from "../../stores/profileStore";
 import { API_URL } from "@env";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAlert } from "../../lib/AlertContext";
 import { errorService } from "../../services/errorService";
+import { authService } from "../../services/authService";
 
 export function useAuth() {
-  const [isLoading, setIsLoading] = useState(false);
   const { setUser, setSession, clearAuth } = useAuthStore();
   const { setProfile, clearProfile } = useProfileStore();
   const queryClient = useQueryClient();
@@ -66,30 +64,17 @@ export function useAuth() {
 
   const login = useMutation({
     mutationFn: async ({ email, password }: { email: string; password: string }) => {
-      setIsLoading(true);
-
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (authError) throw authError;
+      const authData = await authService.signIn(email, password);
 
       if (!authData.user?.email_confirmed_at) {
         throw new Error("Please verify your email before logging in");
       }
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session?.access_token) throw new Error("No auth token available");
-
-      const profileData = await fetchUserProfile(authData.user.id, session.access_token);
+      const profileData = await fetchUserProfile(authData.user.id, authData.session.access_token);
 
       return {
         user: authData.user,
-        session,
+        session: authData.session,
         profile: profileData,
       };
     },
@@ -126,24 +111,11 @@ export function useAuth() {
         type: errorService.getAlertType(appError.category),
       });
     },
-    onSettled: () => {
-      setIsLoading(false);
-    },
   });
 
   const signup = useMutation({
     mutationFn: async ({ email, password }: { email: string; password: string }) => {
-      setIsLoading(true);
-
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-
-      return data;
+      return await authService.signUp(email, password);
     },
     onError: (error) => {
       console.error("Signup error:", error);
@@ -152,22 +124,14 @@ export function useAuth() {
         type: errorService.getAlertType(appError.category),
       });
     },
-    onSettled: () => {
-      setIsLoading(false);
-    },
   });
 
   const logout = useMutation({
     mutationFn: async () => {
-      setIsLoading(true);
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-    },
-    onSuccess: () => {
       clearAuth();
       clearProfile();
-
       queryClient.clear();
+      return true;
     },
     onError: (error) => {
       console.error("Logout error:", error);
@@ -180,15 +144,11 @@ export function useAuth() {
         type: errorService.getAlertType(appError.category),
       });
     },
-    onSettled: () => {
-      setIsLoading(false);
-    },
   });
 
   return {
     login,
     signup,
     logout,
-    isLoading,
   };
 }
