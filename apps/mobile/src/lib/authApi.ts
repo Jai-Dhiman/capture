@@ -1,5 +1,5 @@
 import { API_URL } from "@env";
-import * as SecureStore from "expo-secure-store";
+import { secureStorage } from "./storage";
 import * as Random from "expo-random";
 import { encode as base64encode } from "base-64";
 import crypto from "crypto-js";
@@ -35,21 +35,21 @@ export const authApi = {
   },
 
   async storeCodeVerifier(verifier: string): Promise<void> {
-    await SecureStore.setItemAsync(AUTH_STORAGE_KEYS.CODE_VERIFIER, verifier);
+    await secureStorage.setItem(AUTH_STORAGE_KEYS.CODE_VERIFIER, verifier);
   },
 
   async getStoredCodeVerifier(): Promise<string | null> {
-    return await SecureStore.getItemAsync(AUTH_STORAGE_KEYS.CODE_VERIFIER);
+    return await secureStorage.getItem(AUTH_STORAGE_KEYS.CODE_VERIFIER);
   },
 
   async clearCodeVerifier(): Promise<void> {
-    await SecureStore.deleteItemAsync(AUTH_STORAGE_KEYS.CODE_VERIFIER);
+    await secureStorage.removeItem(AUTH_STORAGE_KEYS.CODE_VERIFIER);
   },
 
   async storeSessionData(session: any, user: any): Promise<void> {
     try {
-      await SecureStore.setItemAsync(AUTH_STORAGE_KEYS.SESSION, JSON.stringify(session));
-      await SecureStore.setItemAsync(AUTH_STORAGE_KEYS.USER, JSON.stringify(user));
+      await secureStorage.setItem(AUTH_STORAGE_KEYS.SESSION, JSON.stringify(session));
+      await secureStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(user));
     } catch (error) {
       console.error("Failed to store session data:", error);
       throw new AuthError("Failed to save session data", "auth/storage-failed");
@@ -58,8 +58,8 @@ export const authApi = {
 
   async getStoredSessionData(): Promise<{ session: any; user: any } | null> {
     try {
-      const sessionData = await SecureStore.getItemAsync(AUTH_STORAGE_KEYS.SESSION);
-      const userData = await SecureStore.getItemAsync(AUTH_STORAGE_KEYS.USER);
+      const sessionData = await secureStorage.getItem(AUTH_STORAGE_KEYS.SESSION);
+      const userData = await secureStorage.getItem(AUTH_STORAGE_KEYS.USER);
 
       if (!sessionData || !userData) {
         return null;
@@ -77,8 +77,8 @@ export const authApi = {
 
   async clearSessionData(): Promise<void> {
     try {
-      await SecureStore.deleteItemAsync(AUTH_STORAGE_KEYS.SESSION);
-      await SecureStore.deleteItemAsync(AUTH_STORAGE_KEYS.USER);
+      await secureStorage.removeItem(AUTH_STORAGE_KEYS.SESSION);
+      await secureStorage.removeItem(AUTH_STORAGE_KEYS.USER);
     } catch (error) {
       console.error("Failed to clear session data:", error);
     }
