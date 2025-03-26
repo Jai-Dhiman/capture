@@ -4,50 +4,53 @@ import { useOnboardingStore } from "./onboardingStore";
 import { AuthUser, AuthSession, AuthStage } from "../types/authTypes";
 import { OnboardingStep } from "./onboardingStore";
 
-interface UserProfile {
-  id: string;
-  userId: string;
-  username: string;
-  bio?: string;
-  profileImage?: string;
-  followersCount?: number;
-  followingCount?: number;
-  isFollowing?: boolean | null;
+interface AuthStoreApi {
+  getState: () => {
+    user: AuthUser | null;
+    session: AuthSession | null;
+    stage: AuthStage;
+    setUser: (user: AuthUser | null) => void;
+    setSession: (session: AuthSession | null) => void;
+    setAuthStage: (stage: AuthStage) => void;
+    clearAuth: () => void;
+    setIsRefreshing: (value: boolean) => void;
+    setLastRefreshError: (error?: string) => void;
+  };
 }
 
-export const authState = {
+export const createAuthState = (store: AuthStoreApi) => ({
   async getAuthState(): Promise<{
     user: AuthUser | null;
     session: AuthSession | null;
     stage: AuthStage;
-    profile: UserProfile | null;
+    profile: any | null;
   }> {
-    const { user, session, stage } = useAuthStore.getState();
+    const { user, session, stage } = store.getState();
     const { profile } = useProfileStore.getState();
     return { user, session, stage, profile };
   },
 
   setUser(user: AuthUser | null): void {
-    const { setUser } = useAuthStore.getState();
+    const { setUser } = store.getState();
     setUser(user);
   },
 
   setSession(session: AuthSession | null): void {
-    const { setSession } = useAuthStore.getState();
+    const { setSession } = store.getState();
     setSession(session);
   },
 
-  setProfile(profile: UserProfile | null): void {
+  setProfile(profile: any | null): void {
     const { setProfile } = useProfileStore.getState();
     setProfile(profile);
   },
 
   setAuthStage(stage: AuthStage): void {
-    const { setAuthStage } = useAuthStore.getState();
+    const { setAuthStage } = store.getState();
     setAuthStage(stage);
   },
 
-  setAuthenticated(user: AuthUser, session: AuthSession, profile: UserProfile | null): void {
+  setAuthenticated(user: AuthUser, session: AuthSession, profile: any | null): void {
     this.setUser(user);
     this.setSession(session);
 
@@ -60,14 +63,14 @@ export const authState = {
   },
 
   clearAuth(): void {
-    const { clearAuth } = useAuthStore.getState();
+    const { clearAuth } = store.getState();
     const { clearProfile } = useProfileStore.getState();
     clearAuth();
     clearProfile();
   },
 
   setPhoneVerified(phone: string): void {
-    const { user } = useAuthStore.getState();
+    const { user } = store.getState();
     if (user) {
       this.setUser({
         ...user,
@@ -83,13 +86,15 @@ export const authState = {
   },
 
   beginRefreshingSession(): void {
-    const { setIsRefreshing } = useAuthStore.getState();
+    const { setIsRefreshing } = store.getState();
     setIsRefreshing(true);
   },
 
   endRefreshingSession(error?: string): void {
-    const { setIsRefreshing, setLastRefreshError } = useAuthStore.getState();
+    const { setIsRefreshing, setLastRefreshError } = store.getState();
     setIsRefreshing(false);
     setLastRefreshError(error);
   },
-};
+});
+
+export const authState = createAuthState(useAuthStore);

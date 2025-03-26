@@ -31,16 +31,16 @@ export default function App() {
           <QueryClientProvider client={queryClient}>
             <JotaiInitializer />
             <ApolloProvider>
-              <AuthProvider>
-                  <AlertProvider>
-                    <View className="flex-1 bg-black">
-                      <StatusBar style="light" />
-                      <NavigationContainer linking={linking}>
-                        <MainNavigator />
-                      </NavigationContainer>
-                    </View>
-                  </AlertProvider>
-              </AuthProvider>
+              <AlertProvider>
+                <AuthProvider>
+                  <View className="flex-1 bg-black">
+                    <StatusBar style="light" />
+                    <NavigationContainer linking={linking}>
+                      <MainNavigator />
+                    </NavigationContainer>
+                  </View>
+                </AuthProvider>
+              </AlertProvider>
             </ApolloProvider>
           </QueryClientProvider>
         </JotaiProvider>
