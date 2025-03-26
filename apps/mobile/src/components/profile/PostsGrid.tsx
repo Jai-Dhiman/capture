@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Dimensions } from 'react-native';
 import { FlatGrid } from 'react-native-super-grid';
 import { MediaImage } from '../media/MediaImage';
 
@@ -16,19 +16,19 @@ export const PostsGrid: React.FC<PostsGridProps> = ({
   spacing,
   onPostPress
 }) => {
+  const { width } = Dimensions.get('window');
+  
   return (
     <FlatGrid
       itemDimension={itemSize}
       spacing={spacing}
       data={posts}
-      staticDimension={itemSize * 3 + spacing * 2}
-      fixed={true} 
       renderItem={({ item: post }) => (
         <TouchableOpacity 
           key={post.id} 
           onPress={() => onPostPress(post)}
         >
-          <View className="w-full h-full bg-stone-400 rounded-[10px] overflow-hidden" style={{ aspectRatio: 1 }}>
+          <View className="w-full bg-stone-400 rounded-[10px] overflow-hidden" style={{ aspectRatio: 1 }}>
             {post.media && post.media.length > 0 ? (
               <MediaImage media={post.media[0]} />
             ) : (

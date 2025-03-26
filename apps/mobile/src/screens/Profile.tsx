@@ -67,9 +67,8 @@ export default function Profile() {
   const carouselPosts = filteredPosts ? filteredPosts.filter((post: any) => post.type === 'post') : [];
   
   const getGridItemSize = useCallback(() => {
-    // Calculate exact size for 3 columns with padding
-    const contentWidth = width - 32; // Account for container padding (16px on each side)
-    const itemSize = (contentWidth - 16) / 3; // 8px spacing between items
+    const contentWidth = width - 32;
+    const itemSize = (contentWidth - 16) / 3;
     return {
       itemSize,
       horizontalMargin: 8

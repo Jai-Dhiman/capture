@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Image } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { useForm } from '@tanstack/react-form';
 import { LoadingSpinner } from 'components/ui/LoadingSpinner';
 import { useAuthStore } from '../../stores/authStore';
 import { useAuth } from '../../hooks/auth/useAuth';
@@ -10,15 +11,18 @@ import { useAlert } from '../../lib/AlertContext';
 import { errorService } from '../../services/errorService';
 
 export default function CreateProfile() {
-  const [username, setUsername] = useState('');
-  const [bio, setBio] = useState('');
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [isUsernameFocused, setIsUsernameFocused] = useState(false);
+  const [isBioFocused, setIsBioFocused] = useState(false);
   const { showAlert } = useAlert();
   
   const { user } = useAuthStore();
   const { logout } = useAuth();
   const { completeStep } = useOnboardingStore();
   const createProfileMutation = useCreateProfile();
+  
+  const usernameInputRef = useRef<TextInput>(null);
+  const bioInputRef = useRef<TextInput>(null);
   
   const pickImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -40,33 +44,39 @@ export default function CreateProfile() {
     }
   };
   
-  const createProfile = async () => {
-    if (!username.trim()) {
-      showAlert('Username is required', { type: 'warning' });
-      return;
-    }
-    
-    createProfileMutation.mutate(
-      {
-        username: username.trim(),
-        bio: bio.trim() || undefined,
-        profileImage
-      },
-      {
-        onSuccess: () => {
-          showAlert('Profile created successfully!', { type: 'success', duration: 3000 });
-          completeStep('profile-setup');
-        },
-        onError: (error) => {
-          const errorMessage = error instanceof Error 
-            ? error.message 
-            : 'Failed to create profile';
-          
-          showAlert(errorMessage, { type: 'error' });
-        }
+  const form = useForm({
+    defaultValues: {
+      username: '',
+      bio: ''
+    },
+    onSubmit: async ({ value }) => {
+      if (!value.username.trim()) {
+        showAlert('Username is required', { type: 'warning' });
+        return;
       }
-    );
-  };
+      
+      createProfileMutation.mutate(
+        {
+          username: value.username.trim(),
+          bio: value.bio.trim() || undefined,
+          profileImage
+        },
+        {
+          onSuccess: () => {
+            showAlert('Profile created successfully!', { type: 'success', duration: 3000 });
+            completeStep('profile-setup');
+          },
+          onError: (error) => {
+            const errorMessage = error instanceof Error 
+              ? error.message 
+              : 'Failed to create profile';
+            
+            showAlert(errorMessage, { type: 'error' });
+          }
+        }
+      );
+    }
+  });
 
   const handleLogout = () => {
     logout.mutate();
@@ -92,42 +102,95 @@ export default function CreateProfile() {
           )}
         </TouchableOpacity>
         
-        <View className="mb-6">
-          <Text className="text-base font-roboto mb-2">Username *</Text>
-          <TextInput
-            className="bg-white h-[56px] rounded-[16px] shadow-md px-4 text-base font-roboto"
-            value={username}
-            onChangeText={setUsername}
-            placeholder="Choose a unique username"
-            autoCapitalize="none"
-          />
-        </View>
-        
-        <View className="mb-8">
-          <Text className="text-base font-roboto mb-2">Bio (Optional)</Text>
-          <TextInput
-            className="bg-white rounded-[16px] shadow-md p-4 text-base font-roboto min-h-[100px]"
-            value={bio}
-            onChangeText={setBio}
-            placeholder="Create a Bio..."
-            multiline
-            textAlignVertical="top"
-          />
-        </View>
-        
-        <TouchableOpacity
-          className="bg-[#E4CAC7] h-[56px] rounded-[30px] shadow-md justify-center mt-4"
-          onPress={createProfile}
-          disabled={createProfileMutation.isPending}
+        <form.Field
+          name="username"
+          validators={{
+            onChange: ({ value }) => {
+              if (!value.trim()) return 'Username is required';
+              if (value.length < 3) return 'Username must be at least 3 characters';
+              if (!/^[a-zA-Z0-9_]+$/.test(value)) return 'Username can only contain letters, numbers, and underscores';
+              return undefined;
+            }
+          }}
         >
-          {createProfileMutation.isPending ? (
-            <LoadingSpinner />
-          ) : (
-            <Text className="text-base font-bold font-roboto text-center">
-              Create Profile
-            </Text>
+          {(field) => (
+            <View className="mb-6">
+              <Text className="text-base font-roboto mb-2">Username *</Text>
+              <TouchableOpacity 
+                activeOpacity={1}
+                onPress={() => usernameInputRef.current?.focus()}
+                className={`bg-white h-[56px] rounded-[16px] shadow-md px-4 text-base font-roboto ${isUsernameFocused ? 'border-2 border-[#E4CAC7]' : ''}`}
+              >
+                <TextInput
+                  ref={usernameInputRef}
+                  onFocus={() => setIsUsernameFocused(true)}
+                  onBlur={() => {
+                    setIsUsernameFocused(false);
+                    field.handleBlur();
+                  }}
+                  className="flex-1 h-full"
+                  value={field.state.value}
+                  onChangeText={field.handleChange}
+                  placeholder="Choose a unique username"
+                  autoCapitalize="none"
+                />
+              </TouchableOpacity>
+              {field.state.meta.errors.length > 0 && (
+                <Text className="text-red-500 text-xs mt-1">
+                  {field.state.meta.errors.join(', ')}
+                </Text>
+              )}
+            </View>
           )}
-        </TouchableOpacity>
+        </form.Field>
+        
+        <form.Field name="bio">
+          {(field) => (
+            <View className="mb-8">
+              <Text className="text-base font-roboto mb-2">Bio (Optional)</Text>
+              <TouchableOpacity 
+                activeOpacity={1}
+                onPress={() => bioInputRef.current?.focus()}
+                className={`bg-white rounded-[16px] shadow-md p-4 text-base font-roboto min-h-[100px] ${isBioFocused ? 'border-2 border-[#E4CAC7]' : ''}`}
+              >
+                <TextInput
+                  ref={bioInputRef}
+                  onFocus={() => setIsBioFocused(true)}
+                  onBlur={() => {
+                    setIsBioFocused(false);
+                    field.handleBlur();
+                  }}
+                  className="flex-1"
+                  value={field.state.value}
+                  onChangeText={field.handleChange}
+                  placeholder="Create a Bio..."
+                  multiline
+                  textAlignVertical="top"
+                />
+              </TouchableOpacity>
+            </View>
+          )}
+        </form.Field>
+        
+        <form.Subscribe
+          selector={(state) => [state.canSubmit, state.isSubmitting]}
+        >
+          {([canSubmit, isSubmitting]) => (
+            <TouchableOpacity
+              className={`bg-[#E4CAC7] h-[56px] rounded-[30px] shadow-md justify-center mt-4 items-center ${!canSubmit ? 'opacity-70' : ''}`}
+              onPress={() => form.handleSubmit()}
+              disabled={createProfileMutation.isPending || isSubmitting}
+            >
+              {createProfileMutation.isPending || isSubmitting ? (
+                <LoadingSpinner />
+              ) : (
+                <Text className="text-base font-bold font-roboto text-center">
+                  Create Profile
+                </Text>
+              )}
+            </TouchableOpacity>
+          )}
+        </form.Subscribe>
         
         <TouchableOpacity 
           className="mt-6 items-center" 

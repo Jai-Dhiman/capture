@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, Dimensions, useWindowDimensions } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, useWindowDimensions } from 'react-native';
 import Carousel from 'react-native-reanimated-carousel';
 import { PostMediaGallery } from '../post/PostMediaGallery';
 import SettingsIcon from "../../../assets/icons/MenuDots.svg";
@@ -32,7 +32,6 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
   const ITEM_WIDTH = width - 32;
   
   const calculateMediaHeight = () => {
-    // Better height calculation
     const headerHeight = 40;
     const footerHeight = 80;
     const paginationHeight = 30;
@@ -40,7 +39,7 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
     
     const availableHeight = height * 0.65;
     return availableHeight - headerHeight - footerHeight - paginationHeight - topMargin;
-  };
+  }; 
   
   const mediaHeight = calculateMediaHeight();
   
@@ -119,7 +118,11 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
         renderItem={renderItem}
         defaultIndex={initialIndex}
         onSnapToItem={(index) => setActiveIndex(index)}
-        mode="horizontal-stack"
+        mode="parallax"
+        modeConfig={{
+          parallaxScrollingScale: 0.9,
+          parallaxScrollingOffset: 50,
+        }}
         snapEnabled={true}
         overscrollEnabled={false}
         windowSize={1}
