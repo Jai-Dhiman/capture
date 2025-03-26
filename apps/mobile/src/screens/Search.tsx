@@ -4,7 +4,6 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../components/Navigators/types/navigation';
 import { Ionicons } from '@expo/vector-icons';
-import { supabase } from '../lib/supabase';
 import { API_URL } from '@env';
 import { ProfileImage } from '../components/media/ProfileImage';
 import { useSearchHashtags } from '../hooks/useHashtags';

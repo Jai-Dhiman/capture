@@ -1,5 +1,5 @@
 import React, { ReactNode, useEffect, useState, useRef } from 'react';
-import { AppState, AppStateStatus } from 'react-native';
+import { Alert, AppState, AppStateStatus } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../stores/authStore';
 import { useProfileStore } from '../../stores/profileStore';
@@ -9,6 +9,7 @@ import { authService } from '../../services/authService';
 import { errorService } from '../../services/errorService';
 import { useAlert } from '../../lib/AlertContext';
 import NetInfo from '@react-native-community/netinfo';
+import * as Linking from 'expo-linking';
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -28,9 +29,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setAuthStage,
     setIsRefreshing,
     isRefreshing,
-    processOfflineQueue
+    processOfflineQueue,
+    user
   } = useAuthStore();
-  const { setProfile } = useProfileStore();
+  const { setProfile, profile, clearProfile } = useProfileStore();
   const queryClient = useQueryClient();
   const { showAlert } = useAlert();
   const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -38,13 +40,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const refreshRetryCount = useRef(0);
   const MAX_REFRESH_RETRIES = 3;
   
-  // Network connectivity monitoring
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener(state => {
       const wasOffline = isOffline;
       setIsOffline(!state.isConnected);
       
-      // If we're going from offline to online, process the queued requests
       if (wasOffline && state.isConnected) {
         processOfflineQueue();
       }
@@ -53,7 +53,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return () => unsubscribe();
   }, [isOffline, processOfflineQueue]);
   
-  // Minimum splash screen time
   useEffect(() => {
     const timer = setTimeout(() => {
       setSplashMinTimeElapsed(true);
@@ -62,22 +61,43 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return () => clearTimeout(timer);
   }, []);
   
-  // Initialize session on app start
   useEffect(() => {
     async function initSession() {
       try {
-        await authService.restoreSession();
+        const sessionRestored = await authService.restoreSession();
         
-        const { stage } = useAuthStore.getState();
-        const { goToStep } = useOnboardingStore.getState();
-        
-        if (stage === 'phone-verification') {
-          goToStep('phone-verification');
-        } else if (stage === 'profile-creation') {
-          goToStep('profile-setup');
+        if (sessionRestored) {
+          const { stage, user, session } = useAuthStore.getState();
+          
+          if (user && session) {
+            const profileData = await authService.fetchUserProfile(user.id, session.access_token);
+            
+            if (profileData) {
+              setProfile({
+                id: profileData.id,
+                userId: profileData.userId,
+                username: profileData.username,
+                bio: profileData.bio || undefined,
+                profileImage: profileData.profileImage || undefined,
+              });
+              
+              setAuthStage('complete');
+            } else if (stage === 'unauthenticated') {
+              setAuthStage('profile-creation');
+            }
+          }
+          
+          const { goToStep } = useOnboardingStore.getState();
+          
+          if (stage === 'phone-verification') {
+            goToStep('phone-verification');
+          } else if (stage === 'profile-creation') {
+            goToStep('profile-setup');
+          }
         }
       } catch (error) {
         console.error('Failed to initialize session:', error);
+        clearAuth();
       } finally {
         setIsAuthInitialized(true);
       }
@@ -86,14 +106,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     initSession();
   }, []);
   
-  // Transition from splash screen when ready
   useEffect(() => {
     if (isAuthInitialized && splashMinTimeElapsed) {
       setIsInitializing(false);
     }
   }, [isAuthInitialized, splashMinTimeElapsed]);
   
-  // Handle app state changes for token refresh
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextAppState: AppStateStatus) => {
       if (appStateRef.current.match(/inactive|background/) && nextAppState === "active") {
@@ -109,7 +127,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   }, [session?.access_token, isRefreshing, isOffline]);
   
-  // Set up token refresh timer based on expiration
   useEffect(() => {
     if (!session?.access_token || isOffline) return;
 
@@ -130,25 +147,73 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   }, [session?.access_token, session?.expires_at, isOffline]);
   
-  // Setup event listener for deep links (to replace Supabase's onAuthStateChange)
   useEffect(() => {
-    // Here you would set up your custom deep link handler
-    // Add logic to handle authentication-related deep links
-    // This would replace the Supabase onAuthStateChange
-    
-    const setupDeepLinkHandlers = async () => {
-      // Implementation would be specific to your deep link handling approach
-      // For example, using Expo's Linking API
+    const handleDeepLink = async (event: { url: string }) => {
+      try {
+        const redirectPath = await authService.handleAuthCallback(event.url);
+        if (redirectPath) {
+          const { user, session } = useAuthStore.getState();
+          
+          if (user && session) {
+            const profileData = await authService.fetchUserProfile(user.id, session.access_token);
+            
+            if (profileData) {
+              setProfile({
+                id: profileData.id,
+                userId: user.id,
+                username: profileData.username,
+                bio: profileData.bio || undefined,
+                profileImage: profileData.profileImage || undefined,
+              });
+              setAuthStage('complete');
+            } else {
+              setAuthStage('profile-creation');
+              useOnboardingStore.getState().goToStep('profile-setup');
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Deep link handling error:', error);
+        const appError = errorService.handleAuthError(error);
+        showAlert(appError.message, {
+          type: errorService.getAlertType(appError.category)
+        });
+      }
     };
     
-    setupDeepLinkHandlers();
+    Linking.getInitialURL().then(url => {
+      if (url) handleDeepLink({ url });
+    });
+    
+    const subscription = Linking.addEventListener('url', handleDeepLink);
     
     return () => {
-      // Clean up any listeners
+      subscription.remove();
     };
   }, []);
   
-  // Token refresh handler with retries and offline handling
+  useEffect(() => {
+    if (!user) {
+      setAuthStage('unauthenticated');
+      return;
+    }
+    
+    if (user && !profile) {
+      setAuthStage('profile-creation');
+      return;
+    }
+    
+    if (user && !user.phone_confirmed_at && user.phone) {
+      setAuthStage('phone-verification');
+      return;
+    }
+    
+    if (user && profile) {
+      setAuthStage('complete');
+      return;
+    }
+  }, [user, profile]);
+  
   const handleTokenRefresh = async () => {
     if (isRefreshing || isOffline) return;
     
@@ -156,7 +221,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const refreshedSession = await refreshSession();
       if (refreshedSession) {
-        // Success - reset retry counter
         refreshRetryCount.current = 0;
       } else {
         throw new Error("Failed to refresh session");
@@ -165,32 +229,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error("Token refresh error:", error);
       
       if (isOffline) {
-        // We're offline, so we'll try again when we're back online
         console.log("Device is offline, will retry token refresh when online");
         return;
       }
       
-      // Implement exponential backoff for retries
       if (refreshRetryCount.current < MAX_REFRESH_RETRIES) {
         refreshRetryCount.current += 1;
-        const backoffTime = Math.pow(2, refreshRetryCount.current) * 1000; // Exponential backoff
+        const backoffTime = Math.pow(2, refreshRetryCount.current) * 1000;
         console.log(`Retrying token refresh in ${backoffTime}ms (attempt ${refreshRetryCount.current}/${MAX_REFRESH_RETRIES})`);
         
         setTimeout(() => {
           handleTokenRefresh();
         }, backoffTime);
       } else {
-        // We've exhausted retries, but don't automatically log the user out
-        // Give them a chance to manually retry
         const appError = errorService.createError(
           "Your session has expired. Please log in again.",
           "auth/session-expired",
           error instanceof Error ? error : undefined
-        );
-        
-        showAlert(appError.message, {
-          type: errorService.getAlertType(appError.category),
-          buttons: [
+        ); 
+        Alert.alert(
+          "Session Expired",
+          "Your session has expired. Please log in again.",
+          [
             {
               text: "Try Again",
               onPress: () => {
@@ -200,10 +260,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
             },
             {
               text: "Log Out",
-              onPress: () => clearAuth()
+              onPress: () => {
+                clearAuth();
+                clearProfile();
+                queryClient.clear();
+              },
+              style: 'destructive'
             }
-          ]
-        });
+          ],
+          { cancelable: false }
+        );
       }
     } finally {
       setIsRefreshing(false);

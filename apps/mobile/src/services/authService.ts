@@ -3,6 +3,13 @@ import crypto from "crypto-js";
 import * as SecureStore from "expo-secure-store";
 import * as Random from "expo-random";
 import { encode as base64encode } from "base-64";
+import { useAuthStore } from "../stores/authStore";
+
+const AUTH_STORAGE_KEYS = {
+  SESSION: "auth_session",
+  USER: "auth_user",
+  CODE_VERIFIER: "pkce_code_verifier",
+};
 
 export class AuthError extends Error {
   code: string;
@@ -28,15 +35,34 @@ async function generateCodeChallenge(verifier: string): Promise<string> {
 }
 
 async function storeCodeVerifier(verifier: string): Promise<void> {
-  await SecureStore.setItemAsync("pkce_code_verifier", verifier);
+  await SecureStore.setItemAsync(AUTH_STORAGE_KEYS.CODE_VERIFIER, verifier);
 }
 
 async function getStoredCodeVerifier(): Promise<string | null> {
-  return await SecureStore.getItemAsync("pkce_code_verifier");
+  return await SecureStore.getItemAsync(AUTH_STORAGE_KEYS.CODE_VERIFIER);
 }
 
 async function clearCodeVerifier(): Promise<void> {
-  await SecureStore.deleteItemAsync("pkce_code_verifier");
+  await SecureStore.deleteItemAsync(AUTH_STORAGE_KEYS.CODE_VERIFIER);
+}
+
+async function storeSessionData(session: any, user: any): Promise<void> {
+  try {
+    await SecureStore.setItemAsync(AUTH_STORAGE_KEYS.SESSION, JSON.stringify(session));
+    await SecureStore.setItemAsync(AUTH_STORAGE_KEYS.USER, JSON.stringify(user));
+  } catch (error) {
+    console.error("Failed to store session data:", error);
+    throw new AuthError("Failed to save session data", "auth/storage-failed");
+  }
+}
+
+async function clearSessionData(): Promise<void> {
+  try {
+    await SecureStore.deleteItemAsync(AUTH_STORAGE_KEYS.SESSION);
+    await SecureStore.deleteItemAsync(AUTH_STORAGE_KEYS.USER);
+  } catch (error) {
+    console.error("Failed to clear session data:", error);
+  }
 }
 
 export const authService = {
@@ -51,6 +77,11 @@ export const authService = {
       const data = await response.json();
       if (!response.ok) {
         throw new AuthError(data.error || "Authentication failed", data.code || "auth/sign-in-failed");
+      }
+
+      // Store the session data securely
+      if (data.session && data.user) {
+        await storeSessionData(data.session, data.user);
       }
 
       return data;
@@ -91,6 +122,19 @@ export const authService = {
       const data = await response.json();
       if (!response.ok) {
         throw new AuthError(data.error || "Failed to refresh token", data.code || "auth/refresh-failed");
+      }
+
+      // Update the stored session with the new tokens
+      const { user } = useAuthStore.getState();
+      if (user) {
+        await storeSessionData(
+          {
+            access_token: data.access_token,
+            refresh_token: data.refresh_token,
+            expires_at: data.expires_at,
+          },
+          user
+        );
       }
 
       return data;
@@ -179,6 +223,16 @@ export const authService = {
         throw new AuthError(data.error || "Failed to verify code", data.code || "auth/verify-failed");
       }
 
+      const { user, session } = useAuthStore.getState();
+      if (user && session) {
+        const updatedUser = {
+          ...user,
+          phone,
+          phone_confirmed_at: new Date().toISOString(),
+        };
+        await storeSessionData(session, updatedUser);
+      }
+
       return data;
     } catch (error) {
       if (error instanceof AuthError) throw error;
@@ -228,16 +282,26 @@ export const authService = {
         }),
       });
 
-      await clearCodeVerifier(); // Clear it after use
+      await clearCodeVerifier();
 
       const data = await response.json();
       if (!response.ok) {
         throw new AuthError(data.error || "Failed to process authentication", data.code || "auth/callback-failed");
       }
 
-      return data;
+      if (data.session && data.user) {
+        await storeSessionData(data.session, data.user);
+
+        if (url.includes("type=recovery")) {
+          return "/auth/reset-password";
+        } else if (url.includes("type=signup")) {
+          return "/auth/login";
+        }
+      }
+
+      return null;
     } catch (error) {
-      await clearCodeVerifier(); // Clear on error too
+      await clearCodeVerifier();
       if (error instanceof AuthError) throw error;
       throw new AuthError(error instanceof Error ? error.message : "Authentication callback failed");
     }
@@ -295,17 +359,179 @@ export const authService = {
 
   async restoreSession() {
     try {
-      // This would be a placeholder for any session restoration logic
-      // It could involve checking secure storage, etc.
-      return true;
+      const sessionData = await SecureStore.getItemAsync(AUTH_STORAGE_KEYS.SESSION);
+      const userData = await SecureStore.getItemAsync(AUTH_STORAGE_KEYS.USER);
+
+      if (!sessionData || !userData) {
+        return false;
+      }
+
+      const session = JSON.parse(sessionData);
+      const user = JSON.parse(userData);
+
+      if (!session.access_token || !session.refresh_token) {
+        await clearSessionData();
+        return false;
+      }
+
+      const expiresAt = new Date(session.expires_at).getTime();
+      const now = Date.now();
+
+      if (expiresAt - now < 5 * 60 * 1000) {
+        try {
+          const refreshedData = await this.refreshToken(session.refresh_token);
+          if (!refreshedData) {
+            await clearSessionData();
+            return false;
+          }
+
+          const { setUser, setSession } = useAuthStore.getState();
+          setUser(user);
+          setSession({
+            access_token: refreshedData.access_token,
+            refresh_token: refreshedData.refresh_token,
+            expires_at: new Date(refreshedData.expires_at).getTime(),
+          });
+
+          return true;
+        } catch (error) {
+          console.error("Failed to refresh token during session restore:", error);
+          await clearSessionData();
+          return false;
+        }
+      } else {
+        const { setUser, setSession } = useAuthStore.getState();
+
+        setUser(user);
+        setSession({
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+          expires_at: expiresAt,
+        });
+
+        return true;
+      }
     } catch (error) {
       console.error("Failed to restore session:", error);
+      await clearSessionData();
       return false;
     }
   },
 
-  updateAuthStage() {
-    // This would be implementation specific
-    // The idea is to check the current user state and update the auth stage
+  async updateAuthStage() {
+    const { user, setAuthStage } = useAuthStore.getState();
+    const { profile } = await import("../stores/profileStore").then((m) => m.useProfileStore.getState());
+
+    if (!user) {
+      setAuthStage("unauthenticated");
+      return;
+    }
+
+    if (user.phone && !user.phone_confirmed_at) {
+      setAuthStage("phone-verification");
+      return;
+    }
+
+    if (!profile) {
+      const { session } = useAuthStore.getState();
+      if (session?.access_token) {
+        const profileData = await this.fetchUserProfile(user.id, session.access_token);
+
+        if (!profileData) {
+          setAuthStage("profile-creation");
+          return;
+        } else {
+          const { setProfile } = await import("../stores/profileStore").then((m) => m.useProfileStore.getState());
+          setProfile({
+            id: profileData.id,
+            userId: profileData.userId,
+            username: profileData.username,
+            bio: profileData.bio || undefined,
+            profileImage: profileData.profileImage || undefined,
+          });
+
+          setAuthStage("complete");
+          return;
+        }
+      } else {
+        setAuthStage("profile-creation");
+        return;
+      }
+    }
+
+    setAuthStage("complete");
+  },
+
+  async logout() {
+    try {
+      await clearSessionData();
+
+      const { clearAuth } = useAuthStore.getState();
+      const { clearProfile } = await import("../stores/profileStore").then((m) => m.useProfileStore.getState());
+
+      clearAuth();
+      clearProfile();
+
+      return true;
+    } catch (error) {
+      console.error("Logout error:", error);
+      throw new AuthError("Failed to log out", "auth/logout-failed");
+    }
+  },
+
+  async hasValidSession(): Promise<boolean> {
+    try {
+      const sessionData = await SecureStore.getItemAsync(AUTH_STORAGE_KEYS.SESSION);
+      if (!sessionData) return false;
+
+      const session = JSON.parse(sessionData);
+      const expiresAt = new Date(session.expires_at).getTime();
+
+      return expiresAt > Date.now();
+    } catch (error) {
+      console.error("Error checking session validity:", error);
+      return false;
+    }
+  },
+
+  async validateSession(token: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${API_URL}/auth/validate-token`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      return response.ok;
+    } catch (error) {
+      console.error("Token validation error:", error);
+      return false;
+    }
+  },
+
+  async forceRefreshSession(): Promise<boolean> {
+    try {
+      const sessionData = await SecureStore.getItemAsync(AUTH_STORAGE_KEYS.SESSION);
+      if (!sessionData) return false;
+
+      const session = JSON.parse(sessionData);
+      if (!session.refresh_token) return false;
+
+      const refreshedData = await this.refreshToken(session.refresh_token);
+      if (!refreshedData) return false;
+
+      const { setSession } = useAuthStore.getState();
+      setSession({
+        access_token: refreshedData.access_token,
+        refresh_token: refreshedData.refresh_token,
+        expires_at: new Date(refreshedData.expires_at).getTime(),
+      });
+
+      return true;
+    } catch (error) {
+      console.error("Force refresh session error:", error);
+      return false;
+    }
   },
 };
