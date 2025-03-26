@@ -8,7 +8,7 @@ import AppNavigator from './AppNavigator';
 import AuthStack from './AuthNavigator';
 import CreateProfile from '../../screens/auth/CreateProfile';
 import PhoneVerificationFlow from './PhoneVerificationFlow';
-import { handleSupabaseDeepLink } from 'lib/handleDeepLinks';
+import { authService } from '../../services/authService';
 import { useOnboardingStore } from '../../stores/onboardingStore';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -46,7 +46,6 @@ export const linking: LinkingOptions<RootStackParamList> = {
           Feed: 'feed',
           NewPost: 'new-post',
           Profile: 'profile/:userId?',
-          SinglePost: 'post/:postId',
           Search: 'search',
           SavedPosts: 'saved',
         }
@@ -58,9 +57,13 @@ export const linking: LinkingOptions<RootStackParamList> = {
     const url = await Linking.getInitialURL();
     
     if (url) {
-      const redirectPath = await handleSupabaseDeepLink(url);
-      if (redirectPath) {
-        return Linking.createURL(redirectPath);
+      try {
+        const redirectPath = await authService.handleAuthCallback(url);
+        if (redirectPath) {
+          return Linking.createURL(redirectPath);
+        }
+      } catch (error) {
+        console.error("Failed to handle deep link:", error);
       }
     }
     

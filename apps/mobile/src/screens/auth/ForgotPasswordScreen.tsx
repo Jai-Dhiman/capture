@@ -5,7 +5,6 @@ import {
 import { useForm } from '@tanstack/react-form';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../components/Navigators/types/navigation';
-import { supabase } from '../../lib/supabase';
 import { LoadingSpinner } from 'components/ui/LoadingSpinner';
 import Header from 'components/ui/Header';
 import EmailIcon from '../../../assets/icons/EmailIcon.svg';

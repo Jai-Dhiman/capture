@@ -1,6 +1,6 @@
 import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
-import { supabase } from './supabase';
+import { useAuthStore } from 'stores/authStore';
 import { API_URL } from '@env';
 
 const httpLink = createHttpLink({
@@ -8,7 +8,7 @@ const httpLink = createHttpLink({
 });
 
 const authLink = setContext(async (_, { headers }) => {
-  const { data: { session } } = await supabase.auth.getSession();
+  const { session } = useAuthStore();
   const token = session?.access_token;
 
   return {

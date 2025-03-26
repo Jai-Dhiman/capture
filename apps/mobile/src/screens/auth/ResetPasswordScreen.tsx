@@ -6,7 +6,6 @@ import { useForm } from '@tanstack/react-form';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { AuthStackParamList } from '../../components/Navigators/types/navigation';
-import { supabase } from '../../lib/supabase';
 import { LoadingSpinner } from 'components/ui/LoadingSpinner';
 import { useAlert } from '../../lib/AlertContext';
 import { errorService } from '../../services/errorService';

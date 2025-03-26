@@ -9,8 +9,6 @@ import { useOnboardingStore } from '../../stores/onboardingStore';
 import { useAuth } from '../../hooks/auth/useAuth';
 import { LoadingSpinner } from 'components/ui/LoadingSpinner';
 import Header from '../../components/ui/Header';
-import { supabase } from '../../lib/supabase';
-import { isDevelopment, canSkipPhoneVerification } from '../../config/environment';
 import { useAlert } from '../../lib/AlertContext';
 import { errorService } from '../../services/errorService';
 
@@ -41,17 +39,17 @@ export default function EnterPhoneScreen({ navigation }: Props) {
     try {
       const formattedPhone = `+1${phone.replace(/\D/g, '')}`;  
       
-      const { error } = await supabase.auth.updateUser({
-        phone: formattedPhone
-      });
+      // const { error } = await supabase.auth.updateUser({
+      //   phone: formattedPhone
+      // });
       
-      if (error) throw error;
+      // if (error) throw error;
 
-      const { error: otpError, data } = await supabase.auth.signInWithOtp({
-        phone: formattedPhone,
-      });
+      // const { error: otpError, data } = await supabase.auth.signInWithOtp({
+      //   phone: formattedPhone,
+      // });
       
-      if (otpError) throw otpError;
+      // if (otpError) throw otpError;
       
       if (user) {
         setUser({
@@ -60,9 +58,9 @@ export default function EnterPhoneScreen({ navigation }: Props) {
         });
       }
       
-      if (data?.messageId) {
-        setOtpMessageId(data.messageId);
-      }
+      // if (data?.messageId) {
+      //   setOtpMessageId(data.messageId);
+      // }
       
       navigation.navigate('VerifyPhoneNumber');
     } catch (error) {
@@ -78,8 +76,6 @@ export default function EnterPhoneScreen({ navigation }: Props) {
     skipStep('phone-verification');
     navigation.navigate('CreateProfile');
   };
-
-  const canSkip = canSkipPhoneVerification(user?.email);
 
   return (
     <View style={{ flex: 1 }}>
@@ -144,26 +140,6 @@ export default function EnterPhoneScreen({ navigation }: Props) {
                 </Text>
               )}
             </TouchableOpacity>
-
-            {canSkip && (
-              <TouchableOpacity
-                style={{ width: inputWidth }}
-                className="h-14 bg-gray-300 rounded-[30px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] backdrop-blur-sm justify-center items-center mt-4"
-                onPress={handleSkip}
-              >
-                <Text className="text-center text-black text-base font-normal font-roboto leading-normal">
-                  Skip for Now
-                </Text>
-              </TouchableOpacity>
-            )}
-
-            {isDevelopment && (
-              <View className="mt-8 bg-yellow-100 p-3 rounded" style={{ width: inputWidth }}>
-                <Text className="text-xs text-center text-yellow-800">
-                  Development Mode: Phone verification can be skipped.
-                </Text>
-              </View>
-            )}
 
             <View className="w-full absolute bottom-0 flex justify-center items-center py-2">
               <View className="w-[139px] h-[5px] bg-black rounded-[100px]" />

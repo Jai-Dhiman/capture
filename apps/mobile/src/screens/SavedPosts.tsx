@@ -55,7 +55,7 @@ export default function SavedPosts() {
             <TouchableOpacity 
               className="relative"
               style={{ width: itemSize, height: itemSize }}
-              onPress={() => navigation.navigate('SinglePost', { post: item })}
+              // onPress={() => navigation.navigate('SinglePost', { post: item })}
             >
               <View className="w-full h-full border border-white">
                 {item.media && item.media.length > 0 ? (

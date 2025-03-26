@@ -29,7 +29,7 @@ export default function LoginScreen({ navigation }: Props) {
   const emailInputRef = useRef<TextInput>(null)
   const passwordInputRef = useRef<TextInput>(null)
   const {showAlert} = useAlert()
-  const { login, isLoading } = useAuth()
+  const { login } = useAuth()
 
   const form = useForm({
     defaultValues: {
@@ -173,9 +173,9 @@ export default function LoginScreen({ navigation }: Props) {
                 <TouchableOpacity
                   className="bg-[#E4CAC7] h-[56px] rounded-[30px] shadow-md justify-center mt-[59px]"
                   onPress={() => form.handleSubmit()}
-                  disabled={isLoading || isSubmitting}
+                  disabled={login.isPending || isSubmitting}
                 >
-                  {isLoading ? (
+                  {login.isPending ? (
                     <LoadingSpinner fullScreen message="Logging in..." />
                   ) : (
                     <Text className="text-base font-bold font-roboto text-center">

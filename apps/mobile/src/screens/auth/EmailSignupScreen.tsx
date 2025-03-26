@@ -22,7 +22,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [isConfirmPasswordFocused, setIsConfirmPasswordFocused] = useState(false);
   const { showAlert } = useAlert();
-  const { signup, isLoading } = useAuth();
+  const { signup } = useAuth();
 
   const emailInputRef = useRef<TextInput>(null);
   const passwordInputRef = useRef<TextInput>(null);
@@ -264,9 +264,9 @@ export default function EmailSignupScreen({ navigation }: Props) {
                 <TouchableOpacity
                   className={`h-14 ${canSubmit ? 'bg-[#e4cac7]' : 'bg-gray-400'} rounded-[30px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] backdrop-blur-sm justify-center items-center mt-4 w-full`}
                   onPress={() => form.handleSubmit()}
-                  disabled={!canSubmit || isLoading}
+                  disabled={!canSubmit || signup.isPending}
                 >
-                  {isLoading || isSubmitting ? (
+                  {signup.isPending || isSubmitting ? (
                     <LoadingSpinner message="Creating account..." />
                   ) : (
                     <Text className="text-center text-black text-base font-bold font-roboto leading-normal">

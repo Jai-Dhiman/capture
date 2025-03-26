@@ -8,6 +8,7 @@ import { API_URL } from '@env';
 import { ProfileImage } from '../components/media/ProfileImage';
 import { useSearchHashtags } from '../hooks/useHashtags';
 import Header from 'components/ui/Header';
+import { useAuthStore } from '../stores/authStore'; 
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 
@@ -27,6 +28,7 @@ type HashtagSearchResult = {
 
 export default function UserSearch() {
   const navigation = useNavigation<NavigationProp>();
+  const { session } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [userResults, setUserResults] = useState<UserSearchResult[]>([]);
@@ -63,7 +65,6 @@ export default function UserSearch() {
 
     setIsLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
 
       if (!session?.access_token) {
         throw new Error('Authentication required. Please log in again.');

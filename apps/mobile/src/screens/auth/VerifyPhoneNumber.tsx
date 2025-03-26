@@ -6,12 +6,12 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm } from '@tanstack/react-form';
 import { AuthStackParamList } from '../../components/Navigators/types/navigation';
 import Header from '../../components/ui/Header';
-import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { LoadingSpinner } from 'components/ui/LoadingSpinner';
 import { useOnboardingStore } from '../../stores/onboardingStore';
 import { useAlert } from '../../lib/AlertContext';
 import { errorService } from '../../services/errorService';
+import { useAuth } from 'hooks/auth/useAuth';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'EnterPhone'>
@@ -35,7 +35,8 @@ export default function PhoneVerificationScreen({ navigation }: Props) {
   const codeInputRefs = useRef<Array<TextInput | null>>([null, null, null, null, null, null]);
   
   // State
-  const { user, setUser, setOtpMessageId } = useAuthStore();
+  const { user } = useAuthStore(); 
+  const { verifyOTP } = useAuth();
   const { completeStep } = useOnboardingStore();
   const { showAlert } = useAlert();
 

@@ -1,15 +1,14 @@
 import React, { ReactNode, useEffect, useState, useRef } from 'react';
 import { Alert, AppState, AppStateStatus } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
-import { useAuthStore } from '../../stores/authStore';
-import { useProfileStore } from '../../stores/profileStore';
-import { useOnboardingStore } from '../../stores/onboardingStore';
-import { SplashAnimation } from '../ui/SplashAnimation';
-import { authService } from '../../services/authService';
-import { errorService } from '../../services/errorService';
-import { useAlert } from '../../lib/AlertContext';
 import NetInfo from '@react-native-community/netinfo';
 import * as Linking from 'expo-linking';
+import { authService } from '../../services/authService';
+import { authState } from '../../stores/authState';
+import { useAuthStore } from '../../stores/authStore';
+import { SplashAnimation } from '../ui/SplashAnimation';
+import { errorService } from '../../services/errorService';
+import { useAlert } from '../../lib/AlertContext';
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -20,21 +19,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isAuthInitialized, setIsAuthInitialized] = useState(false);
   const [splashMinTimeElapsed, setSplashMinTimeElapsed] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
+  
   const { 
     session, 
-    setUser, 
-    setSession, 
     refreshSession, 
-    clearAuth, 
-    setAuthStage,
-    setIsRefreshing,
     isRefreshing,
-    processOfflineQueue,
-    user
+    processOfflineQueue
   } = useAuthStore();
-  const { setProfile, profile, clearProfile } = useProfileStore();
+  
   const queryClient = useQueryClient();
   const { showAlert } = useAlert();
+  
   const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
   const appStateRef = useRef(AppState.currentState);
   const refreshRetryCount = useRef(0);
@@ -67,37 +62,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const sessionRestored = await authService.restoreSession();
         
         if (sessionRestored) {
-          const { stage, user, session } = useAuthStore.getState();
-          
-          if (user && session) {
-            const profileData = await authService.fetchUserProfile(user.id, session.access_token);
-            
-            if (profileData) {
-              setProfile({
-                id: profileData.id,
-                userId: profileData.userId,
-                username: profileData.username,
-                bio: profileData.bio || undefined,
-                profileImage: profileData.profileImage || undefined,
-              });
-              
-              setAuthStage('complete');
-            } else if (stage === 'unauthenticated') {
-              setAuthStage('profile-creation');
-            }
-          }
-          
-          const { goToStep } = useOnboardingStore.getState();
+          const stage = await authService.determineAuthStage();
+          authState.setAuthStage(stage);
           
           if (stage === 'phone-verification') {
-            goToStep('phone-verification');
+            authState.updateOnboardingStep('phone-verification');
           } else if (stage === 'profile-creation') {
-            goToStep('profile-setup');
+            authState.updateOnboardingStep('profile-setup');
           }
         }
       } catch (error) {
         console.error('Failed to initialize session:', error);
-        clearAuth();
+        authState.clearAuth();
       } finally {
         setIsAuthInitialized(true);
       }
@@ -152,25 +128,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       try {
         const redirectPath = await authService.handleAuthCallback(event.url);
         if (redirectPath) {
-          const { user, session } = useAuthStore.getState();
-          
-          if (user && session) {
-            const profileData = await authService.fetchUserProfile(user.id, session.access_token);
-            
-            if (profileData) {
-              setProfile({
-                id: profileData.id,
-                userId: user.id,
-                username: profileData.username,
-                bio: profileData.bio || undefined,
-                profileImage: profileData.profileImage || undefined,
-              });
-              setAuthStage('complete');
-            } else {
-              setAuthStage('profile-creation');
-              useOnboardingStore.getState().goToStep('profile-setup');
-            }
-          }
+          const stage = await authService.determineAuthStage();
+          authState.setAuthStage(stage);
         }
       } catch (error) {
         console.error('Deep link handling error:', error);
@@ -192,32 +151,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   }, []);
   
-  useEffect(() => {
-    if (!user) {
-      setAuthStage('unauthenticated');
-      return;
-    }
-    
-    if (user && !profile) {
-      setAuthStage('profile-creation');
-      return;
-    }
-    
-    if (user && !user.phone_confirmed_at && user.phone) {
-      setAuthStage('phone-verification');
-      return;
-    }
-    
-    if (user && profile) {
-      setAuthStage('complete');
-      return;
-    }
-  }, [user, profile]);
-  
   const handleTokenRefresh = async () => {
     if (isRefreshing || isOffline) return;
     
-    setIsRefreshing(true);
+    authState.beginRefreshingSession();
     try {
       const refreshedSession = await refreshSession();
       if (refreshedSession) {
@@ -261,8 +198,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             {
               text: "Log Out",
               onPress: () => {
-                clearAuth();
-                clearProfile();
+                authState.clearAuth();
                 queryClient.clear();
               },
               style: 'destructive'
@@ -272,7 +208,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         );
       }
     } finally {
-      setIsRefreshing(false);
+      authState.endRefreshingSession();
     }
   };
   
