@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, Animated, StyleSheet, Platform, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform, Modal, Pressable } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../../stores/authStore';
 import BackIcon from '../../../assets/icons/BackIcon.svg';
@@ -22,8 +23,9 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const [menuVisible, setMenuVisible] = useState(false);
   const navigation = useNavigation();
-  const menuAnimation = useRef(new Animated.Value(0)).current;
   const { stage } = useAuthStore();
+  
+  const menuAnimValue = useSharedValue(0);
   
   const showMenuButton = stage === 'complete' && !forceHideMenu;
 
@@ -35,32 +37,23 @@ const Header: React.FC<HeaderProps> = ({
   ];
 
   const toggleMenu = () => {
-    const toValue = menuVisible ? 0 : 1;
-    
-    Animated.spring(menuAnimation, {
-      toValue,
-      useNativeDriver: true,
-      friction: 8,
-    }).start();
-    
+    const newValue = menuVisible ? 0 : 1;
+    menuAnimValue.value = withSpring(newValue, { damping: 15, stiffness: 100 });
     setMenuVisible(!menuVisible);
   };
 
   const handleNavigation = (route: string) => {
     setMenuVisible(false);
-    menuAnimation.setValue(0);
+    menuAnimValue.value = 0;
     // @ts-ignore 
     navigation.navigate(route);
   };
 
-  const menuTranslateY = menuAnimation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-200, 0],
-  });
-
-  const menuOpacity = menuAnimation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
+  const menuAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateY: -200 + (menuAnimValue.value * 200) }],
+      opacity: menuAnimValue.value,
+    };
   });
 
   return (
@@ -97,54 +90,52 @@ const Header: React.FC<HeaderProps> = ({
       
       <View className="h-[1px] bg-black/10 w-full mt-2"></View>
       
-      <Modal
-        transparent={true}
-        visible={menuVisible}
-        animationType="none"
-        onRequestClose={() => setMenuVisible(false)}
-      >
-        <TouchableOpacity 
-          style={StyleSheet.absoluteFill}
-          activeOpacity={1}
-          onPress={() => setMenuVisible(false)}
+      {menuVisible && (
+        <Modal
+          transparent={true}
+          visible={menuVisible}
+          animationType="none"
+          onRequestClose={() => setMenuVisible(false)}
         >
-          <View style={{ flex: 1 }} />
-        </TouchableOpacity>
-        
-        <Animated.View 
-          style={[
-            styles.menuContainer,
-            {
-              transform: [{ translateY: menuTranslateY }],
-              opacity: menuOpacity,
-            },
-          ]}
-        >
-          <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
-            <View className="w-56 h-72 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] flex flex-col justify-start items-start">
-              <View className="w-56 h-72 pb-10 flex flex-col justify-start items-start gap-0.5">
-                {navigationItems.map((item, index) => {
-                  const Icon = item.icon;
-                  return (
-                    <TouchableOpacity
-                      key={index}
-                      className="self-stretch h-14 relative bg-stone-300 rounded-2xl"
-                      onPress={() => handleNavigation(item.route)}
-                    >
-                      <Text className="left-[60px] top-[16px] absolute justify-center text-neutral-900 text-base font-medium font-['Inter'] leading-normal">
-                        {item.name}
-                      </Text>
-                      <View className="w-10 h-10 left-[8px] top-[8px] absolute bg-white rounded-xl outline outline-1 outline-offset-[-1px] outline-zinc-100 flex justify-center items-center">
-                        <Icon width={16} height={16} />
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
+          <Pressable 
+            style={StyleSheet.absoluteFill}
+            onPress={() => setMenuVisible(false)}
+          >
+            <View style={{ flex: 1 }} />
+          </Pressable>
+          
+          <Animated.View 
+            style={[
+              styles.menuContainer,
+              menuAnimatedStyle,
+            ]}
+          >
+            <Pressable onPress={(e) => e.stopPropagation()}>
+              <View className="w-56 h-72 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] flex flex-col justify-start items-start">
+                <View className="w-56 h-72 pb-10 flex flex-col justify-start items-start gap-0.5">
+                  {navigationItems.map((item, index) => {
+                    const Icon = item.icon;
+                    return (
+                      <TouchableOpacity
+                        key={index}
+                        className="self-stretch h-14 relative bg-stone-300 rounded-2xl"
+                        onPress={() => handleNavigation(item.route)}
+                      >
+                        <Text className="left-[60px] top-[16px] absolute justify-center text-neutral-900 text-base font-medium font-['Inter'] leading-normal">
+                          {item.name}
+                        </Text>
+                        <View className="w-10 h-10 left-[8px] top-[8px] absolute bg-white rounded-xl outline outline-1 outline-offset-[-1px] outline-zinc-100 flex justify-center items-center">
+                          <Icon width={16} height={16} />
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
               </View>
-            </View>
-          </TouchableOpacity>
-        </Animated.View>
-      </Modal>
+            </Pressable>
+          </Animated.View>
+        </Modal>
+      )}
     </View>
   );
 };

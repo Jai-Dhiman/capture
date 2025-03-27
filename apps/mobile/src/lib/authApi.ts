@@ -1,6 +1,6 @@
 import { API_URL } from "@env";
 import { secureStorage } from "./storage";
-import * as Random from "expo-random";
+import * as Random from "expo-crypto";
 import { encode as base64encode } from "base-64";
 import crypto from "crypto-js";
 
