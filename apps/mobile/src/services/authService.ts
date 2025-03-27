@@ -1,17 +1,6 @@
 import { authApi, AuthError } from "../lib/authApi";
-import { AuthSession, AuthUser } from "../types/authTypes";
+import type { AuthSession, AuthUser, UserProfile } from "../types/authTypes";
 import { authState } from "../stores/authState";
-
-interface UserProfile {
-  id: string;
-  userId: string;
-  username: string;
-  bio?: string;
-  profileImage?: string;
-  followersCount?: number;
-  followingCount?: number;
-  isFollowing?: boolean | null;
-}
 
 export const authService = {
   async signIn(
@@ -136,6 +125,10 @@ export const authService = {
 
   async handleAuthCallback(url: string) {
     const data = await authApi.handleAuthCallback(url);
+
+    if (!data) {
+      return null;
+    }
 
     if (data.session && data.user) {
       await authApi.storeSessionData(data.session, data.user);

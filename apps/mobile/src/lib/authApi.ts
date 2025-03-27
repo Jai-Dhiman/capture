@@ -258,9 +258,19 @@ export const authApi = {
       throw new AuthError(error instanceof Error ? error.message : "OAuth authentication failed");
     }
   },
-
   async handleAuthCallback(url: string) {
     try {
+      if (!url || typeof url !== "string") {
+        return null;
+      }
+
+      const hasAuthCode = url.includes("code=");
+      const hasAuthToken = url.includes("access_token=");
+
+      if (!hasAuthCode && !hasAuthToken) {
+        return null;
+      }
+
       const codeVerifier = await this.getStoredCodeVerifier();
 
       const response = await fetch(`${API_URL}/auth/handle-callback`, {
@@ -282,6 +292,7 @@ export const authApi = {
       return data;
     } catch (error) {
       await this.clearCodeVerifier();
+      console.error("Auth callback error details:", error);
       if (error instanceof AuthError) throw error;
       throw new AuthError(error instanceof Error ? error.message : "Authentication callback failed");
     }

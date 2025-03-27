@@ -1,57 +1,9 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import * as SecureStore from "expo-secure-store";
-import { AuthUser, AuthSession, AuthStage, AuthStatus } from "../types/authTypes";
-import { authService } from "../services/authService";
-
-export interface AuthState {
-  status: AuthStatus;
-  stage: AuthStage;
-  user: AuthUser | null;
-  session: AuthSession | null;
-  otpMessageId?: string;
-  isRefreshing: boolean;
-  lastRefreshError?: string;
-  offlineRequests: Array<() => Promise<void>>;
-
-  setUser: (user: AuthUser | null) => void;
-  setSession: (session: AuthSession | null) => void;
-  setAuthStage: (stage: AuthStage) => void;
-  clearAuth: () => void;
-  setOtpMessageId: (id: string | undefined) => void;
-  resetPhoneVerification: () => void;
-  simulatePhoneVerification: () => void;
-  refreshSession: () => Promise<AuthSession | null>;
-  queueOfflineRequest: (request: () => Promise<void>) => void;
-  processOfflineQueue: () => Promise<void>;
-  setIsRefreshing: (value: boolean) => void;
-  setLastRefreshError: (error: string | undefined) => void;
-}
-
-const secureStorage = {
-  getItem: async (name: string): Promise<string | null> => {
-    try {
-      return await SecureStore.getItemAsync(name);
-    } catch (error) {
-      console.error("SecureStore getItem error:", error);
-      return null;
-    }
-  },
-  setItem: async (name: string, value: string): Promise<void> => {
-    try {
-      await SecureStore.setItemAsync(name, value);
-    } catch (error) {
-      console.error("SecureStore setItem error:", error);
-    }
-  },
-  removeItem: async (name: string): Promise<void> => {
-    try {
-      await SecureStore.deleteItemAsync(name);
-    } catch (error) {
-      console.error("SecureStore removeItem error:", error);
-    }
-  },
-};
+import { secureStorage } from "../lib/storage";
+import type { AuthState } from "../types/authTypes";
+import { initAuthState } from "./authState";
+import { authApi } from "../lib/authApi";
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -131,7 +83,6 @@ export const useAuthStore = create<AuthState>()(
           }
         }
       },
-
       refreshSession: async () => {
         const currentSession = get().session;
         if (!currentSession?.refresh_token) return null;
@@ -148,18 +99,22 @@ export const useAuthStore = create<AuthState>()(
             return currentSession;
           }
 
-          const refreshedSession = await authService.refreshToken(currentSession.refresh_token);
+          const refreshedData = await authApi.refreshToken(currentSession.refresh_token);
 
           set({
             session: {
-              access_token: refreshedSession.access_token,
-              refresh_token: refreshedSession.refresh_token,
-              expires_at: new Date(refreshedSession.expires_at).getTime(),
+              access_token: refreshedData.access_token,
+              refresh_token: refreshedData.refresh_token,
+              expires_at: new Date(refreshedData.expires_at).getTime(),
             },
             isRefreshing: false,
           });
 
-          return refreshedSession;
+          return {
+            access_token: refreshedData.access_token,
+            refresh_token: refreshedData.refresh_token,
+            expires_at: new Date(refreshedData.expires_at).getTime(),
+          };
         } catch (error) {
           console.error("Failed to refresh session:", error);
           const errorMessage = error instanceof Error ? error.message : "Unknown error";
@@ -175,3 +130,5 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
+
+initAuthState(useAuthStore);

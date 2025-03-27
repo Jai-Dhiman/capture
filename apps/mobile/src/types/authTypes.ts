@@ -11,5 +11,54 @@ export interface AuthUser {
   phone_confirmed_at?: string;
 }
 
+export interface AuthStoreApi {
+  getState: () => {
+    user: AuthUser | null;
+    session: AuthSession | null;
+    stage: AuthStage;
+    setUser: (user: AuthUser | null) => void;
+    setSession: (session: AuthSession | null) => void;
+    setAuthStage: (stage: AuthStage) => void;
+    clearAuth: () => void;
+    setIsRefreshing: (value: boolean) => void;
+    setLastRefreshError: (error?: string) => void;
+  };
+}
+
+export interface AuthState {
+  status: AuthStatus;
+  stage: AuthStage;
+  user: AuthUser | null;
+  session: AuthSession | null;
+  otpMessageId?: string;
+  isRefreshing: boolean;
+  lastRefreshError?: string;
+  offlineRequests: Array<() => Promise<void>>;
+
+  setUser: (user: AuthUser | null) => void;
+  setSession: (session: AuthSession | null) => void;
+  setAuthStage: (stage: AuthStage) => void;
+  clearAuth: () => void;
+  setOtpMessageId: (id: string | undefined) => void;
+  resetPhoneVerification: () => void;
+  simulatePhoneVerification: () => void;
+  refreshSession: () => Promise<AuthSession | null>;
+  queueOfflineRequest: (request: () => Promise<void>) => void;
+  processOfflineQueue: () => Promise<void>;
+  setIsRefreshing: (value: boolean) => void;
+  setLastRefreshError: (error: string | undefined) => void;
+}
+
+export interface UserProfile {
+  id: string;
+  userId: string;
+  username: string;
+  bio?: string;
+  profileImage?: string;
+  followersCount?: number;
+  followingCount?: number;
+  isFollowing?: boolean | null;
+}
+
 export type AuthStatus = "idle" | "loading" | "authenticated" | "unauthenticated";
 export type AuthStage = "unauthenticated" | "profile-creation" | "phone-verification" | "complete";

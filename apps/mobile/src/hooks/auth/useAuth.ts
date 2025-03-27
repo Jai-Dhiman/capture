@@ -3,17 +3,29 @@ import { useAlert } from "../../lib/AlertContext";
 import { errorService } from "../../services/errorService";
 import { authService } from "../../services/authService";
 import { authState } from "../../stores/authState";
+import { useAuthStore } from "../../stores/authStore";
+import { type UserProfile } from "types/authTypes";
 
 export function useAuth() {
   const queryClient = useQueryClient();
   const { showAlert } = useAlert();
+  const authStore = useAuthStore();
 
   const login = useMutation({
     mutationFn: async ({ email, password }: { email: string; password: string }) => {
       return await authService.signIn(email, password);
     },
     onSuccess: (data) => {
-      authState.setAuthenticated(data.user, data.session, data.profile);
+      authStore.setUser(data.user);
+      authStore.setSession(data.session);
+
+      if (data.profile) {
+        authState.setProfile(data.profile);
+        authStore.setAuthStage("complete");
+      } else {
+        authStore.setAuthStage("profile-creation");
+      }
+
       queryClient.invalidateQueries({ queryKey: ["profile"] });
     },
     onError: (error) => {

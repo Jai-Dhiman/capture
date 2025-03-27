@@ -1,22 +1,7 @@
-import { useAuthStore } from "./authStore";
 import { useProfileStore } from "./profileStore";
 import { useOnboardingStore } from "./onboardingStore";
-import { AuthUser, AuthSession, AuthStage } from "../types/authTypes";
+import type { AuthUser, AuthSession, AuthStage, AuthStoreApi } from "../types/authTypes";
 import { OnboardingStep } from "./onboardingStore";
-
-interface AuthStoreApi {
-  getState: () => {
-    user: AuthUser | null;
-    session: AuthSession | null;
-    stage: AuthStage;
-    setUser: (user: AuthUser | null) => void;
-    setSession: (session: AuthSession | null) => void;
-    setAuthStage: (stage: AuthStage) => void;
-    clearAuth: () => void;
-    setIsRefreshing: (value: boolean) => void;
-    setLastRefreshError: (error?: string) => void;
-  };
-}
 
 export const createAuthState = (store: AuthStoreApi) => ({
   async getAuthState(): Promise<{
@@ -97,4 +82,12 @@ export const createAuthState = (store: AuthStoreApi) => ({
   },
 });
 
-export const authState = createAuthState(useAuthStore);
+export let authState = createAuthState({
+  getState: () => {
+    throw new Error("Auth state used before initialization");
+  },
+});
+
+export const initAuthState = (store: AuthStoreApi) => {
+  authState = createAuthState(store);
+};

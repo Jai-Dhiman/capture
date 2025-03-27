@@ -166,14 +166,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error("Token refresh error:", error);
       
       if (isOffline) {
-        console.log("Device is offline, will retry token refresh when online");
         return;
       }
       
       if (refreshRetryCount.current < MAX_REFRESH_RETRIES) {
         refreshRetryCount.current += 1;
         const backoffTime = Math.pow(2, refreshRetryCount.current) * 1000;
-        console.log(`Retrying token refresh in ${backoffTime}ms (attempt ${refreshRetryCount.current}/${MAX_REFRESH_RETRIES})`);
         
         setTimeout(() => {
           handleTokenRefresh();
