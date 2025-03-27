@@ -1,6 +1,7 @@
 import { NavigatorScreenParams } from "@react-navigation/native";
 
 export type RootStackParamList = {
+  Splash: undefined;
   Auth: NavigatorScreenParams<AuthStackParamList> | undefined;
   CreateProfile: undefined;
   App: NavigatorScreenParams<AppStackParamList> | undefined;

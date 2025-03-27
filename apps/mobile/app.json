@@ -44,7 +44,8 @@
       "name": "Capture"
     },
     "plugins": [
-      "expo-secure-store"
+      "expo-secure-store",
+      "react-native-reanimated/plugin"
     ]
   }
 }

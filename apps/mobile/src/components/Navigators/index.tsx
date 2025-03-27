@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { LinkingOptions } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
@@ -8,6 +8,7 @@ import AppNavigator from './AppNavigator';
 import AuthStack from './AuthNavigator';
 import CreateProfile from '../../screens/auth/CreateProfile';
 import PhoneVerificationFlow from './PhoneVerificationFlow';
+import SplashScreen from '../../screens/SplashScreen';
 import { authService } from '../../services/authService';
 import { useOnboardingStore } from '../../stores/onboardingStore';
 
@@ -23,6 +24,7 @@ export const linking: LinkingOptions<RootStackParamList> = {
   ],
   config: {
     screens: {
+      Splash: 'splash',
       Auth: {
         screens: {
           Login: 'auth/login',
@@ -74,24 +76,53 @@ export const linking: LinkingOptions<RootStackParamList> = {
 export function MainNavigator() {
   const { stage: authStage } = useAuthStore();
   const { currentStep } = useOnboardingStore();
+  const [isSplashComplete, setIsSplashComplete] = useState(false);
+  
+  // Check if we should bypass splash (for deep links or auth callbacks)
+  useEffect(() => {
+    const checkForDeepLink = async () => {
+      const url = await Linking.getInitialURL();
+      // Skip splash screen if coming from a deep link
+      if (url) {
+        setIsSplashComplete(true);
+      }
+    };
+    
+    checkForDeepLink();
+  }, []);
 
+  // If we have a deep link or auth callback, skip the splash screen
+  if (isSplashComplete) {
+    return (
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {authStage === 'unauthenticated' && (
+          <Stack.Screen name="Auth" component={AuthStack} />
+        )}
+        
+        {authStage === 'profile-creation' && (
+          <Stack.Screen name="CreateProfile" component={CreateProfile} />
+        )}
+        
+        {authStage === 'phone-verification' && (
+          <Stack.Screen name="PhoneVerification" component={PhoneVerificationFlow} />
+        )}
+        
+        {authStage === 'complete' && (
+          <Stack.Screen name="App" component={AppNavigator} />
+        )}
+      </Stack.Navigator>
+    );
+  }
+  
+  // Otherwise, always start with splash screen
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {authStage === 'unauthenticated' && (
-        <Stack.Screen name="Auth" component={AuthStack} />
-      )}
+      <Stack.Screen name="Splash" component={SplashScreen} />
       
-      {authStage === 'profile-creation' && (
-        <Stack.Screen name="CreateProfile" component={CreateProfile} />
-      )}
-      
-      {authStage === 'phone-verification' && (
-        <Stack.Screen name="PhoneVerification" component={PhoneVerificationFlow} />
-      )}
-      
-      {authStage === 'complete' && (
-        <Stack.Screen name="App" component={AppNavigator} />
-      )}
+      <Stack.Screen name="Auth" component={AuthStack} />
+      <Stack.Screen name="CreateProfile" component={CreateProfile} />
+      <Stack.Screen name="PhoneVerification" component={PhoneVerificationFlow} />
+      <Stack.Screen name="App" component={AppNavigator} />
     </Stack.Navigator>
   );
 }

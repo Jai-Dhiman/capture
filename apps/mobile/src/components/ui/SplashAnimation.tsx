@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { View } from 'react-native';
 import LottieView from 'lottie-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,6 +15,14 @@ export const SplashAnimation: React.FC<SplashAnimationProps> = ({
   const insets = useSafeAreaInsets();
   const animationRef = useRef<LottieView>(null);
   
+  useEffect(() => {
+    if (animationRef.current) {
+      setTimeout(() => {
+        animationRef.current?.play();
+      }, 100);
+    }
+  }, []);
+  
   return (
     <View 
       className={`items-center justify-center bg-white ${fullScreen ? 'flex-1 absolute inset-0 z-50' : ''}`}
@@ -23,7 +31,7 @@ export const SplashAnimation: React.FC<SplashAnimationProps> = ({
       <LottieView
         ref={animationRef}
         source={require('../../../assets/StartupAnimation.json')}
-        autoPlay
+        autoPlay={false} 
         loop={false}
         style={{ width: 200, height: 200 }}
         onAnimationFinish={onAnimationFinish}
