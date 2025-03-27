@@ -49,17 +49,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
         { email: value.email, password: value.password },
         {
           onSuccess: () => {
-            showAlert(
-              'Account Created Successfully! Please check your email for a verification link to complete your registration.',
-              { 
-                type: 'success',
-                action: {
-                  label: 'Go to Login',
-                  onPress: () => navigation.navigate('Login')
-                },
-                duration: 5000
-              }
-            );
+            navigation.navigate('EmailVerificationPending');
           }
         }
       );

@@ -17,6 +17,7 @@ export type AuthStackParamList = {
   ForgotPassword: undefined;
   ResetPassword: { token?: string };
   CreateProfile: undefined;
+  EmailVerificationPending: undefined;
 };
 
 export type AppStackParamList = {

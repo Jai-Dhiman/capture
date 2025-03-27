@@ -261,17 +261,23 @@ export const authApi = {
   async handleAuthCallback(url: string) {
     try {
       if (!url || typeof url !== "string") {
+        console.error("Invalid URL provided to handleAuthCallback:", url);
         return null;
       }
 
+      console.log("Processing auth callback URL:", url);
+
+      // Check if URL has required parameters
       const hasAuthCode = url.includes("code=");
       const hasAuthToken = url.includes("access_token=");
 
       if (!hasAuthCode && !hasAuthToken) {
+        console.error("URL missing auth code or token:", url);
         return null;
       }
 
       const codeVerifier = await this.getStoredCodeVerifier();
+      console.log("Code verifier present:", !!codeVerifier);
 
       const response = await fetch(`${API_URL}/auth/handle-callback`, {
         method: "POST",

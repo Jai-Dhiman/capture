@@ -9,8 +9,10 @@ import { useCreateProfile } from 'hooks/auth/useCreateProfile';
 import { useOnboardingStore } from '../../stores/onboardingStore';
 import { useAlert } from '../../lib/AlertContext';
 import { errorService } from '../../services/errorService';
+import { useNavigation } from '@react-navigation/native';
 
 export default function CreateProfile() {
+  const navigation = useNavigation();
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [isUsernameFocused, setIsUsernameFocused] = useState(false);
   const [isBioFocused, setIsBioFocused] = useState(false);
@@ -65,6 +67,10 @@ export default function CreateProfile() {
           onSuccess: () => {
             showAlert('Profile created successfully!', { type: 'success', duration: 3000 });
             completeStep('profile-setup');
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Feed' }], 
+            });
           },
           onError: (error) => {
             const errorMessage = error instanceof Error 
