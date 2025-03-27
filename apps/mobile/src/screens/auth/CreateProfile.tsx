@@ -10,9 +10,11 @@ import { useOnboardingStore } from '../../stores/onboardingStore';
 import { useAlert } from '../../lib/AlertContext';
 import { errorService } from '../../services/errorService';
 import { useNavigation } from '@react-navigation/native';
+import { RootStackParamList } from '../../components/Navigators/types/navigation';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 export default function CreateProfile() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [isUsernameFocused, setIsUsernameFocused] = useState(false);
   const [isBioFocused, setIsBioFocused] = useState(false);
@@ -69,7 +71,9 @@ export default function CreateProfile() {
             completeStep('profile-setup');
             navigation.reset({
               index: 0,
-              routes: [{ name: 'Feed' }], 
+              routes: [{ 
+                name: 'App' as keyof RootStackParamList
+              }],
             });
           },
           onError: (error) => {

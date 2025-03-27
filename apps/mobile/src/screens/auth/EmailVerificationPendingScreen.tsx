@@ -6,7 +6,7 @@ import { LoadingSpinner } from 'components/ui/LoadingSpinner';
 import Header from '../../components/ui/Header';
 
 type Props = {
-  navigation: NativeStackNavigationProp<AuthStackParamList, 'EmailVerificationPendingScreen'>
+  navigation: NativeStackNavigationProp<AuthStackParamList, 'EmailVerificationPending'>
 }
 
 export default function EmailVerificationPendingScreen({ navigation }: Props) {
