@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, RefreshControl, ActivityIndicator } from 'react-native';
 import { useFeed } from '../hooks/useFeed';
 import { PostItem } from '../components/post/PostItem';
 import { ThreadItem } from '../components/post/ThreadItem';
 import Header from '../components/ui/Header';
 import { EmptyState } from '../components/ui/EmptyState';
 import type { Post, Thread } from '../types/postTypes';
+import { FlashList } from '@shopify/flash-list';
 
 export default function Feed() {
   const [refreshing, setRefreshing] = useState(false);
@@ -56,14 +57,14 @@ export default function Feed() {
     <View className="flex-1 bg-zinc-300">
       <Header />
       
-      <FlatList
+      <FlashList
         data={sortedPosts}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
+        estimatedItemSize={400}
         contentContainerStyle={{ 
           padding: 16,
           paddingBottom: 100,
-          flexGrow: sortedPosts.length === 0 ? 1 : undefined
         }}
         refreshControl={
           <RefreshControl
