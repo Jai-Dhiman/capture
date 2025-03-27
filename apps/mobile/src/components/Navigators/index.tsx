@@ -30,7 +30,6 @@ export const linking: LinkingOptions<RootStackParamList> = {
           Login: 'auth/login',
           Signup: 'auth/signup',
           EmailSignup: 'auth/email-signup',
-          EnterPhone: 'auth/verify-email',
           VerifyPhoneNumber: 'auth/verify-phone',
           CreateProfile: 'auth/create-profile',
           ForgotPassword: 'auth/forgot-password',

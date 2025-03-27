@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../components/Navigators/types/navigation';
-import { LoadingSpinner } from 'components/ui/LoadingSpinner';
 import Header from '../../components/ui/Header';
 
 type Props = {

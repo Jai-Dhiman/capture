@@ -1,5 +1,5 @@
 import { authApi, AuthError } from "../lib/authApi";
-import type { AuthSession, AuthUser, UserProfile } from "../types/authTypes";
+import type { AuthSession, AuthStage, AuthUser, UserProfile } from "../types/authTypes";
 import { authState } from "../stores/authState";
 
 export const authService = {
@@ -20,6 +20,18 @@ export const authService = {
     }
 
     const profileData = await authApi.fetchUserProfile(authData.user.id, authData.session.access_token);
+
+    let nextStage: AuthStage = "unauthenticated";
+
+    if (!profileData) {
+      nextStage = "profile-creation";
+    } else if (!authData.user.phone_confirmed_at) {
+      nextStage = "phone-verification";
+    } else {
+      nextStage = "complete";
+    }
+
+    authState.setAuthStage(nextStage);
 
     return {
       user: {
@@ -179,7 +191,11 @@ export const authService = {
       return "unauthenticated";
     }
 
-    if (user && !profile) {
+    if (!user.phone_confirmed_at) {
+      return "phone-verification";
+    }
+
+    if (!profile) {
       const { session } = await authState.getAuthState();
       if (session?.access_token) {
         const profileData = await authApi.fetchUserProfile(user.id, session.access_token);
@@ -193,10 +209,6 @@ export const authService = {
       } else {
         return "profile-creation";
       }
-    }
-
-    if (user.phone && !user.phone_confirmed_at) {
-      return "phone-verification";
     }
 
     return "complete";

@@ -3,7 +3,7 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import { secureStorage } from "../lib/storage";
 import type { AuthState } from "../types/authTypes";
 import { initAuthState } from "./authState";
-import { authApi } from "../lib/authApi";
+import { authApi, AuthError } from "../lib/authApi";
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -85,14 +85,18 @@ export const useAuthStore = create<AuthState>()(
       },
       refreshSession: async () => {
         const currentSession = get().session;
-        if (!currentSession?.refresh_token) return null;
+
+        if (!currentSession?.refresh_token) {
+          return null;
+        }
 
         set({ isRefreshing: true, lastRefreshError: undefined });
 
         try {
           const now = Date.now();
           const expiresAt = currentSession.expires_at;
-          const shouldRefresh = expiresAt - now < 5 * 60 * 1000;
+
+          const shouldRefresh = !expiresAt || expiresAt - now < 5 * 60 * 1000;
 
           if (!shouldRefresh) {
             set({ isRefreshing: false });
@@ -101,24 +105,38 @@ export const useAuthStore = create<AuthState>()(
 
           const refreshedData = await authApi.refreshToken(currentSession.refresh_token);
 
-          set({
-            session: {
-              access_token: refreshedData.access_token,
-              refresh_token: refreshedData.refresh_token,
-              expires_at: new Date(refreshedData.expires_at).getTime(),
-            },
-            isRefreshing: false,
-          });
+          if (!refreshedData || !refreshedData.access_token || !refreshedData.refresh_token) {
+            throw new Error("Invalid refresh response");
+          }
 
-          return {
+          const updatedSession = {
             access_token: refreshedData.access_token,
             refresh_token: refreshedData.refresh_token,
             expires_at: new Date(refreshedData.expires_at).getTime(),
           };
+
+          const { user } = get();
+          if (user) {
+            await authApi.storeSessionData(updatedSession, user);
+          }
+
+          set({
+            session: updatedSession,
+            isRefreshing: false,
+          });
+
+          return updatedSession;
         } catch (error) {
           console.error("Failed to refresh session:", error);
           const errorMessage = error instanceof Error ? error.message : "Unknown error";
           set({ lastRefreshError: errorMessage, isRefreshing: false });
+
+          if (
+            error instanceof AuthError &&
+            (error.message.includes("Invalid Refresh Token") || error.message.includes("Refresh Token Not Found"))
+          ) {
+            set({ session: null });
+          }
 
           return null;
         }
