@@ -13,6 +13,13 @@ import { AlertProvider } from './lib/AlertContext';
 import { Provider as JotaiProvider } from 'jotai'
 import { JotaiInitializer } from './components/providers/JotaiProvider';
 import { AuthProvider } from './components/providers/AuthProvider';
+import * as Sentry from '@sentry/react-native';
+
+Sentry.init({
+  dsn: 'https://74904d3bf1ebb2b0747f5356b0a83624@o4509049381519360.ingest.us.sentry.io/4509049386434560',
+  tracePropagationTargets: ["localhost", /^\//, "https://o4509049381519360.ingest.us.sentry.io"],
+  tracesSampleRate: 1.0,
+});
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,7 +31,7 @@ const queryClient = new QueryClient({
   },
 });
 
-export default function App() {
+export default Sentry.wrap(function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
@@ -48,4 +55,4 @@ export default function App() {
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
-}
+});

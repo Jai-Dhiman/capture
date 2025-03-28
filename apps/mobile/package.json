@@ -22,6 +22,7 @@
     "@react-navigation/native-stack": "^6.11.0",
     "@react-navigation/stack": "^7.1.1",
     "@rneui/themed": "4.0.0-rc.8",
+    "@sentry/react-native": "~6.3.0",
     "@shopify/flash-list": "~1.7.3",
     "@supabase/supabase-js": "^2.48.1",
     "@tanstack/react-form": "^1.1.2",

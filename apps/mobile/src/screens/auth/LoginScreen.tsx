@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react'
 import {
   View, Text, TouchableOpacity, TextInput, Image, ScrollView,
+  Button,
 } from 'react-native'
 import { useForm } from '@tanstack/react-form'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -15,6 +16,7 @@ import OAuth from '../../components/providers/OAuth';
 import Header from 'components/ui/Header'
 import { useAlert } from '../../lib/AlertContext';
 import { errorService } from '../../services/errorService';
+import * as Sentry from '@sentry/react-native'
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'Login'>
@@ -67,6 +69,7 @@ export default function LoginScreen({ navigation }: Props) {
           <View className="flex-1 px-[26px]">
             <Header />
             <View className="h-[1px] bg-black/10 mb-[30px]" />
+            <Button title='Try!' onPress={ () => { Sentry.captureException(new Error('First error')) }}/>
 
             <form.Field
               name="email"
