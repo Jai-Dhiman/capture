@@ -23,10 +23,10 @@ export const authService = {
 
     let nextStage: AuthStage = "unauthenticated";
 
-    if (!profileData) {
-      nextStage = "profile-creation";
-    } else if (!authData.user.phone_confirmed_at) {
+    if (!authData.user.phone_confirmed_at) {
       nextStage = "phone-verification";
+    } else if (!profileData) {
+      nextStage = "profile-creation";
     } else {
       nextStage = "complete";
     }

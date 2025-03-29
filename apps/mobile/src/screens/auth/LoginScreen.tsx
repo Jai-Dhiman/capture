@@ -69,7 +69,6 @@ export default function LoginScreen({ navigation }: Props) {
           <View className="flex-1 px-[26px]">
             <Header />
             <View className="h-[1px] bg-black/10 mb-[30px]" />
-            <Button title='Try!' onPress={ () => { Sentry.captureException(new Error('First error')) }}/>
 
             <form.Field
               name="email"

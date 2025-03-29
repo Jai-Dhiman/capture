@@ -32,16 +32,7 @@
         "https://captureapp.org",
         "http://localhost:8081",
         "exp://192.168.1.64:8081"
-      ],
-      "config": {
-        "screens": {
-          "Auth": {
-            "screens": {
-              "EnterPhone": "auth/verify-email"
-            }
-          }
-        }
-      }
+      ]
     },
     "web": {
       "bundler": "metro",

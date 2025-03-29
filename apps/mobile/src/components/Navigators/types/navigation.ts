@@ -12,7 +12,6 @@ export type AuthStackParamList = {
   Login: undefined;
   Signup: undefined;
   EmailSignup: undefined;
-  EnterPhone: undefined;
   VerifyPhoneNumber: undefined;
   ForgotPassword: undefined;
   ResetPassword: { token?: string };

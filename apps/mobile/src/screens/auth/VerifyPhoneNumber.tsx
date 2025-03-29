@@ -14,7 +14,7 @@ import { errorService } from '../../services/errorService';
 import { useAuth } from 'hooks/auth/useAuth';
 
 type Props = {
-  navigation: NativeStackNavigationProp<AuthStackParamList, 'EnterPhone'>
+  navigation: NativeStackNavigationProp<AuthStackParamList, 'VerifyPhoneNumber'>
 }
 
 enum VerificationStep {
@@ -35,8 +35,8 @@ export default function PhoneVerificationScreen({ navigation }: Props) {
   const codeInputRefs = useRef<Array<TextInput | null>>([null, null, null, null, null, null]);
   
   // State
-  const { user } = useAuthStore(); 
-  const { verifyOTP } = useAuth();
+  const { user, session } = useAuthStore(); 
+  const { sendOTP, verifyOTP } = useAuth();
   const { completeStep } = useOnboardingStore();
   const { showAlert } = useAlert();
 
@@ -75,27 +75,13 @@ export default function PhoneVerificationScreen({ navigation }: Props) {
       const formatted = `+1${phone.replace(/\D/g, '')}`;  
       setFormattedPhone(formatted);
       
-      const { error } = await supabase.auth.updateUser({
-        phone: formatted
-      });
-      
-      if (error) throw error;
-
-      const { error: otpError, data } = await supabase.auth.signInWithOtp({
-        phone: formatted,
-      });
-      
-      if (otpError) throw otpError;
-      
-      if (user) {
-        setUser({
-          ...user,
-          phone: formatted
+      if (session?.access_token) {
+        await sendOTP.mutateAsync({ 
+          phone: formatted, 
+          token: session.access_token 
         });
-      }
-      
-      if (data?.messageId) {
-        setOtpMessageId(data.messageId);
+      } else {
+        throw new Error("No active session");
       }
       
       // Move to verification code step
@@ -125,13 +111,7 @@ export default function PhoneVerificationScreen({ navigation }: Props) {
 
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.verifyOtp({
-        phone: formattedPhone,
-        token: code,
-        type: 'sms'
-      });
-      
-      if (error) throw error;
+      await verifyOTP.mutateAsync({ phone: formattedPhone, code });
       
       completeStep('phone-verification');
       navigation.navigate('CreateProfile');
@@ -151,11 +131,14 @@ export default function PhoneVerificationScreen({ navigation }: Props) {
     try {
       setSendingCode(true);
       
-      const { error } = await supabase.auth.signInWithOtp({
-        phone: formattedPhone,
-      });
-      
-      if (error) throw error;
+      if (session?.access_token) {
+        await sendOTP.mutateAsync({ 
+          phone: formattedPhone, 
+          token: session.access_token 
+        });
+      } else {
+        throw new Error("No active session");
+      }
 
       setCountdown(60);
       showAlert('A new verification code has been sent to your phone number.', { type: 'success' });
