@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
-import { View, Text, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useFeed } from '../hooks/useFeed';
 import { PostItem } from '../components/post/PostItem';
 import { ThreadItem } from '../components/post/ThreadItem';
 import Header from '../components/ui/Header';
 import { EmptyState } from '../components/ui/EmptyState';
+import { useNavigation } from '@react-navigation/native';
 import type { Post, Thread } from '../types/postTypes';
 import { FlashList } from '@shopify/flash-list';
 
 export default function Feed() {
   const [refreshing, setRefreshing] = useState(false);
   const { data: posts, isLoading, isError, error, refetch } = useFeed();
+  const navigation = useNavigation();
 
-  const onRefresh = async () => {
+  const handleRefresh = async () => {
     setRefreshing(true);
     await refetch();
     setRefreshing(false);
@@ -48,6 +50,11 @@ export default function Feed() {
           <Text className="text-red-500 text-center mb-4">
             {error instanceof Error ? error.message : "An error occurred loading your feed"}
           </Text>
+          <TouchableOpacity 
+            className="bg-black py-3 px-6 rounded-full"
+          >
+            <Text className="text-white font-medium">Try Again</Text>
+          </TouchableOpacity>
         </View>
       </View>
     );
@@ -62,21 +69,17 @@ export default function Feed() {
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         estimatedItemSize={400}
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
         contentContainerStyle={{ 
           padding: 16,
           paddingBottom: 100,
         }}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-          />
-        }
         ListEmptyComponent={
           <EmptyState
             title="Your Feed is Empty"
-            message="Start following other users to see their posts here or create your first post"
-            icon="feed"
+            message="Start following other users to see their posts here."
+            icon="people"
           />
         }
       />

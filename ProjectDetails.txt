@@ -26,7 +26,7 @@ Capture reimagines social media by prioritizing user privacy, safety, and mental
   - Durable Objects for real-time features
   - KV for caching
   - Workers AI for content moderation
-  - Qdrant Vector DB for content recommendations without invasive tracking
+  - Vectorize for content recommendations without invasive tracking
 
 ### Security & Privacy Features
 - Signal Protocol implementation for end-to-end encrypted messaging

@@ -13,13 +13,28 @@ export const postResolvers = {
 
       const db = createD1Client(context.env);
 
-      const posts = await db
-        .select()
-        .from(schema.post)
-        .limit(limit)
-        .offset(offset)
-        .orderBy(sql`${schema.post.createdAt} DESC`)
+      const relationships = await db
+        .select({ followedId: schema.relationship.followedId })
+        .from(schema.relationship)
+        .where(eq(schema.relationship.followerId, context.user.id))
         .all();
+
+      const followedUserIds = relationships.map((r) => r.followedId);
+
+      let postsQuery;
+      if (followedUserIds.length > 0) {
+        postsQuery = db
+          .select()
+          .from(schema.post)
+          .where(inArray(schema.post.userId, followedUserIds))
+          .limit(limit)
+          .offset(offset)
+          .orderBy(sql`${schema.post.createdAt} DESC`);
+      } else {
+        return [];
+      }
+
+      const posts = await postsQuery.all();
 
       const enhancedPosts = await Promise.all(
         posts.map(async (post) => {
