@@ -19,7 +19,9 @@ export function useAuth() {
       authStore.setUser(data.user);
       authStore.setSession(data.session);
 
-      if (data.profile) {
+      if (!data.user.phone_confirmed_at) {
+        authStore.setAuthStage("phone-verification");
+      } else if (data.profile) {
         authState.setProfile(data.profile);
         authStore.setAuthStage("complete");
       } else {
