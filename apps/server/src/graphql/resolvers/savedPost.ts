@@ -1,17 +1,17 @@
-import { createD1Client } from '../../db'
-import { eq, and, desc, sql } from 'drizzle-orm'
-import * as schema from '../../db/schema'
-import { nanoid } from 'nanoid'
-import type { ContextType } from '../../types'
+import { createD1Client } from "../../db";
+import { eq, and, desc, sql } from "drizzle-orm";
+import * as schema from "../../db/schema";
+import { nanoid } from "nanoid";
+import type { ContextType } from "../../types";
 
 export const savedPostResolvers = {
   Query: {
     async savedPosts(_: unknown, { limit = 10, offset = 0 }, context: ContextType) {
       if (!context.user) {
-        throw new Error('Authentication required')
+        throw new Error("Authentication required");
       }
 
-      const db = createD1Client(context.env)
+      const db = createD1Client(context.env);
 
       try {
         const savedPostsIds = await db
@@ -21,33 +21,29 @@ export const savedPostResolvers = {
           .limit(limit)
           .offset(offset)
           .orderBy((tbl) => [desc(schema.savedPost.createdAt)])
-          .all()
+          .all();
 
         if (!savedPostsIds.length) {
-          return []
+          return [];
         }
 
         const savedPosts = await Promise.all(
           savedPostsIds.map(async ({ postId }) => {
             if (!postId) {
-              return null
+              return null;
             }
 
-            const post = await db.select().from(schema.post).where(eq(schema.post.id, postId)).get()
+            const post = await db.select().from(schema.post).where(eq(schema.post.id, postId)).get();
 
-            if (!post) return null
+            if (!post) return null;
 
             const user = await db
               .select()
               .from(schema.profile)
               .where(post.userId !== null ? eq(schema.profile.userId, post.userId) : sql`FALSE`)
-              .get()
+              .get();
 
-            const media = await db
-              .select()
-              .from(schema.media)
-              .where(eq(schema.media.postId, post.id))
-              .all()
+            const media = await db.select().from(schema.media).where(eq(schema.media.postId, post.id)).all();
 
             return {
               ...post,
@@ -56,16 +52,14 @@ export const savedPostResolvers = {
               comments: [],
               hashtags: [],
               savedBy: [],
-            }
+            };
           })
-        )
+        );
 
-        return savedPosts.filter(Boolean)
+        return savedPosts.filter(Boolean);
       } catch (error) {
-        console.error('Error fetching saved posts:', error)
-        throw new Error(
-          `Failed to fetch saved posts: ${error instanceof Error ? error.message : 'Unknown error'}`
-        )
+        console.error("Error fetching saved posts:", error);
+        throw new Error(`Failed to fetch saved posts: ${error instanceof Error ? error.message : "Unknown error"}`);
       }
     },
   },
@@ -73,28 +67,26 @@ export const savedPostResolvers = {
   Mutation: {
     async savePost(_: unknown, { postId }: { postId: string }, context: ContextType) {
       if (!context.user) {
-        throw new Error('Authentication required')
+        throw new Error("Authentication required");
       }
 
-      const db = createD1Client(context.env)
+      const db = createD1Client(context.env);
 
       try {
-        const post = await db.select().from(schema.post).where(eq(schema.post.id, postId)).get()
+        const post = await db.select().from(schema.post).where(eq(schema.post.id, postId)).get();
 
         if (!post) {
-          throw new Error('Post not found')
+          throw new Error("Post not found");
         }
 
         const existingSave = await db
           .select()
           .from(schema.savedPost)
-          .where(
-            and(eq(schema.savedPost.userId, context.user.id), eq(schema.savedPost.postId, postId))
-          )
-          .get()
+          .where(and(eq(schema.savedPost.userId, context.user.id), eq(schema.savedPost.postId, postId)))
+          .get();
 
         if (existingSave) {
-          return { success: true, post }
+          return { success: true, post };
         }
 
         await db.insert(schema.savedPost).values({
@@ -102,64 +94,53 @@ export const savedPostResolvers = {
           userId: context.user.id,
           postId,
           createdAt: new Date().toISOString(),
-        })
+        });
 
-        return { success: true, post }
+        return { success: true, post };
       } catch (error) {
-        console.error('Error saving post:', error)
-        throw new Error(
-          `Failed to save post: ${error instanceof Error ? error.message : 'Unknown error'}`
-        )
+        console.error("Error saving post:", error);
+        throw new Error(`Failed to save post: ${error instanceof Error ? error.message : "Unknown error"}`);
       }
     },
 
     async unsavePost(_: unknown, { postId }: { postId: string }, context: ContextType) {
       if (!context.user) {
-        throw new Error('Authentication required')
+        throw new Error("Authentication required");
       }
 
-      const db = createD1Client(context.env)
+      const db = createD1Client(context.env);
 
       try {
         await db
           .delete(schema.savedPost)
-          .where(
-            and(eq(schema.savedPost.userId, context.user.id), eq(schema.savedPost.postId, postId))
-          )
+          .where(and(eq(schema.savedPost.userId, context.user.id), eq(schema.savedPost.postId, postId)));
 
-        return { success: true }
+        return { success: true };
       } catch (error) {
-        console.error('Error unsaving post:', error)
-        throw new Error(
-          `Failed to unsave post: ${error instanceof Error ? error.message : 'Unknown error'}`
-        )
+        console.error("Error unsaving post:", error);
+        throw new Error(`Failed to unsave post: ${error instanceof Error ? error.message : "Unknown error"}`);
       }
     },
   },
 
   Post: {
     async isSaved(parent: { id: string }, _: unknown, context: ContextType) {
-      if (!context.user || !parent.id) return false
+      if (!context.user || !parent.id) return false;
 
-      const db = createD1Client(context.env)
+      const db = createD1Client(context.env);
 
       try {
         const savedPost = await db
           .select()
           .from(schema.savedPost)
-          .where(
-            and(
-              eq(schema.savedPost.userId, context.user.id),
-              eq(schema.savedPost.postId, parent.id)
-            )
-          )
-          .get()
+          .where(and(eq(schema.savedPost.userId, context.user.id), eq(schema.savedPost.postId, parent.id)))
+          .get();
 
-        return !!savedPost
+        return !!savedPost;
       } catch (error) {
-        console.error('Error checking if post is saved:', error)
-        return false
+        console.error("Error checking if post is saved:", error);
+        return false;
       }
     },
   },
-}
+};

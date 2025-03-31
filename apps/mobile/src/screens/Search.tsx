@@ -9,6 +9,7 @@ import { ProfileImage } from '../components/media/ProfileImage';
 import { useSearchHashtags } from '../hooks/useHashtags';
 import Header from 'components/ui/Header';
 import { useAuthStore } from '../stores/authStore'; 
+import SkeletonContent from 'react-native-skeleton-content';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 
@@ -252,10 +253,50 @@ export default function UserSearch() {
       </View>
 
       {isSearchLoading ? (
-        <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#E4CAC7" />
-          <Text className="mt-4 text-gray-500">Searching...</Text>
-        </View>
+        <View className="flex-1 p-4">
+        <SkeletonContent
+          containerStyle={{ width: "100%" }}
+          isLoading={true}
+          layout={isHashtagSearch ? [
+            { width: "100%", height: 20, marginBottom: 12, borderRadius: 4 },
+            { flexDirection: "row", alignItems: "center", marginBottom: 15, children: [
+              { width: 48, height: 48, borderRadius: 24, marginRight: 16 },
+              { width: 180, height: 20 }
+            ]},
+            { flexDirection: "row", alignItems: "center", marginBottom: 15, children: [
+              { width: 48, height: 48, borderRadius: 24, marginRight: 16 },
+              { width: 150, height: 20 }
+            ]},
+            { flexDirection: "row", alignItems: "center", marginBottom: 15, children: [
+              { width: 48, height: 48, borderRadius: 24, marginRight: 16 },
+              { width: 200, height: 20 }
+            ]}
+          ] : [
+            { width: "100%", height: 20, marginBottom: 12, borderRadius: 4 },
+            { flexDirection: "row", alignItems: "center", marginBottom: 15, children: [
+              { width: 48, height: 48, borderRadius: 24, marginRight: 16 },
+              { children: [
+                { width: 120, height: 20, marginBottom: 5 },
+                { width: 180, height: 14 }
+              ]}
+            ]},
+            { flexDirection: "row", alignItems: "center", marginBottom: 15, children: [
+              { width: 48, height: 48, borderRadius: 24, marginRight: 16 },
+              { children: [
+                { width: 140, height: 20, marginBottom: 5 },
+                { width: 160, height: 14 }
+              ]}
+            ]},
+            { flexDirection: "row", alignItems: "center", marginBottom: 15, children: [
+              { width: 48, height: 48, borderRadius: 24, marginRight: 16 },
+              { children: [
+                { width: 100, height: 20, marginBottom: 5 },
+                { width: 200, height: 14 }
+              ]}
+            ]}
+          ]}
+        />
+      </View>
       ) : (
         <SectionList
           sections={sections as any}

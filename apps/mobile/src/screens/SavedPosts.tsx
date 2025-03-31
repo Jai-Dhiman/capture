@@ -7,6 +7,7 @@ import { AppStackParamList } from '../components/Navigators/types/navigation';
 import { useSavedPosts } from '../hooks/useSavesPosts';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { MediaImage } from '../components/media/MediaImage';
+import SkeletonContent from 'react-native-skeleton-content';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 
@@ -18,7 +19,47 @@ export default function SavedPosts() {
   const { data: savedPosts, isLoading, error } = useSavedPosts(30, 0);
 
   if (isLoading) {
-    return <LoadingSpinner fullScreen message="Loading your saved posts..." />;
+    return (
+      <View className="flex-1">
+        <Image
+          source={require('../../assets/DefaultBackground.png')}
+          style={{ width: '100%', height: '100%', position: 'absolute' }}
+          resizeMode="cover"
+        />
+        
+        <View className="flex-row items-center p-4 bg-transparent">
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={24} color="black" />
+          </TouchableOpacity>
+          <Text className="text-[30px] font-light mx-auto">Saved Posts</Text>
+          <View style={{ width: 24 }} />
+        </View>
+        
+        <View className="flex-1 p-4">
+          <SkeletonContent
+            containerStyle={{ width: "100%" }}
+            isLoading={true}
+            layout={[
+              { flexDirection: "row", width: "100%", marginBottom: 8, children: [
+                { width: width/3, height: width/3, marginRight: 1 },
+                { width: width/3, height: width/3, marginRight: 1 },
+                { width: width/3, height: width/3 }
+              ]},
+              { flexDirection: "row", width: "100%", marginBottom: 8, children: [
+                { width: width/3, height: width/3, marginRight: 1 },
+                { width: width/3, height: width/3, marginRight: 1 },
+                { width: width/3, height: width/3 }
+              ]},
+              { flexDirection: "row", width: "100%", marginBottom: 8, children: [
+                { width: width/3, height: width/3, marginRight: 1 },
+                { width: width/3, height: width/3, marginRight: 1 },
+                { width: width/3, height: width/3 }
+              ]}
+            ]}
+          />
+        </View>
+      </View>
+    );
   }
 
   if (error) {

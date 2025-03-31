@@ -22,6 +22,9 @@ import { PostsGrid } from '../components/profile/PostsGrid';
 import { PostCarousel } from '../components/profile/PostCarousel';
 import { NewPostButton } from '../components/profile/NewPostButton';
 import LockIcon2 from '../../assets/icons/LockIcon2.svg';
+import SkeletonContent from 'react-native-skeleton-content';
+import { ProfileHeaderSkeleton, PostGridSkeleton, ThreadSkeleton } from '../components/ui/LoadingSkeletons';
+
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 type ProfileRouteProp = RouteProp<AppStackParamList, 'Profile'>;
@@ -129,7 +132,17 @@ export default function Profile() {
   };
 
   if (profileLoading) {
-    return <LoadingSpinner fullScreen message="Loading profile..." />;
+    return (
+      <View className="flex-1 bg-zinc-300">
+        <StatusBar barStyle="dark-content" />
+        <Header 
+          showBackButton={true} 
+          onBackPress={() => navigation.goBack()} 
+        />
+        <ProfileHeaderSkeleton />
+        {postFilter === 'posts' ? <PostGridSkeleton /> : <ThreadSkeleton />}
+      </View>
+    );
   }
 
   if (isProfilePrivate) {
@@ -191,7 +204,26 @@ export default function Profile() {
           <View className="h-px bg-black opacity-10 my-2" />               
           
           {postsLoading ? (
-            <LoadingSpinner />
+            <SkeletonContent
+              containerStyle={{ width: "100%" }}
+              isLoading={true}
+              layout={postFilter === 'posts' ? [
+                { flexDirection: "row", width: "100%", children: [
+                  { width: itemSize, height: itemSize, marginRight: 8 },
+                  { width: itemSize, height: itemSize, marginRight: 8 },
+                  { width: itemSize, height: itemSize }
+                ]},
+                { marginTop: 8, flexDirection: "row", width: "100%", children: [
+                  { width: itemSize, height: itemSize, marginRight: 8 },
+                  { width: itemSize, height: itemSize, marginRight: 8 },
+                  { width: itemSize, height: itemSize }
+                ]}
+              ] : [
+                { width: "100%", height: 150, marginBottom: 15, borderRadius: 10 },
+                { width: "100%", height: 150, marginBottom: 15, borderRadius: 10 },
+                { width: "100%", height: 150, marginBottom: 15, borderRadius: 10 }
+              ]}
+            />
           ) : filteredPosts?.length === 0 ? (
             <Text className="text-center py-4 text-gray-500">No {postFilter} yet</Text>
           ) : (
