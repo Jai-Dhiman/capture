@@ -31,6 +31,7 @@ export const typeDefs = `
     unfollowUser(userId: ID!): UnfollowResponse!
     savePost(postId: ID!): SavePostResponse!
     unsavePost(postId: ID!): UnsavePostResponse!
+    updatePrivacySettings(isPrivate: Boolean!): Profile!
   }
 
   type Subscription {
@@ -45,6 +46,7 @@ export const typeDefs = `
     profileImage: String
     bio: String
     verifiedType: String!
+    isPrivate: Boolean!
     posts: [Post!]!
     followers: [Profile!]!
     following: [Profile!]!
@@ -53,6 +55,14 @@ export const typeDefs = `
     followingCount: Int!
     createdAt: String!
     updatedAt: String!
+  }
+
+  input ProfileInput {
+    username: String
+    bio: String
+    profileImage: String
+    phoneNumber: String
+    isPrivate: Boolean
   }
 
   type Post {
@@ -131,13 +141,6 @@ export const typeDefs = `
     name: String!
     posts: [Post!]!
     createdAt: String!
-  }
-
-  input ProfileInput {
-    username: String
-    bio: String
-    image: String
-    phoneNumber: String
   }
 
   type DeletePostResponse {

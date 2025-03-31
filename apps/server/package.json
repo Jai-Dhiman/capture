@@ -13,7 +13,6 @@
   "dependencies": {
     "@apollo/server": "^4.11.3",
     "@as-integrations/cloudflare-workers": "^1.0.2",
-    "@capture/validation": "workspace:*",
     "@hono/zod-validator": "^0.4.2",
     "@supabase/supabase-js": "^2.49.3",
     "drizzle-orm": "^0.39.1",

@@ -1,6 +1,7 @@
 import { createD1Client } from "../../db";
 import { eq, inArray, like, and } from "drizzle-orm";
 import * as schema from "../../db/schema";
+import type { ContextType } from '../../types';
 
 export const profileResolvers = {
   Query: {
@@ -10,7 +11,6 @@ export const profileResolvers = {
       }
 
       const db = createD1Client(context.env);
-
       const profile = await db.select().from(schema.profile).where(eq(schema.profile.userId, id)).get();
 
       if (!profile) throw new Error("Profile not found");
@@ -26,6 +26,15 @@ export const profileResolvers = {
           .get();
 
         isFollowing = !!relationship;
+
+        if (profile.isPrivate && !isFollowing) {
+          return {
+            ...profile,
+            isFollowing,
+            isPrivate: true,
+            posts: [],
+          };
+        }
       }
 
       const posts = await db
@@ -110,6 +119,31 @@ export const profileResolvers = {
         console.error("Error searching users:", error);
         return [];
       }
+    },
+  },
+  Mutation: {
+    async updatePrivacySettings(_: unknown, { isPrivate }: { isPrivate: boolean }, context: ContextType) {
+      if (!context?.user) {
+        throw new Error("Authentication required");
+      }
+
+      const userId = context.user.id;
+      const db = createD1Client(context.env);
+
+      await db
+        .update(schema.profile)
+        .set({
+          isPrivate: isPrivate ? 1 : 0,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(schema.profile.userId, userId));
+
+      const updatedProfile = await db.select().from(schema.profile).where(eq(schema.profile.userId, userId)).get();
+
+      return {
+        ...updatedProfile,
+        isPrivate: !!updatedProfile?.isPrivate,
+      };
     },
   },
 };

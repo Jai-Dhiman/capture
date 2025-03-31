@@ -8,13 +8,15 @@ interface ProfileHeaderProps {
   isOwnProfile: boolean;
   userId: string;
   onFollowersPress: () => void;
+  onSettingsPress?: () => void;
 }
 
 export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   profileData,
   isOwnProfile,
   userId,
-  onFollowersPress
+  onFollowersPress,
+  onSettingsPress
 }) => {
   return (
     <View className="flex-row mb-4">
@@ -37,6 +39,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             <>
               <TouchableOpacity 
                 className="bg-neutral-400 rounded-[30px] px-4 py-1 mr-2"
+                onPress={onSettingsPress}
               >
                 <Text className="text-white text-xs font-normal text-center">Settings</Text>
               </TouchableOpacity>

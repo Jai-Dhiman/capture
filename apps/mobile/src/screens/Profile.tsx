@@ -21,6 +21,7 @@ import { FilterTabs } from '../components/profile/FilterTabs';
 import { PostsGrid } from '../components/profile/PostsGrid';
 import { PostCarousel } from '../components/profile/PostCarousel';
 import { NewPostButton } from '../components/profile/NewPostButton';
+import LockIcon2 from '../../assets/icons/LockIcon2.svg';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 type ProfileRouteProp = RouteProp<AppStackParamList, 'Profile'>;
@@ -41,9 +42,11 @@ export default function Profile() {
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [selectedPost, setSelectedPost] = useState<any>(null);
   
+  
   const [, setCommentDrawerOpen] = useAtom(commentDrawerOpenAtom);
   const [, setCurrentPostId] = useAtom(currentPostIdAtom);
   const { data: profileData, isLoading: profileLoading } = useProfile(userId);
+  const isProfilePrivate = profileData?.isPrivate && !profileData?.isFollowing && !isOwnProfile;
   const { data: posts, isLoading: postsLoading } = useUserPosts(userId);
   const { data: followers, isLoading: followersLoading } = useFollowers(userId);
   const deletePostMutation = useDeletePost();
@@ -129,6 +132,38 @@ export default function Profile() {
     return <LoadingSpinner fullScreen message="Loading profile..." />;
   }
 
+  if (isProfilePrivate) {
+    return (
+      <View className="flex-1 bg-zinc-300">
+        <StatusBar barStyle="dark-content" />
+        
+        <Header 
+          showBackButton={true} 
+          onBackPress={() => navigation.goBack()} 
+        />
+        
+        <View className="px-6 pt-4">
+          <ProfileHeader 
+            profileData={profileData}
+            isOwnProfile={isOwnProfile}
+            userId={userId || ''}
+            onFollowersPress={() => setShowFollowers(true)}
+          />
+          
+          <View className="mt-8 items-center">
+            <View className="bg-stone-200 rounded-lg p-6 w-full items-center">
+              <LockIcon2 height={50} width={50} />
+              <Text className="text-lg font-semibold mt-4">This Account is Private</Text>
+              <Text className="text-sm text-center mt-2 opacity-70">
+                Follow this account to see their photos and videos.
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View className="flex-1 bg-zinc-300">
       <StatusBar barStyle="dark-content" />
@@ -145,6 +180,7 @@ export default function Profile() {
             isOwnProfile={isOwnProfile}
             userId={userId || ''}
             onFollowersPress={() => setShowFollowers(true)}
+            onSettingsPress={() => navigation.navigate('MainSettings')}
           />
           
           <FilterTabs 

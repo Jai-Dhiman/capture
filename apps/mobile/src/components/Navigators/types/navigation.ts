@@ -25,6 +25,8 @@ export type AppStackParamList = {
   Profile: { userId?: string } | undefined;
   SavedPosts: undefined;
   Search: undefined;
+  MainSettings: undefined;
+  AccountSettings: undefined;
 };
 
 export type PhoneVerificationParamList = {

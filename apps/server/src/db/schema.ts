@@ -7,6 +7,7 @@ export const profile = sqliteTable("profile", {
   profileImage: text("profile_image"),
   bio: text("bio"),
   verifiedType: text("verified_type").default("none"),
+  isPrivate: integer("is_private").default(0).notNull(),
   createdAt: numeric("created_at").default(new Date().toISOString()).notNull(),
   updatedAt: numeric("updated_at").default(new Date().toISOString()).notNull(),
 });

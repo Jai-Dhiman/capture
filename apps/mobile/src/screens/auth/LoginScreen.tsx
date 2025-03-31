@@ -16,7 +16,6 @@ import OAuth from '../../components/providers/OAuth';
 import Header from 'components/ui/Header'
 import { useAlert } from '../../lib/AlertContext';
 import { errorService } from '../../services/errorService';
-import * as Sentry from '@sentry/react-native'
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'Login'>

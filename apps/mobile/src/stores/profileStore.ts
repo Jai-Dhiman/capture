@@ -11,6 +11,7 @@ export interface UserProfile {
   followersCount?: number;
   followingCount?: number;
   isFollowing?: boolean | null;
+  isPrivate?: boolean;
 }
 
 export interface ProfileState {

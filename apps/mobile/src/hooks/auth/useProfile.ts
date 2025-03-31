@@ -33,6 +33,7 @@ export function useProfile(
                 followersCount
                 followingCount
                 isFollowing
+                isPrivate
               }
             }
           `,
@@ -55,7 +56,7 @@ export function useProfile(
       return data.data.profile;
     },
     enabled: !!userId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
     ...options,
   });
 }
@@ -88,6 +89,6 @@ export function useCheckProfileExists(userId?: string) {
       }
     },
     enabled: !!userId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
 }
