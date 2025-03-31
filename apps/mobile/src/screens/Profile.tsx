@@ -42,7 +42,6 @@ export default function Profile() {
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [selectedPost, setSelectedPost] = useState<any>(null);
   
-  
   const [, setCommentDrawerOpen] = useAtom(commentDrawerOpenAtom);
   const [, setCurrentPostId] = useAtom(currentPostIdAtom);
   const { data: profileData, isLoading: profileLoading } = useProfile(userId);
@@ -311,12 +310,14 @@ export default function Profile() {
               ) : (
                 <>
                   {postFilter === 'posts' ? (
-                    <PostsGrid 
-                      posts={filteredPosts.filter((post: { type: string }) => post.type === 'post')}
-                      itemSize={itemSize}
-                      spacing={horizontalMargin}
-                      onPostPress={openCarouselAtPhoto}
-                    />
+                    <View className="flex-1">
+                      <PostsGrid 
+                        posts={filteredPosts.filter((post: { type: string }) => post.type === 'post')}
+                        itemSize={itemSize}
+                        spacing={horizontalMargin}
+                        onPostPress={openCarouselAtPhoto}
+                      />
+                    </View>
                   ) : (
                     <View className="mt-4">
                       {filteredPosts.map((thread: any) => (

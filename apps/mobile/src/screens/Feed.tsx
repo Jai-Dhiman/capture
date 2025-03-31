@@ -9,7 +9,11 @@ import { useNavigation } from '@react-navigation/native';
 import type { Post, Thread } from '../types/postTypes';
 import { FlashList } from '@shopify/flash-list';
 import { SkeletonLoader, SkeletonElement } from '../components/ui/SkeletonLoader';
+import { LogBox } from 'react-native';
 
+LogBox.ignoreLogs([
+  'Warning: ProgressiveListView: `ref` is not a prop',
+]);
 
 export default function Feed() {
   const [refreshing, setRefreshing] = useState(false);
@@ -70,25 +74,27 @@ export default function Feed() {
     <View className="flex-1 bg-zinc-300">
       <Header />
       
-      <FlashList
-        data={sortedPosts}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        estimatedItemSize={400}
-        refreshing={refreshing}
-        onRefresh={handleRefresh}
-        contentContainerStyle={{ 
-          padding: 16,
-          paddingBottom: 100,
-        }}
-        ListEmptyComponent={
-          <EmptyState
-            title="Your Feed is Empty"
-            message="Start following other users to see their posts here."
-            icon="people"
-          />
-        }
-      />
+      <View className="flex-1">
+        <FlashList
+          data={sortedPosts}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          estimatedItemSize={400}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          contentContainerStyle={{ 
+            padding: 16,
+            paddingBottom: 100,
+          }}
+          ListEmptyComponent={
+            <EmptyState
+              title="Your Feed is Empty"
+              message="Start following other users to see their posts here."
+              icon="people"
+            />
+          }
+        />
+      </View>
     </View>
   );
 }

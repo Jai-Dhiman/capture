@@ -14,6 +14,13 @@ import { Provider as JotaiProvider } from 'jotai'
 import { JotaiInitializer } from './components/providers/JotaiProvider';
 import { AuthProvider } from './components/providers/AuthProvider';
 import * as Sentry from '@sentry/react-native';
+import { LogBox } from 'react-native';
+
+if (__DEV__) {
+  LogBox.ignoreLogs([
+    'Warning: findDOMNode is deprecated',
+  ]);
+}
 
 Sentry.init({
   dsn: 'https://74904d3bf1ebb2b0747f5356b0a83624@o4509049381519360.ingest.us.sentry.io/4509049386434560',
