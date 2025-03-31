@@ -6,7 +6,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../components/Navigators/types/navigation';
 import { useSavedPosts } from '../hooks/useSavesPosts';
 import { MediaImage } from '../components/media/MediaImage';
-import { AutoSkeletonView } from 'react-native-auto-skeleton';
+import { SkeletonLoader, SkeletonElement } from '../components/ui/SkeletonLoader';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 
@@ -35,21 +35,18 @@ export default function SavedPosts() {
         </View>
         
         <View className="flex-1 p-4">
-          <AutoSkeletonView isLoading={true}>
-            <View className="flex-row flex-wrap">
-              {Array(9).fill(0).map((_, index) => (
-                <View 
-                  key={index} 
-                  style={{ 
-                    width: width/3, 
-                    height: width/3, 
-                    marginRight: (index + 1) % 3 === 0 ? 0 : 1,
-                    marginBottom: 1
-                  }} 
-                />
-              ))}
-            </View>
-          </AutoSkeletonView>
+        <SkeletonLoader isLoading={true}>
+          <View className="flex-row flex-wrap">
+            {Array(9).fill(0).map((_, index) => (
+              <SkeletonElement
+                key={index}
+                width={width/3}
+                height={width/3}
+                radius={0}
+              />
+            ))}
+          </View>
+        </SkeletonLoader>
         </View>
       </View>
     );

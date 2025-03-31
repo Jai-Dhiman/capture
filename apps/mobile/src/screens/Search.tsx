@@ -9,7 +9,7 @@ import { ProfileImage } from '../components/media/ProfileImage';
 import { useSearchHashtags } from '../hooks/useHashtags';
 import Header from 'components/ui/Header';
 import { useAuthStore } from '../stores/authStore'; 
-import { AutoSkeletonView } from 'react-native-auto-skeleton';
+import { SkeletonLoader, SkeletonElement } from '../components/ui/SkeletonLoader';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 
@@ -254,22 +254,22 @@ export default function UserSearch() {
 
       {isSearchLoading ? (
         <View className="flex-1 p-4">
-          <AutoSkeletonView isLoading={true}>
-            <View className="w-full h-5 mb-3 rounded" />
+          <SkeletonLoader isLoading={true}>
+            <SkeletonElement width="100%" height={20} />
             {Array(4).fill(0).map((_, index) => (
               <View key={index} className="flex-row items-center mb-4">
-                <View className="w-12 h-12 rounded-full mr-4" />
+                <SkeletonElement width={48} height={48} radius="round" />
                 {isHashtagSearch ? (
-                  <View className="w-36 h-5" />
+                  <SkeletonElement width={144} height={20} />
                 ) : (
-                  <View>
-                    <View className="w-32 h-5 mb-1" />
-                    <View className="w-48 h-3" />
+                  <View className="ml-4">
+                    <SkeletonElement width={128} height={20} />
+                    <SkeletonElement width={192} height={12} />
                   </View>
                 )}
               </View>
             ))}
-          </AutoSkeletonView>
+          </SkeletonLoader>
         </View>
       ) : (
         <SectionList

@@ -7,7 +7,7 @@ import { ProfileImage } from '../media/ProfileImage'
 import { FollowButton } from './FollowButton'
 import { useSyncFollowingState } from '../../hooks/useRelationships'
 import Header from '../ui/Header'
-import { AutoSkeletonView } from 'react-native-auto-skeleton';
+import { SkeletonLoader, SkeletonElement } from '../../components/ui/SkeletonLoader';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>
 
@@ -79,16 +79,16 @@ export const FollowList = ({
       
       {loading ? (
         <View className="flex-1 p-4">
-        <AutoSkeletonView isLoading={true}>
+        <SkeletonLoader isLoading={true}>
           {Array(4).fill(0).map((_, index) => (
             <View key={index} className="flex-row items-center mb-5">
-              <View className="w-12 h-12 rounded-full mr-4" />
-              <View className="flex-1">
-                <View className="w-36 h-5 mb-1" />
+              <SkeletonElement width={48} height={48} radius="round" />
+              <View className="flex-1 ml-4">
+                <SkeletonElement width={144} height={20} />
               </View>
             </View>
           ))}
-        </AutoSkeletonView>
+        </SkeletonLoader>
       </View>
       ) : data.length === 0 ? (
         <View className="flex-1 justify-center items-center p-4">

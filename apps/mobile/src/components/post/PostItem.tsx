@@ -10,7 +10,7 @@ import { commentDrawerOpenAtom, currentPostIdAtom } from '../../atoms/commentAto
 import { useSavePost, useUnsavePost } from '../../hooks/useSavesPosts';
 import { useAlert } from '../../lib/AlertContext';
 import { useDeletePost } from '../../hooks/usePosts';
-import { AutoSkeletonView } from 'react-native-auto-skeleton';
+import { SkeletonLoader } from '../ui/SkeletonLoader';
 import FavoriteIcon from '../../../assets/icons/FavoriteIcon.svg';
 import SavePostIcon from '../../../assets/icons/PlusIcon.svg';
 import CommentIcon from '../../../assets/icons/CommentsIcon.svg';
@@ -55,7 +55,7 @@ export const PostItem = ({ post, isLoading = false }: PostItemProps) => {
   };
 
   return (
-    <AutoSkeletonView isLoading={isLoading}>
+    <SkeletonLoader isLoading={isLoading}>
       <View className="bg-zinc-300 rounded-lg overflow-hidden mb-4">
         <View className="flex-row items-center p-3">
           <View className="w-10 h-10 mr-3">
@@ -124,6 +124,6 @@ export const PostItem = ({ post, isLoading = false }: PostItemProps) => {
           </View>
         </View>
       </View>
-    </AutoSkeletonView>
+    </SkeletonLoader>
   );
 };

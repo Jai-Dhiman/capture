@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { ProfileImage } from '../media/ProfileImage';
 import { FollowButton } from './FollowButton';
-import { AutoSkeletonView } from 'react-native-auto-skeleton';
+import { SkeletonLoader } from '../ui/SkeletonLoader';
 
 interface ProfileHeaderProps {
   profileData: any;
@@ -22,7 +22,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   isLoading = false
 }) => {
   return (
-    <AutoSkeletonView isLoading={isLoading}>
+    <SkeletonLoader isLoading={isLoading}>
       <View className="flex-row mb-4">
         <View className="w-24 h-24 rounded-full bg-red-200 shadow overflow-hidden">
           {profileData?.profileImage ? (
@@ -71,6 +71,6 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           </View>
         </View>
       </View>
-    </AutoSkeletonView>
+    </SkeletonLoader>
   );
 };

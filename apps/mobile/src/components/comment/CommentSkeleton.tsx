@@ -1,6 +1,6 @@
 import React from 'react';
 import { View } from 'react-native';
-import { AutoSkeletonView } from 'react-native-auto-skeleton';
+import { SkeletonElement } from '../ui/SkeletonLoader';
 
 interface CommentSkeletonProps {
   isReply?: boolean;
@@ -13,28 +13,30 @@ export const CommentSkeleton: React.FC<CommentSkeletonProps> = ({
 }) => {
   return (
     <View className={`mb-3 ${isReply ? 'ml-8' : ''}`}>
-      <AutoSkeletonView isLoading={true}>
-        <View className="flex-row items-start">
-          <View className={`${isReply ? 'w-8 h-8' : 'w-10 h-10'} rounded-full mr-3`} />
-          
-          <View className="flex-1">
-            <View className={`w-24 h-${isReply ? '3' : '4'} mb-1`} />
-            
-            <View className="w-full h-3 mb-1" />
-            <View className="w-4/5 h-3 mb-1" />
-            {!isReply && <View className="w-3/5 h-3 mb-2" />}
-            
-            <View className="w-20 h-2" />
-          </View>
-        </View>
+      <View className="flex-row items-start">
+        <SkeletonElement 
+          width={isReply ? 32 : 40} 
+          height={isReply ? 32 : 40} 
+          radius="round" 
+        />
         
-        {replyCount > 0 && !isReply && (
-          <View className="ml-10 mt-2">
-            <View className="w-11/12 h-3 mb-1" />
-            <View className="w-4/5 h-3" />
-          </View>
-        )}
-      </AutoSkeletonView>
+        <View className="flex-1 ml-3">
+          <SkeletonElement width={96} height={isReply ? 12 : 16} />
+          
+          <SkeletonElement width="100%" height={12} />
+          <SkeletonElement width="80%" height={12} />
+          {!isReply && <SkeletonElement width="60%" height={12} />}
+          
+          <SkeletonElement width={80} height={8} />
+        </View>
+      </View>
+      
+      {replyCount > 0 && !isReply && (
+        <View className="ml-10 mt-2">
+          <SkeletonElement width="92%" height={12} />
+          <SkeletonElement width="80%" height={12} />
+        </View>
+      )}
     </View>
   );
 };
