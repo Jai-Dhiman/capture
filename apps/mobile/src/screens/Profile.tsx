@@ -9,7 +9,6 @@ import { useProfile } from '../hooks/auth/useProfile';
 import { useFollowers, useSyncFollowingState } from '../hooks/useRelationships';
 import { useSavePost, useUnsavePost } from '../hooks/useSavesPosts';
 import { ProfileThreadItem } from '../components/profile/ProfileThreadItem';
-import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { FollowList } from '../components/profile/FollowList';
 import Header from '../components/ui/Header';
 import { PostSettingsMenu } from '../components/post/PostSettingsMenu';
@@ -22,8 +21,7 @@ import { PostsGrid } from '../components/profile/PostsGrid';
 import { PostCarousel } from '../components/profile/PostCarousel';
 import { NewPostButton } from '../components/profile/NewPostButton';
 import LockIcon2 from '../../assets/icons/LockIcon2.svg';
-import SkeletonContent from 'react-native-skeleton-content';
-import { ProfileHeaderSkeleton, PostGridSkeleton, ThreadSkeleton } from '../components/ui/LoadingSkeletons';
+import { AutoSkeletonView } from 'react-native-auto-skeleton';
 
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
@@ -139,8 +137,35 @@ export default function Profile() {
           showBackButton={true} 
           onBackPress={() => navigation.goBack()} 
         />
-        <ProfileHeaderSkeleton />
-        {postFilter === 'posts' ? <PostGridSkeleton /> : <ThreadSkeleton />}
+        <View className="px-6 pt-4">
+          <AutoSkeletonView isLoading={true}>
+            <View className="flex-row mb-4">
+              <View className="w-24 h-24 rounded-full mr-4" />
+              <View className="flex-1 justify-center">
+                <View className="w-36 h-6 mb-2" />
+                <View className="w-48 h-4 mb-4" />
+                <View className="flex-row">
+                  <View className="w-24 h-8 rounded-full mr-2" />
+                  <View className="w-24 h-8 rounded-full" />
+                </View>
+              </View>
+            </View>
+            
+            {postFilter === 'posts' ? (
+              <View className="flex-row flex-wrap">
+                {Array(6).fill(0).map((_, index) => (
+                  <View key={index} className="w-[31%] h-32 m-1 rounded-lg" />
+                ))}
+              </View>
+            ) : (
+              <View>
+                {Array(3).fill(0).map((_, index) => (
+                  <View key={index} className="w-full h-40 mb-4 rounded-lg" />
+                ))}
+              </View>
+            )}
+          </AutoSkeletonView>
+        </View>
       </View>
     );
   }
@@ -204,26 +229,21 @@ export default function Profile() {
           <View className="h-px bg-black opacity-10 my-2" />               
           
           {postsLoading ? (
-            <SkeletonContent
-              containerStyle={{ width: "100%" }}
-              isLoading={true}
-              layout={postFilter === 'posts' ? [
-                { flexDirection: "row", width: "100%", children: [
-                  { width: itemSize, height: itemSize, marginRight: 8 },
-                  { width: itemSize, height: itemSize, marginRight: 8 },
-                  { width: itemSize, height: itemSize }
-                ]},
-                { marginTop: 8, flexDirection: "row", width: "100%", children: [
-                  { width: itemSize, height: itemSize, marginRight: 8 },
-                  { width: itemSize, height: itemSize, marginRight: 8 },
-                  { width: itemSize, height: itemSize }
-                ]}
-              ] : [
-                { width: "100%", height: 150, marginBottom: 15, borderRadius: 10 },
-                { width: "100%", height: 150, marginBottom: 15, borderRadius: 10 },
-                { width: "100%", height: 150, marginBottom: 15, borderRadius: 10 }
-              ]}
-            />
+            <AutoSkeletonView isLoading={true}>
+            {postFilter === 'posts' ? (
+              <View className="flex-row flex-wrap">
+                {Array(6).fill(0).map((_, index) => (
+                  <View key={index} style={{ width: itemSize, height: itemSize, marginRight: index % 3 !== 2 ? horizontalMargin : 0, marginBottom: horizontalMargin }} />
+                ))}
+              </View>
+            ) : (
+              <View>
+                {Array(3).fill(0).map((_, index) => (
+                  <View key={index} className="w-full h-40 mb-4 rounded-lg" />
+                ))}
+              </View>
+            )}
+          </AutoSkeletonView>
           ) : filteredPosts?.length === 0 ? (
             <Text className="text-center py-4 text-gray-500">No {postFilter} yet</Text>
           ) : (

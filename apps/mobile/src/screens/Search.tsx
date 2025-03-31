@@ -9,7 +9,7 @@ import { ProfileImage } from '../components/media/ProfileImage';
 import { useSearchHashtags } from '../hooks/useHashtags';
 import Header from 'components/ui/Header';
 import { useAuthStore } from '../stores/authStore'; 
-import SkeletonContent from 'react-native-skeleton-content';
+import { AutoSkeletonView } from 'react-native-auto-skeleton';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 
@@ -254,49 +254,23 @@ export default function UserSearch() {
 
       {isSearchLoading ? (
         <View className="flex-1 p-4">
-        <SkeletonContent
-          containerStyle={{ width: "100%" }}
-          isLoading={true}
-          layout={isHashtagSearch ? [
-            { width: "100%", height: 20, marginBottom: 12, borderRadius: 4 },
-            { flexDirection: "row", alignItems: "center", marginBottom: 15, children: [
-              { width: 48, height: 48, borderRadius: 24, marginRight: 16 },
-              { width: 180, height: 20 }
-            ]},
-            { flexDirection: "row", alignItems: "center", marginBottom: 15, children: [
-              { width: 48, height: 48, borderRadius: 24, marginRight: 16 },
-              { width: 150, height: 20 }
-            ]},
-            { flexDirection: "row", alignItems: "center", marginBottom: 15, children: [
-              { width: 48, height: 48, borderRadius: 24, marginRight: 16 },
-              { width: 200, height: 20 }
-            ]}
-          ] : [
-            { width: "100%", height: 20, marginBottom: 12, borderRadius: 4 },
-            { flexDirection: "row", alignItems: "center", marginBottom: 15, children: [
-              { width: 48, height: 48, borderRadius: 24, marginRight: 16 },
-              { children: [
-                { width: 120, height: 20, marginBottom: 5 },
-                { width: 180, height: 14 }
-              ]}
-            ]},
-            { flexDirection: "row", alignItems: "center", marginBottom: 15, children: [
-              { width: 48, height: 48, borderRadius: 24, marginRight: 16 },
-              { children: [
-                { width: 140, height: 20, marginBottom: 5 },
-                { width: 160, height: 14 }
-              ]}
-            ]},
-            { flexDirection: "row", alignItems: "center", marginBottom: 15, children: [
-              { width: 48, height: 48, borderRadius: 24, marginRight: 16 },
-              { children: [
-                { width: 100, height: 20, marginBottom: 5 },
-                { width: 200, height: 14 }
-              ]}
-            ]}
-          ]}
-        />
-      </View>
+          <AutoSkeletonView isLoading={true}>
+            <View className="w-full h-5 mb-3 rounded" />
+            {Array(4).fill(0).map((_, index) => (
+              <View key={index} className="flex-row items-center mb-4">
+                <View className="w-12 h-12 rounded-full mr-4" />
+                {isHashtagSearch ? (
+                  <View className="w-36 h-5" />
+                ) : (
+                  <View>
+                    <View className="w-32 h-5 mb-1" />
+                    <View className="w-48 h-3" />
+                  </View>
+                )}
+              </View>
+            ))}
+          </AutoSkeletonView>
+        </View>
       ) : (
         <SectionList
           sections={sections as any}

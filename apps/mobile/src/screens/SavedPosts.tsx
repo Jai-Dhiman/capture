@@ -5,9 +5,8 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../components/Navigators/types/navigation';
 import { useSavedPosts } from '../hooks/useSavesPosts';
-import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { MediaImage } from '../components/media/MediaImage';
-import SkeletonContent from 'react-native-skeleton-content';
+import { AutoSkeletonView } from 'react-native-auto-skeleton';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 
@@ -36,27 +35,21 @@ export default function SavedPosts() {
         </View>
         
         <View className="flex-1 p-4">
-          <SkeletonContent
-            containerStyle={{ width: "100%" }}
-            isLoading={true}
-            layout={[
-              { flexDirection: "row", width: "100%", marginBottom: 8, children: [
-                { width: width/3, height: width/3, marginRight: 1 },
-                { width: width/3, height: width/3, marginRight: 1 },
-                { width: width/3, height: width/3 }
-              ]},
-              { flexDirection: "row", width: "100%", marginBottom: 8, children: [
-                { width: width/3, height: width/3, marginRight: 1 },
-                { width: width/3, height: width/3, marginRight: 1 },
-                { width: width/3, height: width/3 }
-              ]},
-              { flexDirection: "row", width: "100%", marginBottom: 8, children: [
-                { width: width/3, height: width/3, marginRight: 1 },
-                { width: width/3, height: width/3, marginRight: 1 },
-                { width: width/3, height: width/3 }
-              ]}
-            ]}
-          />
+          <AutoSkeletonView isLoading={true}>
+            <View className="flex-row flex-wrap">
+              {Array(9).fill(0).map((_, index) => (
+                <View 
+                  key={index} 
+                  style={{ 
+                    width: width/3, 
+                    height: width/3, 
+                    marginRight: (index + 1) % 3 === 0 ? 0 : 1,
+                    marginBottom: 1
+                  }} 
+                />
+              ))}
+            </View>
+          </AutoSkeletonView>
         </View>
       </View>
     );

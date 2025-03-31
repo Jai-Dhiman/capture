@@ -7,7 +7,7 @@ import { ProfileImage } from '../media/ProfileImage'
 import { FollowButton } from './FollowButton'
 import { useSyncFollowingState } from '../../hooks/useRelationships'
 import Header from '../ui/Header'
-import SkeletonContent from 'react-native-skeleton-content';
+import { AutoSkeletonView } from 'react-native-auto-skeleton';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>
 
@@ -79,28 +79,16 @@ export const FollowList = ({
       
       {loading ? (
         <View className="flex-1 p-4">
-        <SkeletonContent
-          containerStyle={{ width: "100%" }}
-          isLoading={true}
-          layout={[
-            { flexDirection: "row", alignItems: "center", marginBottom: 20, children: [
-              { width: 50, height: 50, borderRadius: 25, marginRight: 15 },
-              { width: 150, height: 20 }
-            ]},
-            { flexDirection: "row", alignItems: "center", marginBottom: 20, children: [
-              { width: 50, height: 50, borderRadius: 25, marginRight: 15 },
-              { width: 150, height: 20 }
-            ]},
-            { flexDirection: "row", alignItems: "center", marginBottom: 20, children: [
-              { width: 50, height: 50, borderRadius: 25, marginRight: 15 },
-              { width: 150, height: 20 }
-            ]},
-            { flexDirection: "row", alignItems: "center", marginBottom: 20, children: [
-              { width: 50, height: 50, borderRadius: 25, marginRight: 15 },
-              { width: 150, height: 20 }
-            ]}
-          ]}
-        />
+        <AutoSkeletonView isLoading={true}>
+          {Array(4).fill(0).map((_, index) => (
+            <View key={index} className="flex-row items-center mb-5">
+              <View className="w-12 h-12 rounded-full mr-4" />
+              <View className="flex-1">
+                <View className="w-36 h-5 mb-1" />
+              </View>
+            </View>
+          ))}
+        </AutoSkeletonView>
       </View>
       ) : data.length === 0 ? (
         <View className="flex-1 justify-center items-center p-4">

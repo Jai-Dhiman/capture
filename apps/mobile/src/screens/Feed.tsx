@@ -8,7 +8,7 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { useNavigation } from '@react-navigation/native';
 import type { Post, Thread } from '../types/postTypes';
 import { FlashList } from '@shopify/flash-list';
-import SkeletonContent from 'react-native-skeleton-content';
+import { AutoSkeletonView } from 'react-native-auto-skeleton';
 
 export default function Feed() {
   const [refreshing, setRefreshing] = useState(false);
@@ -31,21 +31,17 @@ export default function Feed() {
     }
     return <PostItem post={item} />;
   };
-    
+  
   if (isLoading && !refreshing) {
     return (
       <View className="flex-1 bg-zinc-300">
         <Header />
         <View className="p-4">
-          <SkeletonContent
-            containerStyle={{ width: "100%" }}
-            isLoading={true}
-            layout={[
-              { width: "100%", height: 250, marginBottom: 20, borderRadius: 10 },
-              { width: "100%", height: 250, marginBottom: 20, borderRadius: 10 },
-              { width: "100%", height: 250, marginBottom: 20, borderRadius: 10 }
-            ]}
-          />
+          <AutoSkeletonView isLoading={true}>
+            {Array(3).fill(0).map((_, index) => (
+              <View key={index} className="w-full h-64 mb-5 rounded-lg" />
+            ))}
+          </AutoSkeletonView>
         </View>
       </View>
     );
