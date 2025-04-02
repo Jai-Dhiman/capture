@@ -5,7 +5,6 @@ export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList> | undefined;
   CreateProfile: undefined;
   App: NavigatorScreenParams<AppStackParamList> | undefined;
-  PhoneVerification: NavigatorScreenParams<PhoneVerificationParamList> | undefined;
 };
 
 export type AuthStackParamList = {
@@ -25,11 +24,11 @@ export type AppStackParamList = {
   Profile: { userId?: string } | undefined;
   SavedPosts: undefined;
   Search: undefined;
-  MainSettings: undefined;
-  AccountSettings: undefined;
+  Settings: NavigatorScreenParams<SettingsStackParamList> | undefined;
 };
 
-export type PhoneVerificationParamList = {
-  EnterPhone: undefined;
-  VerifyPhoneNumber: undefined;
+export type SettingsStackParamList = {
+  MainSettings: undefined;
+  BlockedUsers: undefined;
+  AccountSettings: undefined;
 };

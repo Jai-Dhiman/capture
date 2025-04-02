@@ -17,6 +17,8 @@ export const typeDefs = `
     savedPosts(limit: Int, offset: Int): [Post!]!
     followers(userId: ID!): [Profile!]!
     following(userId: ID!): [Profile!]!
+    blockedUsers: [Profile!]!
+    isUserBlocked(userId: ID!): Boolean!
   }
 
   type Mutation {
@@ -32,6 +34,8 @@ export const typeDefs = `
     savePost(postId: ID!): SavePostResponse!
     unsavePost(postId: ID!): UnsavePostResponse!
     updatePrivacySettings(isPrivate: Boolean!): Profile!
+    blockUser(userId: ID!): BlockResponse!
+    unblockUser(userId: ID!): UnblockResponse!
   }
 
   type Subscription {
@@ -55,6 +59,7 @@ export const typeDefs = `
     followingCount: Int!
     createdAt: String!
     updatedAt: String!
+    isBlocked: Boolean
   }
 
   input ProfileInput {
@@ -172,4 +177,13 @@ export const typeDefs = `
   type UnsavePostResponse {
     success: Boolean!
   }
+
+  type BlockResponse {
+  success: Boolean!
+  blockedUser: Profile
+}
+
+type UnblockResponse {
+  success: Boolean!
+}
 `;

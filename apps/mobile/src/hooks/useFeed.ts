@@ -31,6 +31,7 @@ export const useFeed = (limit = 20) => {
                     id
                     username
                     profileImage
+                    isBlocked
                   }
                   media {
                     id
@@ -60,7 +61,9 @@ export const useFeed = (limit = 20) => {
           throw new Error(data.errors[0].message || "Unknown GraphQL error");
         }
 
-        return data.data.feed || [];
+        const filteredFeed = data.data.feed.filter((post: any) => !post.user.isBlocked);
+
+        return filteredFeed || [];
       } catch (error) {
         console.error("Feed fetch error:", error);
         throw error;

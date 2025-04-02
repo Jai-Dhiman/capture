@@ -4,6 +4,11 @@ import authRouter from "../auth";
 import { createMockBindings } from "../../test/utils/test-utils";
 import type { Bindings, Variables } from "../../types";
 
+interface ErrorResponse {
+  error: string;
+  code: string;
+}
+
 const mockSignInWithPassword = vi.fn();
 const mockSignUp = vi.fn();
 const mockRefreshSession = vi.fn();
@@ -113,7 +118,7 @@ describe("Auth Routes", () => {
 
       // Assert
       expect(res.status).toBe(400);
-      const data = await res.json();
+      const data = (await res.json()) as ErrorResponse;
       expect(data).toEqual({
         error: "Invalid login credentials",
         code: "auth/invalid-credentials",
@@ -135,7 +140,7 @@ describe("Auth Routes", () => {
 
       // Assert
       expect(res.status).toBe(400);
-      const data = await res.json();
+      const data = (await res.json()) as ErrorResponse;
       expect(data.error).toBe("Invalid input");
       expect(data.code).toBe("auth/invalid-input");
       expect(mockSignInWithPassword).not.toHaveBeenCalled();
@@ -203,7 +208,7 @@ describe("Auth Routes", () => {
 
       // Assert
       expect(res.status).toBe(400);
-      const data = await res.json();
+      const data = (await res.json()) as ErrorResponse;
       expect(data).toEqual({
         error: "User already exists",
         code: "auth/signup-failed",
@@ -271,7 +276,7 @@ describe("Auth Routes", () => {
 
       // Assert
       expect(res.status).toBe(401);
-      const data = await res.json();
+      const data = (await res.json()) as ErrorResponse;
       expect(data).toEqual({
         error: "Invalid refresh token",
         code: "auth/refresh-failed",
@@ -329,7 +334,7 @@ describe("Auth Routes", () => {
 
       // Assert
       expect(res.status).toBe(400);
-      const data = await res.json();
+      const data = (await res.json()) as ErrorResponse;
       expect(data).toEqual({
         error: "Email not found",
         code: "auth/reset-failed",
@@ -380,7 +385,7 @@ describe("Auth Routes", () => {
 
       // Assert
       expect(res.status).toBe(401);
-      const data = await res.json();
+      const data = (await res.json()) as ErrorResponse;
       expect(data).toEqual({
         error: "No token provided",
         code: "auth/no-token",
@@ -409,7 +414,7 @@ describe("Auth Routes", () => {
 
       // Assert
       expect(res.status).toBe(400);
-      const data = await res.json();
+      const data = (await res.json()) as ErrorResponse;
       expect(data).toEqual({
         error: "Invalid token",
         code: "auth/update-failed",
@@ -469,7 +474,7 @@ describe("Auth Routes", () => {
 
       // Assert
       expect(res.status).toBe(401);
-      const data = await res.json();
+      const data = (await res.json()) as ErrorResponse;
       expect(data).toEqual({
         error: "No token provided",
         code: "auth/no-token",
@@ -498,7 +503,7 @@ describe("Auth Routes", () => {
 
       // Assert
       expect(res.status).toBe(401);
-      const data = await res.json();
+      const data = (await res.json()) as ErrorResponse;
       expect(data).toEqual({
         error: "Invalid token",
         code: "auth/invalid-token",
@@ -564,7 +569,7 @@ describe("Auth Routes", () => {
 
       // Assert
       expect(res.status).toBe(400);
-      const data = await res.json();
+      const data = (await res.json()) as ErrorResponse;
       expect(data).toEqual({
         error: "Invalid OTP",
         code: "auth/verify-failed",
@@ -637,7 +642,7 @@ describe("Auth Routes", () => {
 
       // Assert
       expect(res.status).toBe(400);
-      const data = await res.json();
+      const data = (await res.json()) as ErrorResponse;
       expect(data).toEqual({
         error: "Invalid provider",
         code: "auth/oauth-failed",
@@ -731,7 +736,7 @@ describe("Auth Routes", () => {
 
       // Assert
       expect(res.status).toBe(400);
-      const data = await res.json();
+      const data = (await res.json()) as ErrorResponse;
       expect(data.error).toContain("Invalid auth callback URL");
       expect(data.code).toBe("auth/invalid-callback");
     });

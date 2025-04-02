@@ -42,6 +42,9 @@ pnpm-debug.log*
 .wrangler
 .dev.vars
 
+# Package lock files
+pnpm-lock.yaml
+
 # Expo
 .expo/
 dist/

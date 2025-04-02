@@ -1,9 +1,10 @@
-import { hashtagResolvers } from './hashtag'
-import { postResolvers } from './post'
-import { profileResolvers } from './profile'
-import { commentResolvers } from './comment'
-import { relationshipResolvers } from './relationship'
-import { savedPostResolvers } from './savedPost'
+import { hashtagResolvers } from "./hashtag";
+import { postResolvers } from "./post";
+import { profileResolvers } from "./profile";
+import { commentResolvers } from "./comment";
+import { relationshipResolvers } from "./relationship";
+import { savedPostResolvers } from "./savedPost";
+import { blockingResolvers } from "./blocking";
 
 export const resolvers = {
   Query: {
@@ -13,6 +14,7 @@ export const resolvers = {
     ...commentResolvers.Query,
     ...savedPostResolvers.Query,
     ...relationshipResolvers.Query,
+    ...blockingResolvers.Query,
   },
   Mutation: {
     ...postResolvers.Mutation,
@@ -20,6 +22,7 @@ export const resolvers = {
     ...hashtagResolvers.Mutation,
     ...commentResolvers.Mutation,
     ...savedPostResolvers.Mutation,
+    ...blockingResolvers.Mutation,
   },
 
   Post: {
@@ -28,7 +31,8 @@ export const resolvers = {
   },
   Profile: {
     ...relationshipResolvers.Profile,
+    ...blockingResolvers.Profile,
   },
   Hashtag: hashtagResolvers.Hashtag || {},
   Comment: commentResolvers.Comment,
-}
+};

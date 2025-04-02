@@ -9,8 +9,10 @@ import { commentDrawerOpenAtom, currentPostIdAtom } from '../../atoms/commentAto
 import { useSavePost, useUnsavePost } from '../../hooks/useSavesPosts';
 import { useAlert } from '../../lib/AlertContext';
 import { useDeletePost } from '../../hooks/usePosts';
-import { PostSettingsMenu } from './PostSettingsMenu';
 import { SkeletonLoader } from '../ui/SkeletonLoader';
+import { useAuthStore } from '../../stores/authStore';
+import { useBlockUser } from '../../hooks/useBlocking';
+import { PostMenu } from './PostMenu';
 import FavoriteIcon from '../../../assets/icons/FavoriteIcon.svg';
 import SavePostIcon from '../../../assets/icons/PlusIcon.svg';
 import CommentIcon from '../../../assets/icons/CommentsIcon.svg';
@@ -35,6 +37,10 @@ export const ThreadItem = ({ thread, isLoading = false }: ThreadItemProps) => {
   const unsavePostMutation = useUnsavePost();
   const deletePostMutation = useDeletePost();
   const { showAlert } = useAlert();
+  const { user } = useAuthStore();
+  const [menuVisible, setMenuVisible] = useState(false);
+  const blockUserMutation = useBlockUser(thread.user?.userId);
+  const isOwnPost = thread.user?.userId === user?.id;
   
   const handleOpenComments = () => {
     setCurrentPostId(thread.id);
@@ -61,6 +67,16 @@ export const ThreadItem = ({ thread, isLoading = false }: ThreadItemProps) => {
     } catch (error: any) {
       console.error('Delete post error:', error);
       showAlert('Failed to delete post', { type: 'error' });
+    }
+  };
+
+  const handleBlockUser = async () => {
+    try {
+      await blockUserMutation.mutateAsync();
+      showAlert('User blocked successfully', { type: 'success' });
+    } catch (error: any) {
+      console.error('Block user error:', error);
+      showAlert('Failed to block user', { type: 'error' });
     }
   };
   
@@ -123,11 +139,16 @@ export const ThreadItem = ({ thread, isLoading = false }: ThreadItemProps) => {
             </TouchableOpacity>
           </View>
         
-        <PostSettingsMenu 
-          isVisible={settingsVisible}
-          onClose={() => setSettingsVisible(false)}
-          onDelete={handleDeletePost}
-          isDeleting={deletePostMutation.isPending}
+          <PostMenu
+          isVisible={menuVisible}
+          onClose={() => setMenuVisible(false)}
+          onDeletePost={isOwnPost ? handleDeletePost : undefined}
+          onBlockUser={!isOwnPost ? handleBlockUser : undefined}
+          onReportPost={() => {/* Handle report */}}
+          onWhySeeing={() => {/* Handle why */}}
+          onEnableNotifications={() => {/* Handle notifications */}}
+          isOwnPost={isOwnPost}
+          isLoading={isOwnPost ? deletePostMutation?.isPending : blockUserMutation.isPending}
         />
       </View>
     </SkeletonLoader>

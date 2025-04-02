@@ -10,8 +10,9 @@ import { useFollowers, useSyncFollowingState } from '../hooks/useRelationships';
 import { useSavePost, useUnsavePost } from '../hooks/useSavesPosts';
 import { ProfileThreadItem } from '../components/profile/ProfileThreadItem';
 import { FollowList } from '../components/profile/FollowList';
+import { PostMenu } from '../components/post/PostMenu';
+import { useBlockUser } from '../hooks/useBlocking';
 import Header from '../components/ui/Header';
-import { PostSettingsMenu } from '../components/post/PostSettingsMenu';
 import { useAlert } from '../lib/AlertContext';
 import { useAtom } from 'jotai';
 import { commentDrawerOpenAtom, currentPostIdAtom } from '../atoms/commentAtoms';
@@ -41,6 +42,7 @@ export default function Profile() {
   const [initialPostIndex, setInitialPostIndex] = useState(0);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [selectedPost, setSelectedPost] = useState<any>(null);
+  const blockUserMutation = useBlockUser(selectedPost?.user?.userId || '');
   
   const [, setCommentDrawerOpen] = useAtom(commentDrawerOpenAtom);
   const [, setCurrentPostId] = useAtom(currentPostIdAtom);
@@ -51,6 +53,7 @@ export default function Profile() {
   const deletePostMutation = useDeletePost();
   const savePostMutation = useSavePost();
   const unsavePostMutation = useUnsavePost();
+  const [menuVisible, setMenuVisible] = useState(false);
 
   useSyncFollowingState(profileData ? [{ 
     userId: profileData.userId,
@@ -125,6 +128,22 @@ export default function Profile() {
   const handleOpenComments = (postId: string) => {
     setCurrentPostId(postId);
     setCommentDrawerOpen(true);
+  };
+
+  const handleBlockUser = async () => {
+    if (!selectedPost?.user?.userId) return;
+    
+    try {
+      await blockUserMutation.mutateAsync();
+      setMenuVisible(false);
+      showAlert('User blocked successfully', { type: 'success' });
+      if (!isOwnProfile) {
+        navigation.goBack();
+      }
+    } catch (error: any) {
+      console.error('Block user error:', error);
+      showAlert('Failed to block user', { type: 'error' });
+    }
   };
 
   if (profileLoading) {
@@ -246,7 +265,7 @@ export default function Profile() {
             isOwnProfile={isOwnProfile}
             userId={userId || ''}
             onFollowersPress={() => setShowFollowers(true)}
-            onSettingsPress={() => navigation.navigate('MainSettings')}
+            onSettingsPress={() => navigation.navigate('Settings', { screen: 'MainSettings' })}
           />
           
           <FilterTabs 
@@ -349,12 +368,31 @@ export default function Profile() {
         />
       </Modal>
       
-      <PostSettingsMenu
-        isVisible={isMenuVisible}
-        onClose={() => setIsMenuVisible(false)}
-        onDelete={handleDeletePost}
-        isDeleting={deletePostMutation.isPending}
-      />
+      
+    <PostMenu
+      isVisible={menuVisible}
+      onClose={() => setMenuVisible(false)}
+      onDeletePost={handleDeletePost}
+      onBlockUser={handleBlockUser}
+      onReportPost={() => {
+        showAlert('Implement Post Reporting here', { type: 'success' });
+        setMenuVisible(false);
+      }}
+      onWhySeeing={() => {
+        showAlert('Implement Why Seeing here', { type: 'info' });
+        setMenuVisible(false);
+      }}
+      onEnableNotifications={() => {
+        showAlert('Implement Notification Settings here', { type: 'success' });
+        setMenuVisible(false);
+      }}
+      isOwnPost={selectedPost?.user?.userId === user?.id}
+      isLoading={
+        selectedPost?.user?.userId === user?.id 
+          ? deletePostMutation.isPending 
+          : blockUserMutation.isPending
+      }
+    />
     </View>
   );
 }

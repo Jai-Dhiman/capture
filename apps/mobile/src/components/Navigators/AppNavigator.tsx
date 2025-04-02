@@ -5,8 +5,7 @@ import NewPost from '../../screens/NewPost';
 import Profile from '../../screens/Profile';
 import Search from '../../screens/Search';
 import SavedPosts from '../../screens/SavedPosts';
-import MainSettingsScreen from '../../screens/settings/MainSettingsScreen';
-import AccountSettingsScreen from '../../screens/settings/AccountSettingsScreen';
+import SettingsNavigator from './SettingsNavigator';
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
 
@@ -23,8 +22,7 @@ export default function AppNavigator() {
       <Stack.Screen name="Profile" component={Profile} />
       <Stack.Screen name="Search" component={Search} />
       <Stack.Screen name="SavedPosts" component={SavedPosts} />
-      <Stack.Screen name="MainSettings" component={MainSettingsScreen} />
-      <Stack.Screen name="AccountSettings" component={AccountSettingsScreen} />
+      <Stack.Screen name="Settings" component={SettingsNavigator} />
     </Stack.Navigator>
   );
 }

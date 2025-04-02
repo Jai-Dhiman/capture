@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { PostMediaGallery } from './PostMediaGallery';
 import { useNavigation } from '@react-navigation/native';
@@ -11,6 +11,9 @@ import { useSavePost, useUnsavePost } from '../../hooks/useSavesPosts';
 import { useAlert } from '../../lib/AlertContext';
 import { useDeletePost } from '../../hooks/usePosts';
 import { SkeletonLoader } from '../ui/SkeletonLoader';
+import { useAuthStore } from '../../stores/authStore';
+import { useBlockUser } from '../../hooks/useBlocking';
+import { PostMenu } from './PostMenu';
 import FavoriteIcon from '../../../assets/icons/FavoriteIcon.svg';
 import SavePostIcon from '../../../assets/icons/PlusIcon.svg';
 import CommentIcon from '../../../assets/icons/CommentsIcon.svg';
@@ -35,6 +38,10 @@ export const PostItem = ({ post, isLoading = false }: PostItemProps) => {
   const unsavePostMutation = useUnsavePost();
   const deletePostMutation = useDeletePost();
   const { showAlert } = useAlert();
+  const { user } = useAuthStore();
+  const [menuVisible, setMenuVisible] = useState(false);
+  const blockUserMutation = useBlockUser(post.user?.userId);
+  const isOwnPost = post.user?.userId === user?.id;
   
   const handleOpenComments = () => {
     setCurrentPostId(post.id);
@@ -53,6 +60,26 @@ export const PostItem = ({ post, isLoading = false }: PostItemProps) => {
       showAlert(`Failed to ${post.isSaved ? 'unsave' : 'save'} post`, { type: 'error' });
     }
   };
+  
+  const handleDeletePost = async () => {
+    try {
+      await deletePostMutation.mutateAsync(post.id);
+      showAlert('Post deleted successfully', { type: 'success' });
+    } catch (error: any) {
+      console.error('Delete post error:', error);
+      showAlert('Failed to delete post', { type: 'error' });
+    }
+  };
+
+  const handleBlockUser = async () => {
+    try {
+      await blockUserMutation.mutateAsync();
+      showAlert('User blocked successfully', { type: 'success' });
+    } catch (error: any) {
+      console.error('Block user error:', error);
+      showAlert('Failed to block user', { type: 'error' });
+    }
+  };
 
   return (
     <SkeletonLoader isLoading={isLoading}>
@@ -69,10 +96,13 @@ export const PostItem = ({ post, isLoading = false }: PostItemProps) => {
           
           <View className="flex-1" />
           
-          <TouchableOpacity className="w-6 h-6 justify-center items-center">
+          <TouchableOpacity 
+            className="w-6 h-6 justify-center items-center"
+            onPress={() => setMenuVisible(true)}
+          >
             <SettingsIcon width={24} height={24} />
           </TouchableOpacity>
-        </View>
+         </View>
         
         <View className="w-full h-[350px]">
           {post.media && post.media.length > 0 ? (
@@ -123,7 +153,20 @@ export const PostItem = ({ post, isLoading = false }: PostItemProps) => {
             </TouchableOpacity>
           </View>
         </View>
+        <PostMenu
+          isVisible={menuVisible}
+          onClose={() => setMenuVisible(false)}
+          onDeletePost={isOwnPost ? handleDeletePost : undefined}
+          onBlockUser={!isOwnPost ? handleBlockUser : undefined}
+          onReportPost={() => {/* Handle report */}}
+          onWhySeeing={() => {/* Handle why */}}
+          onEnableNotifications={() => {/* Handle notifications */}}
+          isOwnPost={isOwnPost}
+          isLoading={isOwnPost ? deletePostMutation?.isPending : blockUserMutation.isPending}
+        />
       </View>
     </SkeletonLoader>
+
+    
   );
 };

@@ -1,9 +1,8 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, StyleSheet, StatusBar } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AppStackParamList } from '../../components/Navigators/types/navigation';
-import { useAuthStore } from '../../stores/authStore';
+import { SettingsStackParamList } from '../../components/Navigators/types/navigation';
 import { useProfileStore } from '../../stores/profileStore'
 import { ProfileImage } from '../../components/media/ProfileImage';
 import EmptyIcon from '../../../assets/icons/EmptyIcon.svg';
@@ -19,12 +18,15 @@ import ShieldIcon from '../../../assets/icons/ShieldIcon.svg';
 import AccountIcon from '../../../assets/icons/AccountIcon.svg';
 import UserVerifiedIcon from '../../../assets/icons/UserVerifiedIcon.svg';
 
-type NavigationProp = NativeStackNavigationProp<AppStackParamList, 'MainSettings'>;
+type NavigationProp = NativeStackNavigationProp<SettingsStackParamList, 'MainSettings'>;
 
 export default function MainSettingsScreen() {
   const navigation = useNavigation<NavigationProp>();
-  const { user } = useAuthStore();
   const {profile} = useProfileStore();
+
+  const goBack = () => {
+    navigation.getParent()?.goBack();
+  };
   
   return (
     <View className="flex-1 bg-zinc-300">
@@ -33,7 +35,7 @@ export default function MainSettingsScreen() {
       <View className="w-full pt-14 px-4 pb-4">
       <TouchableOpacity 
           className="absolute left-4 top-14 bg-stone-300 rounded-full w-8 h-8 flex items-center justify-center shadow-inner"
-          onPress={() => navigation.goBack()}
+          onPress={goBack }
         >
           <BackIcon height={20} width={20} />
         </TouchableOpacity>
@@ -61,9 +63,11 @@ export default function MainSettingsScreen() {
           </View>
         </TouchableOpacity>
         
-        {/* Privacy & Security Section */}
         <View className="bg-stone-400 bg-opacity-0 rounded-[10px] shadow border border-black mb-6">
-          <TouchableOpacity className="flex-row items-center p-3 border-b border-black border-opacity-20">
+          <TouchableOpacity 
+            className="flex-row items-center p-3 border-b border-black border-opacity-20"
+            onPress={() => navigation.navigate('BlockedUsers')}
+          >
             <BlockIcon height={25} width={25} />
             <Text className="ml-4 text-xs font-bold">Blocked Profiles</Text>
             <View className="flex-1" />

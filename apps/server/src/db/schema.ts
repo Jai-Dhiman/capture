@@ -133,3 +133,22 @@ export const relationship = sqliteTable(
     index("relationship_composite_idx").on(table.followerId, table.followedId),
   ]
 );
+
+export const blockedUser = sqliteTable(
+  "blocked_user",
+  {
+    id: text("id").primaryKey(),
+    blockerId: text("blocker_id")
+      .notNull()
+      .references(() => profile.userId),
+    blockedId: text("blocked_id")
+      .notNull()
+      .references(() => profile.userId),
+    createdAt: numeric("created_at").default(new Date().toISOString()).notNull(),
+  },
+  (table) => [
+    index("blocker_idx").on(table.blockerId),
+    index("blocked_idx").on(table.blockedId),
+    index("block_relationship_idx").on(table.blockerId, table.blockedId),
+  ]
+);
