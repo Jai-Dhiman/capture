@@ -35,11 +35,24 @@ export const authApi = {
   },
 
   async storeCodeVerifier(verifier: string): Promise<void> {
-    await secureStorage.setItem(AUTH_STORAGE_KEYS.CODE_VERIFIER, verifier);
+    try {
+      console.log("Storing code verifier:", verifier);
+      await secureStorage.setItem(AUTH_STORAGE_KEYS.CODE_VERIFIER, verifier);
+    } catch (error) {
+      console.error("Failed to store code verifier:", error);
+      throw error;
+    }
   },
 
   async getStoredCodeVerifier(): Promise<string | null> {
-    return await secureStorage.getItem(AUTH_STORAGE_KEYS.CODE_VERIFIER);
+    try {
+      const verifier = await secureStorage.getItem(AUTH_STORAGE_KEYS.CODE_VERIFIER);
+      console.log("Retrieved code verifier:", verifier); // Debug log
+      return verifier;
+    } catch (error) {
+      console.error("Failed to retrieve code verifier:", error);
+      return null;
+    }
   },
 
   async clearCodeVerifier(): Promise<void> {
@@ -258,6 +271,7 @@ export const authApi = {
       throw new AuthError(error instanceof Error ? error.message : "OAuth authentication failed");
     }
   },
+
   async handleAuthCallback(url: string) {
     try {
       if (!url || typeof url !== "string") {
@@ -265,11 +279,21 @@ export const authApi = {
         return null;
       }
 
-      if (!url.includes("code=") && !url.includes("access_token=") && !url.includes("type=")) {
+      console.log("Handling auth callback with URL:", url);
+
+      const hasAuthParams = url.includes("code=") || url.includes("access_token=") || url.includes("type=");
+      if (!hasAuthParams) {
+        console.log("URL doesn't contain auth parameters, not a callback");
         return null;
       }
 
       const codeVerifier = await this.getStoredCodeVerifier();
+      console.log("Retrieved code verifier for callback:", codeVerifier);
+
+      if (!codeVerifier) {
+        console.error("No code verifier found for OAuth callback");
+        throw new AuthError("Authentication failed: No code verifier found", "auth/missing-verifier");
+      }
 
       const response = await fetch(`${API_URL}/auth/handle-callback`, {
         method: "POST",
@@ -282,11 +306,15 @@ export const authApi = {
 
       await this.clearCodeVerifier();
 
-      const data = await response.json();
       if (!response.ok) {
-        throw new AuthError(data.error || "Failed to process authentication", data.code || "auth/callback-failed");
+        const errorData = await response.json();
+        throw new AuthError(
+          errorData.error || "Failed to process authentication",
+          errorData.code || "auth/callback-failed"
+        );
       }
 
+      const data = await response.json();
       return data;
     } catch (error) {
       await this.clearCodeVerifier();

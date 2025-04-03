@@ -1,5 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, Text } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 import GoogleIcon from '../../../assets/icons/GoogleLogo.svg';
 import { useAlert } from '../../lib/AlertContext';
 import { errorService } from '../../services/errorService';
@@ -11,8 +13,41 @@ export default function OAuth() {
 
   const handleGoogleSignIn = async () => {
     try {
-      oauthSignIn.mutate('google');
+      oauthSignIn.mutate('google', {
+        onSuccess: async (data) => {
+          if (data?.url) {
+            console.log("Opening auth session with URL:", data.url);
+            
+            try {
+              const result = await WebBrowser.openAuthSessionAsync(
+                data.url,
+                Linking.createURL('auth/callback')
+              );
+              
+              console.log("Auth session result:", result.type);
+              
+            } catch (error) {
+              console.error("Error during web browser auth session:", error);
+              showAlert("Authentication failed. Please try again.", {
+                type: "error"
+              });
+            }
+          } else {
+            showAlert("Failed to start Google authentication", {
+              type: "error"
+            });
+          }
+        },
+        onError: (error) => {
+          console.error("OAuth sign-in error:", error);
+          const appError = errorService.handleAuthError(error);
+          showAlert(appError.message, {
+            type: errorService.getAlertType(appError.category)
+          });
+        }
+      });
     } catch (error) {
+      console.error("Unexpected error during Google sign-in:", error);
       const appError = errorService.handleAuthError(error);
       showAlert(appError.message, {
         type: errorService.getAlertType(appError.category)

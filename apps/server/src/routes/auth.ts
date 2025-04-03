@@ -372,9 +372,11 @@ router.post("/handle-callback", authRateLimiter, async (c) => {
     const validation = callbackSchema.safeParse(body);
 
     if (!validation.success) {
+      console.error("Invalid input for handle-callback:", validation.error);
       return c.json(
         {
           error: "Invalid input",
+          details: validation.error.errors,
           code: "auth/invalid-input",
         },
         400
@@ -382,82 +384,165 @@ router.post("/handle-callback", authRateLimiter, async (c) => {
     }
 
     const { url, code_verifier } = validation.data;
+
+    // Log for debugging purposes
+    console.log("Processing auth callback URL:", url);
+    console.log("Code verifier received:", code_verifier ? "Yes" : "No");
+
+    if (!url || typeof url !== "string") {
+      console.error("Invalid URL provided:", url);
+      return c.json(
+        {
+          error: "Invalid URL provided",
+          code: "auth/invalid-url",
+        },
+        400
+      );
+    }
+
+    // Extract the code from URL if it's a code-based flow
+    let code = null;
+    try {
+      const urlObj = new URL(url);
+      code = urlObj.searchParams.get("code");
+      console.log("Extracted code from URL:", code ? "Yes" : "No");
+    } catch (err) {
+      console.error("Error parsing URL:", err);
+    }
+
     const supabase = getSupabaseClient(c);
 
-    if (url.includes("#")) {
-      const hashFragment = url.split("#")[1] || "";
-      const hashParams = new URLSearchParams(hashFragment);
+    // Handle code-based flows (PKCE)
+    if (code) {
+      if (!code_verifier) {
+        console.error("Missing code verifier for code flow");
+        return c.json(
+          {
+            error: "Authentication failed: Missing code verifier for authorization code flow",
+            code: "auth/missing-verifier",
+          },
+          400
+        );
+      }
 
-      const accessToken = hashParams.get("access_token");
-      const refreshToken = hashParams.get("refresh_token");
-      const type = hashParams.get("type");
+      try {
+        console.log("Exchanging code for session with code verifier");
 
-      if (accessToken && refreshToken) {
-        try {
+        // Using Supabase API to exchange code for session
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+        if (error) {
+          console.error("Error exchanging code for session:", error);
+          return c.json(
+            {
+              error: error.message,
+              code: "auth/exchange-failed",
+            },
+            400
+          );
+        }
+
+        if (!data.session || !data.user) {
+          console.error("Missing session or user in auth response");
+          return c.json(
+            {
+              error: "Invalid authentication response",
+              code: "auth/invalid-response",
+            },
+            400
+          );
+        }
+
+        console.log("Successfully exchanged code for session");
+        return c.json({
+          session: data.session,
+          user: data.user,
+        });
+      } catch (err) {
+        console.error("Exception during code exchange:", err);
+        return c.json(
+          {
+            error: err instanceof Error ? err.message : "Failed to exchange code for session",
+            code: "auth/exchange-error",
+          },
+          400
+        );
+      }
+    }
+    // Handle token-based flows (implicit flow responses with hash fragments)
+    else if (url.includes("#")) {
+      try {
+        const hashFragment = url.split("#")[1] || "";
+        const hashParams = new URLSearchParams(hashFragment);
+
+        const accessToken = hashParams.get("access_token");
+        const refreshToken = hashParams.get("refresh_token");
+        const type = hashParams.get("type");
+
+        console.log(
+          "Extracted from hash fragment - access token:",
+          accessToken ? "Yes" : "No",
+          "refresh token:",
+          refreshToken ? "Yes" : "No"
+        );
+
+        if (accessToken && refreshToken) {
+          console.log("Setting session from access and refresh tokens");
           const { data, error } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
           });
 
           if (error) {
-            return c.json({ error: error.message, code: "auth/callback-failed" }, 400);
+            console.error("Error setting session:", error);
+            return c.json(
+              {
+                error: error.message,
+                code: "auth/session-error",
+              },
+              400
+            );
           }
 
+          console.log("Successfully set session from tokens");
           return c.json({
             session: data.session,
             user: data.user,
             type,
           });
-        } catch (err) {
-          console.error("Error setting session:", err);
+        } else {
+          console.error("Missing tokens in hash fragment");
           return c.json(
             {
-              error: err instanceof Error ? err.message : "Failed to process authentication",
-              code: "auth/callback-failed",
+              error: "Missing authentication tokens",
+              code: "auth/missing-tokens",
             },
             400
           );
         }
-      }
-    }
-
-    const urlObj = new URL(url);
-    const code = urlObj.searchParams.get("code");
-
-    if (code) {
-      try {
-        const options = code_verifier ? { codeVerifier: code_verifier } : undefined;
-        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-
-        if (error) {
-          return c.json({ error: error.message, code: "auth/callback-failed" }, 400);
-        }
-
-        return c.json({
-          session: data.session,
-          user: data.user,
-        });
       } catch (err) {
-        console.error("Error exchanging code for session:", err);
+        console.error("Error processing token response:", err);
         return c.json(
           {
-            error: err instanceof Error ? err.message : "Failed to exchange code",
-            code: "auth/callback-failed",
+            error: err instanceof Error ? err.message : "Failed to process authentication response",
+            code: "auth/token-error",
           },
           400
         );
       }
+    } else {
+      // No recognizable auth parameters
+      console.error("No auth parameters found in URL:", url);
+      return c.json(
+        {
+          error: "Invalid auth callback URL. No authentication parameters found.",
+          code: "auth/invalid-callback",
+        },
+        400
+      );
     }
-
-    return c.json(
-      {
-        error: "Invalid auth callback URL. No authentication parameters found.",
-        code: "auth/invalid-callback",
-      },
-      400
-    );
   } catch (error) {
-    console.error("Auth callback error:", error);
+    console.error("Unhandled error in auth callback:", error);
     return c.json(
       {
         error: "Failed to process authentication",

@@ -32,7 +32,34 @@
         "https://captureapp.org",
         "http://localhost:8081",
         "exp://192.168.1.64:8081"
-      ]
+      ],
+      "config": {
+        "screens": {
+          "Splash": "splash",
+          "Auth": {
+            "screens": {
+              "Login": "auth/login",
+              "Signup": "auth/signup", 
+              "EmailSignup": "auth/email-signup",
+              "VerifyPhoneNumber": "auth/verify-phone",
+              "CreateProfile": "auth/create-profile",
+              "ForgotPassword": "auth/forgot-password",
+              "ResetPassword": "auth/reset-password",
+              "EmailVerificationPending": "auth/verify-email"
+            }
+          },
+          "App": {
+            "screens": {
+              "Feed": "feed",
+              "NewPost": "new-post",
+              "Profile": "profile/:userId?",
+              "Search": "search",
+              "SavedPosts": "saved"
+            }
+          },
+          "CreateProfile": "create-profile"
+        }
+      }
     },
     "web": {
       "bundler": "metro",

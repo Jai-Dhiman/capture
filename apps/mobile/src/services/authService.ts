@@ -114,7 +114,6 @@ export const authService = {
           return false;
         }
       } else {
-        // Session is still valid, update state
         authState.setUser(user);
         authState.setSession({
           access_token: session.access_token,
@@ -136,23 +135,63 @@ export const authService = {
   },
 
   async handleAuthCallback(url: string) {
-    const data = await authApi.handleAuthCallback(url);
+    try {
+      console.log("Handling auth callback with URL:", url);
 
-    if (!data) {
-      return null;
-    }
-
-    if (data.session && data.user) {
-      await authApi.storeSessionData(data.session, data.user);
-
-      if (url.includes("type=recovery")) {
-        return "/auth/reset-password";
-      } else if (url.includes("type=signup")) {
-        return "/auth/login";
+      if (!url || typeof url !== "string") {
+        console.error("Invalid URL provided to handleAuthCallback:", url);
+        return null;
       }
-    }
 
-    return null;
+      // Only process URLs that contain auth parameters
+      if (!url.includes("code=") && !url.includes("access_token=") && !url.includes("type=")) {
+        console.log("URL doesn't contain auth parameters, not a callback");
+        return null;
+      }
+
+      const codeVerifier = await authApi.getStoredCodeVerifier();
+      console.log("Retrieved code verifier for callback:", codeVerifier ? "Yes" : "No");
+
+      if (!codeVerifier && url.includes("code=")) {
+        console.error("Missing code verifier for code-based flow");
+        throw new Error("Authentication failed: Missing code verifier");
+      }
+
+      // Fix: Update to match your authApi method signature
+      const data = await authApi.handleAuthCallback(url);
+
+      if (!data) {
+        return null;
+      }
+
+      if (data.session && data.user) {
+        await authApi.storeSessionData(data.session, data.user);
+
+        if (url.includes("type=recovery")) {
+          return "/auth/reset-password";
+        } else if (url.includes("type=signup")) {
+          return "/auth/login";
+        }
+
+        // Fix: Update to match your determineAuthStage method signature
+        const stage = await this.determineAuthStage();
+        authState.setAuthStage(stage);
+
+        // If we have a complete authentication, redirect to the app
+        if (stage === "complete") {
+          return "/feed";
+        } else if (stage === "phone-verification") {
+          return "/auth/verify-phone";
+        } else if (stage === "profile-creation") {
+          return "/auth/create-profile";
+        }
+      }
+
+      return null;
+    } catch (error) {
+      console.error("Auth callback handling error:", error);
+      throw error;
+    }
   },
 
   async resetPassword(email: string) {
