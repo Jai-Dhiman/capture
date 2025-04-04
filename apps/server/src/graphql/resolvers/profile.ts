@@ -1,7 +1,7 @@
 import { createD1Client } from "../../db";
 import { eq, inArray, like, and } from "drizzle-orm";
 import * as schema from "../../db/schema";
-import type { ContextType } from '../../types';
+import type { ContextType } from "../../types";
 
 export const profileResolvers = {
   Query: {

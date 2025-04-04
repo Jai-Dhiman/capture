@@ -29,7 +29,7 @@ router.post("/", async (c) => {
   const user = c.get("user");
 
   const schema = z.object({
-    userId: z.string().uuid(),
+    userId: z.string(),
     username: z.string().min(3).max(30),
     bio: z.string().max(160).nullable().optional(),
     profileImage: z.string().nullable().optional(),
