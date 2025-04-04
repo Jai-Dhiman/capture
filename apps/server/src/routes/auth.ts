@@ -51,8 +51,14 @@ const callbackSchema = z.object({
   code_verifier: z.string().optional(),
 });
 
-function getSupabaseClient(c: any) {
-  return createClient(c.env.SUPABASE_URL, c.env.SUPABASE_KEY);
+function getSupabaseClient(c: { env: Bindings }) {
+  return createClient(c.env.SUPABASE_URL, c.env.SUPABASE_KEY, {
+    auth: {
+      flowType: "pkce",
+      autoRefreshToken: true,
+      detectSessionInUrl: false,
+    },
+  });
 }
 
 router.post("/signin", authRateLimiter, async (c) => {
@@ -329,7 +335,11 @@ router.post("/verify-otp", otpRateLimiter, async (c) => {
 router.post("/oauth", authRateLimiter, async (c) => {
   try {
     const body = await c.req.json();
-    const validation = oauthSchema.safeParse(body);
+    const validation = z
+      .object({
+        provider: z.enum(["google", "apple"]),
+      })
+      .safeParse(body);
 
     if (!validation.success) {
       return c.json(
@@ -341,17 +351,13 @@ router.post("/oauth", authRateLimiter, async (c) => {
       );
     }
 
-    const { provider, code_challenge, code_challenge_method } = validation.data;
+    const { provider } = validation.data;
     const supabase = getSupabaseClient(c);
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
         redirectTo: `${c.req.header("origin") || ""}/auth/callback`,
-        queryParams: {
-          code_challenge: code_challenge,
-          code_challenge_method: code_challenge_method,
-        },
       },
     });
 
@@ -369,7 +375,11 @@ router.post("/oauth", authRateLimiter, async (c) => {
 router.post("/handle-callback", authRateLimiter, async (c) => {
   try {
     const body = await c.req.json();
-    const validation = callbackSchema.safeParse(body);
+    const validation = z
+      .object({
+        url: z.string().url(),
+      })
+      .safeParse(body);
 
     if (!validation.success) {
       console.error("Invalid input for handle-callback:", validation.error);
@@ -383,11 +393,8 @@ router.post("/handle-callback", authRateLimiter, async (c) => {
       );
     }
 
-    const { url, code_verifier } = validation.data;
-
-    // Log for debugging purposes
+    const { url } = validation.data;
     console.log("Processing auth callback URL:", url);
-    console.log("Code verifier received:", code_verifier ? "Yes" : "No");
 
     if (!url || typeof url !== "string") {
       console.error("Invalid URL provided:", url);
@@ -400,7 +407,6 @@ router.post("/handle-callback", authRateLimiter, async (c) => {
       );
     }
 
-    // Extract the code from URL if it's a code-based flow
     let code = null;
     try {
       const urlObj = new URL(url);
@@ -408,27 +414,21 @@ router.post("/handle-callback", authRateLimiter, async (c) => {
       console.log("Extracted code from URL:", code ? "Yes" : "No");
     } catch (err) {
       console.error("Error parsing URL:", err);
+      return c.json(
+        {
+          error: "Failed to parse URL",
+          code: "auth/invalid-url",
+        },
+        400
+      );
     }
 
     const supabase = getSupabaseClient(c);
 
-    // Handle code-based flows (PKCE)
     if (code) {
-      if (!code_verifier) {
-        console.error("Missing code verifier for code flow");
-        return c.json(
-          {
-            error: "Authentication failed: Missing code verifier for authorization code flow",
-            code: "auth/missing-verifier",
-          },
-          400
-        );
-      }
-
       try {
-        console.log("Exchanging code for session with code verifier");
+        console.log("Exchanging code for session");
 
-        // Using Supabase API to exchange code for session
         const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
         if (error) {
@@ -468,9 +468,7 @@ router.post("/handle-callback", authRateLimiter, async (c) => {
           400
         );
       }
-    }
-    // Handle token-based flows (implicit flow responses with hash fragments)
-    else if (url.includes("#")) {
+    } else if (url.includes("#")) {
       try {
         const hashFragment = url.split("#")[1] || "";
         const hashParams = new URLSearchParams(hashFragment);
@@ -531,7 +529,6 @@ router.post("/handle-callback", authRateLimiter, async (c) => {
         );
       }
     } else {
-      // No recognizable auth parameters
       console.error("No auth parameters found in URL:", url);
       return c.json(
         {

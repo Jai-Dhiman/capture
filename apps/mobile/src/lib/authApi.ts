@@ -31,7 +31,7 @@ export const authApi = {
 
   async generateCodeChallenge(verifier: string): Promise<string> {
     const hash = crypto.SHA256(verifier);
-    return base64encode(hash.toString(crypto.enc.Base64)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+    return hash.toString(crypto.enc.Base64).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
   },
 
   async storeCodeVerifier(verifier: string): Promise<void> {
@@ -249,6 +249,7 @@ export const authApi = {
       await this.storeCodeVerifier(codeVerifier);
 
       const codeChallenge = await this.generateCodeChallenge(codeVerifier);
+      console.log("Generated code challenge:", codeChallenge);
 
       const response = await fetch(`${API_URL}/auth/oauth`, {
         method: "POST",
@@ -288,34 +289,42 @@ export const authApi = {
       }
 
       const codeVerifier = await this.getStoredCodeVerifier();
-      console.log("Retrieved code verifier for callback:", codeVerifier);
+      console.log("Retrieved code verifier for callback:", codeVerifier ? "Yes" : "No");
 
-      if (!codeVerifier) {
-        console.error("No code verifier found for OAuth callback");
-        throw new AuthError("Authentication failed: No code verifier found", "auth/missing-verifier");
+      let code = null;
+      try {
+        const urlObj = new URL(url);
+        code = urlObj.searchParams.get("code");
+      } catch (error) {
+        console.error("Failed to parse URL:", error);
+        return null;
       }
 
-      const response = await fetch(`${API_URL}/auth/handle-callback`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url,
-          code_verifier: codeVerifier,
-        }),
-      });
+      if (code) {
+        const body = codeVerifier ? { url, code_verifier: codeVerifier } : { url };
+
+        const response = await fetch(`${API_URL}/auth/handle-callback`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+
+        await this.clearCodeVerifier();
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new AuthError(
+            errorData.error || "Failed to process authentication",
+            errorData.code || "auth/callback-failed"
+          );
+        }
+
+        const data = await response.json();
+        return data;
+      }
 
       await this.clearCodeVerifier();
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new AuthError(
-          errorData.error || "Failed to process authentication",
-          errorData.code || "auth/callback-failed"
-        );
-      }
-
-      const data = await response.json();
-      return data;
+      return null;
     } catch (error) {
       await this.clearCodeVerifier();
       console.error("Auth callback error details:", error);
