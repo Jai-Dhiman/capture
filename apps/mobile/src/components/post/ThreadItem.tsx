@@ -30,7 +30,7 @@ export const ThreadItem = ({ thread, isLoading = false }: ThreadItemProps) => {
   const navigation = useNavigation<NavigationProp>();
   const formattedDate = new Date(thread.createdAt).toLocaleDateString();
   const [settingsVisible, setSettingsVisible] = useState(false);
-  
+
   const [, setCommentDrawerOpen] = useAtom(commentDrawerOpenAtom);
   const [, setCurrentPostId] = useAtom(currentPostIdAtom);
   const savePostMutation = useSavePost();
@@ -41,12 +41,12 @@ export const ThreadItem = ({ thread, isLoading = false }: ThreadItemProps) => {
   const [menuVisible, setMenuVisible] = useState(false);
   const blockUserMutation = useBlockUser(thread.user?.userId);
   const isOwnPost = thread.user?.userId === user?.id;
-  
+
   const handleOpenComments = () => {
     setCurrentPostId(thread.id);
     setCommentDrawerOpen(true);
   };
-  
+
   const handleToggleSavePost = async () => {
     try {
       if (thread.isSaved) {
@@ -59,7 +59,7 @@ export const ThreadItem = ({ thread, isLoading = false }: ThreadItemProps) => {
       showAlert(`Failed to ${thread.isSaved ? 'unsave' : 'save'} post`, { type: 'error' });
     }
   };
-  
+
   const handleDeletePost = async () => {
     try {
       await deletePostMutation.mutateAsync(thread.id);
@@ -79,7 +79,7 @@ export const ThreadItem = ({ thread, isLoading = false }: ThreadItemProps) => {
       showAlert('Failed to block user', { type: 'error' });
     }
   };
-  
+
   return (
     <SkeletonLoader isLoading={isLoading}>
       <View className="bg-zinc-300 rounded-lg overflow-hidden mb-4">
@@ -92,23 +92,23 @@ export const ThreadItem = ({ thread, isLoading = false }: ThreadItemProps) => {
           )}
         </View>
         <Text className="text-black font-medium text-base">{thread.user?.username || 'User'}</Text>
-        
+
         <View className="flex-1" />
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           className="w-6 h-6 justify-center items-center"
-          onPress={() => setSettingsVisible(true)}
+          onPress={() => setMenuVisible(true)}
         >
           <SettingsIcon width={24} height={24} />
         </TouchableOpacity>
       </View>
-      
+
         <View className="mt-2 mb-6">
           <Text className="text-black text-base font-light leading-snug">
             {thread.content}
           </Text>
         </View>
-        
+
         <View className="flex-row justify-end mb-2">
             <Text className="text-center text-black text-[10px] font-light leading-3">
               {formattedDate}
@@ -120,13 +120,13 @@ export const ThreadItem = ({ thread, isLoading = false }: ThreadItemProps) => {
               <TouchableOpacity onPress={handleOpenComments}>
                 <CommentIcon width={20} height={20} />
               </TouchableOpacity>
-              
+
               <TouchableOpacity>
                 <ShareIcon width={20} height={20} />
               </TouchableOpacity>
             </View>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               onPress={handleToggleSavePost}
             >
               {savePostMutation.isPending || unsavePostMutation.isPending ? (
@@ -138,7 +138,7 @@ export const ThreadItem = ({ thread, isLoading = false }: ThreadItemProps) => {
               )}
             </TouchableOpacity>
           </View>
-        
+
           <PostMenu
           isVisible={menuVisible}
           onClose={() => setMenuVisible(false)}
