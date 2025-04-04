@@ -1,13 +1,21 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, QueryFunctionContext } from "@tanstack/react-query";
 import { useAuthStore } from "../stores/authStore";
 import { API_URL } from "@env";
+import { Post } from "../types/postTypes";
 
-export const useFeed = (limit = 20) => {
+interface FeedResponse {
+  posts: Post[];
+  nextPage: number | undefined;
+}
+
+export const useFeed = (limit = 10) => {
   const { session } = useAuthStore();
 
-  return useQuery({
+  return useInfiniteQuery<FeedResponse, Error>({
     queryKey: ["feed"],
-    queryFn: async () => {
+    queryFn: async (context: QueryFunctionContext) => {
+      const { pageParam } = context;
+
       if (!session?.access_token) {
         throw new Error("No auth token available");
       }
@@ -21,8 +29,8 @@ export const useFeed = (limit = 20) => {
           },
           body: JSON.stringify({
             query: `
-              query GetFeed($limit: Int) {
-                feed(limit: $limit) {
+              query GetFeed($limit: Int, $offset: Int) {
+                feed(limit: $limit, offset: $offset) {
                   id
                   content
                   type
@@ -50,6 +58,7 @@ export const useFeed = (limit = 20) => {
             `,
             variables: {
               limit,
+              offset: pageParam,
             },
           }),
         });
@@ -63,12 +72,17 @@ export const useFeed = (limit = 20) => {
 
         const filteredFeed = data.data.feed.filter((post: any) => !post.user.isBlocked);
 
-        return filteredFeed || [];
+        return {
+          posts: filteredFeed || [],
+          nextPage: filteredFeed.length === limit ? pageParam + limit : undefined,
+        };
       } catch (error) {
         console.error("Feed fetch error:", error);
         throw error;
       }
     },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) => lastPage.nextPage,
     staleTime: 1 * 60 * 1000,
     retry: 1,
   });

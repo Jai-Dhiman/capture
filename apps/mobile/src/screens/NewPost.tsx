@@ -31,15 +31,22 @@ export default function NewPost() {
         showAlert('Please allow access to your photos', { type: 'warning' });
         return;
       }
-
+  
+      const remainingSlots = 4 - selectedImages.length;
+      
+      if (remainingSlots <= 0) {
+        showAlert('Maximum of 4 images allowed per post', { type: 'warning' });
+        return;
+      }
+  
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsMultipleSelection: true,
-        selectionLimit: 10,
+        selectionLimit: remainingSlots,
         quality: 0.8,
         base64: Platform.OS === 'web',
       });
-
+  
       if (!result.canceled && result.assets.length > 0) {
         const formattedImages = result.assets.map((asset, index) => ({
           uri: asset.uri,

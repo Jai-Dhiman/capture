@@ -28,7 +28,6 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
   const { width, height } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(initialIndex);
   
-  // Use full width minus padding
   const ITEM_WIDTH = width - 32;
   
   const calculateMediaHeight = () => {
