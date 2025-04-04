@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, ScrollView, Modal, StatusBar, useWindowDimensions, Text } from 'react-native';
 import { useAuthStore } from '../stores/authStore';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -145,6 +145,12 @@ export default function Profile() {
       showAlert('Failed to block user', { type: 'error' });
     }
   };
+
+  useEffect(() => {
+    if (profileData) {
+      console.log("Profile data in component:", profileData);
+    }
+  }, [profileData]);
 
   if (profileLoading) {
     return (

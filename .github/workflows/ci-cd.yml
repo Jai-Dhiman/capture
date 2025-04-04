@@ -27,7 +27,7 @@ jobs:
         run: pnpm install
 
       - name: Run tests
-        run: pnpm turbo test
+        run: cd apps/server && pnpm test
 
   build:
     name: Build

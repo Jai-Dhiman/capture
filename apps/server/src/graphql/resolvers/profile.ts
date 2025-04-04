@@ -15,6 +15,11 @@ export const profileResolvers = {
 
       if (!profile) throw new Error("Profile not found");
 
+      const profileWithBooleanFields = {
+        ...profile,
+        isPrivate: !!profile.isPrivate,
+      };
+
       const currentUserId = context.user.id;
       let isFollowing = null;
 
@@ -27,11 +32,11 @@ export const profileResolvers = {
 
         isFollowing = !!relationship;
 
-        if (profile.isPrivate && !isFollowing) {
+        if (!!profile.isPrivate && !isFollowing) {
           return {
             ...profile,
-            isFollowing,
             isPrivate: true,
+            isFollowing,
             posts: [],
           };
         }
@@ -76,6 +81,7 @@ export const profileResolvers = {
 
       return {
         ...profile,
+        isPrivate: !!profile.isPrivate,
         isFollowing,
         posts: postsWithMedia,
       };
@@ -113,6 +119,7 @@ export const profileResolvers = {
 
         return profiles.map((profile) => ({
           ...profile,
+          isPrivate: !!profile.isPrivate,
           isFollowing: followingIds.has(profile.userId),
         }));
       } catch (error) {
