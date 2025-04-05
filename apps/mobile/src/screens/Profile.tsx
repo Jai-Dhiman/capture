@@ -7,7 +7,7 @@ import { AppStackParamList } from '../components/Navigators/types/navigation';
 import { useUserPosts, useDeletePost } from '../hooks/usePosts';
 import { useProfile } from '../hooks/auth/useProfile';
 import { useFollowers, useSyncFollowingState } from '../hooks/useRelationships';
-import { useSavePost, useUnsavePost } from '../hooks/useSavesPosts';
+import { useSavedPosts, useSavePost, useUnsavePost } from '../hooks/useSavesPosts';
 import { ProfileThreadItem } from '../components/profile/ProfileThreadItem';
 import { FollowList } from '../components/profile/FollowList';
 import { PostMenu } from '../components/post/PostMenu';
@@ -21,6 +21,8 @@ import { FilterTabs } from '../components/profile/FilterTabs';
 import { PostsGrid } from '../components/profile/PostsGrid';
 import { PostCarousel } from '../components/profile/PostCarousel';
 import { NewPostButton } from '../components/profile/NewPostButton';
+import { PostItem } from '../components/post/PostItem';
+import { ThreadItem } from '../components/post/ThreadItem';
 import LockIcon2 from '../../assets/icons/LockIcon2.svg';
 import { SkeletonLoader, SkeletonElement } from '../components/ui/SkeletonLoader';
 
@@ -37,7 +39,9 @@ export default function Profile() {
   const isOwnProfile = userId === user?.id;
   
   const [showFollowers, setShowFollowers] = useState(false);
-  const [postFilter, setPostFilter] = useState<'posts' | 'threads'>(isOwnProfile ? 'posts' : 'threads');
+  const [postFilter, setPostFilter] = useState<'posts' | 'threads' | 'saved'>(
+    route.params?.filter === 'saved' ? 'saved' : isOwnProfile ? 'posts' : 'threads'
+  );
   const [showPostCarousel, setShowPostCarousel] = useState(false);
   const [initialPostIndex, setInitialPostIndex] = useState(0);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
@@ -50,6 +54,7 @@ export default function Profile() {
   const isProfilePrivate = profileData?.isPrivate && !profileData?.isFollowing && !isOwnProfile;
   const { data: posts, isLoading: postsLoading } = useUserPosts(userId);
   const { data: followers, isLoading: followersLoading } = useFollowers(userId);
+  const { data: savedPosts, isLoading: savedPostsLoading } = useSavedPosts(30, 0);
   const deletePostMutation = useDeletePost();
   const savePostMutation = useSavePost();
   const unsavePostMutation = useUnsavePost();
@@ -60,16 +65,25 @@ export default function Profile() {
     isFollowing: profileData.isFollowing 
   }] : []);
 
-  const filteredPosts = posts ? 
-    posts.filter((post: any) => {
-      if (postFilter === 'posts') {
-        return post.type === 'post';
-      } else {
-        return post.type === 'thread';
-      }
-    }) : [];
+  // Filter posts based on the selected tab
+  const filteredPosts = React.useMemo(() => {
+    if (postFilter === 'saved') {
+      return savedPosts || [];
+    }
+    return posts ? 
+      posts.filter((post: any) => {
+        if (postFilter === 'posts') {
+          return post.type === 'post';
+        } else {
+          return post.type === 'thread';
+        }
+      }) : [];
+  }, [posts, postFilter, savedPosts]);
   
-  const carouselPosts = filteredPosts ? filteredPosts.filter((post: any) => post.type === 'post') : [];
+  // Determine posts for carousel view
+  const carouselPosts = React.useMemo(() => {
+    return filteredPosts ? filteredPosts.filter((post: any) => post.type === 'post') : [];
+  }, [filteredPosts]);
   
   const getGridItemSize = useCallback(() => {
     const contentWidth = width - 32;
@@ -82,7 +96,7 @@ export default function Profile() {
 
   const { itemSize, horizontalMargin } = getGridItemSize();
   
-  const handleFilterChange = (filter: 'posts' | 'threads') => {
+  const handleFilterChange = (filter: 'posts' | 'threads' | 'saved') => {
     setPostFilter(filter);
     setShowPostCarousel(false);
   };
@@ -147,10 +161,10 @@ export default function Profile() {
   };
 
   useEffect(() => {
-    if (profileData) {
-      console.log("Profile data in component:", profileData);
+    if (route.params?.filter === 'saved') {
+      setPostFilter('saved');
     }
-  }, [profileData]);
+  }, [route.params?.filter]);
 
   if (profileLoading) {
     return (
@@ -281,57 +295,57 @@ export default function Profile() {
           
           <View className="h-px bg-black opacity-10 my-2" />               
           
-          {postsLoading ? (
+          {postsLoading || (postFilter === 'saved' && savedPostsLoading) ? (
             <SkeletonLoader isLoading={true}>
-            {postFilter === 'posts' ? (
-              <View className="flex-row flex-wrap">
-                {Array(6).fill(0).map((_, index) => (
-                  <View
-                    key={index}
-                    style={{
-                      width: itemSize,
-                      height: itemSize,
-                      marginRight: index % 3 !== 2 ? horizontalMargin : 0,
-                      marginBottom: horizontalMargin,
-                    }}
-                  >
-                    <SkeletonElement 
-                      width={itemSize} 
-                      height={itemSize} 
-                      radius={8} 
-                    />
-                  </View>
-                ))}
-              </View>
-            ) : (
-              <View>
-                {Array(3).fill(0).map((_, index) => (
-                  <View key={index} className="mb-4">
-                    <SkeletonElement 
-                      width="100%" 
-                      height={160} 
-                      radius={8} 
-                    />
-                  </View>
-                ))}
-              </View>
-            )}
-          </SkeletonLoader>
+              {postFilter === 'posts' || postFilter === 'saved' ? (
+                <View className="flex-row flex-wrap">
+                  {Array(6).fill(0).map((_, index) => (
+                    <View
+                      key={index}
+                      style={{
+                        width: itemSize,
+                        height: itemSize,
+                        marginRight: index % 3 !== 2 ? horizontalMargin : 0,
+                        marginBottom: horizontalMargin,
+                      }}
+                    >
+                      <SkeletonElement 
+                        width={itemSize} 
+                        height={itemSize} 
+                        radius={8} 
+                      />
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <View>
+                  {Array(3).fill(0).map((_, index) => (
+                    <View key={index} className="mb-4">
+                      <SkeletonElement 
+                        width="100%" 
+                        height={160} 
+                        radius={8} 
+                      />
+                    </View>
+                  ))}
+                </View>
+              )}
+            </SkeletonLoader>
           ) : filteredPosts?.length === 0 ? (
             <Text className="text-center py-4 text-gray-500">No {postFilter} yet</Text>
           ) : (
             <>
-              {showPostCarousel && postFilter === 'posts' ? (
+              {showPostCarousel && carouselPosts.length > 0 ? (
                 <View className="mt-2 pb-2">
-                <PostCarousel 
-                  posts={carouselPosts}
-                  initialIndex={initialPostIndex}
-                  onSettingsPress={handlePostSettings}
-                  onToggleSave={handleToggleSavePost}
-                  onOpenComments={handleOpenComments}
-                  isSaving={savePostMutation.isPending || unsavePostMutation.isPending}
-                />
-              </View>
+                  <PostCarousel 
+                    posts={carouselPosts}
+                    initialIndex={initialPostIndex}
+                    onSettingsPress={handlePostSettings}
+                    onToggleSave={handleToggleSavePost}
+                    onOpenComments={handleOpenComments}
+                    isSaving={savePostMutation.isPending || unsavePostMutation.isPending}
+                  />
+                </View>
               ) : (
                 <>
                   {postFilter === 'posts' ? (
@@ -343,11 +357,44 @@ export default function Profile() {
                         onPostPress={openCarouselAtPhoto}
                       />
                     </View>
-                  ) : (
+                  ) : postFilter === 'threads' ? (
                     <View className="mt-4">
                       {filteredPosts.map((thread: any) => (
                         <ProfileThreadItem key={thread.id} thread={thread} />
                       ))}
+                    </View>
+                  ) : (
+                    <View className="mt-4">
+                      {/* Saved Photos Section */}
+                      {filteredPosts.filter((post: any) => post.type === 'post').length > 0 && (
+                        <View className="mb-6">
+                          <Text className="text-base font-medium mb-2">Saved Photos</Text>
+                          <PostsGrid 
+                            posts={filteredPosts.filter((post: any) => post.type === 'post')}
+                            itemSize={itemSize}
+                            spacing={horizontalMargin}
+                            onPostPress={openCarouselAtPhoto}
+                          />
+                        </View>
+                      )}
+                      
+                      {/* Saved Threads Section */}
+                      {filteredPosts.filter((post: any) => post.type === 'thread').length > 0 && (
+                        <View>
+                          <Text className="text-base font-medium mb-2">Saved Threads</Text>
+                          {filteredPosts
+                            .filter((post: any) => post.type === 'thread')
+                            .map((thread: any) => (
+                              <ThreadItem key={thread.id} thread={thread} />
+                            ))}
+                        </View>
+                      )}
+                      
+                      {filteredPosts.length === 0 && (
+                        <View className="items-center py-8">
+                          <Text className="text-base text-gray-500">No saved posts yet</Text>
+                        </View>
+                      )}
                     </View>
                   )}
                 </>
@@ -374,31 +421,30 @@ export default function Profile() {
         />
       </Modal>
       
-      
-    <PostMenu
-      isVisible={menuVisible}
-      onClose={() => setMenuVisible(false)}
-      onDeletePost={handleDeletePost}
-      onBlockUser={handleBlockUser}
-      onReportPost={() => {
-        showAlert('Implement Post Reporting here', { type: 'success' });
-        setMenuVisible(false);
-      }}
-      onWhySeeing={() => {
-        showAlert('Implement Why Seeing here', { type: 'info' });
-        setMenuVisible(false);
-      }}
-      onEnableNotifications={() => {
-        showAlert('Implement Notification Settings here', { type: 'success' });
-        setMenuVisible(false);
-      }}
-      isOwnPost={selectedPost?.user?.userId === user?.id}
-      isLoading={
-        selectedPost?.user?.userId === user?.id 
-          ? deletePostMutation.isPending 
-          : blockUserMutation.isPending
-      }
-    />
+      <PostMenu
+        isVisible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        onDeletePost={isOwnProfile ? handleDeletePost : undefined}
+        onBlockUser={!isOwnProfile ? handleBlockUser : undefined}
+        onReportPost={() => {
+          showAlert('Implement Post Reporting here', { type: 'success' });
+          setMenuVisible(false);
+        }}
+        onWhySeeing={() => {
+          showAlert('Implement Why Seeing here', { type: 'info' });
+          setMenuVisible(false);
+        }}
+        onEnableNotifications={() => {
+          showAlert('Implement Notification Settings here', { type: 'success' });
+          setMenuVisible(false);
+        }}
+        isOwnPost={selectedPost?.user?.userId === user?.id}
+        isLoading={
+          selectedPost?.user?.userId === user?.id 
+            ? deletePostMutation.isPending 
+            : blockUserMutation.isPending
+        }
+      />
     </View>
   );
 }

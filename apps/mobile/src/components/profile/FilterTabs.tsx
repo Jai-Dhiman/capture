@@ -5,8 +5,8 @@ import TextIcon from "../../../assets/icons/TextIcon.svg";
 import SavedPosts from "../../../assets/icons/FavoriteIcon.svg";
 
 interface FilterTabsProps {
-  postFilter: 'posts' | 'threads';
-  onFilterChange: (filter: 'posts' | 'threads') => void;
+  postFilter: 'posts' | 'threads' | 'saved';
+  onFilterChange: (filter: 'posts' | 'threads' | 'saved') => void;
 }
 
 export const FilterTabs: React.FC<FilterTabsProps> = ({
@@ -33,9 +33,11 @@ export const FilterTabs: React.FC<FilterTabsProps> = ({
       </TouchableOpacity>
       <TouchableOpacity 
         className="items-center justify-center"
-        onPress={() => {/* Saved posts */}}
+        onPress={() => onFilterChange('saved')}  // Changed to trigger filter change
       >
-        <SavedPosts width={20} height={20}/>
+        <View className={postFilter === 'saved' ? "bg-stone-300 bg-opacity-30 w-7 h-7 rounded-[10px] items-center justify-center" : ""}>
+          <SavedPosts width={20} height={20}/>
+        </View>
       </TouchableOpacity>
     </View>
   );

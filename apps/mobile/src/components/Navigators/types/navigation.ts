@@ -21,7 +21,7 @@ export type AuthStackParamList = {
 export type AppStackParamList = {
   Feed: undefined;
   NewPost: undefined;
-  Profile: { userId?: string } | undefined;
+  Profile: { userId?: string; filter?: string } | undefined;
   SavedPosts: undefined;
   Search: undefined;
   Settings: NavigatorScreenParams<SettingsStackParamList> | undefined;
