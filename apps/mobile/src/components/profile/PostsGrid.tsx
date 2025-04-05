@@ -2,21 +2,48 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Dimensions } from 'react-native';
 import { FlatGrid } from 'react-native-super-grid';
 import { MediaImage } from '../media/MediaImage';
+import { SkeletonElement } from '../ui/SkeletonLoader';
 
 interface PostsGridProps {
   posts: any[];
   itemSize: number;
   spacing: number;
   onPostPress: (post: any) => void;
+  isLoading?: boolean;
 }
 
 export const PostsGrid: React.FC<PostsGridProps> = ({
   posts,
   itemSize,
   spacing,
-  onPostPress
+  onPostPress,
+  isLoading = false
 }) => {
   const { width } = Dimensions.get('window');
+  
+  if (isLoading) {
+    return (
+      <View className="flex-row flex-wrap">
+        {Array(9).fill(0).map((_, index) => (
+          <View 
+            key={index} 
+            style={{ 
+              width: itemSize, 
+              height: itemSize, 
+              marginRight: (index + 1) % 3 !== 0 ? spacing : 0,
+              marginBottom: spacing 
+            }}
+          >
+            <SkeletonElement 
+              width="100%" 
+              height="100%" 
+              radius={10} 
+            />
+          </View>
+        ))}
+      </View>
+    );
+  }
   
   return (
     <FlatGrid

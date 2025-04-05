@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Text, Image } from 'react-native';
 import { useMediaSource } from '../../hooks/useMedia';
 import { useQueryClient } from '@tanstack/react-query';
+import { SkeletonLoader, SkeletonElement } from '../ui/SkeletonLoader';
 
 interface MediaImageProps {
   media: any;
@@ -31,7 +32,11 @@ export const MediaImage = ({ media, style = {}, expirySeconds = 1800 }: MediaIma
   }, [imageUrl, media, expirySeconds, isStale, queryClient]);
   
   if (isLoading) {
-    return <View className="bg-gray-200 flex-1 rounded-lg"><Text className="text-center p-2">Loading...</Text></View>;
+    return (
+      <View className="bg-gray-200 flex-1 rounded-lg">
+        <SkeletonElement width="100%" height="100%" radius={8} />
+      </View>
+    );
   }
 
   if (error || !imageUrl) {

@@ -65,7 +65,6 @@ export default function Profile() {
     isFollowing: profileData.isFollowing 
   }] : []);
 
-  // Filter posts based on the selected tab
   const filteredPosts = React.useMemo(() => {
     if (postFilter === 'saved') {
       return savedPosts || [];
@@ -80,7 +79,6 @@ export default function Profile() {
       }) : [];
   }, [posts, postFilter, savedPosts]);
   
-  // Determine posts for carousel view
   const carouselPosts = React.useMemo(() => {
     return filteredPosts ? filteredPosts.filter((post: any) => post.type === 'post') : [];
   }, [filteredPosts]);
@@ -174,26 +172,35 @@ export default function Profile() {
           showBackButton={true} 
           onBackPress={() => navigation.goBack()} 
         />
-        <View className="px-6 pt-4">
-          <SkeletonLoader isLoading={true}>
+        <ScrollView className="flex-1">
+          <View className="px-6 pt-4">
+            {/* Profile Header Skeleton */}
             <View className="flex-row mb-4">
-              <SkeletonElement 
-                width={96} 
-                height={96} 
-                radius="round" 
-              />
+              <View className="w-24 h-24 rounded-full overflow-hidden">
+                <SkeletonElement 
+                  width="100%" 
+                  height="100%" 
+                  radius="round" 
+                />
+              </View>
               
-              <View className="flex-1 justify-center ml-4">
-                <SkeletonElement width={144} height={24} />
-                <SkeletonElement width={192} height={16} />
+              <View className="ml-4 flex-1 justify-center">
+                <SkeletonElement width="60%" height={24} radius={4} />
+                <View className="mt-1">
+                  <SkeletonElement width="90%" height={16} radius={4} />
+                  <SkeletonElement width="80%" height={16} radius={4} />
+                </View>
+                
                 <View className="flex-row mt-4">
+                  <View className="mr-2">
+                    <SkeletonElement 
+                      width={100} 
+                      height={32} 
+                      radius={30} 
+                    />
+                  </View>
                   <SkeletonElement 
-                    width={96} 
-                    height={32} 
-                    radius={30} 
-                  />
-                  <SkeletonElement 
-                    width={96} 
+                    width={100} 
                     height={32} 
                     radius={30} 
                   />
@@ -201,38 +208,36 @@ export default function Profile() {
               </View>
             </View>
             
-            {postFilter === 'posts' ? (
-              <View className="flex-row flex-wrap">
-                {Array(6).fill(0).map((_, index) => (
-                  <View key={index} style={{ 
-                    width: itemSize, 
-                    height: itemSize, 
-                    marginRight: index % 3 !== 2 ? horizontalMargin : 0,
-                    marginBottom: horizontalMargin 
-                  }}>
-                    <SkeletonElement 
-                      width={itemSize} 
-                      height={itemSize} 
-                      radius={8} 
-                    />
-                  </View>
-                ))}
-              </View>
-            ) : (
-              <View>
-                {Array(3).fill(0).map((_, index) => (
-                  <View key={index} className="w-full h-40 mb-4">
-                    <SkeletonElement 
-                      width="100%" 
-                      height={160} 
-                      radius={8} 
-                    />
-                  </View>
-                ))}
-              </View>
-            )}
-          </SkeletonLoader>
-        </View>
+            {/* Filter Tabs Skeleton */}
+            <View className="flex-row justify-around py-2 items-center">
+              {[0, 1, 2].map((_, index) => (
+                <View key={index} className="items-center">
+                  <SkeletonElement width={28} height={28} radius={10} />
+                </View>
+              ))}
+            </View>
+            
+            <View className="h-px bg-black opacity-10 my-2" />
+            
+            {/* Posts Grid Skeleton */}
+            <View className="flex-row flex-wrap">
+              {Array(9).fill(0).map((_, index) => (
+                <View key={index} style={{ 
+                  width: itemSize, 
+                  height: itemSize, 
+                  marginRight: index % 3 !== 2 ? horizontalMargin : 0,
+                  marginBottom: horizontalMargin 
+                }}>
+                  <SkeletonElement 
+                    width="100%" 
+                    height="100%" 
+                    radius={10} 
+                  />
+                </View>
+              ))}
+            </View>
+          </View>
+        </ScrollView>
       </View>
     );
   }
@@ -286,6 +291,7 @@ export default function Profile() {
             userId={userId || ''}
             onFollowersPress={() => setShowFollowers(true)}
             onSettingsPress={() => navigation.navigate('Settings', { screen: 'MainSettings' })}
+            isLoading={profileLoading}
           />
           
           <FilterTabs 
@@ -296,41 +302,29 @@ export default function Profile() {
           <View className="h-px bg-black opacity-10 my-2" />               
           
           {postsLoading || (postFilter === 'saved' && savedPostsLoading) ? (
-            <SkeletonLoader isLoading={true}>
-              {postFilter === 'posts' || postFilter === 'saved' ? (
-                <View className="flex-row flex-wrap">
-                  {Array(6).fill(0).map((_, index) => (
-                    <View
-                      key={index}
-                      style={{
-                        width: itemSize,
-                        height: itemSize,
-                        marginRight: index % 3 !== 2 ? horizontalMargin : 0,
-                        marginBottom: horizontalMargin,
-                      }}
-                    >
-                      <SkeletonElement 
-                        width={itemSize} 
-                        height={itemSize} 
-                        radius={8} 
-                      />
-                    </View>
-                  ))}
-                </View>
-              ) : (
-                <View>
-                  {Array(3).fill(0).map((_, index) => (
-                    <View key={index} className="mb-4">
-                      <SkeletonElement 
-                        width="100%" 
-                        height={160} 
-                        radius={8} 
-                      />
-                    </View>
-                  ))}
-                </View>
-              )}
-            </SkeletonLoader>
+          <View>
+            {postFilter === 'posts' || postFilter === 'saved' ? (
+              <PostsGrid 
+                posts={[]}
+                itemSize={itemSize}
+                spacing={horizontalMargin}
+                onPostPress={() => {}}
+                isLoading={true}
+              />
+            ) : (
+              <View>
+                {Array(3).fill(0).map((_, index) => (
+                  <View key={index} className="mb-4">
+                    <SkeletonElement 
+                      width="100%" 
+                      height={160} 
+                      radius={8} 
+                    />
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
           ) : filteredPosts?.length === 0 ? (
             <Text className="text-center py-4 text-gray-500">No {postFilter} yet</Text>
           ) : (
@@ -365,7 +359,6 @@ export default function Profile() {
                     </View>
                   ) : (
                     <View className="mt-4">
-                      {/* Saved Photos Section */}
                       {filteredPosts.filter((post: any) => post.type === 'post').length > 0 && (
                         <View className="mb-6">
                           <Text className="text-base font-medium mb-2">Saved Photos</Text>
@@ -378,7 +371,6 @@ export default function Profile() {
                         </View>
                       )}
                       
-                      {/* Saved Threads Section */}
                       {filteredPosts.filter((post: any) => post.type === 'thread').length > 0 && (
                         <View>
                           <Text className="text-base font-medium mb-2">Saved Threads</Text>

@@ -69,9 +69,7 @@ export default function Feed() {
       <View className="flex-1 bg-zinc-300">
         <Header />
         <View className="p-4 space-y-4">
-          {/* Post Skeleton */}
           <PostSkeleton />
-          {/* Thread Skeleton */}
           <ThreadSkeleton />
         </View>
       </View>
