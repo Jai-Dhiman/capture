@@ -47,14 +47,14 @@ export default Sentry.wrap(function App() {
             <JotaiInitializer />
             <ApolloProvider>
               <AlertProvider>
-                <AuthProvider>
-                  <View className="flex-1 bg-black">
-                    <StatusBar style="light" />
-                    <NavigationContainer linking={linking}>
+                <View className="flex-1 bg-black">
+                  <StatusBar style="light" />
+                  <NavigationContainer linking={linking}>
+                    <AuthProvider>
                       <MainNavigator />
-                    </NavigationContainer>
-                  </View>
-                </AuthProvider>
+                    </AuthProvider>
+                  </NavigationContainer>
+                </View>
               </AlertProvider>
             </ApolloProvider>
           </QueryClientProvider>

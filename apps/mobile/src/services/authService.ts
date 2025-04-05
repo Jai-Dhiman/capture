@@ -1,6 +1,8 @@
 import { authApi, AuthError } from "../lib/authApi";
 import type { AuthSession, AuthStage, AuthUser, UserProfile } from "../types/authTypes";
 import { authState } from "../stores/authState";
+import { supabaseAuthClient } from "lib/supabaseAuthClient";
+import { apiClient } from "lib/apiClient";
 
 export const authService = {
   async signIn(
@@ -149,57 +151,71 @@ export const authService = {
       }
 
       try {
-        const data = await authApi.handleAuthCallback(url);
+        const urlObj = new URL(url);
+        const code = urlObj.searchParams.get("code");
 
-        if (!data) {
+        if (!code) {
+          console.error("No auth code found in URL");
           return null;
         }
 
-        if (data.session && data.user) {
-          await authApi.storeSessionData(data.session, data.user);
+        const { data, error } = await supabaseAuthClient.auth.exchangeCodeForSession(code);
 
-          if (url.includes("type=recovery")) {
-            return "/auth/reset-password";
-          } else if (url.includes("type=signup")) {
-            return "/auth/login";
-          }
-
-          const stage = await this.determineAuthStage();
-          authState.setAuthStage(stage);
-
-          if (stage === "complete") {
-            return "/feed";
-          } else if (stage === "phone-verification") {
-            return "/auth/verify-phone";
-          } else if (stage === "profile-creation") {
-            return "/auth/create-profile";
-          }
+        if (error) {
+          console.error("Error exchanging code for session:", error);
+          throw new AuthError(error.message, error.name);
         }
 
-        return null;
+        if (!data.session || !data.user) {
+          console.error("Missing session or user in auth response");
+          return null;
+        }
+
+        await authApi.storeSessionData(data.session, data.user);
+
+        authState.setUser({
+          id: data.user.id,
+          email: data.user.email || "",
+          phone: data.user.phone || "",
+          phone_confirmed_at: data.user.phone_confirmed_at || undefined,
+        });
+
+        authState.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+          expires_at: new Date(data.session.expires_at || "").getTime(),
+        });
+
+        const profileData = await authApi.fetchUserProfile(data.user.id, data.session.access_token);
+        if (profileData) {
+          authState.setProfile(profileData);
+        }
+
+        if (url.includes("type=recovery")) {
+          return "Auth";
+        } else if (url.includes("type=signup")) {
+          return "Auth";
+        }
+
+        const stage = await this.determineAuthStage();
+        authState.setAuthStage(stage);
+
+        if (stage === "complete") {
+          return "App";
+        } else if (stage === "phone-verification") {
+          return "PhoneVerification";
+        } else if (stage === "profile-creation") {
+          return "CreateProfile";
+        }
+
+        return "Auth";
       } catch (error) {
         console.error("Auth callback handling error:", error);
-
-        try {
-          const urlObj = new URL(url);
-          if (urlObj.searchParams.has("code")) {
-            if (url.includes("type=recovery")) {
-              return "/auth/reset-password";
-            } else if (url.includes("type=signup")) {
-              return "/auth/login";
-            } else {
-              return "/auth/login?error=auth_failed";
-            }
-          }
-        } catch (e) {
-          console.error("Failed to parse URL:", e);
-        }
-
-        return null;
+        return "Auth";
       }
     } catch (error) {
-      console.error("Auth callback handling error:", error);
-      return null;
+      console.error("Auth callback outer error:", error);
+      return "Auth";
     }
   },
 

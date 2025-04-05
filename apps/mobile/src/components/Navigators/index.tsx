@@ -43,7 +43,6 @@ export const linking: LinkingOptions<RootStackParamList> = {
           NewPost: 'new-post',
           Profile: 'profile/:userId?',
           Search: 'search',
-          SavedPosts: 'saved',
         }
       },
       CreateProfile: 'create-profile',
@@ -54,9 +53,9 @@ export const linking: LinkingOptions<RootStackParamList> = {
     
     if (url) {
       try {
-        const redirectPath = await authService.handleAuthCallback(url);
-        if (redirectPath) {
-          return Linking.createURL(redirectPath);
+        const screenName = await authService.handleAuthCallback(url);
+        if (screenName) {
+          return null;
         }
       } catch (error) {
         console.error("Failed to handle deep link:", error);

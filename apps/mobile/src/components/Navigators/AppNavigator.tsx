@@ -4,7 +4,6 @@ import Feed from '../../screens/Feed';
 import NewPost from '../../screens/NewPost';
 import Profile from '../../screens/Profile';
 import Search from '../../screens/Search';
-import SavedPosts from '../../screens/SavedPosts';
 import SettingsNavigator from './SettingsNavigator';
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
@@ -21,7 +20,6 @@ export default function AppNavigator() {
       <Stack.Screen name="NewPost" component={NewPost} />
       <Stack.Screen name="Profile" component={Profile} />
       <Stack.Screen name="Search" component={Search} />
-      <Stack.Screen name="SavedPosts" component={SavedPosts} />
       <Stack.Screen name="Settings" component={SettingsNavigator} />
     </Stack.Navigator>
   );

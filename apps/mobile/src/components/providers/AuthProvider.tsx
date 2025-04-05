@@ -3,6 +3,9 @@ import { Alert, AppState, AppStateStatus } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import NetInfo from '@react-native-community/netinfo';
 import * as Linking from 'expo-linking';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../Navigators/types/navigation';
 import { authService } from '../../services/authService';
 import { authState } from '../../stores/authState';
 import { useAuthStore } from '../../stores/authStore';
@@ -15,6 +18,7 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [isInitializing, setIsInitializing] = useState(true);
   const [isAuthInitialized, setIsAuthInitialized] = useState(false);
   const [splashMinTimeElapsed, setSplashMinTimeElapsed] = useState(false);
@@ -123,14 +127,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   }, [session?.access_token, session?.expires_at, isOffline]);
   
+    
+  
   useEffect(() => {
     const handleDeepLink = async (event: { url: string }) => {
       try {
-        const redirectPath = await authService.handleAuthCallback(event.url);
-        if (redirectPath) {
-          const stage = await authService.determineAuthStage();
-          authState.setAuthStage(stage);
-        }
+        const screen = await authService.handleAuthCallback(event.url);
       } catch (error) {
         console.error('Deep link handling error:', error);
         const appError = errorService.handleAuthError(error);

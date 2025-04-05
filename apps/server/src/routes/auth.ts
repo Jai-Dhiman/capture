@@ -40,17 +40,6 @@ const verifyOTPSchema = z.object({
   token: z.string(),
 });
 
-const oauthSchema = z.object({
-  provider: z.enum(["google", "apple"]),
-  code_challenge: z.string(),
-  code_challenge_method: z.enum(["S256"]),
-});
-
-const callbackSchema = z.object({
-  url: z.string().url(),
-  code_verifier: z.string().optional(),
-});
-
 function getSupabaseClient(c: { env: Bindings }) {
   return createClient(c.env.SUPABASE_URL, c.env.SUPABASE_KEY, {
     auth: {
@@ -332,221 +321,39 @@ router.post("/verify-otp", otpRateLimiter, async (c) => {
   }
 });
 
-router.post("/oauth", authRateLimiter, async (c) => {
+router.post("/validate-session", authRateLimiter, async (c) => {
   try {
     const body = await c.req.json();
-    const validation = z
-      .object({
-        provider: z.enum(["google", "apple"]),
-      })
-      .safeParse(body);
+    const { session, user } = body;
 
-    if (!validation.success) {
-      return c.json(
-        {
-          error: "Invalid input",
-          code: "auth/invalid-input",
-        },
-        400
-      );
+    if (!session || !session.access_token || !user || !user.id) {
+      return c.json({ error: "Invalid session data", code: "auth/invalid-session" }, 400);
     }
 
-    const { provider } = validation.data;
     const supabase = getSupabaseClient(c);
 
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: `${c.req.header("origin") || ""}/auth/callback`,
+    const { data: validatedUser, error: validationError } = await supabase.auth.getUser(session.access_token);
+
+    if (validationError || !validatedUser) {
+      return c.json({ error: "Invalid session", code: "auth/invalid-session" }, 401);
+    }
+
+    if (validatedUser.user.id !== user.id) {
+      return c.json({ error: "User ID mismatch", code: "auth/user-mismatch" }, 401);
+    }
+
+    return c.json({
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        phone: user.phone || null,
+        phone_confirmed_at: user.phone_confirmed_at || null,
       },
     });
-
-    if (error) {
-      return c.json({ error: error.message, code: "auth/oauth-failed" }, 400);
-    }
-
-    return c.json(data);
   } catch (error) {
-    console.error("OAuth error:", error);
-    return c.json({ error: "OAuth authentication failed", code: "auth/server-error" }, 500);
-  }
-});
-
-router.post("/handle-callback", authRateLimiter, async (c) => {
-  try {
-    const body = await c.req.json();
-    const validation = z
-      .object({
-        url: z.string().url(),
-      })
-      .safeParse(body);
-
-    if (!validation.success) {
-      console.error("Invalid input for handle-callback:", validation.error);
-      return c.json(
-        {
-          error: "Invalid input",
-          details: validation.error.errors,
-          code: "auth/invalid-input",
-        },
-        400
-      );
-    }
-
-    const { url } = validation.data;
-    console.log("Processing auth callback URL:", url);
-
-    if (!url || typeof url !== "string") {
-      console.error("Invalid URL provided:", url);
-      return c.json(
-        {
-          error: "Invalid URL provided",
-          code: "auth/invalid-url",
-        },
-        400
-      );
-    }
-
-    let code = null;
-    try {
-      const urlObj = new URL(url);
-      code = urlObj.searchParams.get("code");
-      console.log("Extracted code from URL:", code ? "Yes" : "No");
-    } catch (err) {
-      console.error("Error parsing URL:", err);
-      return c.json(
-        {
-          error: "Failed to parse URL",
-          code: "auth/invalid-url",
-        },
-        400
-      );
-    }
-
-    const supabase = getSupabaseClient(c);
-
-    if (code) {
-      try {
-        console.log("Exchanging code for session");
-
-        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-
-        if (error) {
-          console.error("Error exchanging code for session:", error);
-          return c.json(
-            {
-              error: error.message,
-              code: "auth/exchange-failed",
-            },
-            400
-          );
-        }
-
-        if (!data.session || !data.user) {
-          console.error("Missing session or user in auth response");
-          return c.json(
-            {
-              error: "Invalid authentication response",
-              code: "auth/invalid-response",
-            },
-            400
-          );
-        }
-
-        console.log("Successfully exchanged code for session");
-        return c.json({
-          session: data.session,
-          user: data.user,
-        });
-      } catch (err) {
-        console.error("Exception during code exchange:", err);
-        return c.json(
-          {
-            error: err instanceof Error ? err.message : "Failed to exchange code for session",
-            code: "auth/exchange-error",
-          },
-          400
-        );
-      }
-    } else if (url.includes("#")) {
-      try {
-        const hashFragment = url.split("#")[1] || "";
-        const hashParams = new URLSearchParams(hashFragment);
-
-        const accessToken = hashParams.get("access_token");
-        const refreshToken = hashParams.get("refresh_token");
-        const type = hashParams.get("type");
-
-        console.log(
-          "Extracted from hash fragment - access token:",
-          accessToken ? "Yes" : "No",
-          "refresh token:",
-          refreshToken ? "Yes" : "No"
-        );
-
-        if (accessToken && refreshToken) {
-          console.log("Setting session from access and refresh tokens");
-          const { data, error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-
-          if (error) {
-            console.error("Error setting session:", error);
-            return c.json(
-              {
-                error: error.message,
-                code: "auth/session-error",
-              },
-              400
-            );
-          }
-
-          console.log("Successfully set session from tokens");
-          return c.json({
-            session: data.session,
-            user: data.user,
-            type,
-          });
-        } else {
-          console.error("Missing tokens in hash fragment");
-          return c.json(
-            {
-              error: "Missing authentication tokens",
-              code: "auth/missing-tokens",
-            },
-            400
-          );
-        }
-      } catch (err) {
-        console.error("Error processing token response:", err);
-        return c.json(
-          {
-            error: err instanceof Error ? err.message : "Failed to process authentication response",
-            code: "auth/token-error",
-          },
-          400
-        );
-      }
-    } else {
-      console.error("No auth parameters found in URL:", url);
-      return c.json(
-        {
-          error: "Invalid auth callback URL. No authentication parameters found.",
-          code: "auth/invalid-callback",
-        },
-        400
-      );
-    }
-  } catch (error) {
-    console.error("Unhandled error in auth callback:", error);
-    return c.json(
-      {
-        error: "Failed to process authentication",
-        code: "auth/server-error",
-      },
-      500
-    );
+    console.error("Session validation error:", error);
+    return c.json({ error: "Failed to validate session", code: "auth/server-error" }, 500);
   }
 });
 
