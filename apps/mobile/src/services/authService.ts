@@ -2,7 +2,7 @@ import { authApi, AuthError } from "../lib/authApi";
 import type { AuthSession, AuthStage, AuthUser, UserProfile } from "../types/authTypes";
 import { authState } from "../stores/authState";
 import { supabaseAuthClient } from "lib/supabaseAuthClient";
-import { apiClient } from "lib/apiClient";
+import { getStoredCodeVerifier } from "lib/supabaseAuthClient";
 
 export const authService = {
   async signIn(
@@ -151,11 +151,23 @@ export const authService = {
       }
 
       try {
+        const codeVerifier = await getStoredCodeVerifier();
+        console.log("Retrieved code verifier for callback:", codeVerifier ? "Yes" : "No");
+
         const urlObj = new URL(url);
         const code = urlObj.searchParams.get("code");
 
         if (!code) {
           console.error("No auth code found in URL");
+          return null;
+        }
+
+        // Log more debug info
+        console.log("Auth code from URL:", code);
+        console.log("Code verifier value:", codeVerifier);
+
+        if (!codeVerifier) {
+          console.error("Code verifier is missing, OAuth PKCE flow cannot complete");
           return null;
         }
 
