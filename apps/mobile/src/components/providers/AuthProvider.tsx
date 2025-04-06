@@ -9,9 +9,9 @@ import { RootStackParamList } from '../Navigators/types/navigation';
 import { authService } from '../../services/authService';
 import { authState } from '../../stores/authState';
 import { useAuthStore } from '../../stores/authStore';
-import { SplashAnimation } from '../ui/SplashAnimation';
 import { errorService } from '../../services/errorService';
 import { useAlert } from '../../lib/AlertContext';
+import { LoadingSpinner } from 'components/ui/LoadingSpinner';
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -213,7 +213,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
   
   if (isInitializing) {
-    return <SplashAnimation fullScreen />;
+    return <LoadingSpinner />;
   }
   
   return <>{children}</>;

@@ -137,6 +137,9 @@ importers:
       react-native-css-interop:
         specifier: ^0.1.22
         version: 0.1.22(react-native-reanimated@3.17.1(@babel/core@7.26.10)(react-native@0.78.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@19.1.0)(react@18.3.1))(react@18.3.1))(react-native-safe-area-context@4.12.0(react-native@0.78.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@19.1.0)(react@18.3.1))(react@18.3.1))(react-native-svg@15.8.0(react-native@0.78.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@19.1.0)(react@18.3.1))(react@18.3.1))(react-native@0.78.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@19.1.0)(react@18.3.1))(react@18.3.1)(tailwindcss@3.3.2(ts-node@10.9.2(@types/node@22.13.10)(typescript@5.5.4)))
+      react-native-error-boundary:
+        specifier: ^2.0.0
+        version: 2.0.0(@types/react-native@0.70.19)(react-native@0.78.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@19.1.0)(react@18.3.1))(react@18.3.1)
       react-native-gesture-handler:
         specifier: ~2.20.2
         version: 2.20.2(react-native@0.78.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@19.1.0)(react@18.3.1))(react@18.3.1)
@@ -6252,6 +6255,16 @@ packages:
     resolution: {integrity: sha512-6vnIE+WHABSeHCaYP6l3O1BOEhWxKH6nHAdV7n/wKn/sciZ64zPPp2NUdEUf1m7g4uuzlLbjgr+6uDt89q2DOg==}
     peerDependencies:
       '@babel/runtime': ^7.20.6
+
+  react-native-error-boundary@2.0.0:
+    resolution: {integrity: sha512-Od5jZH5DEDuxFI1x+AzCwufpMMJleEJAAj5qOBDA6Ez5+EN2rw5/59/uwW4oGMCgjsB6rpx7yIKHCMx5aIlpdQ==}
+    peerDependencies:
+      '@types/react-native': '>=0.57.7'
+      react: '>=16.6.0'
+      react-native: '>=0.57.7'
+    peerDependenciesMeta:
+      '@types/react-native':
+        optional: true
 
   react-native-gesture-handler@2.20.2:
     resolution: {integrity: sha512-HqzFpFczV4qCnwKlvSAvpzEXisL+Z9fsR08YV5LfJDkzuArMhBu2sOoSPUF/K62PCoAb+ObGlTC83TKHfUd0vg==}
@@ -14459,6 +14472,13 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.26.10
       dotenv: 16.4.7
+
+  react-native-error-boundary@2.0.0(@types/react-native@0.70.19)(react-native@0.78.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@19.1.0)(react@18.3.1))(react@18.3.1):
+    dependencies:
+      react: 18.3.1
+      react-native: 0.78.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@19.1.0)(react@18.3.1)
+    optionalDependencies:
+      '@types/react-native': 0.70.19
 
   react-native-gesture-handler@2.20.2(react-native@0.78.2(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@19.1.0)(react@18.3.1))(react@18.3.1):
     dependencies:

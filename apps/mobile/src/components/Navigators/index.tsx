@@ -82,36 +82,23 @@ export function MainNavigator() {
     checkForDeepLink();
   }, []);
 
-  if (isSplashComplete) {
-    return (
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {authStage === 'unauthenticated' && (
-          <Stack.Screen name="Auth" component={AuthStack} />
-        )}
-        
-        {authStage === 'profile-creation' && (
-          <Stack.Screen name="CreateProfile" component={CreateProfile} />
-        )}
-        
-        {authStage === 'phone-verification' && (
-          <Stack.Screen name="PhoneVerification" component={VerifyPhoneNumber} />
-        )}
-        
-        {authStage === 'complete' && (
-          <Stack.Screen name="App" component={AppNavigator} />
-        )}
-      </Stack.Navigator>
-    );
-  }
-  
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Splash" component={SplashScreen} />
+      {authStage === 'unauthenticated' && (
+        <Stack.Screen name="Auth" component={AuthStack} />
+      )}
       
-      <Stack.Screen name="Auth" component={AuthStack} />
-      <Stack.Screen name="CreateProfile" component={CreateProfile} />
-      <Stack.Screen name="PhoneVerification" component={VerifyPhoneNumber} />
-      <Stack.Screen name="App" component={AppNavigator} />
+      {authStage === 'profile-creation' && (
+        <Stack.Screen name="CreateProfile" component={CreateProfile} />
+      )}
+      
+      {authStage === 'phone-verification' && (
+        <Stack.Screen name="PhoneVerification" component={VerifyPhoneNumber} />
+      )}
+      
+      {authStage === 'complete' && (
+        <Stack.Screen name="App" component={AppNavigator} />
+      )}
     </Stack.Navigator>
   );
 }
