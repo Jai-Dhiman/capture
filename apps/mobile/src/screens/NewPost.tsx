@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image, TextInput, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -10,6 +10,7 @@ import { useCreatePost } from 'hooks/usePosts';
 import { HashtagInput } from '../components/hashtags/HashtagInput';
 import { useAlert } from '../lib/AlertContext';
 import Header from '../components/ui/Header'
+import { PhoneVerificationCheck } from '../components/PhoneVerificationCheck';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type PostType = 'post' | 'thread';
@@ -62,7 +63,6 @@ export default function NewPost() {
     }
   };
 
-
   const handleCreatePost = async () => {
     if (!content && selectedImages.length === 0 && postType === 'post') {
       showAlert('Please add some content or images to your post', { type: 'warning' });
@@ -103,6 +103,9 @@ export default function NewPost() {
   };
 
   return (
+    <PhoneVerificationCheck
+      message="To create posts and share content, please verify your phone number first. This helps keep our community safe."
+    >
     <ScrollView className="flex-1">
       <View className="flex-1 p-5">
         <Header 
@@ -190,5 +193,6 @@ export default function NewPost() {
         </View>
       </View>
     </ScrollView>
+    </PhoneVerificationCheck>
   );
 }

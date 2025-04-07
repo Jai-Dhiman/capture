@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type OnboardingStep = "account-creation" | "profile-setup" | "phone-verification" | "complete";
+export type OnboardingStep = "account-creation" | "profile-setup" | "complete";
 
 interface OnboardingState {
   steps: OnboardingStep[];
@@ -14,7 +14,7 @@ interface OnboardingState {
   resetOnboarding: () => void;
 }
 
-const DEFAULT_STEPS: OnboardingStep[] = ["account-creation", "phone-verification", "profile-setup", "complete"];
+const DEFAULT_STEPS: OnboardingStep[] = ["account-creation", "profile-setup", "complete"];
 
 export const useOnboardingStore = create<OnboardingState>((set) => ({
   steps: DEFAULT_STEPS,

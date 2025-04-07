@@ -4,7 +4,7 @@ import { AuthStackParamList } from './types/navigation';
 import LoginScreen from '../../screens/auth/LoginScreen';
 import SignupScreen from '../../screens/auth/SignupScreen';
 import EmailSignupScreen from '../../screens/auth/EmailSignupScreen';
-import VerifyPhoneNumberScreen from '../../screens/auth/VerifyPhoneNumber';
+import VerifyPhoneNumberScreen from '../../screens/settings/VerifyPhoneNumber';
 import CreateProfile from '../../screens/auth/CreateProfile';
 import ForgotPasswordScreen from '../../screens/auth/ForgotPasswordScreen';
 import ResetPasswordScreen from '../../screens/auth/ResetPasswordScreen';

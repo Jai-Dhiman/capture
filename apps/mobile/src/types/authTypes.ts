@@ -61,4 +61,4 @@ export interface UserProfile {
 }
 
 export type AuthStatus = "idle" | "loading" | "authenticated" | "unauthenticated";
-export type AuthStage = "unauthenticated" | "profile-creation" | "phone-verification" | "complete";
+export type AuthStage = "unauthenticated" | "profile-creation" | "phone-unverified" | "phone-verified" | "complete";

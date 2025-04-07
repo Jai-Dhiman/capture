@@ -1,9 +1,98 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "3cccc1d7-3f7a-4120-b5aa-08228e9414ac",
+  "id": "446952b1-4d4a-46c8-865a-519a22c1b650",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
+    "blocked_user": {
+      "name": "blocked_user",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "blocker_id": {
+          "name": "blocker_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "blocked_id": {
+          "name": "blocked_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'2025-04-07T21:05:15.545Z'"
+        }
+      },
+      "indexes": {
+        "blocker_idx": {
+          "name": "blocker_idx",
+          "columns": [
+            "blocker_id"
+          ],
+          "isUnique": false
+        },
+        "blocked_idx": {
+          "name": "blocked_idx",
+          "columns": [
+            "blocked_id"
+          ],
+          "isUnique": false
+        },
+        "block_relationship_idx": {
+          "name": "block_relationship_idx",
+          "columns": [
+            "blocker_id",
+            "blocked_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "blocked_user_blocker_id_profile_user_id_fk": {
+          "name": "blocked_user_blocker_id_profile_user_id_fk",
+          "tableFrom": "blocked_user",
+          "tableTo": "profile",
+          "columnsFrom": [
+            "blocker_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "blocked_user_blocked_id_profile_user_id_fk": {
+          "name": "blocked_user_blocked_id_profile_user_id_fk",
+          "tableFrom": "blocked_user",
+          "tableTo": "profile",
+          "columnsFrom": [
+            "blocked_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "comment": {
       "name": "comment",
       "columns": {
@@ -71,7 +160,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-03-23T11:54:49.201Z'"
+          "default": "'2025-04-07T21:05:15.545Z'"
         }
       },
       "indexes": {
@@ -172,7 +261,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-03-23T11:54:49.202Z'"
+          "default": "'2025-04-07T21:05:15.545Z'"
         }
       },
       "indexes": {
@@ -247,7 +336,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-03-23T11:54:49.201Z'"
+          "default": "'2025-04-07T21:05:15.545Z'"
         }
       },
       "indexes": {
@@ -336,7 +425,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-03-23T11:54:49.200Z'"
+          "default": "'2025-04-07T21:05:15.544Z'"
         }
       },
       "indexes": {
@@ -397,7 +486,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-03-23T11:54:49.202Z'"
+          "default": "'2025-04-07T21:05:15.545Z'"
         }
       },
       "indexes": {
@@ -502,13 +591,21 @@
           "autoincrement": false,
           "default": "'none'"
         },
+        "is_private": {
+          "name": "is_private",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
         "created_at": {
           "name": "created_at",
           "type": "numeric",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-03-23T11:54:49.195Z'"
+          "default": "'2025-04-07T21:05:15.539Z'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -516,7 +613,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-03-23T11:54:49.199Z'"
+          "default": "'2025-04-07T21:05:15.543Z'"
         }
       },
       "indexes": {
@@ -570,7 +667,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-03-23T11:54:49.202Z'"
+          "default": "'2025-04-07T21:05:15.545Z'"
         }
       },
       "indexes": {
@@ -659,7 +756,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-03-23T11:54:49.202Z'"
+          "default": "'2025-04-07T21:05:15.545Z'"
         }
       },
       "indexes": {

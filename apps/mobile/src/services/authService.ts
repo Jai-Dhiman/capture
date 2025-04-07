@@ -25,9 +25,7 @@ export const authService = {
 
     let nextStage: AuthStage = "unauthenticated";
 
-    if (!authData.user.phone_confirmed_at) {
-      nextStage = "phone-verification";
-    } else if (!profileData) {
+    if (!profileData) {
       nextStage = "profile-creation";
     } else {
       nextStage = "complete";
@@ -162,7 +160,6 @@ export const authService = {
           return null;
         }
 
-        // Log more debug info
         console.log("Auth code from URL:", code);
         console.log("Code verifier value:", codeVerifier);
 
@@ -214,8 +211,6 @@ export const authService = {
 
         if (stage === "complete") {
           return "App";
-        } else if (stage === "phone-verification") {
-          return "PhoneVerification";
         } else if (stage === "profile-creation") {
           return "CreateProfile";
         }
@@ -265,10 +260,6 @@ export const authService = {
 
     if (!user) {
       return "unauthenticated";
-    }
-
-    if (!user.phone_confirmed_at) {
-      return "phone-verification";
     }
 
     if (!profile) {

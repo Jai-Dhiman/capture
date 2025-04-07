@@ -54,10 +54,16 @@
               "NewPost": "new-post",
               "Profile": "profile/:userId?",
               "Search": "search",
-              "SavedPosts": "saved"
+              "Settings": {
+                "screens": {
+                  "MainSettings": "settings",
+                  "BlockedUsers": "settings/blocked-users",
+                  "AccountSettings": "settings/account",
+                  "VerifyPhone": "settings/verify-phone"
+                }
+              }
             }
-          },
-          "CreateProfile": "create-profile"
+          }
         }
       }
     },

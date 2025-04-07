@@ -150,25 +150,11 @@ export function useCreateProfile() {
         profileImage: profileData.profileImage || undefined,
       });
 
-      const { user } = useAuthStore.getState();
+      setAuthStage("complete");
 
-      if (!user?.phone_confirmed_at) {
-        setAuthStage("phone-verification");
-        setTimeout(() => {
-          navigation.reset({
-            index: 0,
-            routes: [{ name: "PhoneVerification" as keyof RootStackParamList }],
-          });
-        }, 100);
-      } else {
-        setAuthStage("complete");
-        setTimeout(() => {
-          navigation.reset({
-            index: 0,
-            routes: [{ name: "App" as keyof RootStackParamList }],
-          });
-        }, 100);
-      }
+      setTimeout(() => {
+        navigation.navigate("App");
+      }, 100);
     },
   });
 }

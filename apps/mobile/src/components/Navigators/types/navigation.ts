@@ -11,7 +11,6 @@ export type AuthStackParamList = {
   Login: undefined;
   Signup: undefined;
   EmailSignup: undefined;
-  VerifyPhoneNumber: undefined;
   ForgotPassword: undefined;
   ResetPassword: { token?: string };
   CreateProfile: undefined;
@@ -31,4 +30,5 @@ export type SettingsStackParamList = {
   MainSettings: undefined;
   BlockedUsers: undefined;
   AccountSettings: undefined;
+  VerifyPhone: undefined;
 };

@@ -69,12 +69,7 @@ export default function CreateProfile() {
           onSuccess: () => {
             showAlert('Profile created successfully!', { type: 'success', duration: 3000 });
             completeStep('profile-setup');
-            navigation.reset({
-              index: 0,
-              routes: [{ 
-                name: 'App' as keyof RootStackParamList
-              }],
-            });
+            navigation.navigate('App');
           },
           onError: (error) => {
             const errorMessage = error instanceof Error 

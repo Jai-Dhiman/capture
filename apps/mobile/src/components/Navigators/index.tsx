@@ -7,7 +7,7 @@ import { RootStackParamList } from './types/navigation';
 import AppNavigator from './AppNavigator';
 import AuthStack from './AuthNavigator';
 import CreateProfile from '../../screens/auth/CreateProfile';
-import VerifyPhoneNumber from '../../screens/auth/VerifyPhoneNumber'
+import VerifyPhoneNumber from '../../screens/settings/VerifyPhoneNumber'
 import SplashScreen from '../../screens/SplashScreen';
 import { authService } from '../../services/authService';
 import { useOnboardingStore } from '../../stores/onboardingStore';
@@ -30,7 +30,6 @@ export const linking: LinkingOptions<RootStackParamList> = {
           Login: 'auth/login',
           Signup: 'auth/signup',
           EmailSignup: 'auth/email-signup',
-          VerifyPhoneNumber: 'auth/verify-phone',
           CreateProfile: 'auth/create-profile',
           ForgotPassword: 'auth/forgot-password',
           ResetPassword: 'auth/reset-password',
@@ -43,6 +42,14 @@ export const linking: LinkingOptions<RootStackParamList> = {
           NewPost: 'new-post',
           Profile: 'profile/:userId?',
           Search: 'search',
+          Settings: {
+            screens: {
+              MainSettings: 'settings',
+              BlockedUsers: 'settings/blocked-users',
+              AccountSettings: 'settings/account',
+              VerifyPhone: 'settings/verify-phone',
+            }
+          }
         }
       },
       CreateProfile: 'create-profile',
@@ -90,10 +97,6 @@ export function MainNavigator() {
       
       {authStage === 'profile-creation' && (
         <Stack.Screen name="CreateProfile" component={CreateProfile} />
-      )}
-      
-      {authStage === 'phone-verification' && (
-        <Stack.Screen name="PhoneVerification" component={VerifyPhoneNumber} />
       )}
       
       {authStage === 'complete' && (
