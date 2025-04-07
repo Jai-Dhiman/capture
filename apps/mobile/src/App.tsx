@@ -1,4 +1,3 @@
-import 'react-native-reanimated'; 
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';

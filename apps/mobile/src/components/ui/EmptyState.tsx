@@ -1,4 +1,3 @@
-// src/components/ui/EmptyState.tsx
 import React from 'react';
 import { View, Text } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
