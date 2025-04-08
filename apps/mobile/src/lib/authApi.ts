@@ -106,12 +106,15 @@ export const authApi = {
       });
 
       const data = await response.json();
+
       if (!response.ok) {
+        console.error(`Authentication failed with status ${response.status}:`, data);
         throw new AuthError(data.error || "Authentication failed", data.code || "auth/sign-in-failed");
       }
 
       return data;
     } catch (error) {
+      console.error("Sign-in error details:", error);
       if (error instanceof AuthError) throw error;
       throw new AuthError(error instanceof Error ? error.message : "Authentication failed");
     }

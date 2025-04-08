@@ -10,7 +10,7 @@ import { useCreatePost } from 'hooks/usePosts';
 import { HashtagInput } from '../components/hashtags/HashtagInput';
 import { useAlert } from '../lib/AlertContext';
 import Header from '../components/ui/Header'
-import { PhoneVerificationCheck } from '../components/PhoneVerificationCheck';
+import { PhoneVerificationCheck } from '../lib/PhoneVerificationCheck';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type PostType = 'post' | 'thread';

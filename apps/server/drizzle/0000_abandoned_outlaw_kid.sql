@@ -1,4 +1,4 @@
-	PRAGMA foreign_keys=ON;
+PRAGMA foreign_keys=ON;
 
 CREATE TABLE `blocked_user` (
 	`id` text PRIMARY KEY NOT NULL,

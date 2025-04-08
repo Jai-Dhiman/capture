@@ -2,9 +2,9 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../stores/authStore';
-import Header from './ui/Header';
+import Header from '../components/ui/Header';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AppStackParamList } from './Navigators/types/navigation';
+import { AppStackParamList } from '../components/Navigators/types/navigation';
 
 
 interface PhoneVerificationCheckProps {

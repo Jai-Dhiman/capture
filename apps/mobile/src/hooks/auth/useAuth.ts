@@ -77,8 +77,21 @@ export function useAuth() {
     },
     onError: (error) => {
       const appError = errorService.handleAuthError(error);
+
+      const isTwilioError =
+        appError.message.toLowerCase().includes("twilio") ||
+        appError.code.includes("otp") ||
+        appError.code.includes("verify");
+
       showAlert(appError.message, {
         type: errorService.getAlertType(appError.category),
+        duration: isTwilioError ? undefined : 3000,
+        action: isTwilioError
+          ? {
+              label: "Dismiss",
+              onPress: () => {},
+            }
+          : undefined,
       });
     },
   });
@@ -93,8 +106,21 @@ export function useAuth() {
     },
     onError: (error) => {
       const appError = errorService.handleAuthError(error);
+
+      const isTwilioError =
+        appError.message.toLowerCase().includes("twilio") ||
+        appError.code.includes("otp") ||
+        appError.code.includes("verify");
+
       showAlert(appError.message, {
         type: errorService.getAlertType(appError.category),
+        duration: isTwilioError ? undefined : 3000,
+        action: isTwilioError
+          ? {
+              label: "Dismiss",
+              onPress: () => {},
+            }
+          : undefined,
       });
     },
   });

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, TextInput, Image, ScrollView, KeyboardAvoidingView, Platform
+  View, Text, TouchableOpacity, TextInput, ScrollView, KeyboardAvoidingView, Platform
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm } from '@tanstack/react-form';
@@ -11,7 +11,7 @@ import { LoadingSpinner } from 'components/ui/LoadingSpinner';
 import { useAlert } from '../../lib/AlertContext';
 import { errorService } from '../../services/errorService';
 import { useAuth } from 'hooks/auth/useAuth';
-import { authState } from '../../stores/authState';
+import { authState } from 'stores/authState';
 
 type Props = {
   navigation: NativeStackNavigationProp<SettingsStackParamList, 'VerifyPhone'>
@@ -24,6 +24,8 @@ export default function VerifyPhoneScreen({ navigation }: Props) {
   const [countdown, setCountdown] = useState(0);
   const [isPhoneFocused, setIsPhoneFocused] = useState(false);
   const [formattedPhone, setFormattedPhone] = useState('');
+  const [isPhoneComplete, setIsPhoneComplete] = useState(false);
+  const [isCodeComplete, setIsCodeComplete] = useState(false);
   
   const phoneInputRef = useRef<TextInput>(null);
   const codeInputRefs = useRef<Array<TextInput | null>>([null, null, null, null, null, null]);
@@ -43,6 +45,7 @@ export default function VerifyPhoneScreen({ navigation }: Props) {
     if (user?.phone) {
       const phoneWithoutCode = user.phone.replace('+1', '');
       form.setFieldValue('phone', phoneWithoutCode);
+      setIsPhoneComplete(phoneWithoutCode.length === 10);
     }
   }, [user]);
 
@@ -90,7 +93,19 @@ export default function VerifyPhoneScreen({ navigation }: Props) {
     } catch (error) {
       const formattedError = errorService.handleAuthError(error);
       const alertType = errorService.getAlertType(formattedError.category);
-      showAlert(formattedError.message, { type: alertType });
+      
+      // Check if error is Twilio-related to make it persistent
+      const isTwilioError = formattedError.message.toLowerCase().includes('twilio') || 
+                          formattedError.code.includes('otp');
+      
+      showAlert(formattedError.message, { 
+        type: alertType,
+        duration: isTwilioError ? undefined : 3000, // undefined makes it persist until dismissed
+        action: isTwilioError ? {
+          label: 'Dismiss',
+          onPress: () => {}
+        } : undefined
+      });
     } finally {
       setSendingCode(false);
     }
@@ -111,7 +126,19 @@ export default function VerifyPhoneScreen({ navigation }: Props) {
     } catch (error) {
       const formattedError = errorService.handleAuthError(error);
       const alertType = errorService.getAlertType(formattedError.category);
-      showAlert(formattedError.message, { type: alertType });
+      
+      const isTwilioError = formattedError.message.toLowerCase().includes('twilio') 
+      || formattedError.code.includes('verify') 
+      || formattedError.code.includes('otp');
+      
+      showAlert(formattedError.message, { 
+        type: alertType,
+        duration: isTwilioError ? undefined : 3000,
+        action: isTwilioError ? {
+          label: 'Dismiss',
+          onPress: () => {}
+        } : undefined
+      });
     } finally {
       setIsLoading(false);
     }
@@ -137,7 +164,17 @@ export default function VerifyPhoneScreen({ navigation }: Props) {
     } catch (error) {
       const formattedError = errorService.handleAuthError(error);
       const alertType = errorService.getAlertType(formattedError.category);
-      showAlert(formattedError.message, { type: alertType });
+      
+      const isTwilioError = formattedError.message.toLowerCase().includes('twilio') || formattedError.code.includes('otp');
+      
+      showAlert(formattedError.message, { 
+        type: alertType,
+        duration: isTwilioError ? undefined : 3000,
+        action: isTwilioError ? {
+          label: 'Dismiss',
+          onPress: () => {}
+        } : undefined
+      });
     } finally {
       setSendingCode(false);
     }
@@ -149,6 +186,9 @@ export default function VerifyPhoneScreen({ navigation }: Props) {
     const newCode = [...form.getFieldValue('code')];
     newCode[index] = text;
     form.setFieldValue('code', newCode);
+    
+    // Check if all 6 digits are filled
+    setIsCodeComplete(newCode.every(digit => digit !== ''));
     
     if (text && index < 5) {
       codeInputRefs.current[index + 1]?.focus();
@@ -165,6 +205,36 @@ export default function VerifyPhoneScreen({ navigation }: Props) {
     }
   };
 
+  const handlePhoneChange = (text: string) => {
+    // Update the phone field
+    form.setFieldValue('phone', text);
+    // Check if phone is complete (10 digits)
+    setIsPhoneComplete(text.length === 10);
+  };
+
+  const handleDevSkip = () => {
+    if (user) {
+      const phoneToUse = formattedPhone || '+15555555555';
+      
+      authState.setUser({
+        ...user,
+        phone: phoneToUse,
+        phone_confirmed_at: new Date().toISOString(),
+      });
+      
+      showAlert('DEV MODE: Phone verification bypassed', { 
+        type: 'success',
+        duration: 2000 
+      });
+      
+      setTimeout(() => {
+        navigation.goBack();
+      }, 500);
+    } else {
+      showAlert('No active session', { type: 'error' });
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -174,24 +244,22 @@ export default function VerifyPhoneScreen({ navigation }: Props) {
         contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
       >
-        <View className="flex-1 bg-white">
+        <View className="flex-1 bg-zinc-300">
           <Header 
             showBackButton
             onBackPress={() => navigation.goBack()}
           />
 
           <View className="flex-1 px-4 items-center pt-6">
-            {/* Title Area */}
-            <View className="w-full bg-zinc-200 rounded-[10px] py-4 px-3 mb-6">
-              <Text className="text-center text-black text-lg font-medium font-roboto leading-loose tracking-wide">
-                Phone Verification
+            <View className="w-full bg-zinc-500 rounded-[10px] py-4 px-3 mb-6">
+              <Text className="text-center text-white text-2xl font-medium font-roboto leading-loose tracking-wide">
+                Let's Verify Your Phone
               </Text>
-              <Text className="text-center text-black text-xs font-normal font-roboto tracking-tight mt-2">
-                Phone verification helps keep our community safe and enables you to create content
+              <Text className="text-center text-white text-xs font-normal font-roboto tracking-tight mt-2">
+                Enter your phone number below so we can send you a 6-digit verification code
               </Text>
             </View>
 
-            {/* Phone Input */}
             <View className="w-full">
               <form.Field name="phone">
                 {(field) => (
@@ -212,7 +280,7 @@ export default function VerifyPhoneScreen({ navigation }: Props) {
                       }}
                       className="absolute left-16 top-0 right-3 h-14 text-base font-semibold font-roboto"
                       value={field.state.value}
-                      onChangeText={field.handleChange}
+                      onChangeText={handlePhoneChange}
                       keyboardType="phone-pad"
                       placeholder="Phone Number"
                       placeholderTextColor="#c7c7c7"
@@ -224,10 +292,9 @@ export default function VerifyPhoneScreen({ navigation }: Props) {
               </form.Field>
             </View>
 
-            {/* Verification Code Input */}
             {codeSent && (
-              <View className="w-full mt-4">
-                <Text className="text-center text-gray-700 text-sm mb-3">
+              <View className="w-full mt-4 bg-zinc-500 rounded-[10px] py-8 px-4">
+                <Text className="text-center text-white text-sm mb-4">
                   Enter the 6-digit code sent to your phone
                 </Text>
                 <form.Field name="code">
@@ -251,40 +318,62 @@ export default function VerifyPhoneScreen({ navigation }: Props) {
                     </View>
                   )}
                 </form.Field>
-              </View>
-            )}
 
-            {/* Resend Link (Only shown when code has been sent) */}
-            {codeSent && (
-              <View className="flex-row justify-center mt-6">
-                <Text className="text-black text-sm font-normal tracking-wide">
-                  Didn't receive the code?
-                </Text>
-                <TouchableOpacity onPress={handleResendCode} disabled={countdown > 0 || sendingCode}>
-                  <Text className={`${countdown > 0 ? 'text-gray-400' : 'text-blue-600'} text-sm font-normal underline tracking-wide ml-1`}>
-                    {countdown > 0 ? `Resend in ${countdown}s` : 'Resend'}
+                <View className="flex-row justify-center mt-6">
+                  <Text className="text-white text-sm font-normal tracking-wide">
+                    Didn't receive the code?
                   </Text>
-                </TouchableOpacity>
+                  <TouchableOpacity onPress={handleResendCode} disabled={countdown > 0 || sendingCode}>
+                    <Text className={`${countdown > 0 ? 'text-gray-400' : 'text-blue-200'} text-sm font-normal underline tracking-wide ml-1`}>
+                      {countdown > 0 ? `Resend in ${countdown}s` : 'Resend'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             )}
 
-            {/* Action Button */}
+            <View className="w-full mt-4">
+              <Text className="text-center text-white text-xs font-light font-roboto tracking-tight">
+                If you are having trouble receiving the SMS, ensure you have entered the correct Country Code, 
+                Area Code, and digits. If you continue to have problems reach out to captureapp@support.com
+              </Text>
+            </View>
+
             <TouchableOpacity 
-              className="h-14 w-4/5 bg-zinc-500 rounded-[30px] shadow-md mt-8 justify-center items-center"
+              className={`h-14 w-4/5 ${
+                (codeSent && isCodeComplete) || (!codeSent && isPhoneComplete) 
+                  ? 'bg-[#E4CAC7]'
+                  : 'bg-zinc-500'
+              } rounded-[30px] shadow-md mt-8 justify-center items-center`}
               onPress={() => form.handleSubmit()}
-              disabled={isLoading || sendingCode || (codeSent && form.getFieldValue('code').some(digit => !digit))}
+              disabled={isLoading || sendingCode || (codeSent && !isCodeComplete) || (!codeSent && !isPhoneComplete)}
             >
               {isLoading || sendingCode ? (
                 <LoadingSpinner message={sendingCode ? "Sending..." : "Verifying..."} />
               ) : (
-                <Text className="text-center text-white text-base font-bold font-roboto leading-normal">
+                <Text className={`text-center ${
+                  (codeSent && isCodeComplete) || (!codeSent && isPhoneComplete)
+                    ? 'text-black'
+                    : 'text-white'
+                } text-base font-bold font-roboto leading-normal`}>
                   {codeSent ? "Verify Code" : "Send Code"}
                 </Text>
               )}
             </TouchableOpacity>
+            {__DEV__ && (
+              <TouchableOpacity 
+                className="h-10 w-4/5 bg-yellow-300 rounded-[15px] mt-4 justify-center items-center border-2 border-red-500"
+                onPress={handleDevSkip}
+              >
+                <Text className="text-center text-red-600 text-sm font-bold font-roboto">
+                  DEV: Skip Verification
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+    
   );
 }
