@@ -46,15 +46,11 @@ export function useProfile(
       }
 
       const data = await response.json();
-      console.log("Profile API Response:", data);
       if (data.errors) {
         if (data.errors.some((e: any) => e.message === "Profile not found")) {
           return null;
         }
         throw new Error(data.errors[0]?.message || "Failed to fetch profile");
-      }
-      if (data.data && data.data.profile) {
-        console.log("Profile fields:", Object.keys(data.data.profile));
       }
       return {
         ...data.data.profile,

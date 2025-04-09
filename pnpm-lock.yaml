@@ -143,6 +143,9 @@ importers:
       react-native-gesture-handler:
         specifier: ~2.20.2
         version: 2.20.2(react-native@0.76.9(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(encoding@0.1.13)(react@18.3.1))(react@18.3.1)
+      react-native-pager-view:
+        specifier: 6.5.1
+        version: 6.5.1(react-native@0.76.9(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(encoding@0.1.13)(react@18.3.1))(react@18.3.1)
       react-native-paper:
         specifier: ^5.13.1
         version: 5.13.1(react-native-safe-area-context@4.12.0(react-native@0.76.9(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(encoding@0.1.13)(react@18.3.1))(react@18.3.1))(react-native-vector-icons@10.2.0)(react-native@0.76.9(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(encoding@0.1.13)(react@18.3.1))(react@18.3.1)
@@ -164,6 +167,9 @@ importers:
       react-native-svg:
         specifier: 15.8.0
         version: 15.8.0(react-native@0.76.9(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(encoding@0.1.13)(react@18.3.1))(react@18.3.1)
+      react-native-tab-view:
+        specifier: ^4.0.10
+        version: 4.0.10(react-native-pager-view@6.5.1(react-native@0.76.9(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(encoding@0.1.13)(react@18.3.1))(react@18.3.1))(react-native@0.76.9(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(encoding@0.1.13)(react@18.3.1))(react@18.3.1)
       react-native-url-polyfill:
         specifier: ^2.0.0
         version: 2.0.0(react-native@0.76.9(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(encoding@0.1.13)(react@18.3.1))
@@ -6302,6 +6308,12 @@ packages:
       react: '>=18.2.0'
       react-native: '>=0.73.0'
 
+  react-native-pager-view@6.5.1:
+    resolution: {integrity: sha512-YdX7bP+rPYvATMU7HzlMq9JaG3ui/+cVRbFZFGW+QshDULANFg9ECR1BA7H7JTIcO/ZgWCwF+1aVmYG5yBA9Og==}
+    peerDependencies:
+      react: '*'
+      react-native: '*'
+
   react-native-paper@5.13.1:
     resolution: {integrity: sha512-8frKVKJ5JBd8WL1G3tpcYzOgK40kxkD/U+yLHGKNeLnD6v1Qc9W6DxWTHWN7lsX/DPYnhgvw1aKkYaPTmDj5pg==}
     peerDependencies:
@@ -6354,6 +6366,13 @@ packages:
     peerDependencies:
       react: '*'
       react-native: '*'
+
+  react-native-tab-view@4.0.10:
+    resolution: {integrity: sha512-KU1ovavUURfKffqNn7F2jwgQ0tUSa2WosnHSztVYArCr22HP2nR7xHrd8DddFL4uenaT9KGXlNgx1IUPGUdZSw==}
+    peerDependencies:
+      react: '>= 18.2.0'
+      react-native: '*'
+      react-native-pager-view: '>= 6.0.0'
 
   react-native-url-polyfill@2.0.0:
     resolution: {integrity: sha512-My330Do7/DvKnEvwQc0WdcBnFPploYKp9CYlefDXzIdEaA+PAhDYllkvGeEroEzvc4Kzzj2O4yVdz8v6fjRvhA==}
@@ -14517,6 +14536,11 @@ snapshots:
       react: 18.3.1
       react-native: 0.76.9(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(encoding@0.1.13)(react@18.3.1)
 
+  react-native-pager-view@6.5.1(react-native@0.76.9(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(encoding@0.1.13)(react@18.3.1))(react@18.3.1):
+    dependencies:
+      react: 18.3.1
+      react-native: 0.76.9(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(encoding@0.1.13)(react@18.3.1)
+
   react-native-paper@5.13.1(react-native-safe-area-context@4.12.0(react-native@0.76.9(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(encoding@0.1.13)(react@18.3.1))(react@18.3.1))(react-native-vector-icons@10.2.0)(react-native@0.76.9(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(encoding@0.1.13)(react@18.3.1))(react@18.3.1):
     dependencies:
       '@callstack/react-theme-provider': 3.0.9(react@18.3.1)
@@ -14600,6 +14624,13 @@ snapshots:
       react: 18.3.1
       react-native: 0.76.9(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(encoding@0.1.13)(react@18.3.1)
       warn-once: 0.1.1
+
+  react-native-tab-view@4.0.10(react-native-pager-view@6.5.1(react-native@0.76.9(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(encoding@0.1.13)(react@18.3.1))(react@18.3.1))(react-native@0.76.9(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(encoding@0.1.13)(react@18.3.1))(react@18.3.1):
+    dependencies:
+      react: 18.3.1
+      react-native: 0.76.9(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(encoding@0.1.13)(react@18.3.1)
+      react-native-pager-view: 6.5.1(react-native@0.76.9(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(encoding@0.1.13)(react@18.3.1))(react@18.3.1)
+      use-latest-callback: 0.2.3(react@18.3.1)
 
   react-native-url-polyfill@2.0.0(react-native@0.76.9(@babel/core@7.26.10)(@babel/preset-env@7.26.9(@babel/core@7.26.10))(@types/react@18.3.12)(encoding@0.1.13)(react@18.3.1)):
     dependencies:
