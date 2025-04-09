@@ -15,14 +15,12 @@ const MediaImageComponent = ({
   media, 
   style = {}, 
   expirySeconds = 1800,
-  priority = false
+  priority = true
 }: MediaImageProps) => {
   const queryClient = useQueryClient();
   const [imageLoaded, setImageLoaded] = useState(false);
   
-  const { data: imageUrl, isLoading, error, isStale } = priority !== false 
-    ? useMediaSource(media, expirySeconds)
-    : { data: null, isLoading: false, error: null, isStale: false };
+  const { data: imageUrl, isLoading, error, isStale } = useMediaSource(media, expirySeconds);
   
   useEffect(() => {
     if (imageUrl && !isStale) {

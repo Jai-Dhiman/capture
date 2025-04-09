@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Modal, StatusBar, useWindowDimensions, Text } from 'react-native';
 import { useAuthStore } from '../stores/authStore';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -44,7 +44,6 @@ export default function Profile() {
   const [, setCommentDrawerOpen] = useAtom(commentDrawerOpenAtom);
   const [, setCurrentPostId] = useAtom(currentPostIdAtom);
   
-  // Data fetching hooks
   const { data: profileData, isLoading: profileLoading } = useProfile(userId);
   const isProfilePrivate = profileData?.isPrivate && !profileData?.isFollowing && !isOwnProfile;
   const { data: posts, isLoading: postsLoading } = useUserPosts(userId);
@@ -54,13 +53,11 @@ export default function Profile() {
   const savePostMutation = useSavePost();
   const unsavePostMutation = useUnsavePost();
 
-  // Sync following state
   useSyncFollowingState(profileData ? [{ 
     userId: profileData.userId,
     isFollowing: profileData.isFollowing 
   }] : []);
 
-  // Calculate grid dimensions
   const getGridItemSize = useCallback(() => {
     const contentWidth = width - 32;
     const itemSize = (contentWidth - 16) / 3;
@@ -72,12 +69,10 @@ export default function Profile() {
 
   const { itemSize, horizontalMargin } = getGridItemSize();
   
-  // Memoized post filters for different types
   const carouselPosts = React.useMemo(() => {
     return posts ? posts.filter((post: any) => post.type === 'post') : [];
   }, [posts]);
   
-  // Handler functions
   const openCarouselAtPhoto = (post: any) => {
     const postIndex = carouselPosts.findIndex((p: any) => p.id === post.id);
     if (postIndex >= 0) {
@@ -137,7 +132,6 @@ export default function Profile() {
     }
   };
 
-  // Render loading state
   if (profileLoading) {
     return (
       <View className="flex-1 bg-zinc-300">
@@ -147,8 +141,7 @@ export default function Profile() {
           onBackPress={() => navigation.goBack()} 
         />
         <View className="px-6 pt-4">
-          {/* Profile Header Skeleton */}
-          <View className="flex-row mb-4">
+          <View className="flex-row mb-6">
             <View className="w-24 h-24 rounded-full overflow-hidden">
               <SkeletonElement 
                 width="100%" 
@@ -181,21 +174,17 @@ export default function Profile() {
             </View>
           </View>
           
-          {/* Filter Tabs Skeleton */}
           <View className="w-full h-16 bg-zinc-300 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]">
             <View className="flex-row justify-center items-center h-full">
               {[0, 1, 2].map((_, index) => (
-                <View key={index} className="items-center mx-8">
+                <View key={index} className="items-center mx-10">
                   <SkeletonElement width={28} height={28} radius={10} />
                 </View>
               ))}
             </View>
           </View>
           
-          <View className="h-px bg-black opacity-10 my-2" />
-          
-          {/* Posts Grid Skeleton */}
-          <View className="flex-row flex-wrap">
+          <View className="flex-row flex-wrap mt-4">
             {Array(9).fill(0).map((_, index) => (
               <View key={index} style={{ 
                 width: itemSize, 
@@ -216,7 +205,6 @@ export default function Profile() {
     );
   }
 
-  // Render private profile state
   if (isProfilePrivate) {
     return (
       <View className="flex-1 bg-zinc-300">
@@ -246,7 +234,6 @@ export default function Profile() {
     );
   }
 
-  // Main render
   return (
     <View className="flex-1 bg-zinc-300">
       <StatusBar barStyle="dark-content" />
@@ -268,25 +255,7 @@ export default function Profile() {
           />
         </View>
         
-        <View className="h-px bg-black opacity-10 mx-6 my-2" />
-        
-        {carouselPosts.length > 0 && (
-          <View className={`flex-1 ${showPostCarousel ? 'block' : 'hidden'}`}>
-            <View className="mt-2 pb-2 px-6">
-              <PostCarousel 
-                posts={carouselPosts}
-                initialIndex={initialPostIndex}
-                onSettingsPress={handlePostSettings}
-                onToggleSave={handleToggleSavePost}
-                onOpenComments={handleOpenComments}
-                isSaving={savePostMutation.isPending || unsavePostMutation.isPending}
-              />
-            </View>
-          </View>
-        )}
-
-        {/* Tab View - always present but conditionally hidden */}
-        <View className={`flex-1 ${showPostCarousel ? 'hidden' : 'block'}`}>
+        <View className="flex-1">
           <ProfileTabView
             posts={posts || []}
             savedPosts={savedPosts || []}
@@ -298,8 +267,24 @@ export default function Profile() {
             onTabPress={(index) => {
               setShowPostCarousel(false);
             }}
+            carouselActive={showPostCarousel}
           />
         </View>
+        
+        {carouselPosts.length > 0 && showPostCarousel && (
+          <View className="absolute top-0 left-0 right-0 bottom-0 bg-zinc-300" style={{ marginTop: 180 }}>
+            <View className="flex-1 px-6">
+              <PostCarousel 
+                posts={carouselPosts}
+                initialIndex={initialPostIndex}
+                onSettingsPress={handlePostSettings}
+                onToggleSave={handleToggleSavePost}
+                onOpenComments={handleOpenComments}
+                isSaving={savePostMutation.isPending || unsavePostMutation.isPending}
+              />
+            </View>
+          </View>
+        )}
       </View>
       
       {isOwnProfile && (

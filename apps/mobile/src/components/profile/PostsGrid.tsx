@@ -18,7 +18,7 @@ const GridItem = ({ post, onPress, itemSize }: GridItemProps) => {
         style={{ aspectRatio: 1, width: itemSize }}
       >
         {post.media && post.media.length > 0 ? (
-          <MediaImage media={post.media[0]} />
+          <MediaImage media={post.media[0]} priority={true} />
         ) : (
           <View className="flex-1 justify-center items-center">
             <Text className="text-white opacity-70">No image</Text>

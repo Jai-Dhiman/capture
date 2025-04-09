@@ -21,6 +21,7 @@ interface ProfileTabViewProps {
   isLoading: boolean;
   isLoadingSaved: boolean;
   onTabPress?: (index: number) => void;
+  carouselActive?: boolean;
 }
 
 export const ProfileTabView = ({
@@ -31,7 +32,8 @@ export const ProfileTabView = ({
   onPostPress,
   isLoading,
   isLoadingSaved,
-  onTabPress
+  onTabPress,
+  carouselActive = false
 }: ProfileTabViewProps) => {
   const layout = useWindowDimensions();
   const [index, setIndex] = useState(0);
@@ -43,8 +45,6 @@ export const ProfileTabView = ({
 
   const photoPosts = posts.filter(post => post.type === 'post');
   const threadPosts = posts.filter(post => post.type === 'thread');
-  const savedPhotoPosts = savedPosts.filter(post => post.type === 'post');
-  const savedThreadPosts = savedPosts.filter(post => post.type === 'thread');
 
   const renderPhotosTab = () => {
     if (isLoading) {
@@ -130,40 +130,24 @@ export const ProfileTabView = ({
       );
     }
 
-    const [savedTabType, setSavedTabType] = useState<'post' | 'thread'>('post');
-    const filteredSavedPosts = savedPosts.filter(post => post.type === savedTabType);
+    const sortedSavedPosts = [...savedPosts].sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
 
     return (
-      <View className="flex-1">
-        <View className="flex-row border-b border-gray-200 py-2">
-          <TouchableOpacity 
-            className={`flex-1 items-center py-2 ${savedTabType === 'post' ? 'border-b-2 border-gray-800' : ''}`}
-            onPress={() => setSavedTabType('post')}
-          >
-            <Text>Photos</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            className={`flex-1 items-center py-2 ${savedTabType === 'thread' ? 'border-b-2 border-gray-800' : ''}`}
-            onPress={() => setSavedTabType('thread')}
-          >
-            <Text>Threads</Text>
-          </TouchableOpacity>
-        </View>
-        
-        <FlatList
-          data={filteredSavedPosts}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            savedTabType === 'post' 
-              ? <PostItem post={item} /> 
-              : <ThreadItem thread={item} />
-          )}
-          showsVerticalScrollIndicator={false}
-          maxToRenderPerBatch={5}
-          windowSize={5}
-          initialNumToRender={5}
-        />
-      </View>
+      <FlatList
+        data={sortedSavedPosts}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          item.type === 'post' 
+            ? <PostItem post={item} /> 
+            : <ThreadItem thread={item} />
+        )}
+        showsVerticalScrollIndicator={false}
+        maxToRenderPerBatch={5}
+        windowSize={5}
+        initialNumToRender={5}
+      />
     );
   };
 
@@ -185,7 +169,7 @@ export const ProfileTabView = ({
       <View className="flex-row justify-center items-center h-full">
         <TouchableOpacity 
           onPress={() => handleTabPress(0)}
-          className="mx-8"
+          className="mx-10"
         >
           <View className={index === 0 ? "w-7 h-7 bg-stone-300 rounded-[10px] items-center justify-center" : "items-center justify-center"}>
             <PhotosIcon width={20} height={20} />
@@ -194,7 +178,7 @@ export const ProfileTabView = ({
         
         <TouchableOpacity 
           onPress={() => handleTabPress(1)}
-          className="mx-8"
+          className="mx-10"
         >
           <View className={index === 1 ? "w-7 h-7 bg-stone-300 rounded-[10px] items-center justify-center" : "items-center justify-center"}>
             <TextIcon width={20} height={20} />
@@ -203,14 +187,13 @@ export const ProfileTabView = ({
         
         <TouchableOpacity 
           onPress={() => handleTabPress(2)}
-          className="mx-8"
+          className="mx-10"
         >
           <View className={index === 2 ? "w-7 h-7 bg-stone-300 rounded-[10px] items-center justify-center" : "items-center justify-center"}>
             <SavedPosts width={20} height={20} />
           </View>
         </TouchableOpacity>
       </View>
-      <View className="h-px bg-black/10 w-72 self-center" />
     </View>
   );
 

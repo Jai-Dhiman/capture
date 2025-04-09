@@ -23,7 +23,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <View className="flex-row mb-4">
+      <View className="flex-row mb-6">
         <View className="w-24 h-24 rounded-full overflow-hidden">
           <SkeletonElement 
             width="100%" 
@@ -59,7 +59,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   }
 
   return (
-    <View className="flex-row mb-4">
+    <View className="flex-row mb-6">
       <View className="w-24 h-24 rounded-full bg-red-200 shadow overflow-hidden">
         {profileData?.profileImage ? (
           <ProfileImage cloudflareId={profileData.profileImage} />
