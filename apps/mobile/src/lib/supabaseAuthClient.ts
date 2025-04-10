@@ -2,12 +2,23 @@ import { createClient } from "@supabase/supabase-js";
 import { secureStorage } from "./storage";
 import { SUPABASE_URL, SUPABASE_ANON_PUBLIC } from "@env";
 
-const CODE_VERIFIER_KEY = "supabase.auth.code_verifier";
+const customStorageAdapter = {
+  getItem: async (key: string) => {
+    const value = await secureStorage.getItem(key);
+    return value;
+  },
+  setItem: async (key: string, value: string) => {
+    return secureStorage.setItem(key, value);
+  },
+  removeItem: async (key: string) => {
+    return secureStorage.removeItem(key);
+  },
+};
 
 export const supabaseAuthClient = createClient(SUPABASE_URL, SUPABASE_ANON_PUBLIC, {
   auth: {
     flowType: "pkce",
-    storage: secureStorage,
+    storage: customStorageAdapter,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
@@ -16,7 +27,8 @@ export const supabaseAuthClient = createClient(SUPABASE_URL, SUPABASE_ANON_PUBLI
 
 export const getStoredCodeVerifier = async () => {
   try {
-    return await secureStorage.getItem(CODE_VERIFIER_KEY);
+    const verifier = await secureStorage.getItem("sb-cksprfmynsulsqecwngc-auth-token-code-verifier");
+    return verifier;
   } catch (error) {
     console.error("Failed to retrieve code verifier:", error);
     return null;

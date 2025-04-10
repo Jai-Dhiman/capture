@@ -1,28 +1,41 @@
-import React, { useState } from 'react';
-import { TouchableOpacity, Text } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { TouchableOpacity, Text, Platform } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import GoogleIcon from '../../../assets/icons/GoogleLogo.svg';
 import { useAlert } from '../../lib/AlertContext';
 import { errorService } from '../../services/errorService';
 import { supabaseAuthClient, getStoredCodeVerifier } from '../../lib/supabaseAuthClient';
+import { secureStorage } from '../../lib/storage';
+import { API_URL } from '@env';
 
 export default function OAuth() {
   const { showAlert } = useAlert();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  
+  useEffect(() => {
+    const checkVerifier = async () => {
+      const verifier = await getStoredCodeVerifier();
+    };
+    checkVerifier();
+  }, []);
 
   const handleGoogleSignIn = async () => {
     if (isAuthenticating) return;
     setIsAuthenticating(true);
     
     try {
-      const existingVerifier = await getStoredCodeVerifier();
-      console.log("Existing code verifier before auth flow:", existingVerifier);
+      await secureStorage.removeItem("sb-cksprfmynsulsqecwngc-auth-token-code-verifier");
+      
+      const baseUrl = __DEV__ 
+        ? 'http://localhost:8081' 
+        : API_URL;
+      const redirectUrl = `${baseUrl}/auth/callback`;
       
       const { data, error } = await supabaseAuthClient.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: Linking.createURL('auth/callback'),
+          redirectTo: redirectUrl,
           skipBrowserRedirect: true,
         }
       });
@@ -33,24 +46,23 @@ export default function OAuth() {
         return;
       }
 
-      const generatedVerifier = await getStoredCodeVerifier();
-      console.log("Generated code verifier after OAuth init:", generatedVerifier);
+      const storedVerifier = await getStoredCodeVerifier();
 
       if (!data?.url) {
         showAlert("Failed to generate authentication URL", { type: "error" });
         return;
       }
 
-      console.log("Opening auth session with URL:", data.url);
       const result = await WebBrowser.openAuthSessionAsync(
         data.url,
-        Linking.createURL('auth/callback')
+        redirectUrl,
+        {
+          showInRecents: true,
+          preferEphemeralSession: false
+        }
       );
       
-      console.log("Auth session result:", result.type);
-      
       const persistedVerifier = await getStoredCodeVerifier();
-      console.log("Persisted code verifier after WebBrowser closed:", persistedVerifier);
       
     } catch (error) {
       console.error("Unexpected error during Google sign-in:", error);

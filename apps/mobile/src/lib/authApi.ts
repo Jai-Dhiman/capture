@@ -36,7 +36,6 @@ export const authApi = {
 
   async storeCodeVerifier(verifier: string): Promise<void> {
     try {
-      console.log("Storing code verifier:", verifier);
       await secureStorage.setItem(AUTH_STORAGE_KEYS.CODE_VERIFIER, verifier);
     } catch (error) {
       console.error("Failed to store code verifier:", error);
@@ -47,7 +46,6 @@ export const authApi = {
   async getStoredCodeVerifier(): Promise<string | null> {
     try {
       const verifier = await secureStorage.getItem(AUTH_STORAGE_KEYS.CODE_VERIFIER);
-      console.log("Retrieved code verifier:", verifier); // Debug log
       return verifier;
     } catch (error) {
       console.error("Failed to retrieve code verifier:", error);
@@ -252,7 +250,6 @@ export const authApi = {
       await this.storeCodeVerifier(codeVerifier);
 
       const codeChallenge = await this.generateCodeChallenge(codeVerifier);
-      console.log("Generated code challenge:", codeChallenge);
 
       const response = await fetch(`${API_URL}/auth/oauth`, {
         method: "POST",
@@ -283,16 +280,12 @@ export const authApi = {
         return null;
       }
 
-      console.log("Handling auth callback with URL:", url);
-
       const hasAuthParams = url.includes("code=") || url.includes("access_token=") || url.includes("type=");
       if (!hasAuthParams) {
-        console.log("URL doesn't contain auth parameters, not a callback");
         return null;
       }
 
       const codeVerifier = await this.getStoredCodeVerifier();
-      console.log("Retrieved code verifier for callback:", codeVerifier ? "Yes" : "No");
 
       let code = null;
       try {

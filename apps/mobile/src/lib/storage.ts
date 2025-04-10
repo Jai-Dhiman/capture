@@ -7,10 +7,9 @@ const isWeb = Platform.OS === "web";
 export const secureStorage = {
   getItem: async (key: string): Promise<string | null> => {
     try {
-      if (isWeb) {
-        return await AsyncStorage.getItem(key);
-      }
-      return await SecureStore.getItemAsync(key);
+      let value = isWeb ? await AsyncStorage.getItem(key) : await SecureStore.getItemAsync(key);
+
+      return value;
     } catch (error) {
       console.error(`Error getting item ${key}:`, error);
       return null;

@@ -3,6 +3,7 @@ import type { AuthSession, AuthStage, AuthUser, UserProfile } from "../types/aut
 import { authState } from "../stores/authState";
 import { supabaseAuthClient } from "lib/supabaseAuthClient";
 import { getStoredCodeVerifier } from "lib/supabaseAuthClient";
+import { secureStorage } from "lib/storage";
 
 export const authService = {
   async signIn(
@@ -136,92 +137,82 @@ export const authService = {
 
   async handleAuthCallback(url: string) {
     try {
-      console.log("Handling auth callback with URL:", url);
-
       if (!url || typeof url !== "string") {
         console.error("Invalid URL provided to handleAuthCallback:", url);
         return null;
       }
 
-      if (!url.includes("code=") && !url.includes("access_token=") && !url.includes("type=")) {
-        console.log("URL doesn't contain auth parameters, not a callback");
+      let code = null;
+      try {
+        const urlObj = new URL(url);
+        code = urlObj.searchParams.get("code");
+      } catch (error) {
+        console.error("Failed to parse URL:", error);
         return null;
       }
 
-      try {
-        const codeVerifier = await getStoredCodeVerifier();
-        console.log("Retrieved code verifier for callback:", codeVerifier ? "Yes" : "No");
+      if (!code) {
+        console.error("No auth code found in URL");
+        return null;
+      }
 
-        const urlObj = new URL(url);
-        const code = urlObj.searchParams.get("code");
+      const codeVerifier = await secureStorage.getItem("sb-cksprfmynsulsqecwngc-auth-token-code-verifier");
 
-        if (!code) {
-          console.error("No auth code found in URL");
-          return null;
-        }
-
-        console.log("Auth code from URL:", code);
-        console.log("Code verifier value:", codeVerifier);
-
-        if (!codeVerifier) {
-          console.error("Code verifier is missing, OAuth PKCE flow cannot complete");
-          return null;
-        }
-
-        const { data, error } = await supabaseAuthClient.auth.exchangeCodeForSession(code);
-
-        if (error) {
-          console.error("Error exchanging code for session:", error);
-          throw new AuthError(error.message, error.name);
-        }
-
-        if (!data.session || !data.user) {
-          console.error("Missing session or user in auth response");
-          return null;
-        }
-
-        await authApi.storeSessionData(data.session, data.user);
-
-        authState.setUser({
-          id: data.user.id,
-          email: data.user.email || "",
-          phone: data.user.phone || "",
-          phone_confirmed_at: data.user.phone_confirmed_at || undefined,
-        });
-
-        authState.setSession({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token,
-          expires_at: new Date(data.session.expires_at || "").getTime(),
-        });
-
-        const profileData = await authApi.fetchUserProfile(data.user.id, data.session.access_token);
-        if (profileData) {
-          authState.setProfile(profileData);
-        }
-
-        if (url.includes("type=recovery")) {
-          return "Auth";
-        } else if (url.includes("type=signup")) {
-          return "Auth";
-        }
-
-        const stage = await this.determineAuthStage();
-        authState.setAuthStage(stage);
-
-        if (stage === "complete") {
-          return "App";
-        } else if (stage === "profile-creation") {
-          return "CreateProfile";
-        }
-
-        return "Auth";
-      } catch (error) {
-        console.error("Auth callback handling error:", error);
+      if (!codeVerifier) {
+        console.error("Code verifier is missing, OAuth PKCE flow cannot complete");
         return "Auth";
       }
+
+      const { data, error } = await supabaseAuthClient.auth.exchangeCodeForSession(code);
+
+      if (error) {
+        console.error("Error exchanging code for session:", error);
+        throw new AuthError(error.message, error.name);
+      }
+
+      if (!data.session || !data.user) {
+        console.error("Missing session or user in auth response");
+        return null;
+      }
+
+      await authApi.storeSessionData(data.session, data.user);
+
+      authState.setUser({
+        id: data.user.id,
+        email: data.user.email || "",
+        phone: data.user.phone || "",
+        phone_confirmed_at: data.user.phone_confirmed_at || undefined,
+      });
+
+      authState.setSession({
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+        expires_at: new Date(data.session.expires_at || "").getTime(),
+      });
+
+      const profileData = await authApi.fetchUserProfile(data.user.id, data.session.access_token);
+      if (profileData) {
+        authState.setProfile(profileData);
+      }
+
+      if (url.includes("type=recovery")) {
+        return "Auth";
+      } else if (url.includes("type=signup")) {
+        return "Auth";
+      }
+
+      const stage = await this.determineAuthStage();
+      authState.setAuthStage(stage);
+
+      if (stage === "complete") {
+        return "App";
+      } else if (stage === "profile-creation") {
+        return "CreateProfile";
+      }
+
+      return "Auth";
     } catch (error) {
-      console.error("Auth callback outer error:", error);
+      console.error("Auth callback handling error:", error);
       return "Auth";
     }
   },
