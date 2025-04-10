@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StatusBar, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SettingsStackParamList } from '../../components/Navigators/types/navigation';
 import { useProfileStore } from '../../stores/profileStore'
 import { ProfileImage } from '../../components/media/ProfileImage';
+import { useAuth } from '../../hooks/auth/useAuth';
 import EmptyIcon from '../../../assets/icons/EmptyIcon.svg';
 import BlockIcon from '../../../assets/icons/BlockIcon.svg';
 import AlgorithmIcon from '../../../assets/icons/AlgorithmIcon.svg';
@@ -22,12 +23,31 @@ type NavigationProp = NativeStackNavigationProp<SettingsStackParamList, 'MainSet
 
 export default function MainSettingsScreen() {
   const navigation = useNavigation<NavigationProp>();
-  const {profile} = useProfileStore();
+  const { profile } = useProfileStore();
+  const { logout } = useAuth();
 
   const goBack = () => {
     navigation.getParent()?.goBack();
   };
   
+  const handleLogout = () => {
+    Alert.alert(
+      "Logout",
+      "Are you sure you want to log out?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Logout",
+          style: "destructive",
+          onPress: () => logout.mutate()
+        }
+      ]
+    );
+  };
+
   return (
     <View className="flex-1 bg-zinc-300">
       <StatusBar barStyle="dark-content" />
@@ -117,19 +137,7 @@ export default function MainSettingsScreen() {
             <View className="ml-4">
               <Text className="text-xs font-bold">Font Customization</Text>
               <Text className="text-[10px] text-black opacity-70">
-                This option is locked and will be available in a future update
-              </Text>
-            </View>
-            <View className="flex-1" />
-            <EmptyIcon height={20} width={20} />
-          </TouchableOpacity>
-          
-          <TouchableOpacity className="flex-row items-center p-3" disabled={true}>
-            <EmptyIcon height={25} width={25} />
-            <View className="ml-4">
-              <Text className="text-xs font-bold">Business Account Customization</Text>
-              <Text className="text-[10px] text-black opacity-70">
-                This option is locked and will be available for verified businesses
+                This option will be available in a future update
               </Text>
             </View>
             <View className="flex-1" />
@@ -161,6 +169,18 @@ export default function MainSettingsScreen() {
           <TouchableOpacity className="flex-row items-center p-3">
             <UserVerifiedIcon height={25} width={25} />
             <Text className="ml-4 text-xs font-bold">Feature Request</Text>
+            <View className="flex-1" />
+            <EmptyIcon height={20} width={20} />
+          </TouchableOpacity>
+        </View>
+
+        <View className="bg-white bg-opacity-0 rounded-[10px] shadow border border-black mb-8 mt-2">
+          <TouchableOpacity 
+            className="flex-row items-center p-3"
+            onPress={handleLogout}
+          >
+            <UserVerifiedIcon height={25} width={25} />
+            <Text className="ml-4 text-xs font-bold text-red-600">Logout</Text>
             <View className="flex-1" />
             <EmptyIcon height={20} width={20} />
           </TouchableOpacity>

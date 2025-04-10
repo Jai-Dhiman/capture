@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { cors } from "hono/cors";
 import { ApolloServer } from "@apollo/server";
+import { sentry } from "@hono/sentry";
 import { startServerAndCreateCloudflareWorkersHandler } from "@as-integrations/cloudflare-workers";
 import { typeDefs } from "graphql/schema";
 import { resolvers } from "graphql/resolvers";
@@ -19,6 +20,7 @@ const app = new Hono<{
 }>();
 
 app.use("*", logger());
+app.use("*", sentry());
 app.use(
   "*",
   cors({
