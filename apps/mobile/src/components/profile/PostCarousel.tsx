@@ -37,10 +37,10 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
     const topMargin = 4;
     const bottomSafeArea = 40;
     
-    const availableHeight = height * 0.65;
+    const availableHeight = height * 0.68;
     return Math.min(
       availableHeight - headerHeight - footerHeight - paginationHeight - topMargin - bottomSafeArea,
-      height * 0.5 
+      height * 0.525
     );
   };
   

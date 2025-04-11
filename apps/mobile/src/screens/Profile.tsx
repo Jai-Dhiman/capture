@@ -282,7 +282,8 @@ export default function Profile() {
             className="absolute top-0 left-0 right-0 bottom-0 bg-zinc-300" 
             style={{ 
               marginTop: 160,
-              height: '85%'
+              height: '85%',
+              zIndex: 1
             }}
           >
             <View className="flex-1 px-4">

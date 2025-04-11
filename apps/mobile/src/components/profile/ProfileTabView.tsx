@@ -64,40 +64,39 @@ export const ProfileTabView = ({
       );
     }
 
-    const numColumns = 3;
-    const gridMargin = 16;
-    const gridSpacing = 8;
-    
-    const screenWidth = layout.width;
-    const gridWidth = screenWidth - (gridMargin * 2);
-    const itemWidth = (gridWidth - (gridSpacing * (numColumns - 1))) / numColumns;
+  const numColumns = 3;
+  const horizontalSpacing = 8;
+  const edgeSpacing = 16;
 
-    return (
-      <FlatGrid
-        itemDimension={itemWidth}
-        spacing={gridSpacing}
-        data={photoPosts}
-        keyExtractor={(item) => item.id}
-        fixed={true}
-        renderItem={({ item }) => (
-          <PostsGrid
-            post={item}
-            onPress={onPostPress}
-            itemSize={itemWidth}
-          />
-        )}
-        maxToRenderPerBatch={8}
-        windowSize={5}
-        initialNumToRender={INITIAL_PAGE_SIZE}
-        contentContainerStyle={{ 
-          padding: gridMargin,
-        }}
-        style={{
-          flex: 1,
-        }}
-      />
-    );
-  };
+  const screenWidth = layout.width;
+  const availableWidth = screenWidth - (edgeSpacing * 2);
+  
+  return (
+    <FlatGrid
+      itemDimension={(availableWidth - (horizontalSpacing * (numColumns - 1))) / numColumns}
+      spacing={horizontalSpacing}
+      data={photoPosts}
+      keyExtractor={(item) => item.id}
+      maxItemsPerRow={3}
+      fixed={true}
+      renderItem={({ item }) => (
+        <PostsGrid
+          post={item}
+          onPress={onPostPress}
+          itemSize={(availableWidth - (horizontalSpacing * (numColumns - 1))) / numColumns}
+        />
+      )}
+      contentContainerStyle={{ 
+        paddingHorizontal: edgeSpacing,
+        paddingTop: edgeSpacing,
+      }}
+      style={{
+        flex: 1,
+        width: '100%',
+      }}
+    />
+  );
+};
 
   const renderThreadsTab = () => {
     if (isLoading) {
@@ -197,7 +196,8 @@ export const ProfileTabView = ({
         shadowOpacity: 0.15,
         shadowRadius: 6,
         elevation: 8,
-        zIndex: 1,
+        zIndex: 10,
+        position: 'relative',
         marginBottom: 8,
       }}
     >
