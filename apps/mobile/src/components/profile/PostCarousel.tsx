@@ -31,13 +31,17 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
   const ITEM_WIDTH = width - 32;
   
   const calculateMediaHeight = () => {
-    const headerHeight = 36;
-    const footerHeight = 60;
+    const headerHeight = 50;
+    const footerHeight = 80;
     const paginationHeight = 20;
     const topMargin = 4;
+    const bottomSafeArea = 40;
     
-    const availableHeight = height * 0.70;
-    return availableHeight - headerHeight - footerHeight - paginationHeight - topMargin;
+    const availableHeight = height * 0.65;
+    return Math.min(
+      availableHeight - headerHeight - footerHeight - paginationHeight - topMargin - bottomSafeArea,
+      height * 0.5 
+    );
   };
   
   const mediaHeight = calculateMediaHeight();

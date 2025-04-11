@@ -64,28 +64,36 @@ export const ProfileTabView = ({
       );
     }
 
+    const numColumns = 3;
+    const gridMargin = 16;
+    const gridSpacing = 8;
+    
+    const screenWidth = layout.width;
+    const gridWidth = screenWidth - (gridMargin * 2);
+    const itemWidth = (gridWidth - (gridSpacing * (numColumns - 1))) / numColumns;
+
     return (
       <FlatGrid
-        itemDimension={itemSize}
-        spacing={spacing}
+        itemDimension={itemWidth}
+        spacing={gridSpacing}
         data={photoPosts}
         keyExtractor={(item) => item.id}
+        fixed={true}
         renderItem={({ item }) => (
           <PostsGrid
             post={item}
             onPress={onPostPress}
-            itemSize={itemSize}
+            itemSize={itemWidth}
           />
         )}
         maxToRenderPerBatch={8}
         windowSize={5}
         initialNumToRender={INITIAL_PAGE_SIZE}
         contentContainerStyle={{ 
-          paddingHorizontal: containerPadding,
-          paddingTop: spacing
+          padding: gridMargin,
         }}
         style={{
-          marginLeft: -3,
+          flex: 1,
         }}
       />
     );
@@ -181,7 +189,18 @@ export const ProfileTabView = ({
   };
 
   const renderTabBar = (props: any) => (
-    <View className="w-full h-16 bg-zinc-300 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]">
+      <View 
+      className="w-full h-16 bg-zinc-300"
+      style={{
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 6,
+        elevation: 8,
+        zIndex: 1,
+        marginBottom: 8,
+      }}
+    >
       <View className="flex-row justify-center items-center h-full">
         <View className="w-full flex-row justify-evenly">
           <TouchableOpacity 

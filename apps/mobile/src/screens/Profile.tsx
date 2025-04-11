@@ -59,18 +59,17 @@ export default function Profile() {
   }] : []);
 
   const getGridItemSize = useCallback(() => {
-    const edgeMarginPercent = 0.08;
-    const edgeMargin = width * edgeMarginPercent;
+    const gridMargin = 16;
+    const gridSpacing = 8;
+    const numColumns = 3;
     
-    const availableWidth = width - (edgeMargin * 2);
-
-    const spacing = width * 0.037;
-    const itemSize = (availableWidth - (spacing * 2)) / 3;
+    const availableWidth = width - (gridMargin * 2);
+    const itemSize = (availableWidth - (gridSpacing * (numColumns - 1))) / numColumns;
     
     return {
       itemSize,
-      spacing,
-      containerPadding: edgeMargin
+      spacing: gridSpacing,
+      containerPadding: gridMargin
     };
   }, [width]);
   

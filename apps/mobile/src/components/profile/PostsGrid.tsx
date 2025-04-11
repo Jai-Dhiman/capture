@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { MediaImage } from '../media/MediaImage';
 
 interface GridItemProps {
@@ -12,19 +12,17 @@ const GridItem = ({ post, onPress, itemSize }: GridItemProps) => {
   return (
     <TouchableOpacity 
       onPress={() => onPress(post)}
-      style={{
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 2
-      }}
+      style={[
+        styles.gridItem,
+        { width: itemSize, height: itemSize }
+      ]}
+      activeOpacity={0.9}
     >
       <View 
         className="bg-stone-400 rounded-2xl overflow-hidden" 
         style={{ 
-          width: itemSize, 
-          height: itemSize,
+          width: '100%', 
+          height: '100%',
           borderRadius: 16
         }}
       >
@@ -39,6 +37,17 @@ const GridItem = ({ post, onPress, itemSize }: GridItemProps) => {
     </TouchableOpacity>
   );
 };
+
+const styles = StyleSheet.create({
+  gridItem: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+    backgroundColor: 'transparent',
+  }
+});
 
 export const PostsGrid = memo(GridItem, (prevProps, nextProps) => {
   return prevProps.post.id === nextProps.post.id && prevProps.itemSize === nextProps.itemSize;
