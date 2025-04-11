@@ -125,12 +125,12 @@ export const PostItem = ({ post, isLoading = false }: PostItemProps) => {
           </View>
           
           <View className="flex-row justify-between items-center">
-            <View className="flex-row space-x-12">
-              <TouchableOpacity onPress={handleOpenComments}>
+            <View className="flex-row">
+              <TouchableOpacity onPress={handleOpenComments} className="mr-10">
                 <CommentIcon width={20} height={20} />
               </TouchableOpacity>
               
-              <TouchableOpacity>
+              <TouchableOpacity className="mr-10">
                 <ShareIcon width={20} height={20} />
               </TouchableOpacity>
             </View>

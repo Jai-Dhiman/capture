@@ -12,10 +12,21 @@ const GridItem = ({ post, onPress, itemSize }: GridItemProps) => {
   return (
     <TouchableOpacity 
       onPress={() => onPress(post)}
+      style={{
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2
+      }}
     >
       <View 
-        className="w-full bg-stone-400 rounded-[10px] overflow-hidden" 
-        style={{ aspectRatio: 1, width: itemSize }}
+        className="bg-stone-400 rounded-2xl overflow-hidden" 
+        style={{ 
+          width: itemSize, 
+          height: itemSize,
+          borderRadius: 16
+        }}
       >
         {post.media && post.media.length > 0 ? (
           <MediaImage media={post.media[0]} priority={true} />

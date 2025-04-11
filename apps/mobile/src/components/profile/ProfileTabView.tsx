@@ -16,6 +16,7 @@ interface ProfileTabViewProps {
   savedPosts: any[];
   itemSize: number;
   spacing: number;
+  containerPadding: number;
   onPostPress: (post: any) => void;
   isLoading: boolean;
   isLoadingSaved: boolean;
@@ -28,6 +29,7 @@ export const ProfileTabView = ({
   savedPosts,
   itemSize,
   spacing,
+  containerPadding,
   onPostPress,
   isLoading,
   isLoadingSaved,
@@ -79,8 +81,11 @@ export const ProfileTabView = ({
         windowSize={5}
         initialNumToRender={INITIAL_PAGE_SIZE}
         contentContainerStyle={{ 
-          paddingHorizontal: 12, 
-          paddingVertical: 12
+          paddingHorizontal: containerPadding,
+          paddingTop: spacing
+        }}
+        style={{
+          marginLeft: -3,
         }}
       />
     );

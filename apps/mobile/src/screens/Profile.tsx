@@ -59,17 +59,22 @@ export default function Profile() {
   }] : []);
 
   const getGridItemSize = useCallback(() => {
-    const contentWidth = width * 0.92; 
-    const spacing = 6; 
-    const itemSize = (contentWidth - (spacing * 2)) / 3;
+    const edgeMarginPercent = 0.08;
+    const edgeMargin = width * edgeMarginPercent;
+    
+    const availableWidth = width - (edgeMargin * 2);
+
+    const spacing = width * 0.037;
+    const itemSize = (availableWidth - (spacing * 2)) / 3;
     
     return {
       itemSize,
-      horizontalMargin: spacing
+      spacing,
+      containerPadding: edgeMargin
     };
   }, [width]);
-
-  const { itemSize, horizontalMargin } = getGridItemSize();
+  
+  const { itemSize, spacing, containerPadding } = getGridItemSize();
   
   const carouselPosts = React.useMemo(() => {
     return posts ? posts.filter((post: any) => post.type === 'post') : [];
@@ -136,74 +141,73 @@ export default function Profile() {
 
   if (profileLoading) {
     return (
-      <View className="flex-1 bg-zinc-300">
-        <StatusBar barStyle="dark-content" />
-        <Header 
-          showBackButton={true} 
-          onBackPress={() => navigation.goBack()} 
-        />
-        <View className="px-6 pt-4">
-          <View className="flex-row mb-6">
-            <View className="w-24 h-24 rounded-full overflow-hidden">
-              <SkeletonElement 
-                width="100%" 
-                height="100%" 
-                radius="round" 
-              />
-            </View>
-            
-            <View className="ml-4 flex-1 justify-center">
-              <SkeletonElement width="60%" height={24} radius={4} />
-              <View className="mt-1">
-                <SkeletonElement width="90%" height={16} radius={4} />
-                <SkeletonElement width="80%" height={16} radius={4} />
+        <View className="flex-1 bg-zinc-300">
+          <StatusBar barStyle="dark-content" />
+          <Header 
+            showBackButton={true} 
+            onBackPress={() => navigation.goBack()} 
+          />
+          <View className="px-6 pt-4">
+            <View className="flex-row mb-6">
+              <View className="w-24 h-24 rounded-full overflow-hidden">
+                <SkeletonElement 
+                  width="100%" 
+                  height="100%" 
+                  radius="round" 
+                />
               </View>
               
-              <View className="flex-row mt-4">
-                <View className="mr-2">
+              <View className="ml-4 flex-1 justify-center">
+                <SkeletonElement width={120} height={24} radius={4} />
+                <View className="mt-1">
+                  <SkeletonElement width="90%" height={16} radius={4} />
+                  <SkeletonElement width="75%" height={16} radius={4} />
+                </View>
+                
+                <View className="flex-row mt-4">
+                  <SkeletonElement 
+                    width={100} 
+                    height={32} 
+                    radius={30} 
+                  />
                   <SkeletonElement 
                     width={100} 
                     height={32} 
                     radius={30} 
                   />
                 </View>
-                <SkeletonElement 
-                  width={100} 
-                  height={32} 
-                  radius={30} 
-                />
               </View>
             </View>
-          </View>
-          
-          <View className="w-full h-16 bg-zinc-300 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]">
-            <View className="flex-row justify-center items-center h-full">
-              {[0, 1, 2].map((_, index) => (
-                <View key={index} className="items-center mx-10">
-                  <SkeletonElement width={28} height={28} radius={10} />
+            
+            <View className="w-full h-16 bg-zinc-300 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]">
+              <View className="flex-row justify-evenly items-center h-full">
+                {[0, 1, 2].map((_, index) => (
+                  <View key={index} className="items-center">
+                    <SkeletonElement width={28} height={28} radius={8} />
+                  </View>
+                ))}
+              </View>
+            </View>
+            
+            <View className="flex-row flex-wrap justify-center mt-4">
+              {Array(9).fill(0).map((_, index) => (
+                <View key={index} 
+                  className="mb-2 mx-1"
+                  style={{ 
+                    width: itemSize, 
+                    height: itemSize
+                  }}
+                >
+                  <SkeletonElement 
+                    width="100%" 
+                    height="100%" 
+                    radius={10} 
+                  />
                 </View>
               ))}
             </View>
           </View>
-          
-          <View className="flex-row flex-wrap mt-4">
-            {Array(9).fill(0).map((_, index) => (
-              <View key={index} style={{ 
-                width: itemSize, 
-                height: itemSize, 
-                marginRight: index % 3 !== 2 ? horizontalMargin : 0,
-                marginBottom: horizontalMargin 
-              }}>
-                <SkeletonElement 
-                  width="100%" 
-                  height="100%" 
-                  radius={10} 
-                />
-              </View>
-            ))}
-          </View>
         </View>
-      </View>
     );
   }
 
@@ -262,7 +266,8 @@ export default function Profile() {
             posts={posts || []}
             savedPosts={savedPosts || []}
             itemSize={itemSize}
-            spacing={horizontalMargin}
+            spacing={spacing}
+            containerPadding={containerPadding}
             onPostPress={openCarouselAtPhoto}
             isLoading={postsLoading}
             isLoadingSaved={savedPostsLoading}
@@ -274,8 +279,14 @@ export default function Profile() {
         </View>
         
         {carouselPosts.length > 0 && showPostCarousel && (
-          <View className="absolute top-0 left-0 right-0 bottom-0 bg-zinc-300" style={{ marginTop: 180 }}>
-            <View className="flex-1 px-6">
+          <View 
+            className="absolute top-0 left-0 right-0 bottom-0 bg-zinc-300" 
+            style={{ 
+              marginTop: 160,
+              height: '85%'
+            }}
+          >
+            <View className="flex-1 px-4">
               <PostCarousel 
                 posts={carouselPosts}
                 initialIndex={initialPostIndex}

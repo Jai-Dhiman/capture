@@ -82,7 +82,7 @@ export const ThreadItem = ({ thread, isLoading = false }: ThreadItemProps) => {
 
   return (
     <SkeletonLoader isLoading={isLoading}>
-      <View className="bg-zinc-300 rounded-lg overflow-hidden mb-4 px-4">
+      <View className="bg-zinc-300 rounded-lg overflow-hidden mb-4 ">
       <View className="flex-row items-center p-3">
         <View className="w-10 h-10 mr-3">
           {thread.user?.profileImage ? (
@@ -103,7 +103,7 @@ export const ThreadItem = ({ thread, isLoading = false }: ThreadItemProps) => {
         </TouchableOpacity>
       </View>
 
-        <View className="mt-3 mb-6">
+        <View className="p-3 mt-3 mb-6">
           <Text className="text-black text-base font-light leading-snug">
             {thread.content}
           </Text>
@@ -115,32 +115,32 @@ export const ThreadItem = ({ thread, isLoading = false }: ThreadItemProps) => {
               {formattedDate}
             </Text>
           </View>
-                  
-          <View className="flex-row justify-between items-center">
-            <View className="flex-row space-x-12">
-              <TouchableOpacity onPress={handleOpenComments}>
-                <CommentIcon width={20} height={20} />
-              </TouchableOpacity>
-                      
-              <TouchableOpacity>
-                <ShareIcon width={20} height={20} />
+                
+            <View className="flex-row justify-between items-center">
+              <View className="flex-row">
+                <TouchableOpacity onPress={handleOpenComments} className="mr-10">
+                  <CommentIcon width={20} height={20} />
+                </TouchableOpacity>
+                
+                <TouchableOpacity className="mr-10">
+                  <ShareIcon width={20} height={20} />
+                </TouchableOpacity>
+              </View>
+              
+              <TouchableOpacity 
+                onPress={handleToggleSavePost}
+                disabled={savePostMutation.isPending || unsavePostMutation.isPending}
+              >
+                {savePostMutation.isPending || unsavePostMutation.isPending ? (
+                  <ActivityIndicator size="small" color="#E4CAC7" />
+                ) : thread.isSaved ? (
+                  <FavoriteIcon width={20} height={20} />
+                ) : (
+                  <SavePostIcon width={20} height={20} />
+                )}
               </TouchableOpacity>
             </View>
-                    
-            <TouchableOpacity 
-              onPress={handleToggleSavePost}
-              disabled={savePostMutation.isPending || unsavePostMutation.isPending}
-            >
-              {savePostMutation.isPending || unsavePostMutation.isPending ? (
-                <ActivityIndicator size="small" color="#E4CAC7" />
-              ) : thread.isSaved ? (
-                <FavoriteIcon width={20} height={20} />
-              ) : (
-                <SavePostIcon width={20} height={20} />
-              )}
-            </TouchableOpacity>
           </View>
-        </View>
 
           <PostMenu
           isVisible={menuVisible}

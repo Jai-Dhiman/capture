@@ -60,8 +60,8 @@ const MediaImageComponent = ({
       )}
       <Image
         source={{ uri: imageUrl }}
-        className="flex-1 rounded-sm"
-        style={style}
+        className="flex-1"
+        style={[{ borderRadius: 16 }, style]}
         resizeMode="cover"
         onLoad={() => setImageLoaded(true)}
       />

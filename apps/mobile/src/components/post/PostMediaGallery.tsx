@@ -1,11 +1,24 @@
 import React from 'react';
-import { View, Dimensions } from 'react-native';
+import { View, Dimensions, StyleSheet } from 'react-native';
 import { MediaImage } from '../media/MediaImage';
 
 interface PostMediaGalleryProps {
   mediaItems: any[];
   containerStyle?: any;
 }
+
+const imageStyle = StyleSheet.create({
+  container: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#f0f0f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 4
+  }
+});
 
 export const PostMediaGallery = ({ mediaItems, containerStyle = {} }: PostMediaGalleryProps) => {
   if (!mediaItems || mediaItems.length === 0) {
@@ -17,7 +30,10 @@ export const PostMediaGallery = ({ mediaItems, containerStyle = {} }: PostMediaG
   
   if (imageCount === 1) {
     return (
-      <View className="w-full h-full rounded-lg" style={containerStyle}>
+      <View 
+        className="w-full h-full rounded-2xl overflow-hidden" 
+        style={[imageStyle.container, containerStyle]}
+      >
         <MediaImage media={displayItems[0]} priority={true} />
       </View>
     );
@@ -25,11 +41,11 @@ export const PostMediaGallery = ({ mediaItems, containerStyle = {} }: PostMediaG
   
   if (imageCount === 2) {
     return (
-      <View className="w-full h-full flex-row" style={containerStyle}>
-        <View className="flex-1 pr-1">
+      <View className="w-full h-full flex-row space-x-2" style={containerStyle}>
+        <View className="flex-1" style={imageStyle.container}>
           <MediaImage media={displayItems[0]} priority={true} />
         </View>
-        <View className="flex-1 pl-1">
+        <View className="flex-1" style={imageStyle.container}>
           <MediaImage media={displayItems[1]} priority={true} />
         </View>
       </View>
@@ -38,14 +54,14 @@ export const PostMediaGallery = ({ mediaItems, containerStyle = {} }: PostMediaG
   
   if (imageCount === 3) {
     return (
-      <View className="w-full h-full flex-row" style={containerStyle}>
-        <View className="flex-1 pr-1">
+      <View className="w-full h-full flex-row space-x-2" style={containerStyle}>
+        <View className="flex-1" style={imageStyle.container}>
           <MediaImage media={displayItems[0]} priority={true} />
         </View>
-        <View className="flex-1 px-1">
+        <View className="flex-1" style={imageStyle.container}>
           <MediaImage media={displayItems[1]} priority={true} />
         </View>
-        <View className="flex-1 pl-1">
+        <View className="flex-1" style={imageStyle.container}>
           <MediaImage media={displayItems[2]} priority={true} />
         </View>
       </View>
@@ -54,19 +70,19 @@ export const PostMediaGallery = ({ mediaItems, containerStyle = {} }: PostMediaG
   
   return (
     <View className="w-full h-full" style={containerStyle}>
-      <View className="flex-1 flex-row mb-1">
-        <View className="flex-1 mr-1">
+      <View className="flex-1 flex-row space-x-2 mb-2">
+        <View className="flex-1" style={imageStyle.container}>
           <MediaImage media={displayItems[0]} priority={true} />
         </View>
-        <View className="flex-1 ml-1">
+        <View className="flex-1" style={imageStyle.container}>
           <MediaImage media={displayItems[1]} priority={true} />
         </View>
       </View>
-      <View className="flex-1 flex-row mt-1">
-        <View className="flex-1 mr-1">
+      <View className="flex-1 flex-row space-x-2 mt-2">
+        <View className="flex-1" style={imageStyle.container}>
           <MediaImage media={displayItems[2]} priority={true} />
         </View>
-        <View className="flex-1 ml-1">
+        <View className="flex-1" style={imageStyle.container}>
           <MediaImage media={displayItems[3]} priority={true} />
         </View>
       </View>

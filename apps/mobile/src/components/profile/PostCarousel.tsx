@@ -31,14 +31,14 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
   const ITEM_WIDTH = width - 32;
   
   const calculateMediaHeight = () => {
-    const headerHeight = 40;
-    const footerHeight = 80;
-    const paginationHeight = 30;
-    const topMargin = 8;
+    const headerHeight = 36;
+    const footerHeight = 60;
+    const paginationHeight = 20;
+    const topMargin = 4;
     
-    const availableHeight = height * 0.65;
+    const availableHeight = height * 0.70;
     return availableHeight - headerHeight - footerHeight - paginationHeight - topMargin;
-  }; 
+  };
   
   const mediaHeight = calculateMediaHeight();
   
@@ -112,15 +112,15 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
       <Carousel
         loop={false}
         width={ITEM_WIDTH}
-        height={height * 0.65}
+        height={height * 0.70}
         data={posts}
         renderItem={renderItem}
         defaultIndex={initialIndex}
         onSnapToItem={(index) => setActiveIndex(index)}
         mode="parallax"
         modeConfig={{
-          parallaxScrollingScale: 0.9,
-          parallaxScrollingOffset: 50,
+          parallaxScrollingScale: 0.92,
+          parallaxScrollingOffset: 40,
         }}
         snapEnabled={true}
         overscrollEnabled={false}
