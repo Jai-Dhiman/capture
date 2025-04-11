@@ -59,11 +59,13 @@ export default function Profile() {
   }] : []);
 
   const getGridItemSize = useCallback(() => {
-    const contentWidth = width - 32;
-    const itemSize = (contentWidth - 16) / 3;
+    const contentWidth = width * 0.92; 
+    const spacing = 6; 
+    const itemSize = (contentWidth - (spacing * 2)) / 3;
+    
     return {
       itemSize,
-      horizontalMargin: 8
+      horizontalMargin: spacing
     };
   }, [width]);
 

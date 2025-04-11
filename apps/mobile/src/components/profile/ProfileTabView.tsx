@@ -10,7 +10,6 @@ import TextIcon from "../../../assets/icons/TextIcon.svg";
 import SavedPosts from "../../../assets/icons/FavoriteIcon.svg";
 
 const INITIAL_PAGE_SIZE = 15;
-const ADDITIONAL_PAGE_SIZE = 10;
 
 interface ProfileTabViewProps {
   posts: any[];
@@ -49,7 +48,7 @@ export const ProfileTabView = ({
   const renderPhotosTab = () => {
     if (isLoading) {
       return (
-        <View className="flex-1 items-center justify-center">
+        <View className="flex-1 items-center justify-center pt-4">
           <Text className="text-gray-500">Loading...</Text>
         </View>
       );
@@ -79,6 +78,10 @@ export const ProfileTabView = ({
         maxToRenderPerBatch={8}
         windowSize={5}
         initialNumToRender={INITIAL_PAGE_SIZE}
+        contentContainerStyle={{ 
+          paddingHorizontal: 12, 
+          paddingVertical: 12
+        }}
       />
     );
   };
@@ -104,7 +107,12 @@ export const ProfileTabView = ({
       <FlatList
         data={threadPosts}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <ThreadItem thread={item} />}
+        renderItem={({ item }) => (
+          <View className="px-4 pt-2">
+            <ThreadItem thread={item} />
+          </View>
+        )}
+        contentContainerStyle={{ paddingTop: 8 }}
         showsVerticalScrollIndicator={false}
         maxToRenderPerBatch={5}
         windowSize={5}
@@ -139,10 +147,13 @@ export const ProfileTabView = ({
         data={sortedSavedPosts}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          item.type === 'post' 
-            ? <PostItem post={item} /> 
-            : <ThreadItem thread={item} />
+          <View className="px-4 pt-2">
+            {item.type === 'post' 
+              ? <PostItem post={item} /> 
+              : <ThreadItem thread={item} />}
+          </View>
         )}
+        contentContainerStyle={{ paddingTop: 8 }}
         showsVerticalScrollIndicator={false}
         maxToRenderPerBatch={5}
         windowSize={5}
@@ -167,32 +178,31 @@ export const ProfileTabView = ({
   const renderTabBar = (props: any) => (
     <View className="w-full h-16 bg-zinc-300 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]">
       <View className="flex-row justify-center items-center h-full">
-        <TouchableOpacity 
-          onPress={() => handleTabPress(0)}
-          className="mx-10"
-        >
-          <View className={index === 0 ? "w-7 h-7 bg-stone-300 rounded-[10px] items-center justify-center" : "items-center justify-center"}>
-            <PhotosIcon width={20} height={20} />
-          </View>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          onPress={() => handleTabPress(1)}
-          className="mx-10"
-        >
-          <View className={index === 1 ? "w-7 h-7 bg-stone-300 rounded-[10px] items-center justify-center" : "items-center justify-center"}>
-            <TextIcon width={20} height={20} />
-          </View>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          onPress={() => handleTabPress(2)}
-          className="mx-10"
-        >
-          <View className={index === 2 ? "w-7 h-7 bg-stone-300 rounded-[10px] items-center justify-center" : "items-center justify-center"}>
-            <SavedPosts width={20} height={20} />
-          </View>
-        </TouchableOpacity>
+        <View className="w-full flex-row justify-evenly">
+          <TouchableOpacity 
+            onPress={() => handleTabPress(0)}
+          >
+            <View className={index === 0 ? "w-8 h-8 bg-[#E4CAC7] rounded-[10px] items-center justify-center" : "items-center justify-center"}>
+              <PhotosIcon width={20} height={20} />
+            </View>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            onPress={() => handleTabPress(1)}
+          >
+            <View className={index === 1 ? "w-8 h-8 bg-[#E4CAC7] rounded-[10px] items-center justify-center" : "items-center justify-center"}>
+              <TextIcon width={20} height={20} />
+            </View>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            onPress={() => handleTabPress(2)}
+          >
+            <View className={index === 2 ? "w-8 h-8 bg-[#E4CAC7] rounded-[10px] items-center justify-center" : "items-center justify-center"}>
+              <SavedPosts width={20} height={20} />
+            </View>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );

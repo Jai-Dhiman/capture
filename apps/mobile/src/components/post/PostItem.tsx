@@ -82,7 +82,7 @@ export const PostItem = ({ post, isLoading = false }: PostItemProps) => {
   };
 
   return (
-    <SkeletonLoader isLoading={isLoading}>
+    <SkeletonLoader isLoading={isLoading}>     
       <View className="bg-zinc-300 rounded-lg overflow-hidden mb-4">
         <View className="flex-row items-center p-3">
           <View className="w-10 h-10 mr-3">
@@ -104,7 +104,7 @@ export const PostItem = ({ post, isLoading = false }: PostItemProps) => {
           </TouchableOpacity>
          </View>
         
-        <View className="w-full h-[350px]">
+        <View className="w-full h-[300px]">
           {post.media && post.media.length > 0 ? (
             <PostMediaGallery 
               mediaItems={post.media} 
@@ -117,11 +117,7 @@ export const PostItem = ({ post, isLoading = false }: PostItemProps) => {
           )}
         </View>
         
-        <View className="p-4">
-          {/* {post.content && (
-            <Text className="text-base mb-2">{post.content}</Text>
-          )} */}
-        
+        <View className="p-4">        
           <View className="flex-row justify-end mb-2">
             <Text className="text-center text-black text-[10px] font-light leading-3">
               {formattedDate}
@@ -129,7 +125,7 @@ export const PostItem = ({ post, isLoading = false }: PostItemProps) => {
           </View>
           
           <View className="flex-row justify-between items-center">
-            <View className="flex-row space-x-8">
+            <View className="flex-row space-x-12">
               <TouchableOpacity onPress={handleOpenComments}>
                 <CommentIcon width={20} height={20} />
               </TouchableOpacity>
@@ -166,7 +162,5 @@ export const PostItem = ({ post, isLoading = false }: PostItemProps) => {
         />
       </View>
     </SkeletonLoader>
-
-    
   );
 };

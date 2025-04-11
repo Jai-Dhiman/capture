@@ -84,7 +84,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                 <Text className="text-white text-xs font-normal text-center">Settings</Text>
               </TouchableOpacity>
               <TouchableOpacity 
-                className="bg-stone-300 rounded-[30px] border border-stone-300 px-4 py-1"
+                className="bg-[#E4CAC7] rounded-[30px] border border-[#E4CAC7] px-4 py-1"
                 onPress={onFollowersPress}
               >
                 <Text className="text-black text-xs font-normal text-center">Followers</Text>

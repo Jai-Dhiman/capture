@@ -79,12 +79,12 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
           </View>
           
           <View className="flex-row justify-between items-center">
-            <View className="flex-row space-x-8">
-              <TouchableOpacity onPress={() => onOpenComments(post.id)}>
+            <View className="flex-row">
+              <TouchableOpacity onPress={() => onOpenComments(post.id)} className="mr-10">
                 <CommentIcon width={20} height={20} />
               </TouchableOpacity>
               
-              <TouchableOpacity>
+              <TouchableOpacity className="mr-10">
                 <ShareIcon width={20} height={20} />
               </TouchableOpacity>
             </View>
@@ -127,7 +127,6 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
         windowSize={1}
       />
       
-      {/* Custom Pagination */}
       <View className="flex-row justify-center mt-2">
         {posts.map((_, index) => (
           <View
