@@ -10,6 +10,7 @@ export const NewPostButton: React.FC<NewPostButtonProps> = ({ onPress }) => {
   return (
     <TouchableOpacity 
       className="absolute bottom-6 right-6 shadow-lg"
+      style={{ zIndex: 2 }}
       onPress={onPress}
     >
       <View className="bg-[#e4CAC7] rounded-[10px] border border-black flex-row items-center px-2 py-1">

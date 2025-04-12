@@ -131,7 +131,14 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
         windowSize={1}
       />
       
-      <View className="flex-row justify-center mt-2">
+      <View 
+        className="flex-row justify-center"
+        style={{ 
+          zIndex: 3,
+          position: 'relative',
+          bottom: 20,
+        }}
+      >
         {posts.map((_, index) => (
           <View
             key={index}

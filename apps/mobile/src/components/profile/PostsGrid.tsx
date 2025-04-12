@@ -17,8 +17,6 @@ const GridItem = ({ post, onPress, itemSize }: GridItemProps) => {
         { 
           width: itemSize, 
           height: itemSize,
-          borderWidth: 2,  // Temporary border
-          borderColor: 'red', // Visible color
         }
       ]}
       activeOpacity={0.9}
@@ -29,8 +27,6 @@ const GridItem = ({ post, onPress, itemSize }: GridItemProps) => {
           width: '100%', 
           height: '100%',
           borderRadius: 16,
-          borderWidth: 2,  // Inner border
-          borderColor: 'blue', // Different color
         }}
       >
         {post.media && post.media.length > 0 ? (

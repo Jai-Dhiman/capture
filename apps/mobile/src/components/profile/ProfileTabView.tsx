@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, useWindowDimensions, Text, FlatList, TouchableOpacity } from 'react-native';
+import { View, useWindowDimensions, FlatList, Text, TouchableOpacity, Dimensions} from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { TabView, SceneMap } from 'react-native-tab-view';
-import { FlatGrid } from 'react-native-super-grid';
 import { PostsGrid } from './PostsGrid';
 import { ThreadItem } from '../post/ThreadItem';
 import { PostItem } from '../post/PostItem';
@@ -48,6 +48,8 @@ export const ProfileTabView = ({
   const threadPosts = posts.filter(post => post.type === 'thread');
 
   const renderPhotosTab = () => {
+    const { width } = Dimensions.get('window');
+
     if (isLoading) {
       return (
         <View className="flex-1 items-center justify-center pt-4">
@@ -64,34 +66,40 @@ export const ProfileTabView = ({
       );
     }
   
-  return (
-    <FlatGrid
-      itemDimension={110}
-      data={photoPosts}
-      spacing={12}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item, index }) => (
-        <PostsGrid
-          post={item}
-          onPress={onPostPress}
-          itemSize={(layout.width - 48) / 3}
+    const containerPadding = 16;
+    const numColumns = 3;
+    const itemSpacing = 12;
+    
+    const availableWidth = width - (containerPadding * 2);
+    const totalSpacingWidth = itemSpacing * (numColumns - 1);
+    const itemWidth = (availableWidth - totalSpacingWidth) / numColumns;
+    
+    return (
+      <View style={{ flex: 1, paddingHorizontal: containerPadding }}>
+        <FlashList
+          data={photoPosts}
+          numColumns={numColumns}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item, index }) => (
+            <View style={{
+              width: itemWidth,
+              height: itemWidth,
+              marginRight: (index + 1) % numColumns !== 0 ? itemSpacing : 0,
+              marginBottom: itemSpacing,
+            }}>
+              <PostsGrid
+                post={item}
+                onPress={onPostPress}
+                itemSize={itemWidth}
+              />
+            </View>
+          )}
+          estimatedItemSize={itemWidth}
+          contentContainerStyle={{ paddingVertical: 12 }}
         />
-      )}
-      style={{
-        flex: 1,
-      }}
-      contentContainerStyle={{
-        paddingHorizontal: 12,
-        paddingTop: 12,
-        paddingBottom: 24,
-      }}
-      maxToRenderPerBatch={12}
-      windowSize={21}
-      initialNumToRender={12}
-      removeClippedSubviews={true}
-    />
-  );
-};
+      </View>
+    );
+  };
 
   const renderThreadsTab = () => {
     if (isLoading) {
