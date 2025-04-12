@@ -53,6 +53,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
     backgroundColor: 'transparent',
+    padding: 4
   }
 });
 

@@ -63,37 +63,32 @@ export const ProfileTabView = ({
         </View>
       );
     }
-
-  const numColumns = 3;
-  const horizontalSpacing = 8;
-  const edgeSpacing = 16;
-
-  const screenWidth = layout.width;
-  const availableWidth = screenWidth - (edgeSpacing * 2);
   
   return (
     <FlatGrid
-      itemDimension={(availableWidth - (horizontalSpacing * (numColumns - 1))) / numColumns}
-      spacing={horizontalSpacing}
+      itemDimension={110}
       data={photoPosts}
+      spacing={12}
       keyExtractor={(item) => item.id}
-      maxItemsPerRow={3}
-      fixed={true}
-      renderItem={({ item }) => (
+      renderItem={({ item, index }) => (
         <PostsGrid
           post={item}
           onPress={onPostPress}
-          itemSize={(availableWidth - (horizontalSpacing * (numColumns - 1))) / numColumns}
+          itemSize={(layout.width - 48) / 3}
         />
       )}
-      contentContainerStyle={{ 
-        paddingHorizontal: edgeSpacing,
-        paddingTop: edgeSpacing,
-      }}
       style={{
         flex: 1,
-        width: '100%',
       }}
+      contentContainerStyle={{
+        paddingHorizontal: 12,
+        paddingTop: 12,
+        paddingBottom: 24,
+      }}
+      maxToRenderPerBatch={12}
+      windowSize={21}
+      initialNumToRender={12}
+      removeClippedSubviews={true}
     />
   );
 };
