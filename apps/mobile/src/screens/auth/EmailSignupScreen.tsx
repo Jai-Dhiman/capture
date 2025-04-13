@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import {
-  View, Text, TouchableOpacity, ScrollView, TextInput, Image, Alert
+  View, Text, TouchableOpacity, ScrollView, TextInput, Image, Dimensions
 } from 'react-native';
 import { useForm } from '@tanstack/react-form';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -10,6 +10,10 @@ import { LoadingSpinner } from 'components/ui/LoadingSpinner';
 import Header from '../../components/ui/Header';
 import { Feather, MaterialIcons } from '@expo/vector-icons';
 import { useAlert } from '../../lib/AlertContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import EmailIcon from '../../../assets/icons/EmailIcon.svg'
+import LockIcon from '../../../assets/icons/LockIcon.svg'
+
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'Signup'>
@@ -18,15 +22,16 @@ type Props = {
 export default function EmailSignupScreen({ navigation }: Props) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isEmailFocused, setIsEmailFocused] = useState(false);
-  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
-  const [isConfirmPasswordFocused, setIsConfirmPasswordFocused] = useState(false);
   const { showAlert } = useAlert();
   const { signup } = useAuth();
+  const insets = useSafeAreaInsets();
+  const screenWidth = Dimensions.get('window').width;
+  
+  const getResponsiveSize = (size: number) => (screenWidth / 393) * size;
 
   const emailInputRef = useRef<TextInput>(null);
   const passwordInputRef = useRef<TextInput>(null);
-  const confirmPasswordInputRef = useRef<TextInput>(null)
+  const confirmPasswordInputRef = useRef<TextInput>(null);
 
   const hasCapitalLetter = /[A-Z]/;
   const hasNumber = /[0-9]/;
@@ -59,10 +64,19 @@ export default function EmailSignupScreen({ navigation }: Props) {
   return (
     <View style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <View className="flex-1 bg-[#DCDCDE] overflow-hidden">
+        <View style={{ 
+          flex: 1, 
+          backgroundColor: '#DCDCDE',
+          overflow: 'hidden'
+        }}>
           <Image
             source={require('../../../assets/DefaultBackground.png')}
-            style={{ width: '100%', height: '100%', position: 'absolute' }}
+            style={{ 
+              width: '100%', 
+              height: '100%', 
+              position: 'absolute',
+              borderRadius: getResponsiveSize(20)
+            }}
             resizeMode="cover"
           />
 
@@ -71,7 +85,16 @@ export default function EmailSignupScreen({ navigation }: Props) {
             onBackPress={() => navigation.goBack()}
           />
 
-          <View className="flex-1 px-5 items-center">
+          <View style={{
+            alignItems: 'center',
+            marginTop: getResponsiveSize(100) - insets.top > 0 ? getResponsiveSize(84) - insets.top : getResponsiveSize(20)
+          }}>
+
+          </View>
+          <View style={{
+            paddingHorizontal: getResponsiveSize(25),
+            width: '100%'
+          }}>
             <form.Field
               name="email"
               validators={{
@@ -83,27 +106,56 @@ export default function EmailSignupScreen({ navigation }: Props) {
               }}
             >
               {(field) => (
-                <View className="mt-12 mb-4 w-full items-center">
+                <View style={{ marginBottom: getResponsiveSize(16) }}>
                   <TouchableOpacity 
                     activeOpacity={1}
                     onPress={() => emailInputRef.current?.focus()}
-                    className="h-[55px] bg-white rounded-2xl shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] w-full"
+                    style={{
+                      height: getResponsiveSize(56),
+                      backgroundColor: 'white',
+                      borderRadius: getResponsiveSize(16),
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.25,
+                      shadowRadius: 4,
+                      elevation: 4,
+                      width: '100%'
+                    }}
                   >
-                    <View className="w-[55px] h-[55px] absolute left-0 top-0 bg-white border border-[#c7c7c7] rounded-l-2xl" />
-                    <View className="absolute left-[12px] top-[12px]">
-                      <MaterialIcons name="email" size={30} color="black" />
+                    <View style={{
+                      width: getResponsiveSize(56),
+                      height: getResponsiveSize(56),
+                      position: 'absolute',
+                      left: 0,
+                      top: 0,
+                      backgroundColor: 'white',
+                      borderWidth: 0.5,
+                      borderColor: '#c7c7c7',
+                      borderTopLeftRadius: getResponsiveSize(16),
+                      borderBottomLeftRadius: getResponsiveSize(16)
+                    }} />
+                    <View style={{
+                      position: 'absolute',
+                      left: getResponsiveSize(12),
+                      top: getResponsiveSize(12)
+                    }}>
+                      <EmailIcon width={getResponsiveSize(30)} height={getResponsiveSize(30)} />
                     </View>
                     <TextInput
-                      onFocus={() => {
-                        setIsEmailFocused(true);
+                      ref={emailInputRef}
+                      style={{
+                        position: 'absolute',
+                        left: getResponsiveSize(65),
+                        top: getResponsiveSize(16),
+                        right: getResponsiveSize(12),
+                        fontSize: getResponsiveSize(16),
+                        fontWeight: '600',
+                        fontFamily: 'Roboto',
+                        color: 'black'
                       }}
-                      onBlur={() => {
-                        setIsEmailFocused(false);
-                        field.handleBlur();
-                      }}
-                      className="absolute left-[65px] top-[20px] right-[12px] text-base font-semibold font-roboto"
                       value={field.state.value}
                       onChangeText={field.handleChange}
+                      onBlur={field.handleBlur}
                       autoCapitalize="none"
                       keyboardType="email-address"
                       placeholder="Email"
@@ -111,7 +163,12 @@ export default function EmailSignupScreen({ navigation }: Props) {
                     />
                   </TouchableOpacity>
                   {field.state.meta.errors.length > 0 && (
-                    <Text className="text-red-500 text-xs mt-1">
+                    <Text style={{
+                      color: 'red',
+                      fontSize: getResponsiveSize(12),
+                      marginTop: getResponsiveSize(4),
+                      marginLeft: getResponsiveSize(8)
+                    }}>
                       {field.state.meta.errors.join(', ')}
                     </Text>
                   )}
@@ -143,40 +200,78 @@ export default function EmailSignupScreen({ navigation }: Props) {
               }}
             >
               {(field) => (
-                <View className="mb-4 w-full items-center">
+                <View style={{ marginBottom: getResponsiveSize(16) }}>
                   <TouchableOpacity
                     activeOpacity={1}
                     onPress={() => passwordInputRef.current?.focus()}
-                    className="h-[55px] bg-white rounded-2xl shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] w-full"
+                    style={{
+                      height: getResponsiveSize(56),
+                      backgroundColor: 'white',
+                      borderRadius: getResponsiveSize(16),
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.25,
+                      shadowRadius: 4,
+                      elevation: 4,
+                      width: '100%'
+                    }}
                   >
-                    <View className="w-[55px] h-[55px] absolute left-0 top-0 bg-white border border-[#c7c7c7] rounded-l-2xl" />
-                    <View className="absolute left-[12px] top-[12px]">
-                      <Feather name="lock" size={30} color="black" />
+                    <View style={{
+                      width: getResponsiveSize(56),
+                      height: getResponsiveSize(56),
+                      position: 'absolute',
+                      left: 0,
+                      top: 0,
+                      backgroundColor: 'white',
+                      borderWidth: 0.5,
+                      borderColor: '#c7c7c7',
+                      borderTopLeftRadius: getResponsiveSize(16),
+                      borderBottomLeftRadius: getResponsiveSize(16)
+                    }} />
+                    <View style={{
+                      position: 'absolute',
+                      left: getResponsiveSize(12),
+                      top: getResponsiveSize(12)
+                    }}>
+                      <LockIcon width={getResponsiveSize(30)} height={getResponsiveSize(30)} />
                     </View>
                     <TextInput
-                      onFocus={() => {
-                        setIsPasswordFocused(true);
+                      ref={passwordInputRef}
+                      style={{
+                        position: 'absolute',
+                        left: getResponsiveSize(64),
+                        top: getResponsiveSize(16),
+                        right: getResponsiveSize(40),
+                        fontSize: getResponsiveSize(16),
+                        fontWeight: '600',
+                        fontFamily: 'Roboto',
+                        color: 'black'
                       }}
-                      onBlur={() => {
-                        setIsPasswordFocused(false);
-                        field.handleBlur();
-                      }}
-                      className="absolute left-[64px] top-[20px] right-[40px] text-base font-semibold font-roboto"
                       value={field.state.value}
                       onChangeText={field.handleChange}
+                      onBlur={field.handleBlur}
                       secureTextEntry={!showPassword}
                       placeholder="Create Password"
                       placeholderTextColor="#c7c7c7"
                     />
                     <TouchableOpacity 
-                      className="absolute right-[12px] top-[12px]"
+                      style={{
+                        position: 'absolute',
+                        right: getResponsiveSize(12),
+                        top: getResponsiveSize(12)
+                      }}
                       onPress={() => setShowPassword(!showPassword)}
                     >
-                      <Feather name={showPassword ? "eye" : "eye-off"} size={24} color="#888" />
+                      <Feather name={showPassword ? "eye" : "eye-off"} size={getResponsiveSize(24)} color="#888" />
                     </TouchableOpacity>
                   </TouchableOpacity>
                   {field.state.meta.errors.length > 0 && (
-                    <Text className="text-red-500 text-xs mt-1">
+                    <Text style={{
+                      color: 'red',
+                      fontSize: getResponsiveSize(12),
+                      marginTop: getResponsiveSize(4),
+                      marginLeft: getResponsiveSize(8)
+                    }}>
                       {field.state.meta.errors}
                     </Text>
                   )}
@@ -197,40 +292,78 @@ export default function EmailSignupScreen({ navigation }: Props) {
               }}
             >
               {(field) => (
-                <View className="mb-1 w-full items-center">
+                <View style={{ marginBottom: getResponsiveSize(8) }}>
                   <TouchableOpacity
                     activeOpacity={1}
                     onPress={() => confirmPasswordInputRef.current?.focus()}
-                    className="h-[55px] bg-white rounded-2xl shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] w-full"
+                    style={{
+                      height: getResponsiveSize(56),
+                      backgroundColor: 'white',
+                      borderRadius: getResponsiveSize(16),
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.25,
+                      shadowRadius: 4,
+                      elevation: 4,
+                      width: '100%'
+                    }}
                   >
-                    <View className="w-[55px] h-[55px] absolute left-0 top-0 bg-white border border-[#c7c7c7] rounded-l-2xl" />
-                    <View className="absolute left-[12px] top-[12px]">
-                      <Feather name="lock" size={30} color="black" />
+                    <View style={{
+                      width: getResponsiveSize(56),
+                      height: getResponsiveSize(56),
+                      position: 'absolute',
+                      left: 0,
+                      top: 0,
+                      backgroundColor: 'white',
+                      borderWidth: 0.5,
+                      borderColor: '#c7c7c7',
+                      borderTopLeftRadius: getResponsiveSize(16),
+                      borderBottomLeftRadius: getResponsiveSize(16)
+                    }} />
+                    <View style={{
+                      position: 'absolute',
+                      left: getResponsiveSize(12),
+                      top: getResponsiveSize(12)
+                    }}>
+                      <LockIcon width={getResponsiveSize(30)} height={getResponsiveSize(30)} />
                     </View>
                     <TextInput
-                      onFocus={() => {
-                        setIsConfirmPasswordFocused(true);
+                      ref={confirmPasswordInputRef}
+                      style={{
+                        position: 'absolute',
+                        left: getResponsiveSize(65),
+                        top: getResponsiveSize(16),
+                        right: getResponsiveSize(40),
+                        fontSize: getResponsiveSize(16),
+                        fontWeight: '600',
+                        fontFamily: 'Roboto',
+                        color: 'black'
                       }}
-                      onBlur={() => {
-                        setIsConfirmPasswordFocused(false);
-                        field.handleBlur();
-                      }}
-                      className="absolute left-[65px] top-[20px] right-[40px] text-base font-semibold font-roboto"
                       value={field.state.value}
                       onChangeText={field.handleChange}
+                      onBlur={field.handleBlur}
                       secureTextEntry={!showConfirmPassword}
                       placeholder="Re-enter Password"
                       placeholderTextColor="#c7c7c7"
                     />
                     <TouchableOpacity 
-                      className="absolute right-[12px] top-[12px]"
+                      style={{
+                        position: 'absolute',
+                        right: getResponsiveSize(12),
+                        top: getResponsiveSize(12)
+                      }}
                       onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                     >
-                      <Feather name={showConfirmPassword ? "eye" : "eye-off"} size={24} color="#888" />
+                      <Feather name={showConfirmPassword ? "eye" : "eye-off"} size={getResponsiveSize(24)} color="#888" />
                     </TouchableOpacity>
                   </TouchableOpacity>
                   {field.state.meta.errors.length > 0 && (
-                    <Text className="text-red-500 text-xs mt-1">
+                    <Text style={{
+                      color: 'red',
+                      fontSize: getResponsiveSize(12),
+                      marginTop: getResponsiveSize(4),
+                      marginLeft: getResponsiveSize(8)
+                    }}>
                       {field.state.meta.errors}
                     </Text>
                   )}
@@ -238,8 +371,17 @@ export default function EmailSignupScreen({ navigation }: Props) {
               )}
             </form.Field>
 
-            <View className="w-full px-2 mb-6">
-              <Text className="text-[11px] font-normal font-roboto leading-normal">
+            <View style={{ 
+              marginLeft: getResponsiveSize(8),
+              marginBottom: getResponsiveSize(30)
+            }}>
+              <Text style={{
+                fontSize: getResponsiveSize(12),
+                fontWeight: '400',
+                fontFamily: 'Roboto',
+                lineHeight: getResponsiveSize(18),
+                color: 'black'
+              }}>
                 Password must contain {"\n"}
                 At least 1 Capital Letter{"\n"}
                 At least 1 Number{"\n"}
@@ -252,14 +394,34 @@ export default function EmailSignupScreen({ navigation }: Props) {
             >
               {([canSubmit, isSubmitting]) => (
                 <TouchableOpacity
-                  className={`h-14 ${canSubmit ? 'bg-[#e4cac7]' : 'bg-gray-400'} rounded-[30px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] backdrop-blur-sm justify-center items-center mt-4 w-full`}
+                  style={{
+                    height: getResponsiveSize(56),
+                    backgroundColor: canSubmit ? '#c7c7c7' : '#a9a9a9',
+                    borderRadius: getResponsiveSize(30),
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.25,
+                    shadowRadius: 4,
+                    elevation: 4,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    width: '100%',
+                    marginTop: getResponsiveSize(80),
+                    marginBottom: getResponsiveSize(30) + insets.bottom
+                  }}
                   onPress={() => form.handleSubmit()}
                   disabled={!canSubmit || signup.isPending}
                 >
                   {signup.isPending || isSubmitting ? (
                     <LoadingSpinner message="Creating account..." />
                   ) : (
-                    <Text className="text-center text-black text-base font-bold font-roboto leading-normal">
+                    <Text style={{
+                      textAlign: 'center',
+                      color: 'black',
+                      fontSize: getResponsiveSize(16),
+                      fontWeight: '700',
+                      fontFamily: 'Roboto'
+                    }}>
                       Create Account
                     </Text>
                   )}

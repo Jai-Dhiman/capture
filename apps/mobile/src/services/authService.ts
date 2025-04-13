@@ -138,7 +138,6 @@ export const authService = {
   async handleAuthCallback(url: string) {
     try {
       if (!url || typeof url !== "string") {
-        console.error("Invalid URL provided to handleAuthCallback:", url);
         return null;
       }
 
@@ -147,12 +146,10 @@ export const authService = {
         const urlObj = new URL(url);
         code = urlObj.searchParams.get("code");
       } catch (error) {
-        console.error("Failed to parse URL:", error);
         return null;
       }
 
       if (!code) {
-        console.error("No auth code found in URL");
         return null;
       }
 
