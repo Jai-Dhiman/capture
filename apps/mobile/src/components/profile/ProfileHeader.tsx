@@ -24,7 +24,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   if (isLoading) {
     return (
       <View className="flex-row mb-6">
-        <View className="w-24 h-24 rounded-full overflow-hidden">
+        <View className="w-24 h-24 rounded-full overflow-hidden shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]">
           <SkeletonElement 
             width="100%" 
             height="100%" 
@@ -33,23 +33,28 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         </View>
         
         <View className="ml-4 flex-1 justify-center">
-          <SkeletonElement width="60%" height={24} radius={4} />
+          <View className="flex-row items-center">
+            <SkeletonElement width={80} height={20} radius={4} />
+            <View className="ml-2">
+              <SkeletonElement width={40} height={12} radius={4} />
+            </View>
+          </View>
           <View className="mt-1">
-            <SkeletonElement width="90%" height={16} radius={4} />
-            <SkeletonElement width="80%" height={16} radius={4} />
+            <SkeletonElement width="90%" height={14} radius={4} />
+            <SkeletonElement width="80%" height={14} radius={4} />
           </View>
           
           <View className="flex-row mt-4">
             <View className="mr-2">
               <SkeletonElement 
-                width={100} 
-                height={32} 
+                width={80} 
+                height={24} 
                 radius={30} 
               />
             </View>
             <SkeletonElement 
-              width={100} 
-              height={32} 
+              width={64} 
+              height={24} 
               radius={30} 
             />
           </View>
@@ -60,7 +65,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 
   return (
     <View className="flex-row mb-6">
-      <View className="w-24 h-24 rounded-full bg-red-200 shadow overflow-hidden">
+      <View className="w-24 h-24 rounded-full bg-red-200 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] overflow-hidden">
         {profileData?.profileImage ? (
           <ProfileImage cloudflareId={profileData.profileImage} />
         ) : (
@@ -69,8 +74,18 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       </View>
       
       <View className="ml-4 flex-1 justify-center">
-        <Text className="text-xl font-light">{profileData?.username || 'User'}</Text>
-        <Text className="text-xs font-light text-black opacity-70 mt-1">
+        <View className="flex-row items-center">
+          <Text className="text-black text-xl font-light font-['Roboto'] leading-tight">
+            {profileData?.username || 'User'}
+          </Text>
+          {profileData?.isPrivate && (
+            <Text className="ml-2 text-black text-xs font-light font-['Roboto'] leading-3">
+              (private)
+            </Text>
+          )}
+        </View>
+        
+        <Text className="text-black text-xs font-light font-['Roboto'] leading-snug mt-1">
           {profileData?.bio || ''}
         </Text>
         
@@ -78,16 +93,20 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           {isOwnProfile ? (
             <>
               <TouchableOpacity 
-                className="bg-neutral-400 rounded-[30px] px-4 py-1 mr-2"
+                className="bg-neutral-400 rounded-[30px] h-6 w-24 mr-2 flex items-center justify-center"
                 onPress={onSettingsPress}
               >
-                <Text className="text-white text-xs font-normal text-center">Settings</Text>
+                <Text className="text-white text-xs font-normal font-['Roboto'] leading-3 text-center">
+                  Settings
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity 
-                className="bg-[#E4CAC7] rounded-[30px] border border-[#E4CAC7] px-4 py-1"
+                className="bg-[#e4cac7] rounded-[30px] border border-stone-300 h-6 w-20 flex items-center justify-center"
                 onPress={onFollowersPress}
               >
-                <Text className="text-black text-xs font-normal text-center">Followers</Text>
+                <Text className="text-black text-xs font-normal font-['Roboto'] leading-3 text-center">
+                  Followers
+                </Text>
               </TouchableOpacity>
             </>
           ) : (
@@ -95,12 +114,14 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               <FollowButton 
                 userId={userId}
                 isFollowing={profileData?.isFollowing ?? false}
-                className="bg-neutral-400 rounded-[30px] px-4 py-1 mr-2"
+                className="rounded-[30px] h-6 mr-2 flex items-center justify-center"
               />
               <TouchableOpacity 
-                className="bg-stone-300 rounded-[30px] border border-stone-300 px-4 py-1"
+                className="bg-stone-300 rounded-[30px] border border-stone-300 h-6 w-16 flex items-center justify-center"
               >
-                <Text className="text-black text-xs font-normal text-center">Message</Text>
+                <Text className="text-black text-xs font-normal font-['Roboto'] leading-3 text-center">
+                  Message
+                </Text>
               </TouchableOpacity>
             </>
           )}
