@@ -30,6 +30,11 @@ export const useUserPosts = (userId?: string) => {
                   type
                   createdAt
                   isSaved
+                  user {
+                    id
+                    username
+                    profileImage
+                  }
                   media {
                     id
                     storageKey

@@ -64,7 +64,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   }
 
   return (
-    <View className="flex-row mb-6">
+    <View className="flex-row mb-6" >
       <View className="w-24 h-24 rounded-full bg-red-200 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] overflow-hidden">
         {profileData?.profileImage ? (
           <ProfileImage cloudflareId={profileData.profileImage} />

@@ -27,9 +27,6 @@ interface ProfileTabViewProps {
 export const ProfileTabView = ({
   posts,
   savedPosts,
-  itemSize,
-  spacing,
-  containerPadding,
   onPostPress,
   isLoading,
   isLoadingSaved,
@@ -38,6 +35,7 @@ export const ProfileTabView = ({
 }: ProfileTabViewProps) => {
   const layout = useWindowDimensions();
   const [index, setIndex] = useState(0);
+  const containerPadding = 16;
   const [routes] = useState([
     { key: 'posts', title: 'Posts' },
     { key: 'threads', title: 'Threads' },
@@ -66,7 +64,6 @@ export const ProfileTabView = ({
       );
     }
   
-    const containerPadding = 16;
     const numColumns = 3;
     const itemSpacing = 12;
     
@@ -75,7 +72,7 @@ export const ProfileTabView = ({
     const itemWidth = (availableWidth - totalSpacingWidth) / numColumns;
     
     return (
-      <View style={{ flex: 1, paddingHorizontal: containerPadding }}>
+      <View style={{ flex: 1 }}>
         <FlashList
           data={photoPosts}
           numColumns={numColumns}
@@ -84,7 +81,6 @@ export const ProfileTabView = ({
             <View style={{
               width: itemWidth,
               height: itemWidth,
-              marginRight: (index + 1) % numColumns !== 0 ? itemSpacing : 0,
               marginBottom: itemSpacing,
             }}>
               <PostsGrid
@@ -95,7 +91,7 @@ export const ProfileTabView = ({
             </View>
           )}
           estimatedItemSize={itemWidth}
-          contentContainerStyle={{ paddingVertical: 12 }}
+          contentContainerStyle={{ paddingVertical: 12, paddingHorizontal: containerPadding }}
         />
       </View>
     );
@@ -208,6 +204,7 @@ export const ProfileTabView = ({
         <View className="w-full flex-row justify-evenly">
           <TouchableOpacity 
             onPress={() => handleTabPress(0)}
+            className="flex-1 items-center"
           >
             <View className={index === 0 ? "w-8 h-8 bg-[#E4CAC7] rounded-[10px] items-center justify-center" : "items-center justify-center"}>
               <PhotosIcon width={20} height={20} />
@@ -216,6 +213,7 @@ export const ProfileTabView = ({
           
           <TouchableOpacity 
             onPress={() => handleTabPress(1)}
+            className="flex-1 items-center"
           >
             <View className={index === 1 ? "w-8 h-8 bg-[#E4CAC7] rounded-[10px] items-center justify-center" : "items-center justify-center"}>
               <TextIcon width={20} height={20} />
@@ -224,6 +222,7 @@ export const ProfileTabView = ({
           
           <TouchableOpacity 
             onPress={() => handleTabPress(2)}
+            className="flex-1 items-center"
           >
             <View className={index === 2 ? "w-8 h-8 bg-[#E4CAC7] rounded-[10px] items-center justify-center" : "items-center justify-center"}>
               <SavedPosts width={20} height={20} />
