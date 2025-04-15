@@ -1,5 +1,5 @@
-import React, { useRef, useMemo, useCallback } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import React, { useRef, useMemo, useCallback, useEffect } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { useAtom } from 'jotai';
 import BottomSheet, { BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import { 
@@ -17,6 +17,7 @@ export const CommentDrawer = () => {
   const [isOpen, setIsOpen] = useAtom(commentDrawerOpenAtom);
   const [postId] = useAtom(currentPostIdAtom);
   const [comments] = useAtom(combinedCommentsAtom);
+  const [sortBy, setSortBy] = useAtom(commentSortAtom);
   const [, loadMoreComments] = useAtom(loadMoreCommentsAtom);
   const queryResult = useAtom(commentsQueryAtom)[0];
   
@@ -26,7 +27,10 @@ export const CommentDrawer = () => {
   const handleClose = useCallback(() => {
     setIsOpen(false);
   }, [setIsOpen]);
-
+  
+  const toggleSort = useCallback(() => {
+    setSortBy(prev => prev === 'newest' ? 'oldest' : 'newest');
+  }, [setSortBy]);
   
   const handleLoadMore = useCallback(() => {
     if (queryResult.data?.hasNextPage && !queryResult.isFetching) {
@@ -51,14 +55,14 @@ export const CommentDrawer = () => {
         />
       )}
     >
-      <View className="flex-1 flex flex-col">
+      <BottomSheetView style={styles.container}>
         <View className="px-4 py-3 border-b border-[#e5e5e5]">
           <Text className="text-xs text-neutral-800 text-center">
             {comments.length} COMMENTS
           </Text>
         </View>
         
-        <View className="flex-1">
+        <View style={styles.commentListContainer}>
           <CommentList 
             comments={comments} 
             loading={queryResult.isLoading}
@@ -71,7 +75,17 @@ export const CommentDrawer = () => {
         <View className="px-6 pt-6 pb-8 border-t border-[#e5e5e5] bg-white">
           <CommentInput />
         </View>
-      </View>
+      </BottomSheetView>
     </BottomSheet>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    flexDirection: 'column',
+  },
+  commentListContainer: {
+    flex: 1,
+  }
+});
