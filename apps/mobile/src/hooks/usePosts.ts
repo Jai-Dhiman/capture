@@ -32,8 +32,8 @@ export const useUserPosts = (userId?: string) => {
                   isSaved
                   user {
                     id
-                    username
-                    profileImage
+                    // username
+                    // profileImage
                   }
                   media {
                     id

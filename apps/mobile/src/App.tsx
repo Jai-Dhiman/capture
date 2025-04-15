@@ -13,6 +13,7 @@ import { AlertProvider } from './lib/AlertContext';
 import { Provider as JotaiProvider } from 'jotai'
 import { JotaiInitializer } from './components/providers/JotaiProvider';
 import { AuthProvider } from './components/providers/AuthProvider';
+import { CommentDrawer } from './components/comment/CommentDrawer';
 import * as Sentry from '@sentry/react-native';
 
 Sentry.init({
@@ -45,6 +46,7 @@ export default Sentry.wrap(function App() {
                   <NavigationContainer linking={linking}>
                     <AuthProvider>
                       <MainNavigator />
+                      <CommentDrawer />
                     </AuthProvider>
                   </NavigationContainer>
                 </View>

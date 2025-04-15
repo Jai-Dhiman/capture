@@ -1,9 +1,7 @@
 import React, { useRef, useMemo, useCallback } from 'react';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useAtom } from 'jotai';
 import BottomSheet, { BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
-import { Ionicons } from '@expo/vector-icons';
 import { 
   commentDrawerOpenAtom, 
   currentPostIdAtom,
@@ -19,7 +17,6 @@ export const CommentDrawer = () => {
   const [isOpen, setIsOpen] = useAtom(commentDrawerOpenAtom);
   const [postId] = useAtom(currentPostIdAtom);
   const [comments] = useAtom(combinedCommentsAtom);
-  const [sortBy, setSortBy] = useAtom(commentSortAtom);
   const [, loadMoreComments] = useAtom(loadMoreCommentsAtom);
   const queryResult = useAtom(commentsQueryAtom)[0];
   
@@ -29,10 +26,7 @@ export const CommentDrawer = () => {
   const handleClose = useCallback(() => {
     setIsOpen(false);
   }, [setIsOpen]);
-  
-  const toggleSort = useCallback(() => {
-    setSortBy(prev => prev === 'newest' ? 'oldest' : 'newest');
-  }, [setSortBy]);
+
   
   const handleLoadMore = useCallback(() => {
     if (queryResult.data?.hasNextPage && !queryResult.isFetching) {
@@ -57,41 +51,27 @@ export const CommentDrawer = () => {
         />
       )}
     >
-      <BottomSheetView className="flex-1 p-4">
-        <View className="flex-row justify-between items-center mb-4">
-          <Text className="text-lg font-semibold">Comments</Text>
-          <TouchableOpacity 
-            onPress={handleClose} 
-            className="p-1"
-          >
-            <Ionicons name="close" size={24} color="#333" />
-          </TouchableOpacity>
+      <View className="flex-1 flex flex-col">
+        <View className="px-4 py-3 border-b border-[#e5e5e5]">
+          <Text className="text-xs text-neutral-800 text-center">
+            {comments.length} COMMENTS
+          </Text>
         </View>
         
-        <View className="mb-3 items-end">
-          <TouchableOpacity 
-            onPress={toggleSort} 
-            className="flex-row items-center p-2"
-          >
-            <Text className="mr-2 text-gray-600">Sort by: {sortBy}</Text>
-            <Ionicons 
-              name={sortBy === 'newest' ? 'arrow-down' : 'arrow-up'} 
-              size={16} 
-              color="#666" 
-            />
-          </TouchableOpacity>
+        <View className="flex-1">
+          <CommentList 
+            comments={comments} 
+            loading={queryResult.isLoading}
+            hasNextPage={queryResult.data?.hasNextPage || false}
+            loadingMore={queryResult.isFetching}
+            onLoadMore={handleLoadMore}
+          />
         </View>
         
-        <CommentInput />
-        
-        <CommentList 
-          comments={comments} 
-          loading={queryResult.isLoading}
-          hasNextPage={queryResult.data?.hasNextPage || false}
-          loadingMore={queryResult.isFetching}
-          onLoadMore={handleLoadMore}
-        />
-      </BottomSheetView>
+        <View className="px-6 pt-6 pb-8 border-t border-[#e5e5e5] bg-white">
+          <CommentInput />
+        </View>
+      </View>
     </BottomSheet>
   );
 };
