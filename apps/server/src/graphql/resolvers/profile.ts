@@ -77,6 +77,12 @@ export const profileResolvers = {
       const postsWithMedia = posts.map((post) => ({
         ...post,
         media: mediaItems.filter((media) => media.postId === post.id),
+        user: {
+          id: profile.id,
+          userId: profile.userId,
+          username: profile.username,
+          profileImage: profile.profileImage,
+        },
       }));
 
       return {
