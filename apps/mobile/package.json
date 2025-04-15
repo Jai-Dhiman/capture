@@ -55,6 +55,7 @@
     "react-native-css-interop": "^0.1.22",
     "react-native-error-boundary": "^2.0.0",
     "react-native-gesture-handler": "~2.20.2",
+    "react-native-keyboard-accessory": "^0.1.16",
     "react-native-pager-view": "6.5.1",
     "react-native-paper": "^5.13.1",
     "react-native-reanimated": "~3.16.1",
