@@ -10,21 +10,21 @@ interface GridItemProps {
 
 const GridItem = ({ post, onPress, itemSize }: GridItemProps) => {
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       onPress={() => onPress(post)}
       style={[
         styles.gridItem,
-        { 
-          width: itemSize, 
+        {
+          width: itemSize,
           height: itemSize,
         }
       ]}
       activeOpacity={0.9}
     >
-      <View 
-        className="bg-stone-400 rounded-2xl overflow-hidden" 
-        style={{ 
-          width: '100%', 
+      <View
+        className="bg-stone-400 rounded-2xl overflow-hidden"
+        style={{
+          width: '100%',
           height: '100%',
           borderRadius: 16,
         }}
@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
     backgroundColor: 'transparent',
-    padding: 4
+    padding: 0.5
   }
 });
 

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import type React from 'react';
+import { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform, Modal, Pressable } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
@@ -16,7 +17,7 @@ type HeaderProps = {
   forceHideMenu?: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ 
+const Header: React.FC<HeaderProps> = ({
   showBackButton = false,
   onBackPress,
   forceHideMenu = false
@@ -24,9 +25,9 @@ const Header: React.FC<HeaderProps> = ({
   const [menuVisible, setMenuVisible] = useState(false);
   const navigation = useNavigation();
   const { stage } = useAuthStore();
-  
+
   const menuAnimValue = useSharedValue(0);
-  
+
   const showMenuButton = stage === 'complete' && !forceHideMenu;
 
   const navigationItems = [
@@ -60,7 +61,7 @@ const Header: React.FC<HeaderProps> = ({
     <View className="relative px-4 mt-[50px]">
       <View className="flex-row items-center justify-between">
         {showBackButton ? (
-          <TouchableOpacity 
+          <TouchableOpacity
             className="w-8 h-8 bg-[#E4CAC7] rounded-full shadow-md flex justify-center items-center"
             onPress={onBackPress}
           >
@@ -69,15 +70,15 @@ const Header: React.FC<HeaderProps> = ({
         ) : (
           <View className="w-8 h-8" />
         )}
-        
+
         <View>
           <Text className="text-[40px] font-roboto font-light text-center">
             Capture
           </Text>
         </View>
-        
+
         {showMenuButton ? (
-          <TouchableOpacity 
+          <TouchableOpacity
             className="w-8 h-8 bg-[#E4CAC7] rounded-full shadow-md flex justify-center items-center"
             onPress={toggleMenu}
           >
@@ -87,9 +88,7 @@ const Header: React.FC<HeaderProps> = ({
           <View className="w-8 h-8" />
         )}
       </View>
-      
-      <View className="h-[1px] bg-black/10 w-full mt-2"></View>
-      
+
       {menuVisible && (
         <Modal
           transparent={true}
@@ -97,14 +96,14 @@ const Header: React.FC<HeaderProps> = ({
           animationType="none"
           onRequestClose={() => setMenuVisible(false)}
         >
-          <Pressable 
+          <Pressable
             style={StyleSheet.absoluteFill}
             onPress={() => setMenuVisible(false)}
           >
             <View style={{ flex: 1 }} />
           </Pressable>
-          
-          <Animated.View 
+
+          <Animated.View
             style={[
               styles.menuContainer,
               menuAnimatedStyle,
@@ -113,11 +112,11 @@ const Header: React.FC<HeaderProps> = ({
             <Pressable onPress={(e) => e.stopPropagation()}>
               <View className="w-56 h-72 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] flex flex-col justify-start items-start">
                 <View className="w-56 h-72 pb-10 flex flex-col justify-start items-start gap-0.5">
-                  {navigationItems.map((item, index) => {
+                  {navigationItems.map((item) => {
                     const Icon = item.icon;
                     return (
                       <TouchableOpacity
-                        key={index}
+                        key={item.route}
                         className="self-stretch h-14 relative bg-stone-300 rounded-2xl"
                         onPress={() => handleNavigation(item.route)}
                       >
@@ -146,13 +145,13 @@ const styles = StyleSheet.create({
     right: 16,
     top: 120,
     zIndex: 9999,
-    ...(Platform.OS === 'ios' 
-      ? { 
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.25,
-          shadowRadius: 4,
-        } 
+    ...(Platform.OS === 'ios'
+      ? {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+      }
       : {}
     ),
   },
