@@ -11,34 +11,33 @@ interface MediaImageProps {
   priority?: boolean;
 }
 
-const MediaImageComponent = ({ 
-  media, 
-  style = {}, 
-  expirySeconds = 1800,
-  priority = true
+const MediaImageComponent = ({
+  media,
+  style = {},
+  expirySeconds = 1800
 }: MediaImageProps) => {
   const queryClient = useQueryClient();
   const [imageLoaded, setImageLoaded] = useState(false);
-  
+
   const { data: imageUrl, isLoading, error, isStale } = useMediaSource(media, expirySeconds);
-  
+
   useEffect(() => {
     if (imageUrl && !isStale) {
       const refreshTime = expirySeconds * 0.8 * 1000;
       const timer = setTimeout(() => {
-        const queryKey = typeof media === 'string' 
+        const queryKey = typeof media === 'string'
           ? ['cloudflareImageUrl', media, expirySeconds]
-          : media.storageKey 
+          : media.storageKey
             ? ['cloudflareImageUrl', media.storageKey, expirySeconds]
             : ['imageUrl', media.id, expirySeconds];
-            
+
         queryClient.invalidateQueries({ queryKey });
       }, refreshTime);
-      
+
       return () => clearTimeout(timer);
     }
   }, [imageUrl, media, expirySeconds, isStale, queryClient]);
-  
+
   if (isLoading) {
     return (
       <View className="bg-gray-200 flex-1 rounded-lg">
@@ -73,10 +72,10 @@ export const MediaImage = memo(MediaImageComponent, (prevProps, nextProps) => {
   if (typeof prevProps.media === 'string' && typeof nextProps.media === 'string') {
     return prevProps.media === nextProps.media;
   }
-  
+
   if (prevProps.media?.id && nextProps.media?.id) {
     return prevProps.media.id === nextProps.media.id;
   }
-  
+
   return false;
 });

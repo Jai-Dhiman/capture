@@ -1,10 +1,18 @@
-PRAGMA foreign_keys=ON;
+DROP TABLE IF EXISTS blocked_user;
+DROP TABLE IF EXISTS relationship;
+DROP TABLE IF EXISTS post_hashtag;
+DROP TABLE IF EXISTS hashtag;
+DROP TABLE IF EXISTS saved_posts;
+DROP TABLE IF EXISTS comment;
+DROP TABLE IF EXISTS media;
+DROP TABLE IF EXISTS post;
+DROP TABLE IF EXISTS profile;
 
 CREATE TABLE `blocked_user` (
 	`id` text PRIMARY KEY NOT NULL,
 	`blocker_id` text NOT NULL,
 	`blocked_id` text NOT NULL,
-	`created_at` numeric DEFAULT '2025-04-07T21:05:15.545Z' NOT NULL,
+	`created_at` numeric DEFAULT '2025-04-17T20:00:18.623Z' NOT NULL,
 	FOREIGN KEY (`blocker_id`) REFERENCES `profile`(`user_id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`blocked_id`) REFERENCES `profile`(`user_id`) ON UPDATE no action ON DELETE no action
 );
@@ -21,7 +29,7 @@ CREATE TABLE `comment` (
 	`path` text NOT NULL,
 	`depth` integer DEFAULT 0 NOT NULL,
 	`is_deleted` integer DEFAULT 0 NOT NULL,
-	`created_at` numeric DEFAULT '2025-04-07T21:05:15.545Z' NOT NULL,
+	`created_at` numeric DEFAULT '2025-04-17T20:00:18.622Z' NOT NULL,
 	FOREIGN KEY (`post_id`) REFERENCES `post`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`user_id`) REFERENCES `profile`(`user_id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`parent_id`) REFERENCES `comment`(`id`) ON UPDATE no action ON DELETE no action
@@ -34,7 +42,7 @@ CREATE INDEX `comment_parent_idx` ON `comment` (`parent_id`);--> statement-break
 CREATE TABLE `hashtag` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
-	`created_at` numeric DEFAULT '2025-04-07T21:05:15.545Z' NOT NULL
+	`created_at` numeric DEFAULT '2025-04-17T20:00:18.622Z' NOT NULL
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `hashtag_name_unique` ON `hashtag` (`name`);--> statement-breakpoint
@@ -46,7 +54,7 @@ CREATE TABLE `media` (
 	`type` text NOT NULL,
 	`storage_key` text NOT NULL,
 	`order` integer NOT NULL,
-	`created_at` numeric DEFAULT '2025-04-07T21:05:15.545Z' NOT NULL,
+	`created_at` numeric DEFAULT '2025-04-17T20:00:18.622Z' NOT NULL,
 	FOREIGN KEY (`user_id`) REFERENCES `profile`(`user_id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`post_id`) REFERENCES `post`(`id`) ON UPDATE no action ON DELETE no action
 );
@@ -58,7 +66,7 @@ CREATE TABLE `post` (
 	`user_id` text NOT NULL,
 	`content` text NOT NULL,
 	`type` text DEFAULT 'post' NOT NULL,
-	`created_at` numeric DEFAULT '2025-04-07T21:05:15.544Z' NOT NULL,
+	`created_at` numeric DEFAULT '2025-04-17T20:00:18.621Z' NOT NULL,
 	FOREIGN KEY (`user_id`) REFERENCES `profile`(`user_id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
@@ -67,7 +75,7 @@ CREATE INDEX `post_time_idx` ON `post` (`created_at`);--> statement-breakpoint
 CREATE TABLE `post_hashtag` (
 	`post_id` text NOT NULL,
 	`hashtag_id` text NOT NULL,
-	`created_at` numeric DEFAULT '2025-04-07T21:05:15.545Z' NOT NULL,
+	`created_at` numeric DEFAULT '2025-04-17T20:00:18.622Z' NOT NULL,
 	FOREIGN KEY (`post_id`) REFERENCES `post`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`hashtag_id`) REFERENCES `hashtag`(`id`) ON UPDATE no action ON DELETE no action
 );
@@ -83,8 +91,8 @@ CREATE TABLE `profile` (
 	`bio` text,
 	`verified_type` text DEFAULT 'none',
 	`is_private` integer DEFAULT 0 NOT NULL,
-	`created_at` numeric DEFAULT '2025-04-07T21:05:15.539Z' NOT NULL,
-	`updated_at` numeric DEFAULT '2025-04-07T21:05:15.543Z' NOT NULL
+	`created_at` numeric DEFAULT '2025-04-17T20:00:18.615Z' NOT NULL,
+	`updated_at` numeric DEFAULT '2025-04-17T20:00:18.620Z' NOT NULL
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `profile_user_id_unique` ON `profile` (`user_id`);--> statement-breakpoint
@@ -93,7 +101,7 @@ CREATE TABLE `relationship` (
 	`id` text PRIMARY KEY NOT NULL,
 	`follower_id` text NOT NULL,
 	`followed_id` text NOT NULL,
-	`created_at` numeric DEFAULT '2025-04-07T21:05:15.545Z' NOT NULL,
+	`created_at` numeric DEFAULT '2025-04-17T20:00:18.622Z' NOT NULL,
 	FOREIGN KEY (`follower_id`) REFERENCES `profile`(`user_id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`followed_id`) REFERENCES `profile`(`user_id`) ON UPDATE no action ON DELETE no action
 );
@@ -105,7 +113,7 @@ CREATE TABLE `saved_posts` (
 	`id` text PRIMARY KEY NOT NULL,
 	`user_id` text NOT NULL,
 	`post_id` text NOT NULL,
-	`created_at` numeric DEFAULT '2025-04-07T21:05:15.545Z' NOT NULL,
+	`created_at` numeric DEFAULT '2025-04-17T20:00:18.622Z' NOT NULL,
 	FOREIGN KEY (`user_id`) REFERENCES `profile`(`user_id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`post_id`) REFERENCES `post`(`id`) ON UPDATE no action ON DELETE no action
 );

@@ -88,6 +88,7 @@ const Header: React.FC<HeaderProps> = ({
           <View className="w-8 h-8" />
         )}
       </View>
+      <View className="h-[1px] bg-black/10 w-full mt-2" />
 
       {menuVisible && (
         <Modal

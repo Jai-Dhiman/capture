@@ -1,4 +1,4 @@
-import type { User } from "@supabase/supabase-js";
+import type { User } from '@supabase/supabase-js';
 
 export type Bindings = {
   DB: D1Database;
@@ -10,6 +10,7 @@ export type Bindings = {
   CLOUDFLARE_ACCOUNT_HASH: string;
   CLOUDFLARE_IMAGES_TOKEN: string;
   CLOUDFLARE_IMAGES_KEY: string;
+  SEED_SECRET: string;
 };
 
 export type Variables = {

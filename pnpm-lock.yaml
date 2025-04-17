@@ -246,6 +246,9 @@ importers:
       '@as-integrations/cloudflare-workers':
         specifier: ^1.0.2
         version: 1.1.0(@apollo/server@4.11.3(encoding@0.1.13)(graphql@16.10.0))(graphql@16.10.0)
+      '@faker-js/faker':
+        specifier: ^9.7.0
+        version: 9.7.0
       '@hono/sentry':
         specifier: ^1.2.1
         version: 1.2.1(hono@4.7.4)
@@ -2026,6 +2029,10 @@ packages:
   '@expo/xcpretty@4.3.2':
     resolution: {integrity: sha512-ReZxZ8pdnoI3tP/dNnJdnmAk7uLT4FjsKDGW7YeDdvdOMz2XCQSmSCM9IWlrXuWtMF9zeSB6WJtEhCQ41gQOfw==}
     hasBin: true
+
+  '@faker-js/faker@9.7.0':
+    resolution: {integrity: sha512-aozo5vqjCmDoXLNUJarFZx2IN/GgGaogY4TMJ6so/WLZOWpSV7fvj2dmrV6sEAnUm1O7aCrhTibjpzeDFgNqbg==}
+    engines: {node: '>=18.0.0', npm: '>=9.0.0'}
 
   '@fastify/busboy@2.1.1':
     resolution: {integrity: sha512-vBZP4NlzfOlerQTnba4aqZoMhE/a9HY7HRqoOPaETQcSQuWEIyZMHGfVu6w9wGtGK5fED5qRs2DteVCjOH60sA==}
@@ -9070,6 +9077,8 @@ snapshots:
       chalk: 4.1.2
       find-up: 5.0.0
       js-yaml: 4.1.0
+
+  '@faker-js/faker@9.7.0': {}
 
   '@fastify/busboy@2.1.1': {}
 
