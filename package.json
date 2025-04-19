@@ -7,7 +7,7 @@
     "lint": "biome check .",
     "lint:fix": "biome check --apply .",
     "format": "biome format .",
-    "format:fix": "biome format --write ."  
+    "format:fix": "biome format --write ."
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
@@ -17,5 +17,10 @@
   "packageManager": "pnpm@9.0.0",
   "workspaces": [
     "apps/*"
-  ]
+  ],
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
 }

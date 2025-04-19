@@ -11,6 +11,7 @@ export type Bindings = {
   CLOUDFLARE_IMAGES_TOKEN: string;
   CLOUDFLARE_IMAGES_KEY: string;
   SEED_SECRET: string;
+  AI: Ai;
 };
 
 export type Variables = {

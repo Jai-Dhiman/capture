@@ -35,6 +35,7 @@ Capture's recommendation system uses content-based vector embeddings to suggest 
   - Saving/unsaving content
   - Following hashtags
   - Engaging with content through comments
+  - Shares by Sender
 - Implementation via Cloudflare Queues with cooldown periods
 - Saves resources by not processing inactive users
 

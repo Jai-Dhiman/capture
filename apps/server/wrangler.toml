@@ -7,27 +7,27 @@ compatibility_flags = ["nodejs_compat"]
 ENV = "development"
 SENTRY_DSN = "https://74904d3bf1ebb2b0747f5356b0a83624@o4509049381519360.ingest.us.sentry.io/4509049386434560"
 
-# [vars]
-# ENV = "production"
-
 [[d1_databases]]
 binding = "DB"
 database_name = "capture-db"
 database_id = "adb1ae42-b82f-44d2-968c-0e7ac0d92200"
 migrations_dir = "drizzle"
 
-# [[r2_buckets]]
-# binding = 'BUCKET'
-# bucket_name = "capture-bucket"
-
-# [[kv_namespaces]]
-# binding = 'KV'
-# id = "Capture_Rate_Limits"
-# preview_id = "40837b53d1e146cbb1c30be570ce1d84"
 
 [[kv_namespaces]]
 binding = "Capture_Rate_Limits"
 id = "94122c41067e4db7b87b7618ecf06b49"
+
+[[kv_namespaces]]
+binding = "POST_VECTORS"
+id = "<paste-your-kv-id-here>"
+
+[[queues.producers]]
+binding = "POST_QUEUE"
+queue = "post-queue"
+
+[ai]
+binding = "AI"
 
 [observability.logs]
 enabled = true

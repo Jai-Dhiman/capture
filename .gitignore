@@ -17,15 +17,16 @@ coverage
 # Turbo
 .turbo
 
-# Vercel
-.vercel
-
 # Build Outputs
-.next/
 out/
 build
 dist
 *.tsbuildinfo
+.output
+.wrangler
+/.svelte-kit
+/build
+
 
 # Debug
 npm-debug.log*
@@ -33,6 +34,7 @@ pnpm-debug.log*
 
 # Misc
 .DS_Store
+Thumbs.db
 *.pem
 *.local
 *.log*
@@ -64,3 +66,7 @@ expo-env.d.ts
 
 #Cursor
 .cursor/
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*

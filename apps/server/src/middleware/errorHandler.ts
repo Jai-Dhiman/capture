@@ -1,7 +1,7 @@
-import { Context } from "hono";
+import type { Context } from 'hono';
 
 export const errorHandler = (err: Error, c: Context) => {
-  const sentry = c.get("sentry");
+  const sentry = c.get('sentry');
   if (sentry) {
     sentry.captureException(err);
   }
@@ -10,8 +10,8 @@ export const errorHandler = (err: Error, c: Context) => {
 
   return c.json(
     {
-      error: c.env.ENV === "production" ? "Internal Server Error" : err.message,
+      error: c.env.ENV === 'production' ? 'Internal Server Error' : err.message,
     },
-    500
+    500,
   );
 };
