@@ -1,6 +1,0 @@
-{
-	"/": [],
-	"/api/health": [
-		"src/routes/api/health/+server.ts"
-	]
-}
