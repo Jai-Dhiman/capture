@@ -18,13 +18,13 @@ migrations_dir = "drizzle"
 binding = "Capture_Rate_Limits"
 id = "94122c41067e4db7b87b7618ecf06b49"
 
-[[kv_namespaces]]
-binding = "POST_VECTORS"
-id = "<paste-your-kv-id-here>"
+# [[kv_namespaces]]
+# binding = "POST_VECTORS"
+# id = "<paste-your-kv-id-here>"
 
-[[queues.producers]]
-binding = "POST_QUEUE"
-queue = "post-queue"
+# [[queues.producers]]
+# binding = "POST_QUEUE"
+# queue = "post-queue"
 
 [ai]
 binding = "AI"

@@ -75,13 +75,6 @@ app.use('/graphql', authMiddleware, async (c) => {
 app.route('/', healthRoutes);
 app.route('/auth', authRouter);
 app.route('/seed', seedRouter);
-app.get('/ai/test', async (c) => {
-  const out = await c.env.AI.run('@cf/baai/bge-base-en-v1.5', {
-    prompt: '👋 Hello from Cloudflare AI!',
-  });
-  return c.json(out);
-});
-
 // Protected routes
 app.use('/api/*', authMiddleware);
 app.route('/api/media', mediaRouter);
