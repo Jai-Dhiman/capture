@@ -46,6 +46,19 @@ apps/server/
 └── ...
 ```
 
+### Dashboard (Remix.js + Cloudflare Workers)
+
+```
+apps/dashboard/
+├── app/
+│   ├── components/    # Reusable UI components
+│   ├── lib/           # Utilities and helpers
+│   ├── routes/        # Nested Remix routes
+│   ├── entry.server.tsx  # Cloudflare Worker server entry
+│   └── root.tsx       # Application root component
+└── ...
+```
+
 ## Key Technologies
 
 ### Frontend
@@ -65,6 +78,15 @@ apps/server/
 - **Drizzle ORM**: Type-safe SQL query builder
 - **D1 SQLite**: Serverless SQL database
 - **TweetNaCl.js**: Cryptographic operations
+
+### Dashboard
+
+- **Remix.js**: Full-stack React framework with nested routing
+- **TypeScript**: Provides type safety
+- **Tailwind CSS & shadcn/ui**: Utility-first styling and accessible components
+- **TanStack Query**: Data fetching and caching
+- **Jotai**: Atomic state management
+- **Recharts**: Charting library for data visualization
 
 ### DevOps
 
