@@ -43,6 +43,7 @@ Thumbs.db
 
 .wrangler
 .dev.vars
+.react-router
 
 # Package lock files
 pnpm-lock.yaml
