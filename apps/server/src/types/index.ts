@@ -4,6 +4,9 @@ export type Bindings = {
   DB: D1Database;
   BUCKET: R2Bucket;
   KV: KVNamespace;
+  Capture_Rate_Limits: KVNamespace;
+  POST_VECTORS: KVNamespace;
+  VECTORIZE: VectorizeIndex;
   SUPABASE_URL: string;
   SUPABASE_KEY: string;
   CLOUDFLARE_ACCOUNT_ID: string;
