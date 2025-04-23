@@ -15,6 +15,7 @@ import profileRouter from 'routes/profile';
 import authRouter from 'routes/auth';
 import seedRouter from 'routes/seed';
 import recommendRouter from 'routes/recommend';
+import queuesRouter from 'routes/queues';
 
 const app = new Hono<{
   Bindings: Bindings;
@@ -80,6 +81,7 @@ app.use('/api/*', authMiddleware);
 app.route('/api/media', mediaRouter);
 app.route('/api/profile', profileRouter);
 app.route('/api/recommend', recommendRouter);
+app.route('/api/queues', queuesRouter);
 
 app.onError(errorHandler);
 

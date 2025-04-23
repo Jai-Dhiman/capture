@@ -25,7 +25,7 @@ Capture's recommendation system uses content-based vector embeddings to suggest 
 - Created by combining vectors from:
   - Saved posts (highest weight)
   - Created content (medium weight)
-  - Hashtag interactions (lower weight)
+  - Post Hashtags (medium weight)
 - Single vector per user representing their interests
 
 ### 2. Event-Driven Vector Updates
@@ -45,10 +45,15 @@ Capture's recommendation system uses content-based vector embeddings to suggest 
 2. System queries vector database using user's interest vector
 3. Finds posts with similar vectors (high cosine similarity)
 4. Filters results:
+   - Prioritizes posts from followed users in the last week
+   - Weights posts by popularity (higher save count/comment count)
    - Removes content from blocked users
    - Excludes already seen posts
    - Applies privacy settings and preferences
-5. Ranks by combination of similarity and recency
+5. Ranks by combination of:
+   - Recent posts from followed users (highest priority)
+   - Popularity metrics (60%)
+   - Similarity score (40%)
 6. Returns recommendations alongside chronological feed
 
 ### 4. Data Schema Extensions
@@ -62,20 +67,19 @@ userInterestVector {
   sourceData: { saved: number, created: number, hashtags: number }
 }
 
-// Hashtag interaction tracking
-hashtagInteraction {
-  id: string (primary key)
-  userId: string
-  hashtagId: string
-  interactionType: string (search/click/follow)
-  createdAt: timestamp
-}
-
 // Post vectors
 postVector {
   postId: string (primary key)
   vector: string (JSON array of vector values)
   createdAt: timestamp
+}
+
+// Post view tracking
+postView {
+  id: string (primary key)
+  userId: string
+  postId: string
+  viewedAt: timestamp
 }
 ```
 
@@ -88,13 +92,13 @@ postVector {
 
 ### Phase 2: User Interest Modeling
 1. Implement event-driven user vector updates
-2. Build hashtag interaction tracking
-3. Develop saved post analysis system
+2. Develop saved post analysis system
 
 ### Phase 3: Recommendation Engine
 1. Create similarity-based recommendation queries
 2. Implement filtering and privacy controls
-3. Add UI components for discovery feed
+3. Add post view tracking to prevent repeated content
+4. Add UI components for discovery feed
 
 ### Phase 4: Enhancements (Future)
 1. Add image vector analysis

@@ -1,14 +1,14 @@
-import { createD1Client } from "../../db";
-import { eq, inArray, sql, and } from "drizzle-orm";
-import * as schema from "../../db/schema";
-import { nanoid } from "nanoid";
-import type { ContextType } from "../../types";
+import { createD1Client } from '../../db';
+import { eq, inArray, sql, and } from 'drizzle-orm';
+import * as schema from '../../db/schema';
+import { nanoid } from 'nanoid';
+import type { ContextType } from '../../types';
 
 export const postResolvers = {
   Query: {
     async feed(_: unknown, { limit = 10, offset = 0 }, context: { env: any; user: any }) {
       if (!context.user) {
-        throw new Error("Authentication required");
+        throw new Error('Authentication required');
       }
 
       const db = createD1Client(context.env);
@@ -38,9 +38,17 @@ export const postResolvers = {
 
       const enhancedPosts = await Promise.all(
         posts.map(async (post) => {
-          const user = await db.select().from(schema.profile).where(eq(schema.profile.userId, post.userId)).get();
+          const user = await db
+            .select()
+            .from(schema.profile)
+            .where(eq(schema.profile.userId, post.userId))
+            .get();
 
-          const media = await db.select().from(schema.media).where(eq(schema.media.postId, post.id)).all();
+          const media = await db
+            .select()
+            .from(schema.media)
+            .where(eq(schema.media.postId, post.id))
+            .all();
 
           const postHashtags = await db
             .select()
@@ -52,16 +60,29 @@ export const postResolvers = {
           if (postHashtags.length > 0) {
             const hashtagIds = postHashtags.map((ph) => ph.hashtagId).filter(Boolean);
             if (hashtagIds.length > 0) {
-              hashtags = await db.select().from(schema.hashtag).where(inArray(schema.hashtag.id, hashtagIds)).all();
+              hashtags = await db
+                .select()
+                .from(schema.hashtag)
+                .where(inArray(schema.hashtag.id, hashtagIds))
+                .all();
             }
           }
 
-          const comments = await db.select().from(schema.comment).where(eq(schema.comment.postId, post.id)).all();
+          const comments = await db
+            .select()
+            .from(schema.comment)
+            .where(eq(schema.comment.postId, post.id))
+            .all();
 
           const saved = await db
             .select()
             .from(schema.savedPost)
-            .where(and(eq(schema.savedPost.postId, post.id), eq(schema.savedPost.userId, context.user.id)))
+            .where(
+              and(
+                eq(schema.savedPost.postId, post.id),
+                eq(schema.savedPost.userId, context.user.id),
+              ),
+            )
             .get();
 
           return {
@@ -72,7 +93,7 @@ export const postResolvers = {
             comments: [],
             isSaved: !!saved,
           };
-        })
+        }),
       );
 
       return enhancedPosts;
@@ -80,14 +101,14 @@ export const postResolvers = {
 
     async post(_parent: unknown, { id }: { id: string }, context: { env: any; user: any }) {
       if (!context.user) {
-        throw new Error("Authentication required");
+        throw new Error('Authentication required');
       }
 
       try {
         const db = createD1Client(context.env);
         const post = await db.select().from(schema.post).where(eq(schema.post.id, id)).get();
 
-        if (!post) throw new Error("Post not found");
+        if (!post) throw new Error('Post not found');
 
         const user = await db
           .select()
@@ -95,7 +116,11 @@ export const postResolvers = {
           .where(post.userId ? eq(schema.profile.userId, post.userId) : sql`FALSE`)
           .get();
 
-        const media = await db.select().from(schema.media).where(eq(schema.media.postId, post.id)).all();
+        const media = await db
+          .select()
+          .from(schema.media)
+          .where(eq(schema.media.postId, post.id))
+          .all();
 
         const postHashtags = await db
           .select()
@@ -110,11 +135,17 @@ export const postResolvers = {
           hashtags = await db
             .select()
             .from(schema.hashtag)
-            .where(validHashtagIds.length > 0 ? inArray(schema.hashtag.id, validHashtagIds) : sql`FALSE`)
+            .where(
+              validHashtagIds.length > 0 ? inArray(schema.hashtag.id, validHashtagIds) : sql`FALSE`,
+            )
             .all();
         }
 
-        const comments = await db.select().from(schema.comment).where(eq(schema.comment.postId, post.id)).all();
+        const comments = await db
+          .select()
+          .from(schema.comment)
+          .where(eq(schema.comment.postId, post.id))
+          .all();
 
         return {
           ...post,
@@ -125,8 +156,10 @@ export const postResolvers = {
           savedBy: [],
         };
       } catch (error) {
-        console.error("Error fetching post:", error);
-        throw new Error(`Failed to fetch post: ${error instanceof Error ? error.message : "Unknown error"}`);
+        console.error('Error fetching post:', error);
+        throw new Error(
+          `Failed to fetch post: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
       }
     },
   },
@@ -134,7 +167,7 @@ export const postResolvers = {
   Mutation: {
     async createPost(_parent: unknown, { input }: { input: any }, context: ContextType) {
       if (!context?.user) {
-        throw new Error("Authentication required");
+        throw new Error('Authentication required');
       }
 
       const db = createD1Client(context.env);
@@ -147,7 +180,7 @@ export const postResolvers = {
           .get();
 
         if (!existingProfile) {
-          throw new Error("Profile not found.");
+          throw new Error('Profile not found.');
         }
 
         const postId = nanoid();
@@ -156,7 +189,7 @@ export const postResolvers = {
           id: postId,
           userId: context.user.id,
           content: input.content,
-          type: input.type || "post",
+          type: input.type || 'post',
           createdAt: new Date().toISOString(),
         });
 
@@ -169,8 +202,8 @@ export const postResolvers = {
                   postId,
                   order: index,
                 })
-                .where(eq(schema.media.id, mediaId))
-            )
+                .where(eq(schema.media.id, mediaId)),
+            ),
           );
         }
 
@@ -181,8 +214,8 @@ export const postResolvers = {
                 postId,
                 hashtagId,
                 createdAt: new Date().toISOString(),
-              })
-            )
+              }),
+            ),
           );
         }
 
@@ -198,7 +231,7 @@ export const postResolvers = {
           .where(eq(schema.post.id, postId))
           .get();
 
-        if (!createdPost) throw new Error("Failed to create post");
+        if (!createdPost) throw new Error('Failed to create post');
 
         const userProfile = await db
           .select({
@@ -211,14 +244,14 @@ export const postResolvers = {
           .where(eq(schema.profile.userId, context.user.id))
           .get();
 
-        if (!userProfile) throw new Error("User profile not found");
+        if (!userProfile) throw new Error('User profile not found');
 
         let mediaItems: Array<any> = [];
         let hashtagItems: Array<any> = [];
 
         return {
           ...createdPost,
-          type: createdPost.type || "post",
+          type: createdPost.type || 'post',
           user: userProfile,
           media: mediaItems,
           comments: [],
@@ -226,15 +259,17 @@ export const postResolvers = {
           savedBy: [],
         };
       } catch (error) {
-        console.error("Creation error:", error);
-        console.error("Input:", input);
-        throw new Error(`Failed to create post: ${error instanceof Error ? error.message : "Unknown error"}`);
+        console.error('Creation error:', error);
+        console.error('Input:', input);
+        throw new Error(
+          `Failed to create post: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
       }
     },
 
     async deletePost(_parent: unknown, { id }: { id: string }, context: ContextType) {
       if (!context?.user) {
-        throw new Error("Authentication required");
+        throw new Error('Authentication required');
       }
 
       const db = createD1Client(context.env);
@@ -243,16 +278,20 @@ export const postResolvers = {
         const post = await db.select().from(schema.post).where(eq(schema.post.id, id)).get();
 
         if (!post) {
-          throw new Error("Post not found");
+          throw new Error('Post not found');
         }
 
         if (post.userId !== context.user.id) {
-          throw new Error("Not authorized to delete this post");
+          throw new Error('Not authorized to delete this post');
         }
 
         await db.delete(schema.postHashtag).where(eq(schema.postHashtag.postId, id));
 
-        const mediaItems = await db.select().from(schema.media).where(eq(schema.media.postId, id)).all();
+        const mediaItems = await db
+          .select()
+          .from(schema.media)
+          .where(eq(schema.media.postId, id))
+          .all();
 
         await db.delete(schema.comment).where(eq(schema.comment.postId, id));
         await db.delete(schema.savedPost).where(eq(schema.savedPost.postId, id));
@@ -269,8 +308,10 @@ export const postResolvers = {
           success: true,
         };
       } catch (error) {
-        console.error("Delete post error:", error);
-        throw new Error(`Failed to delete post: ${error instanceof Error ? error.message : "Unknown error"}`);
+        console.error('Delete post error:', error);
+        throw new Error(
+          `Failed to delete post: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
       }
     },
   },
@@ -298,12 +339,14 @@ export const postResolvers = {
         const hashtags: Array<{ id: string; name: string }> = await db
           .select()
           .from(schema.hashtag)
-          .where(validHashtagIds.length > 0 ? inArray(schema.hashtag.id, validHashtagIds) : sql`FALSE`)
+          .where(
+            validHashtagIds.length > 0 ? inArray(schema.hashtag.id, validHashtagIds) : sql`FALSE`,
+          )
           .all();
 
         return hashtags || [];
       } catch (error) {
-        console.error("Error resolving hashtags:", error);
+        console.error('Error resolving hashtags:', error);
         return [];
       }
     },

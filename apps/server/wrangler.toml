@@ -13,7 +13,6 @@ database_name = "capture-db"
 database_id = "adb1ae42-b82f-44d2-968c-0e7ac0d92200"
 migrations_dir = "drizzle"
 
-
 [[kv_namespaces]]
 binding = "Capture_Rate_Limits"
 id = "94122c41067e4db7b87b7618ecf06b49"
@@ -26,9 +25,13 @@ id = "7edac15c451741d28833d410037d090a"
 binding = "VECTORIZE"
 index_name = "capture-recommendations"
 
-# [[queues.producers]]
-# binding = "POST_QUEUE"
-# queue = "post-queue"
+[[queues.producers]]
+binding = "POST_QUEUE"
+queue = "post-queue"
+
+[[queues.producers]]
+binding = "USER_VECTOR_QUEUE"
+queue = "user-vector-queue"
 
 [ai]
 binding = "AI"

@@ -14,27 +14,6 @@ import {
 
 const router = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
-router.get('/test', async (c) => {
-  const user = c.get('user');
-
-  const text = `User ${user.id} interests`;
-
-  try {
-    const embedding = await c.env.AI.run('@cf/baai/bge-base-en-v1.5', {
-      text: text,
-    });
-
-    return c.json({
-      userId: user.id,
-      inputText: text,
-      embedding: embedding,
-    });
-  } catch (error) {
-    console.error('Embedding generation error:', error);
-    return c.json({ error: error.message }, 500);
-  }
-});
-
 router.post('/post-embedding/:postId', async (c) => {
   const user = c.get('user');
   const postId = c.req.param('postId');
@@ -72,6 +51,8 @@ router.post('/post-embedding/:postId', async (c) => {
 
     const vectorData = await generatePostEmbedding(postId, post.content, hashtags, c.env.AI);
     await storePostEmbedding(vectorData, c.env.POST_VECTORS, c.env.VECTORIZE);
+    // enqueue post embedding event
+    await c.env.POST_QUEUE.send(JSON.stringify({ postId }));
 
     return c.json({
       success: true,
@@ -79,7 +60,7 @@ router.post('/post-embedding/:postId', async (c) => {
       postId: postId,
     });
   } catch (error) {
-    console.error('Post embedding error:', error);
+    console.error('Full error in /post-embedding:', error);
     return c.json({ error: error.message }, 500);
   }
 });
@@ -172,7 +153,7 @@ router.get('/content', async (c) => {
       );
     }
 
-    const similarPosts = await findSimilarPosts(userVector.vector, c.env.VECTORIZE, limit, 0.5);
+    const similarPosts = await findSimilarPosts(userVector.vector, c.env.VECTORIZE, limit, 0.7);
 
     if (similarPosts.length === 0) {
       return c.json({
@@ -242,6 +223,8 @@ router.post('/process-post/:postId', async (c) => {
 
     const vectorData = await generatePostEmbedding(postId, post.content, hashtags, c.env.AI);
     await storePostEmbedding(vectorData, c.env.POST_VECTORS, c.env.VECTORIZE);
+    // enqueue post embedding event
+    await c.env.POST_QUEUE.send(JSON.stringify({ postId }));
 
     return c.json({
       success: true,

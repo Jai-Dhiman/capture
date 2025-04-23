@@ -99,23 +99,47 @@ export async function storePostEmbedding(
     throw new Error('Post ID is required for storing post embeddings');
   }
 
-  await kv.put(`post:${vectorData.postId}`, JSON.stringify(vectorData));
+  const kvKey = `post:${vectorData.postId}`;
+  await kv.put(kvKey, JSON.stringify(vectorData));
 
   try {
-    await vectorize.upsert([
-      {
-        id: `post:${vectorData.postId}`,
-        values: vectorData.vector,
-        metadata: {
-          type: 'post',
-          postId: vectorData.postId,
-          text: vectorData.text,
-          createdAt: vectorData.createdAt,
-        },
+    // Check vector data validity
+    if (!Array.isArray(vectorData.vector) || vectorData.vector.length === 0) {
+      throw new Error('Invalid vector data: empty or not an array');
+    }
+
+    // Check for invalid values
+    const hasInvalidValues = vectorData.vector.some(
+      (val) => Number.isNaN(val) || !Number.isFinite(val),
+    );
+
+    if (hasInvalidValues) {
+      throw new Error('Vector contains NaN or infinite values');
+    }
+
+    // Structure payload and log it
+    const payload = {
+      id: `post:${vectorData.postId}`,
+      values: vectorData.vector,
+      metadata: {
+        type: 'post',
+        postId: vectorData.postId,
+        text: vectorData.text,
+        createdAt: vectorData.createdAt,
       },
-    ]);
+    };
+
+    await vectorize.upsert([payload]);
   } catch (error) {
     console.error('Failed to store vector in Vectorize:', error);
+    // Log more details about the error
+    if (error.response) {
+      console.error('Vectorize API response:', {
+        status: error.response.status,
+        statusText: error.response.statusText,
+        data: error.response.data,
+      });
+    }
     throw new Error(`Vectorize storage failed: ${error.message}`);
   }
 }
