@@ -46,7 +46,7 @@ export async function generateEmbedding(text: string, ai: Ai, retries = 2): Prom
       return generateEmbedding(text, ai, retries - 1);
     }
 
-    console.error('Embedding generation failed after retries', error);
+    console.error('[generateEmbedding] Embedding generation failed after retries', error);
     let errorMessage = 'An unknown error occurred during embedding generation';
     if (error instanceof Error) {
       errorMessage = error.message;

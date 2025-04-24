@@ -33,6 +33,9 @@ queue = "post-queue"
 binding = "USER_VECTOR_QUEUE"
 queue = "user-vector-queue"
 
+[[queues.consumers]]
+queue = "post-queue"
+
 [ai]
 binding = "AI"
 

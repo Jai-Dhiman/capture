@@ -16,7 +16,7 @@ export type Bindings = {
   CLOUDFLARE_IMAGES_KEY: string;
   SEED_SECRET: string;
   AI: Ai;
-  POST_QUEUE: Queue<string>;
+  POST_QUEUE: Queue<{ postId: string }>;
   USER_VECTOR_QUEUE: Queue<string>;
 };
 

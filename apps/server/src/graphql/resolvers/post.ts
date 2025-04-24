@@ -68,11 +68,11 @@ export const postResolvers = {
             }
           }
 
-          const comments = await db
-            .select()
-            .from(schema.comment)
-            .where(eq(schema.comment.postId, post.id))
-            .all();
+          // const comments = await db
+          //   .select()
+          //   .from(schema.comment)
+          //   .where(eq(schema.comment.postId, post.id))
+          //   .all();
 
           const saved = await db
             .select()
@@ -193,6 +193,12 @@ export const postResolvers = {
           createdAt: new Date().toISOString(),
         });
 
+        try {
+          await context.env.POST_QUEUE.send({ postId });
+        } catch (queueError) {
+          console.error(`[createPost] FAILED to send postId ${postId} to POST_QUEUE:`, queueError);
+        }
+
         if (input.mediaIds?.length) {
           await Promise.all(
             input.mediaIds.map((mediaId: string, index: number) =>
@@ -246,8 +252,8 @@ export const postResolvers = {
 
         if (!userProfile) throw new Error('User profile not found');
 
-        let mediaItems: Array<any> = [];
-        let hashtagItems: Array<any> = [];
+        const mediaItems: Array<any> = [];
+        const hashtagItems: Array<any> = [];
 
         return {
           ...createdPost,
@@ -298,7 +304,7 @@ export const postResolvers = {
         if (mediaItems.length > 0) {
           await db.delete(schema.media).where(eq(schema.media.postId, id));
 
-          // Add hereL Delete the actual files from Cloudflare
+          // Add here: Delete the actual files from Cloudflare
         }
 
         await db.delete(schema.post).where(eq(schema.post.id, id));

@@ -15,7 +15,8 @@ import profileRouter from 'routes/profile';
 import authRouter from 'routes/auth';
 import seedRouter from 'routes/seed';
 import recommendRouter from 'routes/recommend';
-import queuesRouter from 'routes/queues';
+import queuesRouter, { handlePostQueue } from 'routes/queues';
+import type { MessageBatch, ExecutionContext } from '@cloudflare/workers-types';
 
 const app = new Hono<{
   Bindings: Bindings;
@@ -85,4 +86,19 @@ app.route('/api/queues', queuesRouter);
 
 app.onError(errorHandler);
 
-export default app;
+export default {
+  fetch: app.fetch,
+  async queue(batch: MessageBatch<any>, env: Bindings): Promise<void> {
+    switch (batch.queue) {
+      case 'post-queue':
+        await handlePostQueue(batch, env);
+        break;
+      // TODO: Add case for 'user-vector-queue' if needed
+      default:
+        console.error(`Received message for unknown queue: ${batch.queue}`);
+        // Acknowledge messages from unknown queues to prevent retries
+        batch.ackAll();
+        break;
+    }
+  },
+};

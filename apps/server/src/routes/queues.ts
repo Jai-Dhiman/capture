@@ -9,35 +9,9 @@ import {
   storeUserEmbedding,
 } from '../lib/embeddings';
 import { inArray, eq } from 'drizzle-orm';
+import type { MessageBatch } from '@cloudflare/workers-types';
 
 const router = new Hono<{ Bindings: Bindings }>();
-
-// 1) Post‐queue: re‐embed a post by ID
-router.post('/post-queue', async (c) => {
-  const { postId } = await c.req.json<{ postId: string }>();
-  const env = c.env as unknown as Bindings;
-  const db = createD1Client(env);
-
-  // fetch post + hashtags
-  const post = await db.select().from(schema.post).where(eq(schema.post.id, postId)).get();
-  if (!post) return c.text('Post not found', 404);
-
-  const hashtags = await db
-    .select({ name: schema.hashtag.name })
-    .from(schema.postHashtag)
-    .where(inArray(schema.postHashtag.postId, [postId]))
-    .leftJoin(schema.hashtag, eq(schema.hashtag.id, schema.postHashtag.hashtagId))
-    .all()
-    .then((rows) => rows.map((r) => r.name));
-
-  const validHashtags = hashtags.filter((tag): tag is string => tag !== null);
-
-  // regenerate + store
-  const vectorData = await generatePostEmbedding(postId, post.content, validHashtags, env.AI);
-  await storePostEmbedding(vectorData, env.POST_VECTORS, env.VECTORIZE);
-
-  return c.text('OK');
-});
 
 // 2) User‐queue: re‐embed user interest
 router.post('/user-vector-queue', async (c) => {
@@ -102,3 +76,64 @@ router.post('/user-vector-queue', async (c) => {
 });
 
 export default router;
+
+// --- Queue Handlers ---
+
+export async function handlePostQueue(
+  batch: MessageBatch<{ postId: string }>,
+  env: Bindings,
+): Promise<void> {
+  const db = createD1Client(env);
+  const promises: Promise<void>[] = [];
+
+  for (const message of batch.messages) {
+    const postId = message.body.postId;
+    const messageId = message.id; // Get message ID for tracking
+
+    const processingPromise = (async () => {
+      try {
+        // Fetch post
+        const post = await db.select().from(schema.post).where(eq(schema.post.id, postId)).get();
+        if (!post) {
+          console.error(
+            `[handlePostQueue][${messageId}] Post not found: ${postId}. Acknowledging message.`,
+          );
+          message.ack();
+          return;
+        }
+        // Fetch hashtags
+        const hashtags = await db
+          .select({ name: schema.hashtag.name })
+          .from(schema.postHashtag)
+          .where(eq(schema.postHashtag.postId, postId))
+          .leftJoin(schema.hashtag, eq(schema.hashtag.id, schema.postHashtag.hashtagId))
+          .all()
+          .then((rows) => rows.map((r) => r.name));
+        const validHashtags = hashtags.filter((tag): tag is string => tag !== null);
+
+        // Generate embedding
+        const vectorData = await generatePostEmbedding(postId, post.content, validHashtags, env.AI);
+        // Check if vectorData.vector exists and is a non-empty array
+        if (!vectorData || !Array.isArray(vectorData.vector) || vectorData.vector.length === 0) {
+          console.error(
+            `[handlePostQueue][${messageId}] Failed to generate valid embedding vector for post ${postId}. Retrying message.`,
+          );
+          message.retry();
+          return;
+        }
+        // Store embedding
+        await storePostEmbedding(vectorData, env.POST_VECTORS, env.VECTORIZE);
+        message.ack();
+      } catch (error) {
+        console.error(
+          `[handlePostQueue][${messageId}] FAILED to process postId ${postId}:`,
+          error instanceof Error ? error.message : error,
+          error instanceof Error ? error.stack : '',
+        );
+        message.retry(); // Retry message on failure
+      }
+    })();
+    promises.push(processingPromise);
+  }
+  await Promise.all(promises);
+}
