@@ -1,84 +1,42 @@
-import { Hono } from 'hono';
 import { createD1Client } from '../db';
 import * as schema from '../db/schema';
 import type { Bindings } from 'types';
-import {
-  generatePostEmbedding,
-  storePostEmbedding,
-  generateUserEmbedding,
-  storeUserEmbedding,
-} from '../lib/embeddings';
-import { inArray, eq } from 'drizzle-orm';
+import { generatePostEmbedding, storePostEmbedding } from '../lib/embeddings';
+import { inArray, eq, desc } from 'drizzle-orm';
 import type { MessageBatch } from '@cloudflare/workers-types';
 
-const router = new Hono<{ Bindings: Bindings }>();
+function calculateAverageVector(
+  savedVectors: number[][],
+  createdVectors: number[][],
+  savedWeight: number = 2,
+): number[] | null {
+  const allVectors = [
+    ...savedVectors.flatMap((v) => Array(savedWeight).fill(v)),
+    ...createdVectors,
+  ];
 
-// 2) User‐queue: re‐embed user interest
-router.post('/user-vector-queue', async (c) => {
-  const { userId } = await c.req.json<{ userId: string }>();
-  const env = c.env as unknown as Bindings;
-  const db = createD1Client(env);
-
-  // gather interests: saved posts, own posts, and hashtags
-  const ownPosts = await db
-    .select({ id: schema.post.id, content: schema.post.content })
-    .from(schema.post)
-    .where(eq(schema.post.userId, userId))
-    .all();
-
-  const savedRows = await db
-    .select({ postId: schema.savedPost.postId })
-    .from(schema.savedPost)
-    .where(eq(schema.savedPost.userId, userId))
-    .all();
-  const savedPostIds = savedRows.map((r) => r.postId);
-  let savedContents: string[] = [];
-  if (savedPostIds.length > 0) {
-    const savedPosts = await db
-      .select({ content: schema.post.content })
-      .from(schema.post)
-      .where(inArray(schema.post.id, savedPostIds))
-      .all();
-    savedContents = savedPosts.map((p) => p.content);
+  if (allVectors.length === 0) {
+    return null;
   }
 
-  // fetch hashtags from all user posts
-  const allPostIds = [...ownPosts.map((p) => p.id), ...savedPostIds];
-  let hashtagNames: string[] = [];
-  if (allPostIds.length > 0) {
-    const hashtagRows = await db
-      .select({ hashtagId: schema.postHashtag.hashtagId })
-      .from(schema.postHashtag)
-      .where(inArray(schema.postHashtag.postId, allPostIds))
-      .all();
-    const hashtagIds = [...new Set(hashtagRows.map((r) => r.hashtagId))].filter(Boolean);
-    if (hashtagIds.length > 0) {
-      const hashtags = await db
-        .select({ name: schema.hashtag.name })
-        .from(schema.hashtag)
-        .where(inArray(schema.hashtag.id, hashtagIds))
-        .all();
-      hashtagNames = hashtags.map((h) => h.name);
+  const vectorLength = allVectors[0].length;
+  const sumVector = new Array(vectorLength).fill(0);
+
+  for (const vector of allVectors) {
+    if (vector.length !== vectorLength) {
+      console.warn('Inconsistent vector lengths found, skipping vector:', vector);
+      continue; // Skip vectors with inconsistent length
+    }
+    for (let i = 0; i < vectorLength; i++) {
+      sumVector[i] += vector[i];
     }
   }
 
-  // combine interests (duplicate saved post content for higher weight)
-  const interests: string[] = [
-    ...savedContents.flatMap((c) => [c, c]),
-    ...ownPosts.map((p) => p.content),
-    ...hashtagNames,
-  ];
+  const averageVector = sumVector.map((sum) => sum / allVectors.length);
+  return averageVector;
+}
 
-  const vectorData = await generateUserEmbedding(userId, interests, env.AI);
-  await storeUserEmbedding(vectorData, env.POST_VECTORS, env.VECTORIZE);
-
-  return c.text('OK');
-});
-
-export default router;
-
-// --- Queue Handlers ---
-
+// Post Queue Handlers
 export async function handlePostQueue(
   batch: MessageBatch<{ postId: string }>,
   env: Bindings,
@@ -92,11 +50,19 @@ export async function handlePostQueue(
 
     const processingPromise = (async () => {
       try {
-        // Fetch post
-        const post = await db.select().from(schema.post).where(eq(schema.post.id, postId)).get();
-        if (!post) {
+        const post = await db
+          .select({
+            id: schema.post.id,
+            content: schema.post.content,
+            userId: schema.post.userId,
+          })
+          .from(schema.post)
+          .where(eq(schema.post.id, postId))
+          .get();
+
+        if (!post || !post.userId) {
           console.error(
-            `[handlePostQueue][${messageId}] Post not found: ${postId}. Acknowledging message.`,
+            `[handlePostQueue][${messageId}] Post or userId not found: ${postId}. Acknowledging message.`,
           );
           message.ack();
           return;
@@ -123,6 +89,25 @@ export async function handlePostQueue(
         }
         // Store embedding
         await storePostEmbedding(vectorData, env.POST_VECTORS, env.VECTORIZE);
+        console.log(
+          `[handlePostQueue][${messageId}] Successfully stored embedding for post ${postId}`,
+        );
+
+        // --- Trigger user embedding update ---
+        try {
+          await env.USER_VECTOR_QUEUE.send({ userId: post.userId });
+          console.log(
+            `[handlePostQueue][${messageId}] Sent userId ${post.userId} to USER_VECTOR_QUEUE for post ${postId}`,
+          );
+        } catch (queueError) {
+          console.error(
+            `[handlePostQueue][${messageId}] FAILED to send userId ${post.userId} to USER_VECTOR_QUEUE for post ${postId}:`,
+            queueError,
+          );
+          // Decide if this failure should prevent ack. Usually not, as the post embedding IS stored.
+        }
+        // --- END Trigger user embedding update ---
+
         message.ack();
       } catch (error) {
         console.error(
@@ -131,6 +116,128 @@ export async function handlePostQueue(
           error instanceof Error ? error.stack : '',
         );
         message.retry(); // Retry message on failure
+      }
+    })();
+    promises.push(processingPromise);
+  }
+  await Promise.all(promises);
+}
+
+// User Embedding Queue Handler
+export async function handleUserEmbeddingQueue(
+  batch: MessageBatch<{ userId: string }>,
+  env: Bindings,
+): Promise<void> {
+  const db = createD1Client(env);
+  const userVectorsKV = env.USER_VECTORS;
+  const postVectorsKV = env.POST_VECTORS;
+  const promises: Promise<void>[] = [];
+  const COOLDOWN_SECONDS = 300; // 5 minutes
+
+  for (const message of batch.messages) {
+    const userId = message.body.userId;
+    const messageId = message.id; // For logging
+    const cooldownKey = `user-vector-cooldown:${userId}`;
+    const userVectorKey = `user-vector:${userId}`;
+
+    const processingPromise = (async () => {
+      try {
+        // 1. Cooldown Check
+        const cooling = await userVectorsKV.get(cooldownKey);
+        if (cooling) {
+          console.log(`[UserQueue][${messageId}] User ${userId} is in cooldown. Skipping.`);
+          message.ack();
+          return;
+        }
+        // 2. Fetch relevant Post IDs (e.g., last 20 saved, last 20 created)
+        const recentSavedPosts = await db
+          .select({ postId: schema.savedPost.postId })
+          .from(schema.savedPost)
+          .where(eq(schema.savedPost.userId, userId))
+          .orderBy(desc(schema.savedPost.createdAt))
+          .limit(20) // Limit scope
+          .all();
+        const savedPostIds = recentSavedPosts.map((r) => r.postId);
+
+        const recentCreatedPosts = await db
+          .select({ id: schema.post.id })
+          .from(schema.post)
+          .where(eq(schema.post.userId, userId))
+          .orderBy(desc(schema.post.createdAt))
+          .limit(20) // Limit scope
+          .all();
+        const createdPostIds = recentCreatedPosts.map((p) => p.id);
+
+        const uniquePostIds = [...new Set([...savedPostIds, ...createdPostIds])];
+
+        if (uniquePostIds.length === 0) {
+          console.log(
+            `[UserQueue][${messageId}] No recent saved or created posts found for user ${userId}. Skipping.`,
+          );
+          // Set cooldown anyway to avoid constant re-checking if user is inactive
+          await userVectorsKV.put(cooldownKey, 'no_posts', { expirationTtl: COOLDOWN_SECONDS });
+          message.ack();
+          return;
+        }
+
+        // 3. Fetch Post Embeddings from POST_VECTORS KV
+        const postVectorKeys = uniquePostIds.map((id) => `post:${id}`);
+        // Note: KV list/bulk operations might be more efficient for many keys
+        const kvResults = await Promise.all(
+          postVectorKeys.map((key) => postVectorsKV.get<number[]>(key, { type: 'json' })),
+        );
+
+        const savedVectors: number[][] = [];
+        const createdVectors: number[][] = [];
+        const fetchedEmbeddings = new Map<string, number[]>();
+
+        uniquePostIds.forEach((postId, index) => {
+          const vector = kvResults[index];
+          if (vector && Array.isArray(vector) && vector.length > 0) {
+            fetchedEmbeddings.set(postId, vector);
+            if (savedPostIds.includes(postId)) {
+              savedVectors.push(vector);
+            }
+            // Add to created even if also saved (post is still user's creation)
+            if (createdPostIds.includes(postId)) {
+              createdVectors.push(vector);
+            }
+          } else {
+            console.warn(
+              `[UserQueue][${messageId}] Embedding not found or invalid in KV for post ${postId}`,
+            );
+          }
+        });
+
+        // 4. Calculate Average Embedding
+        const averageVector = calculateAverageVector(savedVectors, createdVectors);
+
+        if (!averageVector) {
+          console.log(
+            `[UserQueue][${messageId}] No valid post embeddings found to average for user ${userId}. Skipping.`,
+          );
+          // Set cooldown
+          await userVectorsKV.put(cooldownKey, 'no_vectors', { expirationTtl: COOLDOWN_SECONDS });
+          message.ack();
+          return;
+        }
+
+        // 5. Store User Embedding in USER_VECTORS KV
+        await userVectorsKV.put(userVectorKey, JSON.stringify(averageVector));
+
+        // 6. Set Cooldown
+        await userVectorsKV.put(cooldownKey, 'processed', { expirationTtl: COOLDOWN_SECONDS });
+
+        console.log(`[UserQueue][${messageId}] Successfully updated embedding for user ${userId}`);
+        message.ack();
+      } catch (error) {
+        console.error(
+          `[UserQueue][${messageId}] FAILED to process userId ${userId}:`,
+          error instanceof Error ? error.message : error,
+          error instanceof Error ? error.stack : '',
+        );
+        // TODO: Decide whether to retry or ack based on error type if possible
+        message.retry();
       }
     })();
     promises.push(processingPromise);

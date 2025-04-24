@@ -7,6 +7,7 @@ export type Bindings = {
   KV: KVNamespace;
   Capture_Rate_Limits: KVNamespace;
   POST_VECTORS: KVNamespace;
+  USER_VECTORS: KVNamespace;
   VECTORIZE: VectorizeIndex;
   SUPABASE_URL: string;
   SUPABASE_KEY: string;
@@ -17,7 +18,7 @@ export type Bindings = {
   SEED_SECRET: string;
   AI: Ai;
   POST_QUEUE: Queue<{ postId: string }>;
-  USER_VECTOR_QUEUE: Queue<string>;
+  USER_VECTOR_QUEUE: Queue<{ userId: any }>;
 };
 
 export type Variables = {

@@ -1,14 +1,14 @@
-import { createD1Client } from "../../db";
-import { eq, and, desc, sql } from "drizzle-orm";
-import * as schema from "../../db/schema";
-import { nanoid } from "nanoid";
-import type { ContextType } from "../../types";
+import { createD1Client } from '../../db';
+import { eq, and, desc, sql } from 'drizzle-orm';
+import * as schema from '../../db/schema';
+import { nanoid } from 'nanoid';
+import type { ContextType } from '../../types';
 
 export const savedPostResolvers = {
   Query: {
     async savedPosts(_: unknown, { limit = 10, offset = 0 }, context: ContextType) {
       if (!context.user) {
-        throw new Error("Authentication required");
+        throw new Error('Authentication required');
       }
 
       const db = createD1Client(context.env);
@@ -20,7 +20,7 @@ export const savedPostResolvers = {
           .where(eq(schema.savedPost.userId, context.user.id))
           .limit(limit)
           .offset(offset)
-          .orderBy((tbl) => [desc(schema.savedPost.createdAt)])
+          .orderBy(() => [desc(schema.savedPost.createdAt)])
           .all();
 
         if (!savedPostsIds.length) {
@@ -33,7 +33,11 @@ export const savedPostResolvers = {
               return null;
             }
 
-            const post = await db.select().from(schema.post).where(eq(schema.post.id, postId)).get();
+            const post = await db
+              .select()
+              .from(schema.post)
+              .where(eq(schema.post.id, postId))
+              .get();
 
             if (!post) return null;
 
@@ -43,7 +47,11 @@ export const savedPostResolvers = {
               .where(post.userId !== null ? eq(schema.profile.userId, post.userId) : sql`FALSE`)
               .get();
 
-            const media = await db.select().from(schema.media).where(eq(schema.media.postId, post.id)).all();
+            const media = await db
+              .select()
+              .from(schema.media)
+              .where(eq(schema.media.postId, post.id))
+              .all();
 
             return {
               ...post,
@@ -53,13 +61,15 @@ export const savedPostResolvers = {
               hashtags: [],
               savedBy: [],
             };
-          })
+          }),
         );
 
         return savedPosts.filter(Boolean);
       } catch (error) {
-        console.error("Error fetching saved posts:", error);
-        throw new Error(`Failed to fetch saved posts: ${error instanceof Error ? error.message : "Unknown error"}`);
+        console.error('Error fetching saved posts:', error);
+        throw new Error(
+          `Failed to fetch saved posts: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
       }
     },
   },
@@ -67,7 +77,7 @@ export const savedPostResolvers = {
   Mutation: {
     async savePost(_: unknown, { postId }: { postId: string }, context: ContextType) {
       if (!context.user) {
-        throw new Error("Authentication required");
+        throw new Error('Authentication required');
       }
 
       const db = createD1Client(context.env);
@@ -76,13 +86,15 @@ export const savedPostResolvers = {
         const post = await db.select().from(schema.post).where(eq(schema.post.id, postId)).get();
 
         if (!post) {
-          throw new Error("Post not found");
+          throw new Error('Post not found');
         }
 
         const existingSave = await db
           .select()
           .from(schema.savedPost)
-          .where(and(eq(schema.savedPost.userId, context.user.id), eq(schema.savedPost.postId, postId)))
+          .where(
+            and(eq(schema.savedPost.userId, context.user.id), eq(schema.savedPost.postId, postId)),
+          )
           .get();
 
         if (existingSave) {
@@ -96,16 +108,28 @@ export const savedPostResolvers = {
           createdAt: new Date().toISOString(),
         });
 
+        try {
+          await context.env.USER_VECTOR_QUEUE.send({ userId: context.user.id });
+          console.log(`[savePost] Sent userId ${context.user.id} to USER_VECTOR_QUEUE`);
+        } catch (queueError) {
+          console.error(
+            `[savePost] FAILED to send userId ${context.user.id} to USER_VECTOR_QUEUE:`,
+            queueError,
+          );
+        }
+
         return { success: true, post };
       } catch (error) {
-        console.error("Error saving post:", error);
-        throw new Error(`Failed to save post: ${error instanceof Error ? error.message : "Unknown error"}`);
+        console.error('Error saving post:', error);
+        throw new Error(
+          `Failed to save post: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
       }
     },
 
     async unsavePost(_: unknown, { postId }: { postId: string }, context: ContextType) {
       if (!context.user) {
-        throw new Error("Authentication required");
+        throw new Error('Authentication required');
       }
 
       const db = createD1Client(context.env);
@@ -113,12 +137,26 @@ export const savedPostResolvers = {
       try {
         await db
           .delete(schema.savedPost)
-          .where(and(eq(schema.savedPost.userId, context.user.id), eq(schema.savedPost.postId, postId)));
+          .where(
+            and(eq(schema.savedPost.userId, context.user.id), eq(schema.savedPost.postId, postId)),
+          );
+
+        try {
+          await context.env.USER_VECTOR_QUEUE.send({ userId: context.user.id });
+          console.log(`[unsavePost] Sent userId ${context.user.id} to USER_VECTOR_QUEUE`);
+        } catch (queueError) {
+          console.error(
+            `[unsavePost] FAILED to send userId ${context.user.id} to USER_VECTOR_QUEUE:`,
+            queueError,
+          );
+        }
 
         return { success: true };
       } catch (error) {
-        console.error("Error unsaving post:", error);
-        throw new Error(`Failed to unsave post: ${error instanceof Error ? error.message : "Unknown error"}`);
+        console.error('Error unsaving post:', error);
+        throw new Error(
+          `Failed to unsave post: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
       }
     },
   },
@@ -133,12 +171,17 @@ export const savedPostResolvers = {
         const savedPost = await db
           .select()
           .from(schema.savedPost)
-          .where(and(eq(schema.savedPost.userId, context.user.id), eq(schema.savedPost.postId, parent.id)))
+          .where(
+            and(
+              eq(schema.savedPost.userId, context.user.id),
+              eq(schema.savedPost.postId, parent.id),
+            ),
+          )
           .get();
 
         return !!savedPost;
       } catch (error) {
-        console.error("Error checking if post is saved:", error);
+        console.error('Error checking if post is saved:', error);
         return false;
       }
     },

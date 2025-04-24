@@ -33,9 +33,8 @@ Capture's recommendation system uses content-based vector embeddings to suggest 
 - User vectors update only after meaningful actions:
   - Creating new posts
   - Saving/unsaving content
-  - Following hashtags
-  - Engaging with content through comments
-  - Shares by Sender
+  - Following hashtags (future implementation)
+  - Shares by Sender (future implementation)
 - Implementation via Cloudflare Queues with cooldown periods
 - Saves resources by not processing inactive users
 

@@ -15,7 +15,7 @@ import profileRouter from 'routes/profile';
 import authRouter from 'routes/auth';
 import seedRouter from 'routes/seed';
 import recommendRouter from 'routes/recommend';
-import queuesRouter, { handlePostQueue } from 'routes/queues';
+import { handlePostQueue, handleUserEmbeddingQueue } from 'routes/queues';
 import type { MessageBatch, ExecutionContext } from '@cloudflare/workers-types';
 
 const app = new Hono<{
@@ -82,7 +82,6 @@ app.use('/api/*', authMiddleware);
 app.route('/api/media', mediaRouter);
 app.route('/api/profile', profileRouter);
 app.route('/api/recommend', recommendRouter);
-app.route('/api/queues', queuesRouter);
 
 app.onError(errorHandler);
 
@@ -93,7 +92,9 @@ export default {
       case 'post-queue':
         await handlePostQueue(batch, env);
         break;
-      // TODO: Add case for 'user-vector-queue' if needed
+      case 'user-vector-queue':
+        await handleUserEmbeddingQueue(batch, env);
+        break;
       default:
         console.error(`Received message for unknown queue: ${batch.queue}`);
         // Acknowledge messages from unknown queues to prevent retries

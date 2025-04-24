@@ -21,6 +21,10 @@ id = "94122c41067e4db7b87b7618ecf06b49"
 binding = "POST_VECTORS"
 id = "7edac15c451741d28833d410037d090a"
 
+[[kv_namespaces]]
+binding = "USER_VECTORS"
+id = "99abeb7032754aa59283001ec4ed4006"
+
 [[vectorize]]
 binding = "VECTORIZE"
 index_name = "capture-recommendations"
@@ -35,6 +39,9 @@ queue = "user-vector-queue"
 
 [[queues.consumers]]
 queue = "post-queue"
+
+[[queues.consumers]]
+queue = "user-vector-queue"
 
 [ai]
 binding = "AI"
