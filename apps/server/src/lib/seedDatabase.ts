@@ -28,6 +28,36 @@ const postCaptions = [
   'What’s everyone reading these days? Need recommendations!',
   'Just hit a new personal record at the gym! 💪',
   'Taking a break to enjoy some fresh air.',
+  'Dreaming of my next adventure. Where should I go? ✈️',
+  'Sometimes a quiet night in is exactly what you need. 😌',
+  "Finally tackling that book I've been meaning to read. 📚",
+  'Is it just me or did this week feel extra long?',
+  "Trying to learn a new skill. It's harder than it looks! 😂",
+  'Sunday morning vibes: coffee and pancakes. 🥞☕',
+  'Spending the afternoon organizing my space. ✨',
+  'That feeling when your favorite song comes on shuffle. 🎶',
+  'Looking forward to catching up with friends this weekend.',
+  'A little bit of nature therapy always helps. 🌳',
+  'Exploring the city streets today. So much to see! 🏙️',
+  'Just baked some cookies. The house smells amazing! 🍪',
+  'Planning my next big project. Feeling inspired!',
+  'Nothing beats a good podcast during the commute. 🎧',
+  'Lazy Sunday in full effect. 😴',
+  'Trying to eat healthier this week. So far, so good!',
+  'Discovered a hidden gem cafe in my neighborhood. ☕️📍',
+  'That feeling of accomplishment after a productive day. ✅',
+  'Movie night! Any suggestions for a good comedy? 🎬',
+  'Working from home has its perks... and distractions. 😅',
+  'Golden hour light is just magical. ✨',
+  "Learning to play a new instrument. It's a challenge! 🎸",
+  'A simple walk can clear the mind. 🚶‍♀️',
+  'Decluttering my digital life. Feels good!',
+  'Anyone else already thinking about the holidays? 🎄',
+  'The best ideas often come when you least expect them.',
+  'Re-watching a classic movie tonight.',
+  'Spending quality time with family is everything. ❤️',
+  'Trying to incorporate more mindfulness into my day. 🙏',
+  'Soaking up the last bit of sunshine. ☀️',
 ];
 
 const cloudflareImageIds = [
@@ -51,6 +81,14 @@ const cloudflareImageIds = [
   '32a15ecb-14c0-4bef-7049-147d9c3b2100',
   '3285d359-adc0-4ccb-39e4-be0ac2a0e900',
   'b6b02750-6198-4ce6-47a6-ddc7ffad3d00',
+  '00f5d0dd-1225-46c7-41db-c4bfa9b16200',
+  '9c3c5f57-ed3b-4e28-5304-27a4c828ed00',
+  '38a5032e-75e2-4e39-9f60-ba4f86f59100',
+  'ce6bd285-33e3-4374-f717-8c95d54b4500',
+  '05742317-255a-486a-b8c3-0892fd604a00',
+  'ac4e0814-f3ca-482f-d1c6-801f8ed95c00',
+  '34241a14-35e7-4ff3-8bdc-cefbfe8b9e00',
+  '64595be6-8a60-4a81-0be1-713c1d1eb600',
 ];
 
 async function batchInsert(db: any, table: any, rows: any[]) {
@@ -108,11 +146,13 @@ export async function seedDatabase(
   for (const user of users) {
     for (let i = 0; i < postsPerUser; i++) {
       const postId = nanoid();
+      const postType = faker.helpers.arrayElement(['post', 'thread']);
+
       posts.push({
         id: postId,
         userId: user.userId,
         content: postCaptions[Math.floor(Math.random() * postCaptions.length)],
-        type: faker.helpers.arrayElement(['post', 'thread']),
+        type: postType,
         createdAt: faker.date.recent().toISOString(),
       });
 
@@ -130,7 +170,11 @@ export async function seedDatabase(
         postHashtagMap[postId].push(randomHashtag.name);
       }
 
-      const mediaCount = Math.floor(Math.random() * 5);
+      let mediaCount = 0;
+      if (postType === 'post') {
+        mediaCount = Math.floor(Math.random() * 4) + 1;
+      }
+
       for (let k = 0; k < mediaCount; k++) {
         mediaItems.push({
           id: nanoid(),

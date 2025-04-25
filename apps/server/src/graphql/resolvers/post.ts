@@ -3,6 +3,7 @@ import { eq, inArray, sql, and } from 'drizzle-orm';
 import * as schema from '../../db/schema';
 import { nanoid } from 'nanoid';
 import type { ContextType } from '../../types';
+import { createImageService } from '../../lib/imageService';
 
 export const postResolvers = {
   Query: {
@@ -29,13 +30,14 @@ export const postResolvers = {
         return { posts: [], nextCursor: null };
       }
 
-      let query = db
+      const query = db
         .select()
         .from(schema.post)
         .where(inArray(schema.post.userId, followedUserIds))
         .orderBy(sql`${schema.post.createdAt} DESC`)
         .limit(limit + 1);
 
+      let finalQuery = query;
       if (cursor) {
         const cursorRow = await db
           .select({ createdAt: schema.post.createdAt })
@@ -44,11 +46,11 @@ export const postResolvers = {
           .get();
 
         if (cursorRow) {
-          query = query.where(sql`${schema.post.createdAt} < ${cursorRow.createdAt}`);
+          finalQuery = query.where(sql`${schema.post.createdAt} < ${cursorRow.createdAt}`);
         }
       }
 
-      const rows = await query.all();
+      const rows = await finalQuery.all();
       const hasNextPage = rows.length > limit;
       const sliced = hasNextPage ? rows.slice(0, limit) : rows;
       const nextCursor = hasNextPage ? sliced[sliced.length - 1].id : null;
@@ -291,14 +293,20 @@ export const postResolvers = {
     },
 
     async deletePost(_parent: unknown, { id }: { id: string }, context: ContextType) {
-      if (!context?.user) {
-        throw new Error('Authentication required');
+      if (!context?.user?.id || !context?.env?.VECTORIZE) {
+        throw new Error('Authentication required or environment/VECTORIZE binding missing');
       }
 
       const db = createD1Client(context.env);
+      const imageService = createImageService(context.env);
+      const vectorizeIndex = context.env.VECTORIZE;
 
       try {
-        const post = await db.select().from(schema.post).where(eq(schema.post.id, id)).get();
+        const post = await db
+          .select({ id: schema.post.id, userId: schema.post.userId })
+          .from(schema.post)
+          .where(eq(schema.post.id, id))
+          .get();
 
         if (!post) {
           throw new Error('Post not found');
@@ -308,21 +316,34 @@ export const postResolvers = {
           throw new Error('Not authorized to delete this post');
         }
 
-        await db.delete(schema.postHashtag).where(eq(schema.postHashtag.postId, id));
-
         const mediaItems = await db
-          .select()
+          .select({ id: schema.media.id, storageKey: schema.media.storageKey })
           .from(schema.media)
           .where(eq(schema.media.postId, id))
           .all();
 
-        await db.delete(schema.comment).where(eq(schema.comment.postId, id));
-        await db.delete(schema.savedPost).where(eq(schema.savedPost.postId, id));
-        if (mediaItems.length > 0) {
-          await db.delete(schema.media).where(eq(schema.media.postId, id));
+        const deletionPromises = [];
 
-          // Add here: Delete the actual files from Cloudflare
+        deletionPromises.push(
+          db.delete(schema.postHashtag).where(eq(schema.postHashtag.postId, id)),
+        );
+        deletionPromises.push(db.delete(schema.comment).where(eq(schema.comment.postId, id)));
+        deletionPromises.push(db.delete(schema.savedPost).where(eq(schema.savedPost.postId, id)));
+
+        // Delete associated images from Cloudflare Images and DB
+        for (const mediaItem of mediaItems) {
+          deletionPromises.push(imageService.delete(mediaItem.id, context.user.id));
         }
+
+        // Delete vector from Vectorize
+        const vectorIdToDelete = `post:${post.id}`;
+        deletionPromises.push(
+          vectorizeIndex.deleteByIds([vectorIdToDelete]).catch((err) => {
+            console.error(`Failed to delete vector ${vectorIdToDelete} via binding:`, err);
+          }),
+        );
+
+        await Promise.all(deletionPromises);
 
         await db.delete(schema.post).where(eq(schema.post.id, id));
 

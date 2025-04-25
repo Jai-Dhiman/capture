@@ -27,7 +27,7 @@ id = "99abeb7032754aa59283001ec4ed4006"
 
 [[vectorize]]
 binding = "VECTORIZE"
-index_name = "capture-recommendations"
+index_name = "capture-vectors"
 
 [[queues.producers]]
 binding = "POST_QUEUE"
