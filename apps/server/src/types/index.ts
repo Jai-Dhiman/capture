@@ -18,7 +18,7 @@ export type Bindings = {
   SEED_SECRET: string;
   AI: Ai;
   POST_QUEUE: Queue<{ postId: string }>;
-  USER_VECTOR_QUEUE: Queue<{ userId: any }>;
+  USER_VECTOR_QUEUE: Queue<{ userId: string }>;
 };
 
 export type Variables = {
