@@ -6,7 +6,11 @@ import type { ContextType } from '../../types';
 
 export const postResolvers = {
   Query: {
-    async feed(_: unknown, { limit = 10, offset = 0 }, context: { env: any; user: any }) {
+    async feed(
+      _: unknown,
+      { limit = 10, cursor }: { limit?: number; cursor?: string },
+      context: { env: any; user: any },
+    ): Promise<{ posts: any[]; nextCursor?: string | null }> {
       if (!context.user) {
         throw new Error('Authentication required');
       }
@@ -21,23 +25,36 @@ export const postResolvers = {
 
       const followedUserIds = relationships.map((r) => r.followedId);
 
-      let postsQuery;
-      if (followedUserIds.length > 0) {
-        postsQuery = db
-          .select()
-          .from(schema.post)
-          .where(inArray(schema.post.userId, followedUserIds))
-          .limit(limit)
-          .offset(offset)
-          .orderBy(sql`${schema.post.createdAt} DESC`);
-      } else {
-        return [];
+      if (followedUserIds.length === 0) {
+        return { posts: [], nextCursor: null };
       }
 
-      const posts = await postsQuery.all();
+      let query = db
+        .select()
+        .from(schema.post)
+        .where(inArray(schema.post.userId, followedUserIds))
+        .orderBy(sql`${schema.post.createdAt} DESC`)
+        .limit(limit + 1);
+
+      if (cursor) {
+        const cursorRow = await db
+          .select({ createdAt: schema.post.createdAt })
+          .from(schema.post)
+          .where(eq(schema.post.id, cursor))
+          .get();
+
+        if (cursorRow) {
+          query = query.where(sql`${schema.post.createdAt} < ${cursorRow.createdAt}`);
+        }
+      }
+
+      const rows = await query.all();
+      const hasNextPage = rows.length > limit;
+      const sliced = hasNextPage ? rows.slice(0, limit) : rows;
+      const nextCursor = hasNextPage ? sliced[sliced.length - 1].id : null;
 
       const enhancedPosts = await Promise.all(
-        posts.map(async (post) => {
+        sliced.map(async (post) => {
           const user = await db
             .select()
             .from(schema.profile)
@@ -96,7 +113,7 @@ export const postResolvers = {
         }),
       );
 
-      return enhancedPosts;
+      return { posts: enhancedPosts, nextCursor };
     },
 
     async post(_parent: unknown, { id }: { id: string }, context: { env: any; user: any }) {
@@ -357,16 +374,7 @@ export const postResolvers = {
       }
     },
 
-    _commentCount: async (parent: { id: string }, _: unknown, context: ContextType) => {
-      const db = createD1Client(context.env);
-
-      const result = await db
-        .select({ count: sql`count(*)` })
-        .from(schema.comment)
-        .where(eq(schema.comment.postId, parent.id))
-        .get();
-
-      return result?.count || 0;
-    },
+    _commentCount: (parent: { _commentCount: number }) => parent._commentCount,
+    _saveCount: (parent: { _saveCount: number }) => parent._saveCount,
   },
 };

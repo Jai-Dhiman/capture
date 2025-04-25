@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "5d211292-62c4-47ea-85b7-bcb74868a825",
+  "id": "7d3fba6d-b57c-4444-ab46-462b1c5c53ff",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "blocked_user": {
@@ -34,7 +34,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-04-17T20:00:18.623Z'"
+          "default": "'2025-04-24T10:11:59.620Z'"
         }
       },
       "indexes": {
@@ -160,7 +160,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-04-17T20:00:18.622Z'"
+          "default": "'2025-04-24T10:11:59.620Z'"
         }
       },
       "indexes": {
@@ -261,7 +261,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-04-17T20:00:18.622Z'"
+          "default": "'2025-04-24T10:11:59.620Z'"
         }
       },
       "indexes": {
@@ -336,7 +336,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-04-17T20:00:18.622Z'"
+          "default": "'2025-04-24T10:11:59.620Z'"
         }
       },
       "indexes": {
@@ -425,7 +425,23 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-04-17T20:00:18.621Z'"
+          "default": "'2025-04-24T10:11:59.619Z'"
+        },
+        "_save_count": {
+          "name": "_save_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "_comment_count": {
+          "name": "_comment_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
         }
       },
       "indexes": {
@@ -486,7 +502,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-04-17T20:00:18.622Z'"
+          "default": "'2025-04-24T10:11:59.620Z'"
         }
       },
       "indexes": {
@@ -605,7 +621,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-04-17T20:00:18.615Z'"
+          "default": "'2025-04-24T10:11:59.613Z'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -613,7 +629,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-04-17T20:00:18.620Z'"
+          "default": "'2025-04-24T10:11:59.618Z'"
         }
       },
       "indexes": {
@@ -667,7 +683,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-04-17T20:00:18.622Z'"
+          "default": "'2025-04-24T10:11:59.620Z'"
         }
       },
       "indexes": {
@@ -756,7 +772,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-04-17T20:00:18.622Z'"
+          "default": "'2025-04-24T10:11:59.620Z'"
         }
       },
       "indexes": {

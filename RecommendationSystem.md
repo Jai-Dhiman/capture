@@ -58,21 +58,6 @@ Capture's recommendation system uses content-based vector embeddings to suggest 
 ### 4. Data Schema Extensions
 
 ```
-// User interest vectors
-userInterestVector {
-  userId: string (primary key)
-  vector: string (JSON array of vector values)
-  lastUpdated: timestamp
-  sourceData: { saved: number, created: number, hashtags: number }
-}
-
-// Post vectors
-postVector {
-  postId: string (primary key)
-  vector: string (JSON array of vector values)
-  createdAt: timestamp
-}
-
 // Post view tracking
 postView {
   id: string (primary key)
@@ -81,6 +66,7 @@ postView {
   viewedAt: timestamp
 }
 ```
+KV Stores for User Interests Vectors and Post Vectors
 
 ## Implementation Phases
 

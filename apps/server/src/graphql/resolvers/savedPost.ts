@@ -108,6 +108,11 @@ export const savedPostResolvers = {
           createdAt: new Date().toISOString(),
         });
 
+        await db
+          .update(schema.post)
+          .set({ _saveCount: sql`${schema.post._saveCount} + 1` })
+          .where(eq(schema.post.id, postId));
+
         try {
           await context.env.USER_VECTOR_QUEUE.send({ userId: context.user.id });
           console.log(`[savePost] Sent userId ${context.user.id} to USER_VECTOR_QUEUE`);
@@ -140,6 +145,12 @@ export const savedPostResolvers = {
           .where(
             and(eq(schema.savedPost.userId, context.user.id), eq(schema.savedPost.postId, postId)),
           );
+
+        // Decrement post's save count
+        await db
+          .update(schema.post)
+          .set({ _saveCount: sql`${schema.post._saveCount} - 1` })
+          .where(eq(schema.post.id, postId));
 
         try {
           await context.env.USER_VECTOR_QUEUE.send({ userId: context.user.id });

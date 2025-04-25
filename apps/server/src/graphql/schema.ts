@@ -1,6 +1,5 @@
 export const typeDefs = `
   type Query {
-    feed(limit: Int, offset: Int): [Post!]!
     post(id: ID!): Post
     profile(id: ID!): Profile
     searchHashtags(query: String!, limit: Int, offset: Int): [Hashtag!]!
@@ -19,6 +18,8 @@ export const typeDefs = `
     following(userId: ID!): [Profile!]!
     blockedUsers: [Profile!]!
     isUserBlocked(userId: ID!): Boolean!
+    feed(limit: Int = 10, cursor: String): FeedPayload
+    discoverFeed(limit: Int = 10, cursor: String): FeedPayload
   }
 
   type Mutation {
@@ -84,6 +85,7 @@ export const typeDefs = `
     createdAt: String!
     updatedAt: String!
     _commentCount: Int!
+    _saveCount: Int!
   }
 
   input PostInput {
@@ -185,5 +187,10 @@ export const typeDefs = `
 
 type UnblockResponse {
   success: Boolean!
+}
+
+type FeedPayload {
+  posts: [Post!]!
+  nextCursor: String
 }
 `;

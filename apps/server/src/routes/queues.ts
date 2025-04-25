@@ -1,18 +1,21 @@
 import { createD1Client } from '../db';
 import * as schema from '../db/schema';
 import type { Bindings } from 'types';
-import { generatePostEmbedding, storePostEmbedding } from '../lib/embeddings';
+import { generatePostEmbedding, storePostEmbedding, generateEmbedding } from '../lib/embeddings';
 import { inArray, eq, desc } from 'drizzle-orm';
 import type { MessageBatch } from '@cloudflare/workers-types';
 
 function calculateAverageVector(
   savedVectors: number[][],
   createdVectors: number[][],
+  hashtagVectors: number[][] = [],
   savedWeight: number = 2,
+  tagWeight: number = 1,
 ): number[] | null {
   const allVectors = [
     ...savedVectors.flatMap((v) => Array(savedWeight).fill(v)),
     ...createdVectors,
+    ...hashtagVectors.flatMap((v) => Array(tagWeight).fill(v)),
   ];
 
   if (allVectors.length === 0) {
@@ -138,7 +141,7 @@ export async function handleUserEmbeddingQueue(
     const userId = message.body.userId;
     const messageId = message.id; // For logging
     const cooldownKey = `user-vector-cooldown:${userId}`;
-    const userVectorKey = `user-vector:${userId}`;
+    const userVectorKey = userId;
 
     const processingPromise = (async () => {
       try {
@@ -209,8 +212,28 @@ export async function handleUserEmbeddingQueue(
           }
         });
 
-        // 4. Calculate Average Embedding
-        const averageVector = calculateAverageVector(savedVectors, createdVectors);
+        // 3.b. Hashtag Embedding for user interests
+        const hashtagRows = await db
+          .select({ name: schema.hashtag.name })
+          .from(schema.postHashtag)
+          .leftJoin(schema.hashtag, eq(schema.hashtag.id, schema.postHashtag.hashtagId))
+          .where(inArray(schema.postHashtag.postId, uniquePostIds))
+          .all();
+        const tagNames = Array.from(new Set(hashtagRows.map((r) => r.name).filter(Boolean)));
+        let hashtagVectors: number[][] = [];
+        if (tagNames.length > 0) {
+          try {
+            const tagVector = await generateEmbedding(tagNames.join(' '), env.AI);
+            if (Array.isArray(tagVector) && tagVector.length > 0) {
+              hashtagVectors.push(tagVector);
+            }
+          } catch (e) {
+            console.error(`[UserQueue][${messageId}] Failed to generate hashtag embedding:`, e);
+          }
+        }
+
+        // 4. Calculate Average Embedding including hashtags
+        const averageVector = calculateAverageVector(savedVectors, createdVectors, hashtagVectors);
 
         if (!averageVector) {
           console.log(

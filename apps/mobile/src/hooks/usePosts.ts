@@ -1,22 +1,21 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuthStore } from "stores/authStore";
-import { API_URL } from "@env";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuthStore } from 'stores/authStore';
+import { API_URL } from '@env';
 
 export const useUserPosts = (userId?: string) => {
   return useQuery({
-    queryKey: ["userPosts", userId],
+    queryKey: ['userPosts', userId],
     queryFn: async () => {
       const { session } = useAuthStore.getState();
-      const token = session?.access_token;
 
       if (!session?.access_token) {
-        throw new Error("No auth token available");
+        throw new Error('No auth token available');
       }
 
       const response = await fetch(`${API_URL}/graphql`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
@@ -54,7 +53,7 @@ export const useUserPosts = (userId?: string) => {
       const data = await response.json();
 
       if (data.errors) {
-        console.error("GraphQL Errors:", data.errors);
+        console.error('GraphQL Errors:', data.errors);
         throw new Error(data.errors[0].message);
       }
 
@@ -66,19 +65,18 @@ export const useUserPosts = (userId?: string) => {
 
 export const useSinglePost = (postId?: string) => {
   return useQuery({
-    queryKey: ["post", postId],
+    queryKey: ['post', postId],
     queryFn: async () => {
       const { session } = useAuthStore.getState();
-      const token = session?.access_token;
 
       if (!session?.access_token) {
-        throw new Error("No auth token available");
+        throw new Error('No auth token available');
       }
 
       const response = await fetch(`${API_URL}/graphql`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
@@ -122,7 +120,7 @@ export const useSinglePost = (postId?: string) => {
       const data = await response.json();
 
       if (data.errors) {
-        console.error("GraphQL Errors:", data.errors);
+        console.error('GraphQL Errors:', data.errors);
         throw new Error(data.errors[0].message);
       }
 
@@ -136,25 +134,25 @@ export const useCreatePost = () => {
   return useMutation({
     mutationFn: async ({
       content,
-      type = "post",
+      type = 'post',
       mediaIds,
       hashtagIds,
     }: {
       content: string;
-      type: "post" | "thread";
+      type: 'post' | 'thread';
       mediaIds: string[];
       hashtagIds?: string[];
     }) => {
       const { session } = useAuthStore.getState();
 
       if (!session?.access_token) {
-        throw new Error("No auth token available");
+        throw new Error('No auth token available');
       }
 
       const response = await fetch(`${API_URL}/graphql`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
@@ -197,8 +195,8 @@ export const useCreatePost = () => {
       const data = await response.json();
 
       if (data.errors) {
-        console.error("GraphQL Errors:", data.errors);
-        throw new Error(data.errors[0].message || "Unknown GraphQL error");
+        console.error('GraphQL Errors:', data.errors);
+        throw new Error(data.errors[0].message || 'Unknown GraphQL error');
       }
 
       return data.data.createPost;
@@ -212,16 +210,15 @@ export const useDeletePost = () => {
   return useMutation({
     mutationFn: async (postId: string) => {
       const { session } = useAuthStore.getState();
-      const token = session?.access_token;
 
       if (!session?.access_token) {
-        throw new Error("No auth token available");
+        throw new Error('No auth token available');
       }
 
       const response = await fetch(`${API_URL}/graphql`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
@@ -242,16 +239,16 @@ export const useDeletePost = () => {
       const data = await response.json();
 
       if (data.errors) {
-        console.error("GraphQL Errors:", data.errors);
-        throw new Error(data.errors[0].message || "Unknown GraphQL error");
+        console.error('GraphQL Errors:', data.errors);
+        throw new Error(data.errors[0].message || 'Unknown GraphQL error');
       }
 
       return data.data.deletePost;
     },
     onSuccess: () => {
       // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ["userPosts"] });
-      queryClient.invalidateQueries({ queryKey: ["feed"] });
+      queryClient.invalidateQueries({ queryKey: ['userPosts'] });
+      queryClient.invalidateQueries({ queryKey: ['feed'] });
     },
   });
 };

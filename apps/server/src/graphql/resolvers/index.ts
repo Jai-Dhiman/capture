@@ -1,10 +1,11 @@
-import { hashtagResolvers } from "./hashtag";
-import { postResolvers } from "./post";
-import { profileResolvers } from "./profile";
-import { commentResolvers } from "./comment";
-import { relationshipResolvers } from "./relationship";
-import { savedPostResolvers } from "./savedPost";
-import { blockingResolvers } from "./blocking";
+import { hashtagResolvers } from './hashtag';
+import { postResolvers } from './post';
+import { profileResolvers } from './profile';
+import { commentResolvers } from './comment';
+import { relationshipResolvers } from './relationship';
+import { savedPostResolvers } from './savedPost';
+import { blockingResolvers } from './blocking';
+import { discoveryResolvers } from './discovery';
 
 export const resolvers = {
   Query: {
@@ -15,6 +16,7 @@ export const resolvers = {
     ...savedPostResolvers.Query,
     ...relationshipResolvers.Query,
     ...blockingResolvers.Query,
+    ...discoveryResolvers.Query,
   },
   Mutation: {
     ...postResolvers.Mutation,

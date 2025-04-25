@@ -14,7 +14,6 @@ import mediaRouter from 'routes/media';
 import profileRouter from 'routes/profile';
 import authRouter from 'routes/auth';
 import seedRouter from 'routes/seed';
-import recommendRouter from 'routes/recommend';
 import { handlePostQueue, handleUserEmbeddingQueue } from 'routes/queues';
 import type { MessageBatch, ExecutionContext } from '@cloudflare/workers-types';
 
@@ -81,7 +80,6 @@ app.route('/seed', seedRouter);
 app.use('/api/*', authMiddleware);
 app.route('/api/media', mediaRouter);
 app.route('/api/profile', profileRouter);
-app.route('/api/recommend', recommendRouter);
 
 app.onError(errorHandler);
 

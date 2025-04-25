@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { useFeed } from '../hooks/useFeed';
+import { useDiscoverFeed } from '../hooks/useDiscoverFeed';
 import { PostItem } from '../components/post/PostItem';
 import { ThreadItem } from '../components/post/ThreadItem';
 import Header from '../components/ui/Header';
@@ -17,17 +17,16 @@ LogBox.ignoreLogs([
 
 export default function Feed() {
   const [refreshing, setRefreshing] = useState(false);
-  const { 
+  const {
     data,
-    isLoading, 
-    isError, 
-    error, 
-    refetch, 
-    fetchNextPage, 
-    hasNextPage, 
-    isFetchingNextPage 
-  } = useFeed();
-  const navigation = useNavigation();
+    isLoading,
+    isError,
+    error,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
+  } = useDiscoverFeed();
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -35,11 +34,7 @@ export default function Feed() {
     setRefreshing(false);
   };
 
-  const allPosts = data?.pages.flatMap(page => page.posts) || [];
-
-  const sortedPosts = [...allPosts].sort((a, b) => {
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-  });
+  const posts = data?.pages.flatMap(page => page.posts) || [];
 
   const renderItem = ({ item }: { item: Post | Thread }) => {
     if (item.type === 'thread') {
@@ -47,7 +42,7 @@ export default function Feed() {
     }
     return <PostItem post={item} />;
   };
-  
+
   const loadMore = () => {
     if (hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
@@ -56,7 +51,7 @@ export default function Feed() {
 
   const renderFooter = () => {
     if (!isFetchingNextPage) return null;
-    
+
     return (
       <View className="py-4 flex items-center justify-center">
         <ActivityIndicator size="small" color="#000" />
@@ -84,7 +79,7 @@ export default function Feed() {
           <Text className="text-red-500 text-center mb-4">
             {error instanceof Error ? error.message : "An error occurred loading your feed"}
           </Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             className="bg-black py-3 px-6 rounded-full"
             onPress={() => refetch()}
           >
@@ -98,10 +93,10 @@ export default function Feed() {
   return (
     <View className="flex-1 bg-zinc-300">
       <Header />
-      
+
       <View className="flex-1">
         <FlashList
-          data={sortedPosts}
+          data={posts}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
           estimatedItemSize={400}
@@ -110,7 +105,7 @@ export default function Feed() {
           onEndReached={loadMore}
           onEndReachedThreshold={0.5}
           ListFooterComponent={renderFooter}
-          contentContainerStyle={{ 
+          contentContainerStyle={{
             padding: 16,
             paddingBottom: 100,
           }}
@@ -135,14 +130,14 @@ const PostSkeleton = () => (
         <SkeletonElement width={120} height={20} />
       </View>
     </View>
-    
+
     <SkeletonElement width="100%" height={350} />
-    
+
     <View className="p-4">
       <View className="flex-row justify-end mb-2">
         <SkeletonElement width={80} height={10} />
       </View>
-      
+
       <View className="flex-row justify-between items-center">
         <View className="flex-row space-x-8">
           <SkeletonElement width={20} height={20} />
@@ -162,18 +157,18 @@ const ThreadSkeleton = () => (
         <SkeletonElement width={120} height={20} />
       </View>
     </View>
-    
+
     <View className="p-4">
       <SkeletonElement width="100%" height={20} />
       <SkeletonElement width="90%" height={20} />
       <SkeletonElement width="80%" height={20} />
     </View>
-    
+
     <View className="p-4">
       <View className="flex-row justify-end mb-2">
         <SkeletonElement width={80} height={10} />
       </View>
-      
+
       <View className="flex-row justify-between items-center">
         <View className="flex-row space-x-8">
           <SkeletonElement width={20} height={20} />

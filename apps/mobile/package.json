@@ -24,7 +24,7 @@
     "@react-navigation/native-stack": "^6.11.0",
     "@react-navigation/stack": "^7.1.1",
     "@sentry/react-native": "~6.10.0",
-    "@shopify/flash-list": "~1.7.3",
+    "@shopify/flash-list": "~1.8.0",
     "@supabase/supabase-js": "^2.48.1",
     "@tanstack/react-form": "^1.1.2",
     "@tanstack/react-query": "^5.65.1",
