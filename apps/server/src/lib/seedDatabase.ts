@@ -1,31 +1,33 @@
 import { nanoid } from 'nanoid';
 import { faker } from '@faker-js/faker';
 import type { createD1Client } from '../db';
+import type { Bindings } from '../types';
 import { profile, post, comment, relationship, media, hashtag, postHashtag } from '../db/schema';
+import { generatePostEmbedding, storePostEmbedding } from './embeddings';
 
 const BATCH_SIZE = 10;
 
 const postCaptions = [
-  "Just finished my morning coffee ☕️ Ready to take on the day!",
-  "Can’t believe it’s already Thursday. This week flew by!",
-  "Trying out a new recipe tonight. Wish me luck! 🍝",
-  "Sunsets always make everything better.",
-  "Anyone else obsessed with this new album? 🔥",
-  "Productivity hack: Turn off notifications for an hour. Game changer.",
-  "Weekend plans: absolutely nothing and loving it.",
-  "Grateful for the little things today.",
-  "Caught in the rain without an umbrella—classic me.",
-  "If you need me, I’ll be binge-watching my favorite show.",
-  "Motivation comes and goes. Discipline gets things done.",
-  "Is it too late for coffee? Asking for a friend.",
-  "New blog post is live! Check it out on my profile.",
-  "Why does my dog always steal my spot on the couch? 🐶",
-  "Throwback to the best vacation ever.",
-  "Monday mood: Let’s do this!",
-  "Cooking up something special tonight.",
-  "What’s everyone reading these days? Need recommendations!",
-  "Just hit a new personal record at the gym! 💪",
-  "Taking a break to enjoy some fresh air.",
+  'Just finished my morning coffee ☕️ Ready to take on the day!',
+  'Can’t believe it’s already Thursday. This week flew by!',
+  'Trying out a new recipe tonight. Wish me luck! 🍝',
+  'Sunsets always make everything better.',
+  'Anyone else obsessed with this new album? 🔥',
+  'Productivity hack: Turn off notifications for an hour. Game changer.',
+  'Weekend plans: absolutely nothing and loving it.',
+  'Grateful for the little things today.',
+  'Caught in the rain without an umbrella—classic me.',
+  'If you need me, I’ll be binge-watching my favorite show.',
+  'Motivation comes and goes. Discipline gets things done.',
+  'Is it too late for coffee? Asking for a friend.',
+  'New blog post is live! Check it out on my profile.',
+  'Why does my dog always steal my spot on the couch? 🐶',
+  'Throwback to the best vacation ever.',
+  'Monday mood: Let’s do this!',
+  'Cooking up something special tonight.',
+  'What’s everyone reading these days? Need recommendations!',
+  'Just hit a new personal record at the gym! 💪',
+  'Taking a break to enjoy some fresh air.',
 ];
 
 const cloudflareImageIds = [
@@ -60,6 +62,7 @@ async function batchInsert(db: any, table: any, rows: any[]) {
 
 export async function seedDatabase(
   db: ReturnType<typeof createD1Client>,
+  env: Bindings,
   userCount = 50,
   postsPerUser = 5,
   commentsPerPost = 3,
@@ -82,12 +85,12 @@ export async function seedDatabase(
   await batchInsert(db, profile, users);
 
   const hashtagNames: string[] = [];
-while (hashtagNames.length < 20) {
-  const tag = `#${faker.word.sample().toLowerCase()}`;
-  if (!hashtagNames.includes(tag)) {
-    hashtagNames.push(tag);
+  while (hashtagNames.length < 20) {
+    const tag = `#${faker.word.sample().toLowerCase()}`;
+    if (!hashtagNames.includes(tag)) {
+      hashtagNames.push(tag);
+    }
   }
-}
 
   const hashtags = hashtagNames.map((name) => ({
     id: nanoid(),
@@ -100,6 +103,7 @@ while (hashtagNames.length < 20) {
   const posts = [];
   const postHashtags = [];
   const mediaItems = [];
+  const postHashtagMap: Record<string, string[]> = {};
 
   for (const user of users) {
     for (let i = 0; i < postsPerUser; i++) {
@@ -120,6 +124,10 @@ while (hashtagNames.length < 20) {
           hashtagId: randomHashtag.id,
           createdAt: new Date().toISOString(),
         });
+        if (!postHashtagMap[postId]) {
+          postHashtagMap[postId] = [];
+        }
+        postHashtagMap[postId].push(randomHashtag.name);
       }
 
       const mediaCount = Math.floor(Math.random() * 5);
@@ -140,6 +148,19 @@ while (hashtagNames.length < 20) {
   await batchInsert(db, post, posts);
   await batchInsert(db, postHashtag, postHashtags);
   await batchInsert(db, media, mediaItems);
+
+  // ── seed post vectors ──
+  await Promise.all(
+    posts.map(async (p) => {
+      try {
+        const tagsForPost = postHashtagMap[p.id] || [];
+        const vecData = await generatePostEmbedding(p.id, p.content, tagsForPost, env.AI);
+        await storePostEmbedding(vecData, env.POST_VECTORS, env.VECTORIZE);
+      } catch (err) {
+        console.error(`seedDatabase> embedding failed for post ${p.id}:`, err);
+      }
+    }),
+  );
 
   const comments = [];
   for (const p of posts) {

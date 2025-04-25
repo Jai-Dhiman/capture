@@ -1,7 +1,12 @@
 import { createD1Client } from '../db';
 import * as schema from '../db/schema';
 import type { Bindings } from 'types';
-import { generatePostEmbedding, storePostEmbedding, generateEmbedding } from '../lib/embeddings';
+import {
+  generatePostEmbedding,
+  storePostEmbedding,
+  generateEmbedding,
+  type VectorData,
+} from '../lib/embeddings';
 import { inArray, eq, desc } from 'drizzle-orm';
 import type { MessageBatch } from '@cloudflare/workers-types';
 
@@ -92,16 +97,10 @@ export async function handlePostQueue(
         }
         // Store embedding
         await storePostEmbedding(vectorData, env.POST_VECTORS, env.VECTORIZE);
-        console.log(
-          `[handlePostQueue][${messageId}] Successfully stored embedding for post ${postId}`,
-        );
 
         // --- Trigger user embedding update ---
         try {
           await env.USER_VECTOR_QUEUE.send({ userId: post.userId });
-          console.log(
-            `[handlePostQueue][${messageId}] Sent userId ${post.userId} to USER_VECTOR_QUEUE for post ${postId}`,
-          );
         } catch (queueError) {
           console.error(
             `[handlePostQueue][${messageId}] FAILED to send userId ${post.userId} to USER_VECTOR_QUEUE for post ${postId}:`,
@@ -148,7 +147,6 @@ export async function handleUserEmbeddingQueue(
         // 1. Cooldown Check
         const cooling = await userVectorsKV.get(cooldownKey);
         if (cooling) {
-          console.log(`[UserQueue][${messageId}] User ${userId} is in cooldown. Skipping.`);
           message.ack();
           return;
         }
@@ -174,9 +172,6 @@ export async function handleUserEmbeddingQueue(
         const uniquePostIds = [...new Set([...savedPostIds, ...createdPostIds])];
 
         if (uniquePostIds.length === 0) {
-          console.log(
-            `[UserQueue][${messageId}] No recent saved or created posts found for user ${userId}. Skipping.`,
-          );
           // Set cooldown anyway to avoid constant re-checking if user is inactive
           await userVectorsKV.put(cooldownKey, 'no_posts', { expirationTtl: COOLDOWN_SECONDS });
           message.ack();
@@ -185,9 +180,8 @@ export async function handleUserEmbeddingQueue(
 
         // 3. Fetch Post Embeddings from POST_VECTORS KV
         const postVectorKeys = uniquePostIds.map((id) => `post:${id}`);
-        // Note: KV list/bulk operations might be more efficient for many keys
         const kvResults = await Promise.all(
-          postVectorKeys.map((key) => postVectorsKV.get<number[]>(key, { type: 'json' })),
+          postVectorKeys.map((key) => postVectorsKV.get<VectorData>(key, { type: 'json' })),
         );
 
         const savedVectors: number[][] = [];
@@ -195,7 +189,8 @@ export async function handleUserEmbeddingQueue(
         const fetchedEmbeddings = new Map<string, number[]>();
 
         uniquePostIds.forEach((postId, index) => {
-          const vector = kvResults[index];
+          const record = kvResults[index];
+          const vector = record?.vector;
           if (vector && Array.isArray(vector) && vector.length > 0) {
             fetchedEmbeddings.set(postId, vector);
             if (savedPostIds.includes(postId)) {
@@ -220,7 +215,7 @@ export async function handleUserEmbeddingQueue(
           .where(inArray(schema.postHashtag.postId, uniquePostIds))
           .all();
         const tagNames = Array.from(new Set(hashtagRows.map((r) => r.name).filter(Boolean)));
-        let hashtagVectors: number[][] = [];
+        const hashtagVectors: number[][] = [];
         if (tagNames.length > 0) {
           try {
             const tagVector = await generateEmbedding(tagNames.join(' '), env.AI);
@@ -236,9 +231,6 @@ export async function handleUserEmbeddingQueue(
         const averageVector = calculateAverageVector(savedVectors, createdVectors, hashtagVectors);
 
         if (!averageVector) {
-          console.log(
-            `[UserQueue][${messageId}] No valid post embeddings found to average for user ${userId}. Skipping.`,
-          );
           // Set cooldown
           await userVectorsKV.put(cooldownKey, 'no_vectors', { expirationTtl: COOLDOWN_SECONDS });
           message.ack();
@@ -251,7 +243,6 @@ export async function handleUserEmbeddingQueue(
         // 6. Set Cooldown
         await userVectorsKV.put(cooldownKey, 'processed', { expirationTtl: COOLDOWN_SECONDS });
 
-        console.log(`[UserQueue][${messageId}] Successfully updated embedding for user ${userId}`);
         message.ack();
       } catch (error) {
         console.error(

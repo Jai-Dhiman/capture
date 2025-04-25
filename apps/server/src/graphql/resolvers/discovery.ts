@@ -29,7 +29,8 @@ interface GraphQLPost {
   updatedAt: string; // ISOString
   _saveCount: number;
   _commentCount: number;
-  author: GraphQLProfile;
+  user: GraphQLProfile;
+  media: { id: string; type: string; storageKey: string; order: number; createdAt: string }[];
 }
 
 interface GraphQLFeedPayload {
@@ -69,17 +70,15 @@ export const discoveryResolvers = {
       }
 
       if (!userVector) {
-        console.log(`No interest vector found for user ${userId}. Returning empty discovery feed.`);
         return { posts: [], nextCursor: null };
       }
 
       // 2. Vector Search in Vectorize
       let vectorMatches: VectorizeMatch[] = [];
-      const vectorQueryLimit = limit * 3;
+      const vectorQueryLimit = limit * 10;
       try {
         const queryResult = await VECTORIZE.query(userVector, { topK: vectorQueryLimit });
         vectorMatches = queryResult.matches as VectorizeMatch[];
-        console.log(`Vectorize found ${vectorMatches.length} matches for user ${userId}`);
       } catch (e) {
         console.error(`Vectorize query failed for user ${userId}:`, e);
         throw new Error('Failed to query recommendations');
@@ -120,8 +119,6 @@ export const discoveryResolvers = {
           .innerJoin(schema.profile, eq(schema.post.userId, schema.profile.userId))
           .where(inArray(schema.post.id, recommendedPostIds))
           .orderBy(desc(schema.post.createdAt));
-
-        console.log(`Fetched ${recommendedPosts.length} post details from D1 for user ${userId}`);
       } catch (e) {
         console.error(`Failed to fetch post details from D1 for user ${userId}:`, e);
         throw new Error('Failed to fetch post details');
@@ -143,18 +140,12 @@ export const discoveryResolvers = {
         ]);
         followedUserIds = followedUsersResult.map((r) => r.followedId);
         blockedUserIds = blockedUsersResult.map((r) => r.blockedId);
-        console.log(
-          `User ${userId} follows ${followedUserIds.length} users and blocks ${blockedUserIds.length} users.`,
-        );
       } catch (e) {
         console.error(`Failed to fetch follow/block relationships for user ${userId}:`, e);
       }
 
       const filteredPosts = recommendedPosts.filter(
         (post) => !blockedUserIds.includes(post.userId),
-      );
-      console.log(
-        `Filtered down to ${filteredPosts.length} posts after removing blocked authors for user ${userId}`,
       );
 
       // 4.b. Privacy Filtering — remove private-profile posts unless self or followed
@@ -163,9 +154,6 @@ export const discoveryResolvers = {
         if (!isPrivate) return true;
         return post.userId === userId || followedUserIds.includes(post.userId);
       });
-      console.log(
-        `Filtered down to ${privacyFilteredPosts.length} posts after applying privacy rules for user ${userId}`,
-      );
 
       // 5. Ranking
       const rankedPosts = privacyFilteredPosts.sort((a, b) => {
@@ -188,26 +176,46 @@ export const discoveryResolvers = {
         ? Math.max(rankedPosts.findIndex((p) => p.id === cursor) + 1, 0)
         : 0;
       const finalPosts = rankedPosts.slice(startIndex, startIndex + limit);
-      const nextCursor = finalPosts.length === limit ? finalPosts[finalPosts.length - 1].id : null;
+      const nextCursor =
+        finalPosts.length === limit && startIndex + limit < rankedPosts.length
+          ? finalPosts[finalPosts.length - 1].id
+          : null;
 
-      const formattedPosts: GraphQLPost[] = finalPosts.map((p) => ({
-        id: p.id,
-        userId: p.userId,
-        content: p.content,
-        type: p.type as GraphQLPostType,
-        createdAt: p.createdAt,
-        updatedAt: p.createdAt,
-        _saveCount: p._saveCount,
-        _commentCount: p._commentCount,
-        author: {
-          id: p.author.id,
-          userId: p.author.userId,
-          username: p.author.username,
-          profileImage: p.author.profileImage,
-          verifiedType: p.author.verifiedType ?? 'none',
-          isPrivate: !!p.author.isPrivate,
-        },
-      }));
+      const formattedPosts: GraphQLPost[] = await Promise.all(
+        finalPosts.map(async (p) => {
+          const media = await db
+            .select({
+              id: schema.media.id,
+              type: schema.media.type,
+              storageKey: schema.media.storageKey,
+              order: schema.media.order,
+              createdAt: schema.media.createdAt,
+            })
+            .from(schema.media)
+            .where(eq(schema.media.postId, p.id))
+            .orderBy(schema.media.order);
+
+          return {
+            id: p.id,
+            userId: p.userId,
+            content: p.content,
+            type: p.type as GraphQLPostType,
+            createdAt: p.createdAt,
+            updatedAt: p.createdAt,
+            _saveCount: p._saveCount,
+            _commentCount: p._commentCount,
+            user: {
+              id: p.author.id,
+              userId: p.author.userId,
+              username: p.author.username,
+              profileImage: p.author.profileImage,
+              verifiedType: p.author.verifiedType ?? 'none',
+              isPrivate: !!p.author.isPrivate,
+            },
+            media,
+          };
+        }),
+      );
 
       const response: GraphQLFeedPayload = {
         posts: formattedPosts,

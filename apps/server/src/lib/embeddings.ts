@@ -100,6 +100,17 @@ export async function storePostEmbedding(
       throw new Error('Vector contains NaN or infinite values');
     }
 
+    // Validate expected embedding dimension
+    const EXPECTED_DIMENSION = 768;
+    if (vectorData.vector.length !== EXPECTED_DIMENSION) {
+      console.error(
+        `[storePostEmbedding] Invalid embedding length: expected ${EXPECTED_DIMENSION}, got ${vectorData.vector.length}`,
+      );
+      throw new Error(
+        `Embedding length ${vectorData.vector.length} does not match expected ${EXPECTED_DIMENSION}`,
+      );
+    }
+
     // Structure payload and log it
     const payload = {
       id: `post:${vectorData.postId}`,
@@ -112,6 +123,10 @@ export async function storePostEmbedding(
       },
     };
 
+    // Debug log before upsert
+    console.debug(
+      `[storePostEmbedding] Upserting vector id=${payload.id}, length=${payload.values.length}`,
+    );
     await vectorize.upsert([payload]);
   } catch (error) {
     console.error('Failed to store vector in Vectorize:', error);

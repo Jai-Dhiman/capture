@@ -5,7 +5,6 @@ import { PostItem } from '../components/post/PostItem';
 import { ThreadItem } from '../components/post/ThreadItem';
 import Header from '../components/ui/Header';
 import { EmptyState } from '../components/ui/EmptyState';
-import { useNavigation } from '@react-navigation/native';
 import type { Post, Thread } from '../types/postTypes';
 import { FlashList } from '@shopify/flash-list';
 import { SkeletonLoader, SkeletonElement } from '../components/ui/SkeletonLoader';

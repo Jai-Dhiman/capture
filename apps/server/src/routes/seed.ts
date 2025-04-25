@@ -17,7 +17,7 @@ seedRouter.post('/', async (c) => {
   }
 
   const db = createD1Client(c.env);
-  const result = await seedDatabase(db);
+  const result = await seedDatabase(db, c.env);
   return c.json({
     message: 'Database seeded!',
     ...result,

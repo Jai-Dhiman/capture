@@ -115,7 +115,6 @@ export const savedPostResolvers = {
 
         try {
           await context.env.USER_VECTOR_QUEUE.send({ userId: context.user.id });
-          console.log(`[savePost] Sent userId ${context.user.id} to USER_VECTOR_QUEUE`);
         } catch (queueError) {
           console.error(
             `[savePost] FAILED to send userId ${context.user.id} to USER_VECTOR_QUEUE:`,
@@ -154,7 +153,6 @@ export const savedPostResolvers = {
 
         try {
           await context.env.USER_VECTOR_QUEUE.send({ userId: context.user.id });
-          console.log(`[unsavePost] Sent userId ${context.user.id} to USER_VECTOR_QUEUE`);
         } catch (queueError) {
           console.error(
             `[unsavePost] FAILED to send userId ${context.user.id} to USER_VECTOR_QUEUE:`,
