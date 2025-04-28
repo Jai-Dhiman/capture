@@ -58,11 +58,11 @@ const Header: React.FC<HeaderProps> = ({
   });
 
   return (
-    <View className="relative px-4 mt-[50px]">
-      <View className="flex-row items-center justify-between">
+    <View className="relative px-4 mt-[80px]">
+      <View className="flex-row items-center justify-around">
         {showBackButton ? (
           <TouchableOpacity
-            className="w-8 h-8 bg-[#E4CAC7] rounded-full shadow-md flex justify-center items-center"
+            className="w-10 h-10 bg-[#DFD2CD] rounded-full drop-shadow-md flex justify-center items-center mt-1"
             onPress={onBackPress}
           >
             <BackIcon width={24} height={24} />
@@ -72,14 +72,14 @@ const Header: React.FC<HeaderProps> = ({
         )}
 
         <View>
-          <Text className="text-[40px] font-roboto font-light text-center">
+          <Text className="text-[45px] font-roboto font-light text-center">
             Capture
           </Text>
         </View>
 
         {showMenuButton ? (
           <TouchableOpacity
-            className="w-8 h-8 bg-[#E4CAC7] rounded-full shadow-md flex justify-center items-center"
+            className="w-10 h-10 bg-[#DFD2CD] rounded-full drop-shadow-lg flex justify-center items-center mt-1"
             onPress={toggleMenu}
           >
             <MenuDots width={24} height={24} />
@@ -88,7 +88,7 @@ const Header: React.FC<HeaderProps> = ({
           <View className="w-8 h-8" />
         )}
       </View>
-      <View className="h-[1px] bg-black/10 w-full mt-2" />
+      <View className="h-[1px] bg-black/10 w-full mt-6" />
 
       {menuVisible && (
         <Modal

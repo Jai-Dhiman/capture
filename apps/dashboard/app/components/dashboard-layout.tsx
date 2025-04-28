@@ -1,16 +1,18 @@
 import type React from "react";
+import { useState } from "react";
 import { Link, useLocation } from "react-router";
 import {
   LayoutDashboard,
   Users,
   BarChart2,
   Calendar,
-  Settings,
   ShieldAlert,
   MessageSquare,
   Ticket,
   FileText,
-  HelpCircle
+  ChevronLeft,
+  ChevronRight,
+  Search as LucideSearch
 } from "lucide-react";
 
 import { cn } from "../lib/utils";
@@ -26,21 +28,23 @@ interface SidebarNavProps extends React.HTMLAttributes<HTMLElement> {
   className?: string;
 }
 
-export function SidebarNav({ className, items, ...props }: SidebarNavProps) {
+export function SidebarNav({ className, items, collapsed, ...props }: SidebarNavProps & { collapsed?: boolean }) {
   const location = useLocation();
   return (
-    <nav className={cn("flex space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1", className)} {...props}>
+    <nav className={cn("flex flex-col gap-1", className)} {...props}>
       {items.map((item) => (
         <Link
           key={item.href}
           to={item.href}
+          aria-label={item.title}
           className={cn(
-            "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
-            location.pathname === item.href ? "bg-accent" : "transparent"
+            "flex items-center gap-3 rounded-lg transition-colors px-3 py-2 text-sm font-medium font-poppins hover:bg-indigo-50 hover:text-indigo-600",
+            location.pathname === item.href ? "bg-indigo-100 text-indigo-700" : "text-slate-800",
+            collapsed ? "justify-center px-2" : "justify-start px-3"
           )}
         >
           {item.icon}
-          {item.title}
+          {!collapsed && <span className="transition-opacity duration-200">{item.title}</span>}
         </Link>
       ))}
     </nav>
@@ -48,6 +52,8 @@ export function SidebarNav({ className, items, ...props }: SidebarNavProps) {
 }
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   const sidebarNavItems = [
     {
       title: "Dashboard",
@@ -98,75 +104,65 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       icon: <FileText className="h-4 w-4" />,
     },
   ];
-
   return (
-    <div className="grid min-h-screen w-full grid-cols-[240px_1fr]">
-      <div className="flex flex-col border-r bg-background">
-        <div className="flex h-14 items-center gap-2 border-b px-4">
-          <div className="flex items-center gap-2 font-semibold">
-            <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center text-white">C</div>
-            CAPTURE
-          </div>
+    <div className={cn("grid min-h-screen w-full transition-all duration-300", sidebarCollapsed ? "grid-cols-[72px_1fr]" : "grid-cols-[260px_1fr]")}>
+      {/* Sidebar */}
+      <aside className={cn(
+        "flex flex-col border-r bg-gray-100 transition-all duration-300 shadow-md",
+        sidebarCollapsed ? "w-[72px]" : "w-[260px]"
+      )}>
+        {/* Logo and Collapse Button */}
+        <div className="flex h-16 items-center justify-between px-4 border-b">
+          <button
+            type="button"
+            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className="ml-2 p-1 rounded hover:bg-indigo-100 transition-colors"
+            onClick={() => setSidebarCollapsed((v) => !v)}
+          >
+            {sidebarCollapsed ? <ChevronRight className="w-5 h-5 text-indigo-500" /> : <ChevronLeft className="w-5 h-5 text-indigo-500" />}
+          </button>
         </div>
         <ScrollArea className="flex-1">
-          <div className="px-2 py-2">
-            <div className="px-3 py-2">
-              <h2 className="mb-2 text-xs font-semibold tracking-tight text-muted-foreground">
-                ANALYTICS
-              </h2>
-              <SidebarNav items={sidebarNavItems} />
+          <div className="py-4">
+            <div className={cn("px-3 py-2", sidebarCollapsed && "px-1")}>
+              <h2 className={cn(
+                "mb-2 text-xs font-semibold tracking-wide text-slate-500 uppercase font-poppins transition-all duration-200",
+                sidebarCollapsed && "text-center"
+              )}>ANALYTICS</h2>
+              <SidebarNav items={sidebarNavItems} collapsed={sidebarCollapsed} />
             </div>
             <Separator className="my-2" />
-            <div className="px-3 py-2">
-              <h2 className="mb-2 text-xs font-semibold tracking-tight text-muted-foreground">
-                ADMIN
-              </h2>
-              <SidebarNav items={adminNavItems} />
+            <div className={cn("px-3 py-2", sidebarCollapsed && "px-1")}>
+              <h2 className={cn(
+                "mb-2 text-xs font-semibold tracking-wide text-slate-500 uppercase font-poppins transition-all duration-200",
+                sidebarCollapsed && "text-center"
+              )}>ADMIN</h2>
+              <SidebarNav items={adminNavItems} collapsed={sidebarCollapsed} />
             </div>
           </div>
         </ScrollArea>
-      </div>
+      </aside>
+      {/* Main Content Area */}
       <div className="flex flex-col">
-        <header className="flex h-14 items-center gap-4 border-b bg-background px-6 sticky top-0 z-10">
-          <div className="ml-auto flex items-center gap-4">
-            <div className="relative">
-              <input
-                className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 w-[300px] pl-8"
-                placeholder="Search for something"
-              />
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-                className="lucide lucide-search absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"
-              >
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.3-4.3" />
-              </svg>
-            </div>
-            <button type="button" className="h-9 w-9 rounded-full bg-muted flex items-center justify-center">
-              <Settings className="h-4 w-4" />
-            </button>
-            <div className="h-9 w-9 rounded-full bg-muted-foreground/20 overflow-hidden">
-              <img
-                src="https://ui.shadcn.com/avatars/01.png"
-                alt="User"
-                className="h-full w-full object-cover"
-              />
-            </div>
+        {/* Header */}
+        <header className="flex h-16 items-center gap-4 border-b bg-white px-6 sticky top-0 z-10 shadow-sm">
+          {/* Search Bar */}
+          <div className="relative flex-1 max-w-xl">
+            <input
+              className="h-10 w-full rounded-md border border-slate-200 bg-slate-50 px-4 pl-10 text-sm font-poppins text-blue-950 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-all"
+              placeholder="Search"
+              aria-label="Search"
+            />
+            <LucideSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
           </div>
         </header>
-        <main className="flex-1 p-6 overflow-auto">
+        {/* Main Dashboard Content */}
+        <main className="flex-1 p-8 bg-white overflow-auto rounded-tl-2xl">
           {children}
         </main>
       </div>
     </div>
   );
 }
+
+export default DashboardLayout;
