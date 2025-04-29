@@ -45,8 +45,6 @@ Thumbs.db
 .dev.vars
 .react-router
 
-# Package lock files
-pnpm-lock.yaml
 
 # Expo
 .expo/
