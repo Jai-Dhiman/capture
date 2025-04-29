@@ -29,12 +29,14 @@ export const useDiscoverFeed = (limit = 10) => {
               discoverFeed(limit: $limit, cursor: $cursor) {
                 posts {
                   id
+                  userId
                   content
                   type
                   createdAt
                   updatedAt
                   user {
                     id
+                    userId
                     username
                     profileImage
                     isBlocked

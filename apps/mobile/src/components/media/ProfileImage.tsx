@@ -14,10 +14,10 @@ export const ProfileImage = ({ cloudflareId, style = {}, expirySeconds = 1800, i
   if (isLoading) {
     return (
       <View className="w-full h-full rounded-full overflow-hidden">
-        <SkeletonElement width="100%" height="100%" radius="round" />
+        <SkeletonElement width="100%" height="100%" radius={9999} />
       </View>
     );
   }
-  
+
   return <MediaImage media={cloudflareId} style={style} expirySeconds={expirySeconds} priority={true} />;
 };

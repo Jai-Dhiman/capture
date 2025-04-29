@@ -1,21 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useDiscoverFeed } from '../hooks/useDiscoverFeed';
 import { PostItem } from '../components/post/PostItem';
 import { ThreadItem } from '../components/post/ThreadItem';
-import Header from '../components/ui/Header';
+import Header, { HEADER_HEIGHT } from '../components/ui/Header';
 import { EmptyState } from '../components/ui/EmptyState';
 import type { Post, Thread } from '../types/postTypes';
 import { FlashList } from '@shopify/flash-list';
 import { SkeletonLoader, SkeletonElement } from '../components/ui/SkeletonLoader';
-import { LogBox } from 'react-native';
-
-LogBox.ignoreLogs([
-  'Warning: ProgressiveListView: `ref` is not a prop',
-]);
 
 export default function Feed() {
   const [refreshing, setRefreshing] = useState(false);
+  const [hideHeader, setHideHeader] = useState(false);
+  const prevScrollY = useRef(0);
   const {
     data,
     isLoading,
@@ -58,10 +55,20 @@ export default function Feed() {
     );
   };
 
+  const handleScroll = (event) => {
+    const currentY = event.nativeEvent.contentOffset.y;
+    if (currentY > prevScrollY.current && currentY > 40) {
+      setHideHeader(true);
+    } else if (currentY < prevScrollY.current) {
+      setHideHeader(false);
+    }
+    prevScrollY.current = currentY;
+  };
+
   if (isLoading && !refreshing) {
     return (
       <View className="flex-1 bg-zinc-300">
-        <Header />
+        <Header hideHeader={hideHeader} />
         <View className="p-4 space-y-4">
           <PostSkeleton />
           <ThreadSkeleton />
@@ -73,7 +80,7 @@ export default function Feed() {
   if (isError) {
     return (
       <View className="flex-1 bg-zinc-300">
-        <Header />
+        <Header hideHeader={hideHeader} />
         <View className="flex-1 justify-center items-center p-4">
           <Text className="text-red-500 text-center mb-4">
             {error instanceof Error ? error.message : "An error occurred loading your feed"}
@@ -91,7 +98,7 @@ export default function Feed() {
 
   return (
     <View className="flex-1 bg-zinc-300">
-      <Header />
+      <Header hideHeader={hideHeader} />
 
       <View className="flex-1">
         <FlashList
@@ -107,7 +114,10 @@ export default function Feed() {
           contentContainerStyle={{
             padding: 16,
             paddingBottom: 100,
+            paddingTop: HEADER_HEIGHT,
           }}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
           ListEmptyComponent={
             <EmptyState
               title="Your Feed is Empty"
@@ -124,13 +134,13 @@ export default function Feed() {
 const PostSkeleton = () => (
   <View className="bg-zinc-300 rounded-lg overflow-hidden mb-4">
     <View className="flex-row items-center p-3">
-      <SkeletonElement width={40} height={40} radius="round" />
+      <SkeletonElement width={40} height={40} radius={9999} />
       <View className="ml-3">
         <SkeletonElement width={120} height={20} />
       </View>
     </View>
 
-    <SkeletonElement width="100%" height={350} />
+    <SkeletonElement width="100%" height={350} radius={16} />
 
     <View className="p-4">
       <View className="flex-row justify-end mb-2">

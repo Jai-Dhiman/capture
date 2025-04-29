@@ -1,4 +1,5 @@
-import React, { ReactNode } from 'react';
+import type React from 'react';
+import type { ReactNode } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Skeleton } from 'moti/skeleton';
 
@@ -18,10 +19,9 @@ interface SkeletonElementProps {
   colorMode?: 'light' | 'dark';
 }
 
-export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({ 
-  isLoading, 
+export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
+  isLoading,
   children,
-  colorMode = 'light'
 }) => {
   if (!isLoading) {
     return <>{children}</>;
@@ -36,9 +36,9 @@ export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
   );
 };
 
-export const SkeletonElement: React.FC<SkeletonElementProps> = ({ 
-  width, 
-  height = 20, 
+export const SkeletonElement: React.FC<SkeletonElementProps> = ({
+  width,
+  height = 20,
   radius = 4,
   colorMode = 'light'
 }) => (

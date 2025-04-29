@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { PostMediaGallery } from './PostMediaGallery';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AppStackParamList } from '../Navigators/types/navigation';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { AppStackParamList } from '../Navigators/types/navigation';
 import { ProfileImage } from '../media/ProfileImage';
 import { useAtom } from 'jotai';
 import { commentDrawerOpenAtom, currentPostIdAtom } from '../../atoms/commentAtoms';
@@ -29,9 +29,8 @@ interface PostItemProps {
 
 export const PostItem = ({ post, isLoading = false }: PostItemProps) => {
   const navigation = useNavigation<NavigationProp>();
-  const isThread = post.type === 'thread';
   const formattedDate = new Date(post.createdAt).toLocaleDateString();
-  
+
   const [, setCommentDrawerOpen] = useAtom(commentDrawerOpenAtom);
   const [, setCurrentPostId] = useAtom(currentPostIdAtom);
   const savePostMutation = useSavePost();
@@ -40,14 +39,14 @@ export const PostItem = ({ post, isLoading = false }: PostItemProps) => {
   const { showAlert } = useAlert();
   const { user } = useAuthStore();
   const [menuVisible, setMenuVisible] = useState(false);
-  const blockUserMutation = useBlockUser(post.user?.userId);
-  const isOwnPost = post.user?.userId === user?.id;
-  
+  const blockUserMutation = useBlockUser(post.userId);
+  const isOwnPost = post.userId === user?.id;
+
   const handleOpenComments = () => {
     setCurrentPostId(post.id);
     setCommentDrawerOpen(true);
   };
-  
+
   const handleToggleSavePost = async () => {
     try {
       if (post.isSaved) {
@@ -60,7 +59,7 @@ export const PostItem = ({ post, isLoading = false }: PostItemProps) => {
       showAlert(`Failed to ${post.isSaved ? 'unsave' : 'save'} post`, { type: 'error' });
     }
   };
-  
+
   const handleDeletePost = async () => {
     try {
       await deletePostMutation.mutateAsync(post.id);
@@ -82,33 +81,37 @@ export const PostItem = ({ post, isLoading = false }: PostItemProps) => {
   };
 
   return (
-    <SkeletonLoader isLoading={isLoading}>     
+    <SkeletonLoader isLoading={isLoading}>
       <View className="bg-zinc-300 rounded-lg overflow-hidden mb-4">
         <View className="flex-row items-center p-3">
-          <View className="w-10 h-10 mr-3">
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Profile', { userId: post.userId })}
+            className="w-12 h-12 mr-3 drop-shadow-md">
             {post.user?.profileImage ? (
-              <ProfileImage cloudflareId={post.user.profileImage} style={{ borderRadius: 20 }} />
+              <ProfileImage cloudflareId={post.user.profileImage} style={{ borderRadius: 24 }} />
             ) : (
               <View className="w-10 h-10 bg-stone-300 rounded-full" />
             )}
-          </View>
-          <Text className="text-black font-medium text-base">{post.user?.username || 'User'}</Text>
-          
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Profile', { userId: post.userId })}>
+            <Text className="text-black font-light text-xl">{post.user?.username || 'User'}</Text>
+          </TouchableOpacity>
+
           <View className="flex-1" />
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             className="w-6 h-6 justify-center items-center"
             onPress={() => setMenuVisible(true)}
           >
             <SettingsIcon width={24} height={24} />
           </TouchableOpacity>
-         </View>
-        
+        </View>
+
         <View className="w-full h-[300px]">
           {post.media && post.media.length > 0 ? (
-            <PostMediaGallery 
-              mediaItems={post.media} 
-              containerStyle={{ height: '100%' }} 
+            <PostMediaGallery
+              mediaItems={post.media}
+              containerStyle={{ height: '100%' }}
             />
           ) : (
             <View className="w-full h-full bg-gray-200 justify-center items-center">
@@ -116,26 +119,26 @@ export const PostItem = ({ post, isLoading = false }: PostItemProps) => {
             </View>
           )}
         </View>
-        
-        <View className="p-4">        
+
+        <View className="p-4">
           <View className="flex-row justify-end mb-2">
             <Text className="text-center text-black text-[10px] font-light leading-3">
               {formattedDate}
             </Text>
           </View>
-          
+
           <View className="flex-row justify-between items-center">
             <View className="flex-row">
-              <TouchableOpacity onPress={handleOpenComments} className="mr-10">
+              <TouchableOpacity onPress={handleOpenComments} className="mr-4">
                 <CommentIcon width={20} height={20} />
               </TouchableOpacity>
-              
+
               <TouchableOpacity className="mr-10">
                 <ShareIcon width={20} height={20} />
               </TouchableOpacity>
             </View>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               onPress={handleToggleSavePost}
               disabled={savePostMutation.isPending || unsavePostMutation.isPending}
             >
@@ -154,9 +157,9 @@ export const PostItem = ({ post, isLoading = false }: PostItemProps) => {
           onClose={() => setMenuVisible(false)}
           onDeletePost={isOwnPost ? handleDeletePost : undefined}
           onBlockUser={!isOwnPost ? handleBlockUser : undefined}
-          onReportPost={() => {/* Handle report */}}
-          onWhySeeing={() => {/* Handle why */}}
-          onEnableNotifications={() => {/* Handle notifications */}}
+          onReportPost={() => {/* Handle report */ }}
+          onWhySeeing={() => {/* Handle why */ }}
+          onEnableNotifications={() => {/* Handle notifications */ }}
           isOwnPost={isOwnPost}
           isLoading={isOwnPost ? deletePostMutation?.isPending : blockUserMutation.isPending}
         />

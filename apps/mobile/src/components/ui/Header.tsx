@@ -10,17 +10,22 @@ import ProfileIcon from '../../../assets/icons/ProfileIcon.svg';
 import PlusIcon from '../../../assets/icons/PlusIcon.svg';
 import SearchIcon from '../../../assets/icons/SearchIcon.svg';
 import EmptyIcon from '../../../assets/icons/EmptyIcon.svg';
+import { MotiView } from 'moti';
 
 type HeaderProps = {
   showBackButton?: boolean;
   onBackPress?: () => void;
   forceHideMenu?: boolean;
+  hideHeader?: boolean;
 }
+
+export const HEADER_HEIGHT = 90;
 
 const Header: React.FC<HeaderProps> = ({
   showBackButton = false,
   onBackPress,
-  forceHideMenu = false
+  forceHideMenu = false,
+  hideHeader = false
 }) => {
   const [menuVisible, setMenuVisible] = useState(false);
   const navigation = useNavigation();
@@ -58,85 +63,92 @@ const Header: React.FC<HeaderProps> = ({
   });
 
   return (
-    <View className="relative px-4 mt-[80px]">
-      <View className="flex-row items-center justify-around">
-        {showBackButton ? (
-          <TouchableOpacity
-            className="w-10 h-10 bg-[#DFD2CD] rounded-full drop-shadow-md flex justify-center items-center mt-1"
-            onPress={onBackPress}
-          >
-            <BackIcon width={24} height={24} />
-          </TouchableOpacity>
-        ) : (
-          <View className="w-8 h-8" />
-        )}
+    <MotiView
+      from={{ translateY: 0 }}
+      animate={{ translateY: hideHeader ? -HEADER_HEIGHT : 0 }}
+      transition={{ type: 'timing', duration: 300 }}
+      style={{ height: HEADER_HEIGHT, zIndex: 10 }}
+    >
+      <View className="relative px-4 mt-[80px]">
+        <View className="flex-row items-center justify-around">
+          {showBackButton ? (
+            <TouchableOpacity
+              className="w-10 h-10 bg-[#DFD2CD] rounded-full drop-shadow-md flex justify-center items-center mt-1"
+              onPress={onBackPress}
+            >
+              <BackIcon width={24} height={24} />
+            </TouchableOpacity>
+          ) : (
+            <View className="w-8 h-8" />
+          )}
 
-        <View>
-          <Text className="text-[45px] font-roboto font-light text-center">
-            Capture
-          </Text>
+          <View>
+            <Text className="text-[45px] font-roboto font-light text-center">
+              Capture
+            </Text>
+          </View>
+
+          {showMenuButton ? (
+            <TouchableOpacity
+              className="w-10 h-10 bg-[#DFD2CD] rounded-full drop-shadow-lg flex justify-center items-center mt-1"
+              onPress={toggleMenu}
+            >
+              <MenuDots width={24} height={24} />
+            </TouchableOpacity>
+          ) : (
+            <View className="w-8 h-8" />
+          )}
         </View>
+        <View className="h-[1px] bg-black/10 w-full mt-6" />
 
-        {showMenuButton ? (
-          <TouchableOpacity
-            className="w-10 h-10 bg-[#DFD2CD] rounded-full drop-shadow-lg flex justify-center items-center mt-1"
-            onPress={toggleMenu}
+        {menuVisible && (
+          <Modal
+            transparent={true}
+            visible={menuVisible}
+            animationType="none"
+            onRequestClose={() => setMenuVisible(false)}
           >
-            <MenuDots width={24} height={24} />
-          </TouchableOpacity>
-        ) : (
-          <View className="w-8 h-8" />
+            <Pressable
+              style={StyleSheet.absoluteFill}
+              onPress={() => setMenuVisible(false)}
+            >
+              <View style={{ flex: 1 }} />
+            </Pressable>
+
+            <Animated.View
+              style={[
+                styles.menuContainer,
+                menuAnimatedStyle,
+              ]}
+            >
+              <Pressable onPress={(e) => e.stopPropagation()}>
+                <View className="w-56 h-72 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] flex flex-col justify-start items-start">
+                  <View className="w-56 h-72 pb-10 flex flex-col justify-start items-start gap-0.5">
+                    {navigationItems.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <TouchableOpacity
+                          key={item.route}
+                          className="self-stretch h-14 relative bg-stone-300 rounded-2xl"
+                          onPress={() => handleNavigation(item.route)}
+                        >
+                          <Text className="left-[60px] top-[16px] absolute justify-center text-neutral-900 text-base font-medium font-['Inter'] leading-normal">
+                            {item.name}
+                          </Text>
+                          <View className="w-10 h-10 left-[8px] top-[8px] absolute bg-white rounded-xl outline outline-1 outline-offset-[-1px] outline-zinc-100 flex justify-center items-center">
+                            <Icon width={16} height={16} />
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+              </Pressable>
+            </Animated.View>
+          </Modal>
         )}
       </View>
-      <View className="h-[1px] bg-black/10 w-full mt-6" />
-
-      {menuVisible && (
-        <Modal
-          transparent={true}
-          visible={menuVisible}
-          animationType="none"
-          onRequestClose={() => setMenuVisible(false)}
-        >
-          <Pressable
-            style={StyleSheet.absoluteFill}
-            onPress={() => setMenuVisible(false)}
-          >
-            <View style={{ flex: 1 }} />
-          </Pressable>
-
-          <Animated.View
-            style={[
-              styles.menuContainer,
-              menuAnimatedStyle,
-            ]}
-          >
-            <Pressable onPress={(e) => e.stopPropagation()}>
-              <View className="w-56 h-72 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] flex flex-col justify-start items-start">
-                <View className="w-56 h-72 pb-10 flex flex-col justify-start items-start gap-0.5">
-                  {navigationItems.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <TouchableOpacity
-                        key={item.route}
-                        className="self-stretch h-14 relative bg-stone-300 rounded-2xl"
-                        onPress={() => handleNavigation(item.route)}
-                      >
-                        <Text className="left-[60px] top-[16px] absolute justify-center text-neutral-900 text-base font-medium font-['Inter'] leading-normal">
-                          {item.name}
-                        </Text>
-                        <View className="w-10 h-10 left-[8px] top-[8px] absolute bg-white rounded-xl outline outline-1 outline-offset-[-1px] outline-zinc-100 flex justify-center items-center">
-                          <Icon width={16} height={16} />
-                        </View>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-            </Pressable>
-          </Animated.View>
-        </Modal>
-      )}
-    </View>
+    </MotiView>
   );
 };
 

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AppStackParamList } from '../Navigators/types/navigation';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { AppStackParamList } from '../Navigators/types/navigation';
 import { ProfileImage } from '../media/ProfileImage';
 import { useAtom } from 'jotai';
 import { commentDrawerOpenAtom, currentPostIdAtom } from '../../atoms/commentAtoms';
@@ -29,7 +29,6 @@ interface ThreadItemProps {
 export const ThreadItem = ({ thread, isLoading = false }: ThreadItemProps) => {
   const navigation = useNavigation<NavigationProp>();
   const formattedDate = new Date(thread.createdAt).toLocaleDateString();
-  const [settingsVisible, setSettingsVisible] = useState(false);
 
   const [, setCommentDrawerOpen] = useAtom(commentDrawerOpenAtom);
   const [, setCurrentPostId] = useAtom(currentPostIdAtom);
@@ -83,27 +82,31 @@ export const ThreadItem = ({ thread, isLoading = false }: ThreadItemProps) => {
   return (
     <SkeletonLoader isLoading={isLoading}>
       <View className="bg-zinc-300 rounded-lg overflow-hidden mb-4 ">
-      <View className="flex-row items-center p-3">
-        <View className="w-10 h-10 mr-3">
-          {thread.user?.profileImage ? (
-            <ProfileImage cloudflareId={thread.user.profileImage} style={{ borderRadius: 20 }} />
-          ) : (
-            <View className="w-10 h-10 bg-stone-300 rounded-full" />
-          )}
+        <View className="flex-row items-center p-3">
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Profile', { userId: thread.userId })}
+            className="w-12 h-12 mr-3 drop-shadow-md">
+            {thread.user?.profileImage ? (
+              <ProfileImage cloudflareId={thread.user.profileImage} style={{ borderRadius: 24 }} />
+            ) : (
+              <View className="w-10 h-10 bg-stone-300 rounded-full" />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Profile', { userId: thread.userId })}>
+            <Text className="text-black font-light text-xl">{thread.user?.username || 'User'}</Text>
+          </TouchableOpacity>
+
+          <View className="flex-1" />
+
+          <TouchableOpacity
+            className="w-6 h-6 justify-center items-center"
+            onPress={() => setMenuVisible(true)}
+          >
+            <SettingsIcon width={24} height={24} />
+          </TouchableOpacity>
         </View>
-        <Text className="text-black font-medium text-base">{thread.user?.username || 'User'}</Text>
 
-        <View className="flex-1" />
-
-        <TouchableOpacity
-          className="w-6 h-6 justify-center items-center"
-          onPress={() => setMenuVisible(true)}
-        >
-          <SettingsIcon width={24} height={24} />
-        </TouchableOpacity>
-      </View>
-
-        <View className="p-3 mt-3 mb-6">
+        <View className="p-3">
           <Text className="text-black text-base font-light leading-snug">
             {thread.content}
           </Text>
@@ -115,41 +118,41 @@ export const ThreadItem = ({ thread, isLoading = false }: ThreadItemProps) => {
               {formattedDate}
             </Text>
           </View>
-                
-            <View className="flex-row justify-between items-center">
-              <View className="flex-row">
-                <TouchableOpacity onPress={handleOpenComments} className="mr-10">
-                  <CommentIcon width={20} height={20} />
-                </TouchableOpacity>
-                
-                <TouchableOpacity className="mr-10">
-                  <ShareIcon width={20} height={20} />
-                </TouchableOpacity>
-              </View>
-              
-              <TouchableOpacity 
-                onPress={handleToggleSavePost}
-                disabled={savePostMutation.isPending || unsavePostMutation.isPending}
-              >
-                {savePostMutation.isPending || unsavePostMutation.isPending ? (
-                  <ActivityIndicator size="small" color="#E4CAC7" />
-                ) : thread.isSaved ? (
-                  <FavoriteIcon width={20} height={20} />
-                ) : (
-                  <SavePostIcon width={20} height={20} />
-                )}
+
+          <View className="flex-row justify-between items-center">
+            <View className="flex-row">
+              <TouchableOpacity onPress={handleOpenComments} className="mr-4">
+                <CommentIcon width={20} height={20} />
+              </TouchableOpacity>
+
+              <TouchableOpacity className="mr-10">
+                <ShareIcon width={20} height={20} />
               </TouchableOpacity>
             </View>
-          </View>
 
-          <PostMenu
+            <TouchableOpacity
+              onPress={handleToggleSavePost}
+              disabled={savePostMutation.isPending || unsavePostMutation.isPending}
+            >
+              {savePostMutation.isPending || unsavePostMutation.isPending ? (
+                <ActivityIndicator size="small" color="#E4CAC7" />
+              ) : thread.isSaved ? (
+                <FavoriteIcon width={20} height={20} />
+              ) : (
+                <SavePostIcon width={20} height={20} />
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <PostMenu
           isVisible={menuVisible}
           onClose={() => setMenuVisible(false)}
           onDeletePost={isOwnPost ? handleDeletePost : undefined}
           onBlockUser={!isOwnPost ? handleBlockUser : undefined}
-          onReportPost={() => {/* Handle report */}}
-          onWhySeeing={() => {/* Handle why */}}
-          onEnableNotifications={() => {/* Handle notifications */}}
+          onReportPost={() => {/* Handle report */ }}
+          onWhySeeing={() => {/* Handle why */ }}
+          onEnableNotifications={() => {/* Handle notifications */ }}
           isOwnPost={isOwnPost}
           isLoading={isOwnPost ? deletePostMutation?.isPending : blockUserMutation.isPending}
         />
