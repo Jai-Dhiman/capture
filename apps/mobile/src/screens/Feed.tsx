@@ -3,11 +3,14 @@ import { View, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useDiscoverFeed } from '../hooks/useDiscoverFeed';
 import { PostItem } from '../components/post/PostItem';
 import { ThreadItem } from '../components/post/ThreadItem';
-import Header, { HEADER_HEIGHT } from '../components/ui/Header';
+import Header from '../components/ui/Header';
 import { EmptyState } from '../components/ui/EmptyState';
 import type { Post, Thread } from '../types/postTypes';
 import { FlashList } from '@shopify/flash-list';
 import { SkeletonLoader, SkeletonElement } from '../components/ui/SkeletonLoader';
+import { MotiView } from 'moti';
+
+const HEADER_HEIGHT = 150;
 
 export default function Feed() {
   const [refreshing, setRefreshing] = useState(false);
@@ -68,7 +71,13 @@ export default function Feed() {
   if (isLoading && !refreshing) {
     return (
       <View className="flex-1 bg-zinc-300">
-        <Header hideHeader={hideHeader} />
+        <Header hideHeader={hideHeader} height={HEADER_HEIGHT} />
+        <MotiView
+          from={{ height: HEADER_HEIGHT }}
+          animate={{ height: hideHeader ? 0 : HEADER_HEIGHT }}
+          transition={{ type: 'timing', duration: 300 }}
+          className="w-full bg-zinc-300"
+        />
         <View className="p-4 space-y-4">
           <PostSkeleton />
           <ThreadSkeleton />
@@ -80,7 +89,13 @@ export default function Feed() {
   if (isError) {
     return (
       <View className="flex-1 bg-zinc-300">
-        <Header hideHeader={hideHeader} />
+        <Header hideHeader={hideHeader} height={HEADER_HEIGHT} />
+        <MotiView
+          from={{ height: HEADER_HEIGHT }}
+          animate={{ height: hideHeader ? 0 : HEADER_HEIGHT }}
+          transition={{ type: 'timing', duration: 300 }}
+          className="w-full bg-zinc-300"
+        />
         <View className="flex-1 justify-center items-center p-4">
           <Text className="text-red-500 text-center mb-4">
             {error instanceof Error ? error.message : "An error occurred loading your feed"}
@@ -98,8 +113,13 @@ export default function Feed() {
 
   return (
     <View className="flex-1 bg-zinc-300">
-      <Header hideHeader={hideHeader} />
-
+      <Header hideHeader={hideHeader} height={HEADER_HEIGHT} />
+      <MotiView
+        from={{ height: HEADER_HEIGHT }}
+        animate={{ height: hideHeader ? 0 : HEADER_HEIGHT }}
+        transition={{ type: 'timing', duration: 300 }}
+        className="w-full bg-zinc-300"
+      />
       <View className="flex-1">
         <FlashList
           data={posts}
@@ -111,11 +131,7 @@ export default function Feed() {
           onEndReached={loadMore}
           onEndReachedThreshold={0.5}
           ListFooterComponent={renderFooter}
-          contentContainerStyle={{
-            padding: 16,
-            paddingBottom: 100,
-            paddingTop: HEADER_HEIGHT,
-          }}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
           onScroll={handleScroll}
           scrollEventThrottle={16}
           ListEmptyComponent={
