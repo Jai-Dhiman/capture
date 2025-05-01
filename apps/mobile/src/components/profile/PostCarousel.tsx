@@ -27,46 +27,46 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
 }) => {
   const { width, height } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(initialIndex);
-  
+
   const ITEM_WIDTH = width - 32;
-  
+
   const calculateMediaHeight = () => {
     const headerHeight = 50;
     const footerHeight = 80;
     const paginationHeight = 20;
     const topMargin = 4;
     const bottomSafeArea = 40;
-    
+
     const availableHeight = height * 0.68;
     return Math.min(
       availableHeight - headerHeight - footerHeight - paginationHeight - topMargin - bottomSafeArea,
       height * 0.525
     );
   };
-  
+
   const mediaHeight = calculateMediaHeight();
-  
+
   const renderItem = ({ item: post, index }: { item: any; index: number }) => {
     const formattedDate = new Date(post.createdAt).toLocaleDateString();
-    
+
     return (
       <View className="bg-zinc-300 rounded-lg overflow-hidden mb-2 h-full mx-0">
         <View className="flex-row justify-between items-center p-2">
           <View className="flex-1" />
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             onPress={() => onSettingsPress(post)}
             className="w-6 h-6 justify-center items-center"
           >
             <SettingsIcon width={24} height={24} />
           </TouchableOpacity>
         </View>
-        
+
         <View style={{ width: '100%', height: mediaHeight }}>
           {post.media && post.media.length > 0 ? (
-            <PostMediaGallery 
-              mediaItems={post.media} 
-              containerStyle={{ height: '100%' }} 
+            <PostMediaGallery
+              mediaItems={post.media}
+              containerStyle={{ height: '100%' }}
             />
           ) : (
             <View className="w-full h-full bg-gray-200 justify-center items-center">
@@ -74,26 +74,26 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
             </View>
           )}
         </View>
-        
+
         <View className="p-4">
           <View className="flex-row justify-end mb-2">
             <Text className="text-center text-black text-[10px] font-light leading-3">
               {formattedDate}
             </Text>
           </View>
-          
+
           <View className="flex-row justify-between items-center">
             <View className="flex-row">
               <TouchableOpacity onPress={() => onOpenComments(post.id)} className="mr-10">
                 <CommentIcon width={20} height={20} />
               </TouchableOpacity>
-              
+
               <TouchableOpacity className="mr-10">
                 <ShareIcon width={20} height={20} />
               </TouchableOpacity>
             </View>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               onPress={() => onToggleSave(post)}
               disabled={isSaving}
             >
@@ -110,9 +110,9 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
       </View>
     );
   };
-  
+
   return (
-    <View className="flex-1 mt-2">
+    <View className="flex-1">
       <Carousel
         loop={false}
         width={ITEM_WIDTH}
@@ -130,10 +130,10 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
         overscrollEnabled={false}
         windowSize={1}
       />
-      
-      <View 
+
+      <View
         className="flex-row justify-center"
-        style={{ 
+        style={{
           zIndex: 3,
           position: 'relative',
           bottom: 20,
@@ -142,11 +142,10 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
         {posts.map((_, index) => (
           <View
             key={index}
-            className={`mx-1 rounded-full ${
-              index === activeIndex
-                ? 'w-4 h-2 bg-[#E4CAC7]'
-                : 'w-2 h-2 bg-gray-400'
-            }`}
+            className={`mx-1 rounded-full ${index === activeIndex
+              ? 'w-4 h-2 bg-[#E4CAC7]'
+              : 'w-2 h-2 bg-gray-400'
+              }`}
           />
         ))}
       </View>

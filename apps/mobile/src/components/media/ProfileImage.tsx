@@ -19,5 +19,12 @@ export const ProfileImage = ({ cloudflareId, style = {}, expirySeconds = 1800, i
     );
   }
 
-  return <MediaImage media={cloudflareId} style={style} expirySeconds={expirySeconds} priority={true} />;
+  const profileStyle = {
+    ...style,
+    borderRadius: 9999,
+    width: '100%',
+    height: '100%'
+  };
+
+  return <MediaImage media={cloudflareId} style={profileStyle} expirySeconds={expirySeconds} priority={true} />;
 };

@@ -62,6 +62,7 @@ const Header: React.FC<HeaderProps> = ({
       <View className="absolute left-0 right-0 bottom-8 flex-row items-center justify-between px-8">
         {showBackButton ? (
           <TouchableOpacity className="w-10 h-10 bg-[#DFD2CD] rounded-full drop-shadow-md flex justify-center items-center"
+            style={{ boxShadow: "0 4px 6px rgba(0,0,0,0.2)" }}
             onPress={onBackPress}
           >
             <BackIcon width={20} height={20} />
@@ -72,7 +73,8 @@ const Header: React.FC<HeaderProps> = ({
         <Text className="text-5xl font-light text-center flex-1">Capture</Text>
         {showMenuButton ? (
           <TouchableOpacity
-            className="w-10 h-10 flex justify-center items-center"
+            className="w-10 h-10 bg-[#DFD2CD] rounded-full drop-shadow-md flex justify-center items-center"
+            style={{ boxShadow: "0 4px 6px rgba(0,0,0,0.2)" }}
             onPress={toggleMenu}
           >
             <MenuDots width={24} height={24} />
@@ -128,7 +130,7 @@ const Header: React.FC<HeaderProps> = ({
           </Modal>
         )
       }
-      <View className="absolute bottom-0 self-center w-[85%] h-[0.5px] bg-neutral-700 opacity-50" />
+      <View className="absolute bottom-0 self-center w-[85%] h-[0.75px] bg-neutral-700 opacity-50" />
     </MotiView >
   );
 };

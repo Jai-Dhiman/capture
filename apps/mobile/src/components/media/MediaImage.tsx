@@ -65,7 +65,7 @@ const MediaImageComponent = ({
         onRequestClose={() => setIsFullscreen(false)}
       >
         <Pressable
-          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' }}
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' }}
           onPressOut={() => setIsFullscreen(false)}
         >
           <MotiView
@@ -75,11 +75,20 @@ const MediaImageComponent = ({
             transition={{ type: 'timing', duration: 180 }}
             style={{ width: windowWidth, height: windowHeight, justifyContent: 'center', alignItems: 'center' }}
           >
-            <Image
-              source={{ uri: imageUrl }}
-              style={{ width: windowWidth, height: windowWidth, borderRadius: 16 }}
-              resizeMode="contain"
-            />
+            <View style={{
+              overflow: 'hidden',
+              borderRadius: 20,
+              width: windowWidth * 0.95,
+              height: 'auto',
+              maxHeight: windowHeight * 0.8,
+              backgroundColor: '#fff'
+            }}>
+              <Image
+                source={{ uri: imageUrl }}
+                style={{ width: '100%', aspectRatio: 1 }}
+                resizeMode="cover"
+              />
+            </View>
           </MotiView>
         </Pressable>
       </Modal>

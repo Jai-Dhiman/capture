@@ -21,13 +21,12 @@ import { PostCarousel } from '../components/profile/PostCarousel';
 import { NewPostButton } from '../components/profile/NewPostButton';
 import LockIcon2 from '../../assets/icons/LockIcon2.svg';
 import { SkeletonElement } from '../components/ui/SkeletonLoader';
-import { HEADER_HEIGHT } from '../components/ui/Header';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 type ProfileRouteProp = RouteProp<AppStackParamList, 'Profile'>;
 
 export default function Profile() {
-  const { width } = useWindowDimensions();
+  const { height, width } = useWindowDimensions();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<ProfileRouteProp>();
   const { user } = useAuthStore();
@@ -143,7 +142,7 @@ export default function Profile() {
     return (
       <View style={{ flex: 1, backgroundColor: '#fff' }}>
         <Header />
-        <View style={{ flex: 1, paddingTop: HEADER_HEIGHT }}>
+        <View style={{ flex: 1 }}>
           <View className="flex-1 bg-zinc-300">
             <StatusBar barStyle="dark-content" />
             <View className="flex-1">
@@ -218,20 +217,20 @@ export default function Profile() {
   if (isProfilePrivate) {
     return (
       <View style={{ flex: 1, backgroundColor: '#fff' }}>
-        <Header />
-        <View style={{ flex: 1, paddingTop: HEADER_HEIGHT }}>
+        <View style={{ flex: 1 }}>
           <View className="flex-1 bg-zinc-300">
             <StatusBar barStyle="dark-content" />
-            <Header
-              showBackButton={true}
-              onBackPress={() => navigation.goBack()}
-            />
             <View className="px-6 pt-4">
               <ProfileHeader
                 profileData={profileData}
                 isOwnProfile={isOwnProfile}
                 userId={userId || ''}
                 onFollowersPress={() => setShowFollowers(true)}
+                onSettingsPress={() => navigation.navigate('Settings', { screen: 'MainSettings' })}
+                showBackButton={true}
+                onBackPress={() => navigation.goBack()}
+                showMenuButton={true}
+                onMenuPress={() => {/* menu logic here */ }}
               />
               <View className="mt-8 items-center">
                 <View className="bg-stone-200 rounded-lg p-6 w-full items-center">
@@ -251,106 +250,99 @@ export default function Profile() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
-      <Header />
-      <View style={{ flex: 1, paddingTop: HEADER_HEIGHT }}>
-        <View className="flex-1 bg-zinc-300">
-          <StatusBar barStyle="dark-content" />
-
-          <View className="flex-1">
-            <View className="px-6 pt-4">
-              <ProfileHeader
-                profileData={profileData}
-                isOwnProfile={isOwnProfile}
-                userId={userId || ''}
-                onFollowersPress={() => setShowFollowers(true)}
-                onSettingsPress={() => navigation.navigate('Settings', { screen: 'MainSettings' })}
-                isLoading={profileLoading}
-              />
-            </View>
-
-            <View className="flex-1">
-              <ProfileTabView
-                posts={posts || []}
-                savedPosts={savedPosts || []}
-                itemSize={itemSize}
-                spacing={spacing}
-                containerPadding={containerPadding}
-                onPostPress={openCarouselAtPhoto}
-                isLoading={postsLoading}
-                isLoadingSaved={savedPostsLoading}
-                onTabPress={() => {
-                  setShowPostCarousel(false);
-                }}
-                carouselActive={showPostCarousel}
-              />
-            </View>
-
-            {carouselPosts.length > 0 && showPostCarousel && (
-              <View
-                className="absolute top-0 left-0 right-0 bottom-0 bg-zinc-300"
-                style={{
-                  top: 190,
-                  height: '85%',
-                  zIndex: 1
-                }}
-              >
-                <View className="flex-1 px-4">
-                  <PostCarousel
-                    posts={carouselPosts}
-                    initialIndex={initialPostIndex}
-                    onSettingsPress={handlePostSettings}
-                    onToggleSave={handleToggleSavePost}
-                    onOpenComments={handleOpenComments}
-                    isSaving={savePostMutation.isPending || unsavePostMutation.isPending}
-                  />
-                </View>
-              </View>
-            )}
-          </View>
-
-          {isOwnProfile && (
-            <NewPostButton onPress={() => navigation.navigate('NewPost')} />
-          )}
-
-          <Modal
-            visible={showFollowers}
-            animationType="slide"
-            onRequestClose={() => setShowFollowers(false)}
-          >
-            <FollowList
-              data={followers || []}
-              loading={followersLoading}
-              onClose={() => setShowFollowers(false)}
-              currentUserId={user?.id}
-            />
-          </Modal>
-
-          <PostMenu
-            isVisible={menuVisible}
-            onClose={() => setMenuVisible(false)}
-            onDeletePost={isOwnProfile ? handleDeletePost : undefined}
-            onBlockUser={!isOwnProfile ? handleBlockUser : undefined}
-            onReportPost={() => {
-              showAlert('Implement Post Reporting here', { type: 'success' });
-              setMenuVisible(false);
+      <View className="flex-1 bg-zinc-300">
+        <ProfileHeader
+          profileData={profileData}
+          isOwnProfile={isOwnProfile}
+          userId={userId || ''}
+          onFollowersPress={() => setShowFollowers(true)}
+          onSettingsPress={() => navigation.navigate('Settings', { screen: 'MainSettings' })}
+          showBackButton={true}
+          onBackPress={() => navigation.goBack()}
+          showMenuButton={true}
+          onMenuPress={() => {/* your menu logic here */ }}
+        />
+        <StatusBar barStyle="dark-content" />
+        <View className="flex-1">
+          <ProfileTabView
+            posts={posts || []}
+            savedPosts={savedPosts || []}
+            itemSize={itemSize}
+            spacing={spacing}
+            containerPadding={containerPadding}
+            onPostPress={openCarouselAtPhoto}
+            isLoading={postsLoading}
+            isLoadingSaved={savedPostsLoading}
+            onTabPress={() => {
+              setShowPostCarousel(false);
             }}
-            onWhySeeing={() => {
-              showAlert('Implement Why Seeing here', { type: 'info' });
-              setMenuVisible(false);
-            }}
-            onEnableNotifications={() => {
-              showAlert('Implement Notification Settings here', { type: 'success' });
-              setMenuVisible(false);
-            }}
-            isOwnPost={selectedPost?.user?.userId === user?.id}
-            isLoading={
-              selectedPost?.user?.userId === user?.id
-                ? deletePostMutation.isPending
-                : blockUserMutation.isPending
-            }
+            carouselActive={showPostCarousel}
           />
         </View>
       </View>
-    </View>
+
+      {carouselPosts.length > 0 && showPostCarousel && (
+        <View
+          className="absolute top-0 left-0 right-0 bottom-0 bg-zinc-300"
+          style={{
+            top: height * 0.345,
+            zIndex: 1
+          }}
+        >
+          <View className="flex-1 px-4">
+            <PostCarousel
+              posts={carouselPosts}
+              initialIndex={initialPostIndex}
+              onSettingsPress={handlePostSettings}
+              onToggleSave={handleToggleSavePost}
+              onOpenComments={handleOpenComments}
+              isSaving={savePostMutation.isPending || unsavePostMutation.isPending}
+            />
+          </View>
+        </View>
+      )}
+
+      {isOwnProfile && (
+        <NewPostButton onPress={() => navigation.navigate('NewPost')} />
+      )}
+
+      <Modal
+        visible={showFollowers}
+        animationType="slide"
+        onRequestClose={() => setShowFollowers(false)}
+      >
+        <FollowList
+          data={followers || []}
+          loading={followersLoading}
+          onClose={() => setShowFollowers(false)}
+          currentUserId={user?.id}
+        />
+      </Modal>
+
+      <PostMenu
+        isVisible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        onDeletePost={isOwnProfile ? handleDeletePost : undefined}
+        onBlockUser={!isOwnProfile ? handleBlockUser : undefined}
+        onReportPost={() => {
+          showAlert('Implement Post Reporting here', { type: 'success' });
+          setMenuVisible(false);
+        }}
+        onWhySeeing={() => {
+          showAlert('Implement Why Seeing here', { type: 'info' });
+          setMenuVisible(false);
+        }}
+        onEnableNotifications={() => {
+          showAlert('Implement Notification Settings here', { type: 'success' });
+          setMenuVisible(false);
+        }}
+        isOwnPost={selectedPost?.user?.userId === user?.id}
+        isLoading={
+          selectedPost?.user?.userId === user?.id
+            ? deletePostMutation.isPending
+            : blockUserMutation.isPending
+        }
+      />
+    </View >
   );
 }

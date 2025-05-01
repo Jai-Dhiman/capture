@@ -208,7 +208,7 @@ export const ProfileTabView = ({
 
   const renderTabBar = () => (
     <View
-      className="w-full h-16 bg-zinc-300"
+      className="w-full h-12 bg-zinc-300"
       style={{
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
@@ -220,7 +220,7 @@ export const ProfileTabView = ({
         marginBottom: 8,
       }}
     >
-      <View className="flex-row justify-between items-center h-full px-4">
+      <View className="flex-row justify-between items-end h-full px-4 pb-2">
         <TouchableOpacity
           onPress={() => handleTabPress(0)}
           className="flex-1 items-center"
