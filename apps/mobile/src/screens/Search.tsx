@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, SectionList } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, SectionList, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../components/Navigators/types/navigation';
@@ -8,8 +8,10 @@ import { API_URL } from '@env';
 import { ProfileImage } from '../components/media/ProfileImage';
 import { useSearchHashtags } from '../hooks/useHashtags';
 import Header from 'components/ui/Header';
-import { useAuthStore } from '../stores/authStore'; 
+import { useAuthStore } from '../stores/authStore';
 import { SkeletonLoader, SkeletonElement } from '../components/ui/SkeletonLoader';
+import BackIcon from '../../assets/icons/BackIcon.svg';
+import Background1 from '../../assets/Background1.svg';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 
@@ -35,10 +37,10 @@ export default function UserSearch() {
   const [userResults, setUserResults] = useState<UserSearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  
+
   const isHashtagSearch = searchQuery.startsWith('#');
   const hashtagQuery = isHashtagSearch ? searchQuery.substring(1) : '';
-  const { data: hashtagResults = [], isLoading: hashtagsLoading } = 
+  const { data: hashtagResults = [], isLoading: hashtagsLoading } =
     useSearchHashtags(hashtagQuery, isHashtagSearch && hashtagQuery.length > 0);
 
   useEffect(() => {
@@ -48,13 +50,13 @@ export default function UserSearch() {
         handleSearch();
       }
     }, 500);
-    
+
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
   const handleSearch = async () => {
     setErrorMessage(null);
-    
+
     if (!searchQuery.trim()) {
       setUserResults([]);
       return;
@@ -109,8 +111,8 @@ export default function UserSearch() {
 
       const users = data.data?.searchUsers || [];
       setUserResults(users);
-      
-      
+
+
     } catch (error: any) {
       console.error('Search error:', error);
       setErrorMessage(error.message || 'Failed to search for users. Please try again.');
@@ -133,7 +135,7 @@ export default function UserSearch() {
       return (
         <View className="flex-1 justify-center items-center p-6">
           <Text className="text-red-500 text-center mb-4">{errorMessage}</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             className="bg-[#E4CAC7] px-4 py-2 rounded-full"
             onPress={handleSearch}
           >
@@ -142,7 +144,7 @@ export default function UserSearch() {
         </View>
       );
     }
-    
+
     if (debouncedQuery.trim() !== '') {
       return (
         <View className="flex-1 justify-center items-center p-6">
@@ -155,7 +157,7 @@ export default function UserSearch() {
         </View>
       );
     }
-    
+
     return (
       <View className="flex-1 justify-center items-center p-6">
         <Text className="text-gray-400 text-center">
@@ -166,13 +168,13 @@ export default function UserSearch() {
   };
 
   const sections = [];
-  
+
   if (isHashtagSearch) {
     sections.push({
       title: 'Hashtags',
       data: hashtagResults,
       renderItem: ({ item }: { item: HashtagSearchResult }) => (
-        <TouchableOpacity 
+        <TouchableOpacity
           className="flex-row items-center p-4 border-b border-gray-100"
           onPress={() => handleHashtagPress(item)}
         >
@@ -180,7 +182,7 @@ export default function UserSearch() {
             <Text className="text-black font-bold">#</Text>
           </View>
           <View className="flex-1">
-            <Text className="font-medium">#{item.name}</Text>
+            <Text className="font-medium">{item.name}</Text>
           </View>
         </TouchableOpacity>
       )
@@ -190,7 +192,7 @@ export default function UserSearch() {
       title: 'Users',
       data: userResults,
       renderItem: ({ item }: { item: UserSearchResult }) => (
-        <TouchableOpacity 
+        <TouchableOpacity
           className="flex-row items-center p-4 border-b border-gray-100"
           onPress={() => handleUserPress(item.userId)}
         >
@@ -226,30 +228,31 @@ export default function UserSearch() {
   const isSearchLoading = isLoading || (isHashtagSearch && hashtagsLoading);
 
   return (
-    <View className="flex-1 bg-white">
-      
-      <Header 
-        showBackButton={true} 
-        onBackPress={() => navigation.goBack()} 
+    <View className="flex-1">
+      <Background1
+        width="100%"
+        height="100%"
+        style={StyleSheet.absoluteFill}
       />
-
-      <View className="flex-row items-center p-4 border-b border-gray-100">
-        <TextInput
-          className="flex-1 bg-gray-100 rounded-full px-4 py-2 mr-2"
-          placeholder="Search users or hashtags with #"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        <TouchableOpacity 
-          className="bg-[#E4CAC7] p-2 rounded-full" 
-          onPress={handleSearch}
-          disabled={isSearchLoading}
-          accessibilityLabel="Search button"
+      <View className="flex-row items-center p-4 pt-20 shadow-md bg-transparent">
+        <TouchableOpacity
+          className="w-8 h-8 bg-[#DFD2CD] rounded-full drop-shadow-md flex justify-center items-center mr-2"
+          style={{ boxShadow: "0 4px 6px rgba(0,0,0,0.2)" }}
+          onPress={() => navigation.goBack()}
         >
-          <Ionicons name="search" size={24} color="black" />
+          <BackIcon width={16} height={16} />
         </TouchableOpacity>
+        <View className="flex-1 flex-row items-center bg-white/50 rounded-lg shadow-sm border border-gray-300 py-1">
+          <Ionicons name="search" size={18} color="gray" className="absolute left-3 z-10" />
+          <TextInput
+            className="flex-1 bg-transparent rounded-lg px-4 py-1 pl-9"
+            placeholder="Search users or hashtags with #"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+        </View>
       </View>
 
       {isSearchLoading ? (
@@ -284,7 +287,7 @@ export default function UserSearch() {
           )}
           stickySectionHeadersEnabled={false}
           ListEmptyComponent={renderEmptyState}
-          contentContainerStyle={{ flexGrow: 1 }}
+          contentContainerStyle={{ flexGrow: 1, backgroundColor: 'rgba(229, 231, 235, 0.8)' }}
         />
       )}
     </View>

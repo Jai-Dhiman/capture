@@ -111,7 +111,7 @@ const Header: React.FC<HeaderProps> = ({
                     return (
                       <TouchableOpacity
                         key={item.route}
-                        className="self-stretch h-14 relative bg-stone-300 rounded-2xl"
+                        className="self-stretch h-14 relative bg-[#e4cac7] rounded-2xl"
                         onPress={() => handleNavigation(item.route)}
                       >
                         <Text className="left-[60px] top-[16px] absolute justify-center text-neutral-900 text-base font-medium font-['Inter'] leading-normal">
