@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, SectionList, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, SectionList, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../components/Navigators/types/navigation';
@@ -7,7 +7,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { API_URL } from '@env';
 import { ProfileImage } from '../components/media/ProfileImage';
 import { useSearchHashtags } from '../hooks/useHashtags';
-import Header from 'components/ui/Header';
 import { useAuthStore } from '../stores/authStore';
 import { SkeletonLoader, SkeletonElement } from '../components/ui/SkeletonLoader';
 import BackIcon from '../../assets/icons/BackIcon.svg';
