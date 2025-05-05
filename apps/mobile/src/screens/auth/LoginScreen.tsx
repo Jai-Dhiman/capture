@@ -29,7 +29,7 @@ export default function LoginScreen({ navigation }: Props) {
   const [isPasswordFocused, setIsPasswordFocused] = useState(false)
   const emailInputRef = useRef<TextInput>(null)
   const passwordInputRef = useRef<TextInput>(null)
-  const {showAlert} = useAlert()
+  const { showAlert } = useAlert()
   const { login } = useAuth()
 
   const form = useForm({
@@ -42,19 +42,19 @@ export default function LoginScreen({ navigation }: Props) {
         showAlert('Please enter both email and password', { type: 'warning' });
         return;
       }
-      
+
       login.mutate(
         { email: value.email, password: value.password },
         {
-        onError: (error) => {
-          const formattedError = errorService.handleAuthError(error);
-          const alertType = errorService.getAlertType(formattedError.category);
-          showAlert(formattedError.message, { type: alertType });
+          onError: (error) => {
+            const formattedError = errorService.handleAuthError(error);
+            const alertType = errorService.getAlertType(formattedError.category);
+            showAlert(formattedError.message, { type: alertType });
+          }
         }
-      }
-    )
-  }
-})
+      )
+    }
+  })
 
   return (
     <View style={{ flex: 1 }}>
@@ -66,7 +66,6 @@ export default function LoginScreen({ navigation }: Props) {
             resizeMode="cover"
           />
           <View className="flex-1 px-[26px]">
-            <Header />
             <View className="h-[1px] bg-black/10 mb-[30px]" />
 
             <form.Field
@@ -81,7 +80,7 @@ export default function LoginScreen({ navigation }: Props) {
               {(field) => (
                 <View className="mb-[29px]">
                   <Text className="text-base font-roboto mb-[6px]">Email</Text>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     activeOpacity={1}
                     onPress={() => emailInputRef.current?.focus()}
                     className={`bg-white h-[56px] rounded-[16px] shadow-md flex-row items-center px-[9px] ${isEmailFocused ? 'border-2 border-[#E4CAC7]' : ''}`}
@@ -144,7 +143,7 @@ export default function LoginScreen({ navigation }: Props) {
                       value={field.state.value}
                       onChangeText={field.handleChange}
                     />
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       className="absolute right-[9px]"
                       onPress={() => setShowPassword(!showPassword)}
                     >

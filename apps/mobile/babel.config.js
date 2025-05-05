@@ -1,11 +1,17 @@
 module.exports = function (api) {
   api.cache(true);
   return {
-    presets: [["babel-preset-expo", { jsxImportSource: "nativewind" }], "nativewind/babel", "@babel/preset-typescript"],
+    presets: [
+      [
+        "babel-preset-expo",
+        {
+          jsxImportSource: "nativewind",
+        },
+      ],
+      "nativewind/babel",
+    ],
     plugins: [
-      "react-native-reanimated/plugin",
       "@babel/plugin-transform-runtime",
-      ["@babel/plugin-transform-react-jsx", { runtime: "automatic" }],
       [
         "module:react-native-dotenv",
         {
@@ -15,6 +21,7 @@ module.exports = function (api) {
           allowUndefined: true,
         },
       ],
+      "react-native-reanimated/plugin",
     ],
   };
 };
