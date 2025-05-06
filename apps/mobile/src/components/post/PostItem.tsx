@@ -82,7 +82,7 @@ export const PostItem = ({ post, isLoading = false }: PostItemProps) => {
 
   return (
     <SkeletonLoader isLoading={isLoading}>
-      <View className="bg-zinc-300 rounded-lg overflow-hidden mb-4">
+      <View className="bg-[#DCDCDE] rounded-lg overflow-hidden mb-4">
         <View className="flex-row items-center p-3">
           <TouchableOpacity
             onPress={() => navigation.navigate('Profile', { userId: post.userId })}

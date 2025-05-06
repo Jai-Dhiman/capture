@@ -50,7 +50,7 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
     const formattedDate = new Date(post.createdAt).toLocaleDateString();
 
     return (
-      <View className="bg-zinc-300 rounded-lg overflow-hidden mb-2 h-full mx-0">
+      <View className="bg-[#DCDCDE] rounded-lg overflow-hidden mb-2 h-full mx-0">
         <View className="flex-row justify-between items-center p-2">
           <View className="flex-1" />
 

@@ -26,7 +26,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
   const { showAlert } = useAlert();
   const { signup } = useAuth();
   const insets = useSafeAreaInsets();
-  
+
   const emailInputRef = useRef<TextInput>(null);
   const passwordInputRef = useRef<TextInput>(null);
   const confirmPasswordInputRef = useRef<TextInput>(null);
@@ -44,13 +44,13 @@ export default function EmailSignupScreen({ navigation }: Props) {
     },
     onSubmit: async ({ value }) => {
       const errors = validatePasswordRequirements(value.password);
-      
+
       if (errors.length > 0 || value.password !== value.confirmPassword) {
         setShowValidationErrors(true);
         showAlert('Please fix the errors before submitting', { type: 'warning' });
         return;
       }
-      
+
       signup.mutate(
         { email: value.email, password: value.password },
         {
@@ -64,7 +64,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
 
   const validatePasswordRequirements = (password: string) => {
     const errors = [];
-    
+
     if (!hasMinLength.test(password)) {
       errors.push('Password must be at least 8 characters');
     }
@@ -77,7 +77,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
     if (!hasSpecialChar.test(password)) {
       errors.push('Password must contain at least 1 special character');
     }
-    
+
     return errors;
   };
 
@@ -86,22 +86,22 @@ export default function EmailSignupScreen({ navigation }: Props) {
   };
 
   return (
-    <View className="flex-1"> 
+    <View className="flex-1">
       <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1 }}>
-        <View className="flex-1 bg-zinc-300 overflow-hidden">
+        <View className="flex-1 bg-[#DCDCDE] overflow-hidden">
           <Image
             source={require('../../../assets/DefaultBackground.png')}
             className="w-full h-full absolute"
             resizeMode="cover"
           />
 
-          <Header 
+          <Header
             showBackButton={true}
             onBackPress={() => navigation.goBack()}
           />
 
           <View className="h-[40px]" />
-          
+
           <View className="px-[26px] w-full">
             <form.Field
               name="email"
@@ -115,7 +115,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
             >
               {(field) => (
                 <View className="mb-[24px]">
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     activeOpacity={1}
                     onPress={() => emailInputRef.current?.focus()}
                     className="h-[56px] bg-white rounded-[16px] w-full"
@@ -151,7 +151,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
             >
               {(field) => {
                 const passwordErrors = showValidationErrors ? validatePasswordRequirements(field.state.value) : [];
-                
+
                 return (
                   <View className="mb-[24px]">
                     <TouchableOpacity
@@ -174,7 +174,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
                         placeholder="Create Password"
                         placeholderTextColor="#c7c7c7"
                       />
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         className="absolute right-[12px] top-[12px]"
                         onPress={() => setShowPassword(!showPassword)}
                       >
@@ -200,12 +200,12 @@ export default function EmailSignupScreen({ navigation }: Props) {
             >
               {(field) => {
                 const passwordValue = form.getFieldValue('password');
-                const confirmError = showValidationErrors && 
-                  field.state.value !== '' && 
-                  passwordValue !== field.state.value 
-                    ? 'Passwords do not match' 
-                    : undefined;
-                
+                const confirmError = showValidationErrors &&
+                  field.state.value !== '' &&
+                  passwordValue !== field.state.value
+                  ? 'Passwords do not match'
+                  : undefined;
+
                 return (
                   <View className="mb-2">
                     <TouchableOpacity
@@ -228,7 +228,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
                         placeholder="Re-enter Password"
                         placeholderTextColor="#c7c7c7"
                       />
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         className="absolute right-[12px] top-[12px]"
                         onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                       >
@@ -260,7 +260,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
 
             <form.Subscribe
               selector={(state) => [
-                state.canSubmit, 
+                state.canSubmit,
                 state.isSubmitting,
                 state.values.password,
                 state.values.confirmPassword
@@ -268,7 +268,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
             >
               {([canSubmit, isSubmitting, password, confirmPassword]) => {
                 const buttonColorChange = passwordsMatch(String(password), String(confirmPassword));
-                
+
                 return (
                   <TouchableOpacity
                     className={`h-[56px] ${buttonColorChange ? 'bg-[#e7cac4]' : 'bg-stone-300'} rounded-[30px] shadow-md justify-center items-center w-full mt-[-2px]`}

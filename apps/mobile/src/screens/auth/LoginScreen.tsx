@@ -58,11 +58,18 @@ export default function LoginScreen({ navigation }: Props) {
 
   return (
     <View style={{ flex: 1 }}>
+      <Header height={120} showBackground={true} backgroundOffset={-80} />
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <View className="flex-1 bg-[#DCDCDE] rounded-[30px] overflow-hidden">
+        <View className="flex-1 bg-[#DCDCDE] overflow-hidden">
           <Image
             source={require('../../../assets/DefaultBackground.png')}
-            style={{ width: '100%', height: '100%', position: 'absolute' }}
+            style={{
+              width: '100%',
+              height: '100%',
+              position: 'absolute',
+              top: 0,
+              left: 0
+            }}
             resizeMode="cover"
           />
           <View className="flex-1 px-[26px]">

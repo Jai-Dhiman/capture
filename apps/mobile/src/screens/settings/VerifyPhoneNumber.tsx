@@ -26,11 +26,11 @@ export default function VerifyPhoneScreen({ navigation }: Props) {
   const [formattedPhone, setFormattedPhone] = useState('');
   const [isPhoneComplete, setIsPhoneComplete] = useState(false);
   const [isCodeComplete, setIsCodeComplete] = useState(false);
-  
+
   const phoneInputRef = useRef<TextInput>(null);
   const codeInputRefs = useRef<Array<TextInput | null>>([null, null, null, null, null, null]);
-  
-  const { user, session } = useAuthStore(); 
+
+  const { user, session } = useAuthStore();
   const { sendOTP, verifyOTP } = useAuth();
   const { showAlert } = useAlert();
 
@@ -71,39 +71,39 @@ export default function VerifyPhoneScreen({ navigation }: Props) {
 
     setSendingCode(true);
     try {
-      const formatted = `+1${phone.replace(/\D/g, '')}`;  
+      const formatted = `+1${phone.replace(/\D/g, '')}`;
       setFormattedPhone(formatted);
-      
+
       if (session?.access_token) {
-        await sendOTP.mutateAsync({ 
-          phone: formatted, 
-          token: session.access_token 
+        await sendOTP.mutateAsync({
+          phone: formatted,
+          token: session.access_token
         });
       } else {
         throw new Error("No active session");
       }
-      
+
       setCodeSent(true);
       setCountdown(60);
-      
+
       setTimeout(() => {
         codeInputRefs.current[0]?.focus();
       }, 100);
-      
+
     } catch (error) {
       const formattedError = errorService.handleAuthError(error);
       const alertType = errorService.getAlertType(formattedError.category);
-      
+
       // Check if error is Twilio-related to make it persistent
-      const isTwilioError = formattedError.message.toLowerCase().includes('twilio') || 
-                          formattedError.code.includes('otp');
-      
-      showAlert(formattedError.message, { 
+      const isTwilioError = formattedError.message.toLowerCase().includes('twilio') ||
+        formattedError.code.includes('otp');
+
+      showAlert(formattedError.message, {
         type: alertType,
         duration: isTwilioError ? undefined : 3000, // undefined makes it persist until dismissed
         action: isTwilioError ? {
           label: 'Dismiss',
-          onPress: () => {}
+          onPress: () => { }
         } : undefined
       });
     } finally {
@@ -120,23 +120,23 @@ export default function VerifyPhoneScreen({ navigation }: Props) {
     setIsLoading(true);
     try {
       await verifyOTP.mutateAsync({ phone: formattedPhone, code });
-      
+
       showAlert('Phone number verified successfully!', { type: 'success' });
       navigation.goBack();
     } catch (error) {
       const formattedError = errorService.handleAuthError(error);
       const alertType = errorService.getAlertType(formattedError.category);
-      
-      const isTwilioError = formattedError.message.toLowerCase().includes('twilio') 
-      || formattedError.code.includes('verify') 
-      || formattedError.code.includes('otp');
-      
-      showAlert(formattedError.message, { 
+
+      const isTwilioError = formattedError.message.toLowerCase().includes('twilio')
+        || formattedError.code.includes('verify')
+        || formattedError.code.includes('otp');
+
+      showAlert(formattedError.message, {
         type: alertType,
         duration: isTwilioError ? undefined : 3000,
         action: isTwilioError ? {
           label: 'Dismiss',
-          onPress: () => {}
+          onPress: () => { }
         } : undefined
       });
     } finally {
@@ -146,14 +146,14 @@ export default function VerifyPhoneScreen({ navigation }: Props) {
 
   const handleResendCode = async () => {
     if (countdown > 0) return;
-    
+
     try {
       setSendingCode(true);
-      
+
       if (session?.access_token) {
-        await sendOTP.mutateAsync({ 
-          phone: formattedPhone, 
-          token: session.access_token 
+        await sendOTP.mutateAsync({
+          phone: formattedPhone,
+          token: session.access_token
         });
       } else {
         throw new Error("No active session");
@@ -164,15 +164,15 @@ export default function VerifyPhoneScreen({ navigation }: Props) {
     } catch (error) {
       const formattedError = errorService.handleAuthError(error);
       const alertType = errorService.getAlertType(formattedError.category);
-      
+
       const isTwilioError = formattedError.message.toLowerCase().includes('twilio') || formattedError.code.includes('otp');
-      
-      showAlert(formattedError.message, { 
+
+      showAlert(formattedError.message, {
         type: alertType,
         duration: isTwilioError ? undefined : 3000,
         action: isTwilioError ? {
           label: 'Dismiss',
-          onPress: () => {}
+          onPress: () => { }
         } : undefined
       });
     } finally {
@@ -182,14 +182,14 @@ export default function VerifyPhoneScreen({ navigation }: Props) {
 
   const handleCodeChange = (text: string, index: number) => {
     if (!/^\d*$/.test(text)) return;
-    
+
     const newCode = [...form.getFieldValue('code')];
     newCode[index] = text;
     form.setFieldValue('code', newCode);
-    
+
     // Check if all 6 digits are filled
     setIsCodeComplete(newCode.every(digit => digit !== ''));
-    
+
     if (text && index < 5) {
       codeInputRefs.current[index + 1]?.focus();
     }
@@ -198,7 +198,7 @@ export default function VerifyPhoneScreen({ navigation }: Props) {
   const handleKeyDown = (e: any, index: number) => {
     if (e.nativeEvent.key === 'Backspace') {
       const newCode = [...form.getFieldValue('code')];
-      
+
       if (!newCode[index] && index > 0) {
         codeInputRefs.current[index - 1]?.focus();
       }
@@ -215,18 +215,18 @@ export default function VerifyPhoneScreen({ navigation }: Props) {
   const handleDevSkip = () => {
     if (user) {
       const phoneToUse = formattedPhone || '+15555555555';
-      
+
       authState.setUser({
         ...user,
         phone: phoneToUse,
         phone_confirmed_at: new Date().toISOString(),
       });
-      
-      showAlert('DEV MODE: Phone verification bypassed', { 
+
+      showAlert('DEV MODE: Phone verification bypassed', {
         type: 'success',
-        duration: 2000 
+        duration: 2000
       });
-      
+
       setTimeout(() => {
         navigation.goBack();
       }, 500);
@@ -240,12 +240,12 @@ export default function VerifyPhoneScreen({ navigation }: Props) {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={{ flex: 1 }}
     >
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
       >
-        <View className="flex-1 bg-zinc-300">
-          <Header 
+        <View className="flex-1 bg-[#DCDCDE]">
+          <Header
             showBackButton
             onBackPress={() => navigation.goBack()}
           />
@@ -263,7 +263,7 @@ export default function VerifyPhoneScreen({ navigation }: Props) {
             <View className="w-full">
               <form.Field name="phone">
                 {(field) => (
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     activeOpacity={1}
                     onPress={() => phoneInputRef.current?.focus()}
                     className="h-14 bg-white rounded-2xl shadow-md w-full mb-4 border border-gray-200"
@@ -334,34 +334,32 @@ export default function VerifyPhoneScreen({ navigation }: Props) {
 
             <View className="w-full mt-4">
               <Text className="text-center text-white text-xs font-light font-roboto tracking-tight">
-                If you are having trouble receiving the SMS, ensure you have entered the correct Country Code, 
+                If you are having trouble receiving the SMS, ensure you have entered the correct Country Code,
                 Area Code, and digits. If you continue to have problems reach out to captureapp@support.com
               </Text>
             </View>
 
-            <TouchableOpacity 
-              className={`h-14 w-4/5 ${
-                (codeSent && isCodeComplete) || (!codeSent && isPhoneComplete) 
+            <TouchableOpacity
+              className={`h-14 w-4/5 ${(codeSent && isCodeComplete) || (!codeSent && isPhoneComplete)
                   ? 'bg-[#E4CAC7]'
                   : 'bg-zinc-500'
-              } rounded-[30px] shadow-md mt-8 justify-center items-center`}
+                } rounded-[30px] shadow-md mt-8 justify-center items-center`}
               onPress={() => form.handleSubmit()}
               disabled={isLoading || sendingCode || (codeSent && !isCodeComplete) || (!codeSent && !isPhoneComplete)}
             >
               {isLoading || sendingCode ? (
                 <LoadingSpinner message={sendingCode ? "Sending..." : "Verifying..."} />
               ) : (
-                <Text className={`text-center ${
-                  (codeSent && isCodeComplete) || (!codeSent && isPhoneComplete)
+                <Text className={`text-center ${(codeSent && isCodeComplete) || (!codeSent && isPhoneComplete)
                     ? 'text-black'
                     : 'text-white'
-                } text-base font-bold font-roboto leading-normal`}>
+                  } text-base font-bold font-roboto leading-normal`}>
                   {codeSent ? "Verify Code" : "Send Code"}
                 </Text>
               )}
             </TouchableOpacity>
             {__DEV__ && (
-              <TouchableOpacity 
+              <TouchableOpacity
                 className="h-10 w-4/5 bg-yellow-300 rounded-[15px] mt-4 justify-center items-center border-2 border-red-500"
                 onPress={handleDevSkip}
               >
@@ -374,6 +372,6 @@ export default function VerifyPhoneScreen({ navigation }: Props) {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
-    
+
   );
 }

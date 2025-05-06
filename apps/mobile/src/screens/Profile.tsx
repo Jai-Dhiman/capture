@@ -143,7 +143,7 @@ export default function Profile() {
       <View style={{ flex: 1, backgroundColor: '#fff' }}>
         <Header />
         <View style={{ flex: 1 }}>
-          <View className="flex-1 bg-zinc-300">
+          <View className="flex-1 bg-[#DCDCDE]">
             <StatusBar barStyle="dark-content" />
             <View className="flex-1">
               <View className="px-6 pt-4">
@@ -172,7 +172,7 @@ export default function Profile() {
                 </View>
               </View>
 
-              <View className="w-full h-16 bg-zinc-300"
+              <View className="w-full h-16 bg-[#DCDCDE]"
                 style={{
                   shadowColor: '#000',
                   shadowOffset: { width: 0, height: 4 },
@@ -218,7 +218,7 @@ export default function Profile() {
     return (
       <View style={{ flex: 1, backgroundColor: '#fff' }}>
         <View style={{ flex: 1 }}>
-          <View className="flex-1 bg-zinc-300">
+          <View className="flex-1 bg-[#DCDCDE]">
             <StatusBar barStyle="dark-content" />
             <View className="px-6 pt-4">
               <ProfileHeader
@@ -250,7 +250,7 @@ export default function Profile() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
-      <View className="flex-1 bg-zinc-300">
+      <View className="flex-1 bg-[#DCDCDE]">
         <ProfileHeader
           profileData={profileData}
           isOwnProfile={isOwnProfile}
@@ -283,7 +283,7 @@ export default function Profile() {
 
       {carouselPosts.length > 0 && showPostCarousel && (
         <View
-          className="absolute top-0 left-0 right-0 bottom-0 bg-zinc-300"
+          className="absolute top-0 left-0 right-0 bottom-0 bg-[#DCDCDE]"
           style={{
             top: height * 0.345,
             zIndex: 1

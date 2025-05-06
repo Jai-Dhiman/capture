@@ -29,7 +29,7 @@ export default function MainSettingsScreen() {
   const goBack = () => {
     navigation.getParent()?.goBack();
   };
-  
+
   const handleLogout = () => {
     Alert.alert(
       "Logout",
@@ -49,21 +49,21 @@ export default function MainSettingsScreen() {
   };
 
   return (
-    <View className="flex-1 bg-zinc-300">
+    <View className="flex-1 bg-[#DCDCDE]">
       <StatusBar barStyle="dark-content" />
-      
+
       <View className="w-full pt-14 px-4 pb-4">
-      <TouchableOpacity 
+        <TouchableOpacity
           className="absolute left-4 top-14 bg-stone-300 rounded-full w-8 h-8 flex items-center justify-center shadow-inner"
-          onPress={goBack }
+          onPress={goBack}
         >
           <BackIcon height={20} width={20} />
         </TouchableOpacity>
         <Text className="text-center text-4xl font-medium">Settings</Text>
       </View>
-      
+
       <ScrollView className="flex-1 px-4">
-        <TouchableOpacity 
+        <TouchableOpacity
           className="flex-row items-center bg-stone-400 rounded-full p-4 mb-6 shadow"
           onPress={() => navigation.navigate('AccountSettings')}
         >
@@ -74,7 +74,7 @@ export default function MainSettingsScreen() {
               <View className="w-full h-full bg-stone-300" />
             )}
           </View>
-          
+
           <View className="ml-4">
             <Text className="text-sm font-semibold">{profile?.username || 'User'}</Text>
             <Text className="text-xs text-black opacity-70">
@@ -82,9 +82,9 @@ export default function MainSettingsScreen() {
             </Text>
           </View>
         </TouchableOpacity>
-        
+
         <View className="bg-stone-400 bg-opacity-0 rounded-[10px] shadow border border-black mb-6">
-          <TouchableOpacity 
+          <TouchableOpacity
             className="flex-row items-center p-3 border-b border-black border-opacity-20"
             onPress={() => navigation.navigate('BlockedUsers')}
           >
@@ -93,21 +93,21 @@ export default function MainSettingsScreen() {
             <View className="flex-1" />
             <EmptyIcon height={20} width={20} />
           </TouchableOpacity>
-          
+
           <TouchableOpacity className="flex-row items-center p-3 border-b border-black border-opacity-20">
             <EmailIcon height={25} width={25} />
             <Text className="ml-4 text-xs font-bold">Private Messaging Preferences</Text>
             <View className="flex-1" />
             <EmptyIcon height={20} width={20} />
           </TouchableOpacity>
-          
+
           <TouchableOpacity className="flex-row items-center p-3 border-b border-black border-opacity-20">
             <AlgorithmIcon height={25} width={25} />
             <Text className="ml-4 text-xs font-bold">Algorithm Preferences</Text>
             <View className="flex-1" />
             <EmptyIcon height={20} width={20} />
           </TouchableOpacity>
-          
+
           <TouchableOpacity className="flex-row items-center p-3">
             <LockIcon2 height={25} width={25} />
             <Text className="ml-4 text-xs font-bold">Data & Privacy Policy</Text>
@@ -115,7 +115,7 @@ export default function MainSettingsScreen() {
             <EmptyIcon height={20} width={20} />
           </TouchableOpacity>
         </View>
-        
+
         {/* Customization Section */}
         <View className="bg-white bg-opacity-0 rounded-[10px] shadow border border-black mb-6">
           <TouchableOpacity className="flex-row items-center p-3 border-b border-black border-opacity-20">
@@ -124,14 +124,14 @@ export default function MainSettingsScreen() {
             <View className="flex-1" />
             <EmptyIcon height={20} width={20} />
           </TouchableOpacity>
-          
+
           <TouchableOpacity className="flex-row items-center p-3 border-b border-black border-opacity-20">
             <CustomizeIcon height={25} width={25} />
             <Text className="ml-4 text-xs font-bold">Appearance & Customization</Text>
             <View className="flex-1" />
             <EmptyIcon height={20} width={20} />
           </TouchableOpacity>
-          
+
           <TouchableOpacity className="flex-row items-center p-3 border-b border-black border-opacity-20" disabled={true}>
             <FontBookIcon height={25} width={25} />
             <View className="ml-4">
@@ -144,12 +144,12 @@ export default function MainSettingsScreen() {
             <EmptyIcon height={20} width={20} />
           </TouchableOpacity>
         </View>
-        
+
         <Text className="text-center text-[10px] opacity-70 mb-4">
-          More customization features will be available as the application gets updated. 
+          More customization features will be available as the application gets updated.
           Stay tuned to @Capture for more information on what you can expect and when
         </Text>
-        
+
         {/* Support Section */}
         <View className="bg-white bg-opacity-0 rounded-[10px] shadow border border-black mb-8">
           <TouchableOpacity className="flex-row items-center p-3 border-b border-black border-opacity-20">
@@ -158,14 +158,14 @@ export default function MainSettingsScreen() {
             <View className="flex-1" />
             <EmptyIcon height={20} width={20} />
           </TouchableOpacity>
-          
+
           <TouchableOpacity className="flex-row items-center p-3 border-b border-black border-opacity-20">
             <AccountIcon height={25} width={25} />
             <Text className="ml-4 text-xs font-bold">Report Bug</Text>
             <View className="flex-1" />
             <EmptyIcon height={20} width={20} />
           </TouchableOpacity>
-          
+
           <TouchableOpacity className="flex-row items-center p-3">
             <UserVerifiedIcon height={25} width={25} />
             <Text className="ml-4 text-xs font-bold">Feature Request</Text>
@@ -175,7 +175,7 @@ export default function MainSettingsScreen() {
         </View>
 
         <View className="bg-white bg-opacity-0 rounded-[10px] shadow border border-black mb-8 mt-2">
-          <TouchableOpacity 
+          <TouchableOpacity
             className="flex-row items-center p-3"
             onPress={handleLogout}
           >

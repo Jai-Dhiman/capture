@@ -77,6 +77,7 @@ app.use("/graphql", authMiddleware, async (c) => {
 app.route("/", healthRoutes);
 app.route("/auth", authRouter);
 app.route("/seed", seedRouter);
+
 // Protected routes
 app.use("/api/*", authMiddleware);
 app.route("/api/media", mediaRouter);

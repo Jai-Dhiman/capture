@@ -17,6 +17,8 @@ coverage
 # Turbo
 .turbo
 
+.idea
+
 # Build Outputs
 out/
 build

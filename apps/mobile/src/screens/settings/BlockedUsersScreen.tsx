@@ -31,7 +31,7 @@ export default function BlockedUsersScreen() {
     const formattedDate = format(blockDate, 'MM/dd/yy');
 
     return (
-      <View className="w-full h-16 bg-zinc-300 flex-row items-center px-2 mb-2">
+      <View className="w-full h-16 bg-[#DCDCDE] flex-row items-center px-2 mb-2">
         <View className="w-12 h-12 rounded-full overflow-hidden bg-stone-400 shadow-sm">
           {item.profileImage ? (
             <ProfileImage cloudflareId={item.profileImage} />
@@ -39,7 +39,7 @@ export default function BlockedUsersScreen() {
             <View className="w-full h-full bg-stone-400" />
           )}
         </View>
-        
+
         <View className="ml-4 flex-1">
           <Text className="text-black text-xs font-semibold">
             {item.username}
@@ -48,7 +48,7 @@ export default function BlockedUsersScreen() {
             {`Blocked on ${formattedDate}`}
           </Text>
         </View>
-        
+
         <TouchableOpacity
           className="bg-neutral-400 rounded-[30px] px-4 py-1"
           onPress={() => handleUnblock(item.userId)}
@@ -60,11 +60,11 @@ export default function BlockedUsersScreen() {
   };
 
   return (
-    <View className="flex-1 bg-zinc-300">
+    <View className="flex-1 bg-[#DCDCDE]">
       <StatusBar barStyle="dark-content" />
-      
+
       <View className="w-full pt-14 px-4 pb-4">
-        <TouchableOpacity 
+        <TouchableOpacity
           className="absolute left-4 top-14 bg-stone-300 rounded-full w-8 h-8 flex items-center justify-center shadow-inner"
           onPress={() => navigation.goBack()}
         >
@@ -72,7 +72,7 @@ export default function BlockedUsersScreen() {
         </TouchableOpacity>
         <Text className="text-center text-4xl font-medium">Blocked Accounts</Text>
       </View>
-      
+
       {isLoading ? (
         <View className="p-4">
           <SkeletonLoader isLoading={true}>

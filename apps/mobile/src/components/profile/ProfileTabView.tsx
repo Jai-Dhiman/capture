@@ -208,7 +208,7 @@ export const ProfileTabView = ({
 
   const renderTabBar = () => (
     <View
-      className="w-full h-12 bg-zinc-300"
+      className="w-full h-12 bg-[#DCDCDE]"
       style={{
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },

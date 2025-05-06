@@ -33,7 +33,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 }) => {
   return (
     <View>
-      <View className="w-full z-10 bg-zinc-300 flex justify-end" style={{ height: 110 }}>
+      <View className="w-full z-10 bg-[#DCDCDE] flex justify-end" style={{ height: 110 }}>
         <View className="flex-row items-center justify-between px-8 mb-4">
           {showBackButton ? (
             <TouchableOpacity className="w-10 h-10 bg-[#DFD2CD] rounded-full drop-shadow-md flex justify-center items-center"
@@ -87,8 +87,8 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           </View>
         </View>
       ) : (
-        <View className="flex-row mb-0 px-6 pt-4 bg-zinc-300 pb-4">
-          <View className="w-28 h-28 rounded-full bg-zinc-300 drop-shadow-md">
+        <View className="flex-row mb-0 px-6 pt-4 bg-[#DCDCDE] pb-4">
+          <View className="w-28 h-28 rounded-full bg-[#DCDCDE] drop-shadow-md">
             {profileData?.profileImage ? (
               <ProfileImage cloudflareId={profileData.profileImage} />
             ) : (

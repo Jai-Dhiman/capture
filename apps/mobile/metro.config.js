@@ -5,12 +5,11 @@ const config = getSentryExpoConfig(__dirname, {
   isCSSEnabled: true,
   resolver: {
     platforms: ["ios", "android", "web"],
-    unstable_enablePackageExports: false,
-    unstable_enableSymlinks: true,
   },
 });
 
 const { transformer, resolver } = config;
+
 config.transformer = {
   ...transformer,
   babelTransformerPath: require.resolve("react-native-svg-transformer"),
@@ -18,9 +17,17 @@ config.transformer = {
 config.resolver = {
   ...resolver,
   assetExts: resolver.assetExts.filter((ext) => ext !== "svg"),
-  sourceExts: [...resolver.sourceExts, "svg", "web.ts", "web.tsx", "web.js"],
-  unstable_enablePackageExports: false,
-  unstable_enableSymlinks: true,
+  sourceExts: [...resolver.sourceExts, "svg"],
 };
+
+const webExtensions = ["web.ts", "web.tsx", "web.js"];
+webExtensions.forEach((ext) => {
+  if (!config.resolver.sourceExts.includes(ext)) {
+    config.resolver.sourceExts.push(ext);
+  }
+});
+
+config.resolver.unstable_enablePackageExports = config.resolver.unstable_enablePackageExports ?? false;
+config.resolver.unstable_enableSymlinks = config.resolver.unstable_enableSymlinks ?? true;
 
 module.exports = withNativeWind(config, { input: "./global.css" });

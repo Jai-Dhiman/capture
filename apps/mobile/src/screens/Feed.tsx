@@ -70,13 +70,13 @@ export default function Feed() {
 
   if (isLoading && !refreshing) {
     return (
-      <View className="flex-1 bg-zinc-300">
+      <View className="flex-1 bg-[#DCDCDE]">
         <Header hideHeader={hideHeader} height={HEADER_HEIGHT} />
         <MotiView
           from={{ height: HEADER_HEIGHT }}
           animate={{ height: hideHeader ? 0 : HEADER_HEIGHT }}
           transition={{ type: 'timing', duration: 300 }}
-          className="w-full bg-zinc-300"
+          className="w-full bg-[#DCDCDE]"
         />
         <View className="p-4 space-y-4">
           <PostSkeleton />
@@ -88,13 +88,13 @@ export default function Feed() {
 
   if (isError) {
     return (
-      <View className="flex-1 bg-zinc-300">
+      <View className="flex-1 bg-[#DCDCDE]">
         <Header hideHeader={hideHeader} height={HEADER_HEIGHT} />
         <MotiView
           from={{ height: HEADER_HEIGHT }}
           animate={{ height: hideHeader ? 0 : HEADER_HEIGHT }}
           transition={{ type: 'timing', duration: 300 }}
-          className="w-full bg-zinc-300"
+          className="w-full bg-[#DCDCDE]"
         />
         <View className="flex-1 justify-center items-center p-4">
           <Text className="text-red-500 text-center mb-4">
@@ -112,13 +112,13 @@ export default function Feed() {
   }
 
   return (
-    <View className="flex-1 bg-zinc-300">
-      <Header hideHeader={hideHeader} height={HEADER_HEIGHT} />
+    <View className="flex-1 bg-[#DCDCDE]">
+      <Header hideHeader={hideHeader} height={HEADER_HEIGHT} addSpacer={false} />
       <MotiView
         from={{ height: HEADER_HEIGHT }}
         animate={{ height: hideHeader ? 0 : HEADER_HEIGHT }}
         transition={{ type: 'timing', duration: 300 }}
-        className="w-full bg-zinc-300"
+        className="w-full bg-[#DCDCDE]"
       />
       <View className="flex-1">
         <FlashList
@@ -148,7 +148,7 @@ export default function Feed() {
 }
 
 const PostSkeleton = () => (
-  <View className="bg-zinc-300 rounded-lg overflow-hidden mb-4">
+  <View className="bg-[#DCDCDE] rounded-lg overflow-hidden mb-4">
     <View className="flex-row items-center p-3">
       <SkeletonElement width={40} height={40} radius={9999} />
       <View className="ml-3">
@@ -175,7 +175,7 @@ const PostSkeleton = () => (
 );
 
 const ThreadSkeleton = () => (
-  <View className="bg-zinc-300 rounded-lg overflow-hidden mb-4">
+  <View className="bg-[#DCDCDE] rounded-lg overflow-hidden mb-4">
     <View className="flex-row items-center p-3">
       <SkeletonElement width={40} height={40} radius="round" />
       <View className="ml-3">
