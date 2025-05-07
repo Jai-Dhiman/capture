@@ -9,13 +9,13 @@ interface PostMediaGalleryProps {
 
 export const PostMediaGallery = ({ mediaItems, containerStyle = {} }: PostMediaGalleryProps) => {
   const { width } = useWindowDimensions();
-  const [spacing, setSpacing] = useState(8); 
-  
+  const [spacing, setSpacing] = useState(8);
+
   useEffect(() => {
     const calculatedSpacing = width * 0.02;
     setSpacing(Math.max(8, Math.min(16, calculatedSpacing)));
   }, [width]);
-  
+
   const imageStyle = StyleSheet.create({
     container: {
       borderRadius: 16,
@@ -32,21 +32,21 @@ export const PostMediaGallery = ({ mediaItems, containerStyle = {} }: PostMediaG
   if (!mediaItems || mediaItems.length === 0) {
     return null;
   }
-  
+
   const displayItems = mediaItems.slice(0, 4);
   const imageCount = displayItems.length;
-  
+
   if (imageCount === 1) {
     return (
-      <View 
-        className="w-full h-full rounded-2xl overflow-hidden" 
+      <View
+        className="w-full h-full rounded-2xl overflow-hidden"
         style={[imageStyle.container, containerStyle]}
       >
         <MediaImage media={displayItems[0]} priority={true} />
       </View>
     );
   }
-  
+
   if (imageCount === 2) {
     return (
       <View className="w-full h-full flex-row" style={[containerStyle, { gap: spacing }]}>
@@ -59,7 +59,7 @@ export const PostMediaGallery = ({ mediaItems, containerStyle = {} }: PostMediaG
       </View>
     );
   }
-  
+
   if (imageCount === 3) {
     return (
       <View className="w-full h-full flex-row" style={[containerStyle, { gap: spacing }]}>
@@ -75,7 +75,7 @@ export const PostMediaGallery = ({ mediaItems, containerStyle = {} }: PostMediaG
       </View>
     );
   }
-  
+
   return (
     <View className="w-full h-full" style={containerStyle}>
       <View className="flex-1 flex-row" style={{ marginBottom: spacing / 2, gap: spacing }}>

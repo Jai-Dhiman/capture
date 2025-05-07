@@ -7,7 +7,7 @@ import Header from '../components/ui/Header';
 import { EmptyState } from '../components/ui/EmptyState';
 import type { Post, Thread } from '../types/postTypes';
 import { FlashList } from '@shopify/flash-list';
-import { SkeletonLoader, SkeletonElement } from '../components/ui/SkeletonLoader';
+import { SkeletonElement } from '../components/ui/SkeletonLoader';
 import { MotiView } from 'moti';
 
 const HEADER_HEIGHT = 150;
@@ -113,7 +113,7 @@ export default function Feed() {
 
   return (
     <View className="flex-1 bg-[#DCDCDE]">
-      <Header hideHeader={hideHeader} height={HEADER_HEIGHT} addSpacer={false} showBackButton={true} />
+      <Header hideHeader={hideHeader} height={HEADER_HEIGHT} addSpacer={false} />
       <MotiView
         from={{ height: HEADER_HEIGHT }}
         animate={{ height: hideHeader ? 0 : HEADER_HEIGHT }}

@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Image, TextInput, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, Image, TextInput, ScrollView, useWindowDimensions, GestureResponderEvent, Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as ImagePicker from 'expo-image-picker';
 import { Platform } from 'react-native';
-import DraggableFlatList from 'react-native-draggable-flatlist';
+import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
 import { RootStackParamList } from 'components/Navigators/types/navigation';
 import { useUploadMedia } from 'hooks/useMedia';
 import { useCreatePost } from 'hooks/usePosts';
@@ -25,6 +25,16 @@ export default function NewPost() {
   const uploadMediaMutation = useUploadMedia();
   const createPostMutation = useCreatePost();
   const { showAlert } = useAlert();
+  const { width } = useWindowDimensions();
+  const [spacing, setSpacing] = useState(8);
+
+  useEffect(() => {
+    const calculatedSpacing = width * 0.02;
+    setSpacing(Math.max(8, Math.min(16, calculatedSpacing)));
+  }, [width]);
+
+  const imageCount = selectedImages.length;
+  const numColumns = imageCount <= 3 ? imageCount : 2;
 
   // Image selection logic
   const handleImageSelection = async () => {
@@ -112,26 +122,20 @@ export default function NewPost() {
   };
 
   // Render each image in the draggable list
-  const renderImageItem = ({ item, index, drag }: any) => (
-    <TouchableOpacity
+  const renderImageItem = ({ item, index, drag, isActive }: any) => (
+    <Pressable
       onPress={() => handleImagePress(item)}
       onLongPress={drag}
-      className="relative mx-1"
-      activeOpacity={0.85}
+      style={{ flex: 1, aspectRatio: 1, margin: spacing / 2, opacity: isActive ? 0.8 : 1 }}
     >
-      <Image
-        source={{ uri: item.uri }}
-        className="w-20 h-28 rounded-lg border border-black"
-        resizeMode="cover"
-      />
-      <TouchableOpacity
+      <Image source={{ uri: item.uri }} className="w-full h-full rounded-lg border border-black" resizeMode="cover" />
+      <Pressable
         onPress={() => handleRemoveImage(index)}
-        className="absolute top-1 right-1 bg-black/60 rounded-full p-1"
-        style={{ zIndex: 2 }}
+        style={{ position: 'absolute', top: spacing / 4, right: spacing / 4, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 12, padding: 4, zIndex: 2 }}
       >
         <Text className="text-white text-xs font-bold">×</Text>
-      </TouchableOpacity>
-    </TouchableOpacity>
+      </Pressable>
+    </Pressable>
   );
 
   return (
@@ -146,7 +150,7 @@ export default function NewPost() {
             {/* Type Selector */}
             <View className="w-full h-10 mb-5 rounded-lg flex-row justify-center items-center overflow-hidden bg-white/10 shadow">
               <TouchableOpacity
-                className={`flex-1 mx-1 h-8 rounded-md flex justify-center items-center ${postType === 'post' ? 'bg-stone-400' : 'bg-gray-100'}`}
+                className={`flex-1 mx-1 h-8 rounded-md flex justify-center items-center ${postType === 'post' ? 'bg-[#a99ca3]' : 'bg-[#dcdcde]'}`}
                 onPress={() => setPostType('post')}
               >
                 <Text className={`text-center text-xs ${postType === 'post' ? 'text-white font-semibold' : 'text-black font-normal'}`}>
@@ -154,7 +158,7 @@ export default function NewPost() {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className={`flex-1 mx-1 h-8 rounded-md flex justify-center items-center ${postType === 'thread' ? 'bg-stone-400' : 'bg-gray-100'}`}
+                className={`flex-1 mx-1 h-8 rounded-md flex justify-center items-center ${postType === 'thread' ? 'bg-[#a99ca3]' : 'bg-[#dcdcde]'}`}
                 onPress={() => setPostType('thread')}
               >
                 <Text className={`text-center text-xs ${postType === 'thread' ? 'text-white font-semibold' : 'text-black font-normal'}`}>
@@ -163,10 +167,29 @@ export default function NewPost() {
               </TouchableOpacity>
             </View>
 
+            {/* Image Grid for photo/video */}
+            {postType === 'post' && selectedImages.length > 0 && (
+              <View style={{ paddingHorizontal: spacing, marginBottom: spacing }}>
+                <DraggableFlatList
+                  data={selectedImages}
+                  onDragEnd={({ data }) => setSelectedImages(data)}
+                  keyExtractor={(item) => item.uri}
+                  renderItem={renderImageItem}
+                  numColumns={numColumns}
+                  scrollEnabled={false}
+                  nestedScrollEnabled={true}
+                  activationDistance={10}
+                  contentContainerStyle={{}}
+                  columnWrapperStyle={{ justifyContent: 'space-between', marginBottom: spacing }}
+                  showsVerticalScrollIndicator={false}
+                />
+              </View>
+            )}
+
             {/* Content Input */}
-            <View className="mt-2 bg-white p-4 rounded-lg shadow">
+            <View className="mt-2 bg-[#dcdcde] p-4 rounded-lg shadow">
               <TextInput
-                className="border border-gray-300 rounded-lg p-3 mb-3 bg-white"
+                className="border border-gray-300 rounded-lg p-3 mb-3 bg-[#dcdcde]"
                 placeholder={postType === 'post' ? "Write a caption..." : "What's on your mind?"}
                 value={content}
                 onChangeText={setContent}
@@ -184,34 +207,19 @@ export default function NewPost() {
                 maxHashtags={5}
               />
 
-              {/* Image grid (only for posts) */}
-              {postType === 'post' && selectedImages.length > 0 && (
-                <View className="my-3">
-                  <DraggableFlatList
-                    data={selectedImages}
-                    horizontal
-                    onDragEnd={({ data }) => setSelectedImages(data)}
-                    keyExtractor={(item, index) => item.uri + index}
-                    renderItem={renderImageItem}
-                    contentContainerStyle={{ paddingVertical: 8, paddingHorizontal: 4 }}
-                    showsHorizontalScrollIndicator={false}
-                  />
-                </View>
-              )}
-
               {/* Add Images Button (only for posts) */}
               {postType === 'post' && (
                 <TouchableOpacity
-                  className="bg-stone-300 rounded-2xl shadow px-6 py-3 mb-4 mt-2"
+                  className="bg-[#a99ca3] rounded-[30px] shadow px-6 py-3 mb-2 mt-2"
                   onPress={handleImageSelection}
                 >
-                  <Text className="text-center text-black font-bold text-base">Add Images</Text>
+                  <Text className="text-center text-white font-bold text-base">Add Images</Text>
                 </TouchableOpacity>
               )}
 
               {/* Post Button */}
               <TouchableOpacity
-                className="bg-stone-300 rounded-[30px] shadow px-6 py-3 mt-4"
+                className="bg-[#e4cac7] rounded-[30px] shadow px-6 py-3 mt-2"
                 onPress={handleCreatePost}
                 disabled={createPostMutation.isPending || uploadMediaMutation.isPending}
               >
