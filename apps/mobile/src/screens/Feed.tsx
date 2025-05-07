@@ -71,7 +71,7 @@ export default function Feed() {
   if (isLoading && !refreshing) {
     return (
       <View className="flex-1 bg-[#DCDCDE]">
-        <Header hideHeader={hideHeader} height={HEADER_HEIGHT} />
+        <Header hideHeader={hideHeader} height={HEADER_HEIGHT} addSpacer={false} />
         <MotiView
           from={{ height: HEADER_HEIGHT }}
           animate={{ height: hideHeader ? 0 : HEADER_HEIGHT }}
@@ -113,7 +113,7 @@ export default function Feed() {
 
   return (
     <View className="flex-1 bg-[#DCDCDE]">
-      <Header hideHeader={hideHeader} height={HEADER_HEIGHT} addSpacer={false} />
+      <Header hideHeader={hideHeader} height={HEADER_HEIGHT} addSpacer={false} showBackButton={true} />
       <MotiView
         from={{ height: HEADER_HEIGHT }}
         animate={{ height: hideHeader ? 0 : HEADER_HEIGHT }}

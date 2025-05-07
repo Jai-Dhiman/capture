@@ -5,6 +5,7 @@ export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList> | undefined;
   CreateProfile: undefined;
   App: NavigatorScreenParams<AppStackParamList> | undefined;
+  ImageEditScreen: { imageUri: string };
 };
 
 export type AuthStackParamList = {

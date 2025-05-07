@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Image, TextInput, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as ImagePicker from 'expo-image-picker';
 import { Platform } from 'react-native';
+import DraggableFlatList from 'react-native-draggable-flatlist';
 import { RootStackParamList } from 'components/Navigators/types/navigation';
 import { useUploadMedia } from 'hooks/useMedia';
 import { useCreatePost } from 'hooks/usePosts';
@@ -25,6 +26,7 @@ export default function NewPost() {
   const createPostMutation = useCreatePost();
   const { showAlert } = useAlert();
 
+  // Image selection logic
   const handleImageSelection = async () => {
     try {
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -32,14 +34,13 @@ export default function NewPost() {
         showAlert('Please allow access to your photos', { type: 'warning' });
         return;
       }
-  
+
       const remainingSlots = 4 - selectedImages.length;
-      
       if (remainingSlots <= 0) {
         showAlert('Maximum of 4 images allowed per post', { type: 'warning' });
         return;
       }
-  
+
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsMultipleSelection: true,
@@ -47,7 +48,7 @@ export default function NewPost() {
         quality: 0.8,
         base64: Platform.OS === 'web',
       });
-  
+
       if (!result.canceled && result.assets.length > 0) {
         const formattedImages = result.assets.map((asset, index) => ({
           uri: asset.uri,
@@ -63,12 +64,22 @@ export default function NewPost() {
     }
   };
 
+  // Remove image
+  const handleRemoveImage = (index: number) => {
+    setSelectedImages(images => images.filter((_, i) => i !== index));
+  };
+
+  // Navigate to image edit screen
+  const handleImagePress = (image: any) => {
+    navigation.navigate('ImageEditScreen', { imageUri: image.uri });
+  };
+
+  // Post creation logic
   const handleCreatePost = async () => {
     if (!content && selectedImages.length === 0 && postType === 'post') {
       showAlert('Please add some content or images to your post', { type: 'warning' });
       return;
     }
-    
     if (!content && postType === 'thread') {
       showAlert('Please add some content to your thread', { type: 'warning' });
       return;
@@ -76,21 +87,19 @@ export default function NewPost() {
 
     try {
       let mediaIds: string[] = [];
-      
       if (postType === 'post' && selectedImages.length > 0) {
         const uploadedMedia = await uploadMediaMutation.mutateAsync(selectedImages);
         mediaIds = uploadedMedia.map(media => media.id);
       }
-      
       const hashtagIds = selectedHashtags.map(hashtag => hashtag.id);
-      
-      const createdPost = await createPostMutation.mutateAsync({ 
-        content, 
+
+      await createPostMutation.mutateAsync({
+        content,
         type: postType,
         mediaIds,
-        hashtagIds
+        hashtagIds,
       });
-      
+
       showAlert(`${postType === 'post' ? 'Post' : 'Thread'} created successfully!`, { type: 'success' });
       navigation.goBack();
     } catch (error: any) {
@@ -102,97 +111,118 @@ export default function NewPost() {
     }
   };
 
+  // Render each image in the draggable list
+  const renderImageItem = ({ item, index, drag }: any) => (
+    <TouchableOpacity
+      onPress={() => handleImagePress(item)}
+      onLongPress={drag}
+      className="relative mx-1"
+      activeOpacity={0.85}
+    >
+      <Image
+        source={{ uri: item.uri }}
+        className="w-20 h-28 rounded-lg border border-black"
+        resizeMode="cover"
+      />
+      <TouchableOpacity
+        onPress={() => handleRemoveImage(index)}
+        className="absolute top-1 right-1 bg-black/60 rounded-full p-1"
+        style={{ zIndex: 2 }}
+      >
+        <Text className="text-white text-xs font-bold">×</Text>
+      </TouchableOpacity>
+    </TouchableOpacity>
+  );
+
   return (
     <PhoneVerificationCheck
       message="To create posts and share content, please verify your phone number first. This helps keep our community safe."
     >
-    <ScrollView className="flex-1">
-      <View className="flex-1 p-5">
-        <Header 
-          showBackButton={true} 
-          onBackPress={() => navigation.goBack()} 
-        />
-        
-        {/* Type Selector */}
-        <View className="w-full h-10 p-9 mb-5 shadow rounded-lg flex-row justify-center items-center overflow-hidden">
-          <TouchableOpacity 
-            className={`flex-1 mx-1 h-8 rounded-md flex justify-center items-center ${postType === 'post' ? 'bg-stone-400' : 'bg-gray-100'}`}
-            onPress={() => setPostType('post')}
-          >
-            <Text className={`text-center text-xs ${postType === 'post' ? 'text-white font-semibold' : 'text-black font-normal'}`}>
-              Photo/Video
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            className={`flex-1 mx-1 h-8 rounded-md flex justify-center items-center ${postType === 'thread' ? 'bg-stone-400' : 'bg-gray-100'}`}
-            onPress={() => setPostType('thread')}
-          >
-            <Text className={`text-center text-xs ${postType === 'thread' ? 'text-white font-semibold' : 'text-black font-normal'}`}>
-              Thread
-            </Text>
-          </TouchableOpacity>
-        </View>
-        
-        <View className="mt-5 bg-white p-4 rounded-lg shadow">
-          {/* Content Input */}
-          <TextInput
-            className="border border-gray-300 rounded-lg p-3 mb-3"
-            placeholder={postType === 'post' ? "Write a caption..." : "What's on your mind?"}
-            value={content}
-            onChangeText={setContent}
-            multiline
-            maxLength={postType === 'post' ? 500 : 800}
-          />
-          
-          {/* Character Count */}
-          <Text className="text-right text-gray-500 mb-2">
-            {content.length}/{postType === 'post' ? 500 : 800}
-          </Text>
+      <View className="flex-1 bg-[#DCDCDE] rounded-[30px]">
+        <Header height={120} showBackButton={true} onBackPress={() => navigation.goBack()} />
 
-          {/* Hashtags */}
-          <HashtagInput
-            selectedHashtags={selectedHashtags}
-            onHashtagsChange={setSelectedHashtags}
-            maxHashtags={5}
-          />
-
-          {/* Media Upload (only for posts) */}
-          {postType === 'post' && (
-            <>
-              <View className="flex-row flex-wrap mb-3">
-                {selectedImages.map((image, index) => (
-                  <View key={index} className="w-20 h-20 m-1 bg-gray-200 rounded">
-                    <Image
-                      source={{ uri: image.uri }}
-                      className="w-full h-full rounded"
-                      resizeMode="cover"
-                    />
-                  </View>
-                ))}
-              </View>
-
+        <ScrollView className="flex-1">
+          <View className="flex-1 p-5">
+            {/* Type Selector */}
+            <View className="w-full h-10 mb-5 rounded-lg flex-row justify-center items-center overflow-hidden bg-white/10 shadow">
               <TouchableOpacity
-                className="bg-gray-200 p-3 rounded-lg mb-3"
-                onPress={handleImageSelection}
+                className={`flex-1 mx-1 h-8 rounded-md flex justify-center items-center ${postType === 'post' ? 'bg-stone-400' : 'bg-gray-100'}`}
+                onPress={() => setPostType('post')}
               >
-                <Text className="text-center">Add Images</Text>
+                <Text className={`text-center text-xs ${postType === 'post' ? 'text-white font-semibold' : 'text-black font-normal'}`}>
+                  Photo/Video
+                </Text>
               </TouchableOpacity>
-            </>
-          )}
-          
-          {/* Submit Button */}
-          <TouchableOpacity
-            className="bg-[#E4CAC7] p-3 rounded-lg"
-            onPress={handleCreatePost}
-            disabled={createPostMutation.isPending || uploadMediaMutation.isPending}
-          >
-            <Text className="text-black text-center font-bold">
-              {createPostMutation.isPending ? 'Creating...' : `Create ${postType === 'post' ? 'Post' : 'Thread'}`}
-            </Text>
-          </TouchableOpacity>
-        </View>
+              <TouchableOpacity
+                className={`flex-1 mx-1 h-8 rounded-md flex justify-center items-center ${postType === 'thread' ? 'bg-stone-400' : 'bg-gray-100'}`}
+                onPress={() => setPostType('thread')}
+              >
+                <Text className={`text-center text-xs ${postType === 'thread' ? 'text-white font-semibold' : 'text-black font-normal'}`}>
+                  Thread
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Content Input */}
+            <View className="mt-2 bg-white p-4 rounded-lg shadow">
+              <TextInput
+                className="border border-gray-300 rounded-lg p-3 mb-3 bg-white"
+                placeholder={postType === 'post' ? "Write a caption..." : "What's on your mind?"}
+                value={content}
+                onChangeText={setContent}
+                multiline
+                maxLength={postType === 'post' ? 500 : 800}
+              />
+              <Text className="text-right text-gray-500 mb-2">
+                {content.length}/{postType === 'post' ? 500 : 800}
+              </Text>
+
+              {/* Hashtags */}
+              <HashtagInput
+                selectedHashtags={selectedHashtags}
+                onHashtagsChange={setSelectedHashtags}
+                maxHashtags={5}
+              />
+
+              {/* Image grid (only for posts) */}
+              {postType === 'post' && selectedImages.length > 0 && (
+                <View className="my-3">
+                  <DraggableFlatList
+                    data={selectedImages}
+                    horizontal
+                    onDragEnd={({ data }) => setSelectedImages(data)}
+                    keyExtractor={(item, index) => item.uri + index}
+                    renderItem={renderImageItem}
+                    contentContainerStyle={{ paddingVertical: 8, paddingHorizontal: 4 }}
+                    showsHorizontalScrollIndicator={false}
+                  />
+                </View>
+              )}
+
+              {/* Add Images Button (only for posts) */}
+              {postType === 'post' && (
+                <TouchableOpacity
+                  className="bg-stone-300 rounded-2xl shadow px-6 py-3 mb-4 mt-2"
+                  onPress={handleImageSelection}
+                >
+                  <Text className="text-center text-black font-bold text-base">Add Images</Text>
+                </TouchableOpacity>
+              )}
+
+              {/* Post Button */}
+              <TouchableOpacity
+                className="bg-stone-300 rounded-[30px] shadow px-6 py-3 mt-4"
+                onPress={handleCreatePost}
+                disabled={createPostMutation.isPending || uploadMediaMutation.isPending}
+              >
+                <Text className="text-black text-center font-bold text-base">
+                  {createPostMutation.isPending ? 'Creating...' : `Post`}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
       </View>
-    </ScrollView>
     </PhoneVerificationCheck>
   );
 }

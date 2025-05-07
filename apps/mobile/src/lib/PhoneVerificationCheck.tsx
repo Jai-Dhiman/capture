@@ -15,20 +15,17 @@ interface PhoneVerificationCheckProps {
 export function PhoneVerificationCheck({ children, message }: PhoneVerificationCheckProps) {
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const { user } = useAuthStore();
-  
+
   const isPhoneVerified = !!user?.phone_confirmed_at;
-  
+
   if (isPhoneVerified) {
     return <>{children}</>;
   }
-  
+
   return (
-    <View className="flex-1 p-5">
-      <Header 
-        showBackButton={true} 
-        onBackPress={() => navigation.goBack()} 
-      />
-      
+    <View className="flex-1 bg-[#DCDCDE] rounded-[30px]">
+      <Header height={120} showBackButton={true} onBackPress={() => navigation.goBack()} />
+
       <View className="flex-1 justify-center items-center">
         <Text className="text-lg text-center mb-4">
           Phone Verification Check
@@ -38,8 +35,8 @@ export function PhoneVerificationCheck({ children, message }: PhoneVerificationC
         </Text>
         <TouchableOpacity
           className="bg-[#E4CAC7] p-3 rounded-lg mb-3"
-          onPress={() => navigation.navigate('Settings', { 
-            screen: 'VerifyPhone' 
+          onPress={() => navigation.navigate('Settings', {
+            screen: 'VerifyPhone'
           })}
         >
           <Text className="text-black text-center font-bold">

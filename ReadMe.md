@@ -120,7 +120,7 @@ This project employs modern development practices including:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/capture.git
+git clone https://github.com/Jai-Dhiman/capture.git
 cd capture
 
 # Install dependencies

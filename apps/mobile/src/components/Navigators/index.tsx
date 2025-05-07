@@ -7,17 +7,16 @@ import { RootStackParamList } from './types/navigation';
 import AppNavigator from './AppNavigator';
 import AuthStack from './AuthNavigator';
 import CreateProfile from '../../screens/auth/CreateProfile';
-import VerifyPhoneNumber from '../../screens/settings/VerifyPhoneNumber'
-import SplashScreen from '../../screens/SplashScreen';
 import { authService } from '../../services/authService';
 import { useOnboardingStore } from '../../stores/onboardingStore';
+import ImageEditScreen from '../../screens/ImageEditScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export const linking: LinkingOptions<RootStackParamList> = {
   prefixes: [
-    Linking.createURL('/'), 
-    'captureapp://', 
+    Linking.createURL('/'),
+    'captureapp://',
     'https://captureapp.org',
     'http://localhost:8081',
     'exp://192.168.1.64:8081'
@@ -53,11 +52,12 @@ export const linking: LinkingOptions<RootStackParamList> = {
         }
       },
       CreateProfile: 'create-profile',
+      ImageEditScreen: 'image-edit',
     }
   },
   async getInitialURL() {
     const url = await Linking.getInitialURL();
-    
+
     if (url) {
       try {
         const screenName = await authService.handleAuthCallback(url);
@@ -68,7 +68,7 @@ export const linking: LinkingOptions<RootStackParamList> = {
         console.error("Failed to handle deep link:", error);
       }
     }
-    
+
     return url;
   },
 };
@@ -77,7 +77,7 @@ export function MainNavigator() {
   const { stage: authStage } = useAuthStore();
   const { currentStep } = useOnboardingStore();
   const [isSplashComplete, setIsSplashComplete] = useState(false);
-  
+
   useEffect(() => {
     const checkForDeepLink = async () => {
       const url = await Linking.getInitialURL();
@@ -85,7 +85,7 @@ export function MainNavigator() {
         setIsSplashComplete(true);
       }
     };
-    
+
     checkForDeepLink();
   }, []);
 
@@ -94,14 +94,15 @@ export function MainNavigator() {
       {authStage === 'unauthenticated' && (
         <Stack.Screen name="Auth" component={AuthStack} />
       )}
-      
+
       {authStage === 'profile-creation' && (
         <Stack.Screen name="CreateProfile" component={CreateProfile} />
       )}
-      
+
       {authStage === 'complete' && (
         <Stack.Screen name="App" component={AppNavigator} />
       )}
+      <Stack.Screen name="ImageEditScreen" component={ImageEditScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }

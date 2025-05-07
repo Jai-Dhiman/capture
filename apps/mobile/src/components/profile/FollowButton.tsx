@@ -14,14 +14,14 @@ interface FollowButtonProps {
 export const FollowButton = ({ userId, isFollowing: initialIsFollowing, className = '' }: FollowButtonProps) => {
   const [isFollowing, setIsFollowing] = useState<boolean | null>(initialIsFollowing)
   const queryClient = useQueryClient()
-  
+
   useEffect(() => {
     if (initialIsFollowing !== null && initialIsFollowing !== isFollowing) {
       setIsFollowing(initialIsFollowing)
-      
+
       const jotaiStore = queryClient.getQueryData(["jotai"]) as FollowingState | undefined
       const followingMap = { ...(jotaiStore?.followingMap || {}) }
-      
+
       if (followingMap[userId] !== initialIsFollowing) {
         followingMap[userId] = initialIsFollowing
         queryClient.setQueryData<FollowingState>(["jotai"], {
@@ -29,7 +29,7 @@ export const FollowButton = ({ userId, isFollowing: initialIsFollowing, classNam
         })
       }
     }
-  }, [initialIsFollowing, userId]) 
+  }, [initialIsFollowing, userId])
 
 
   const followMutation = useMutation({
@@ -77,7 +77,7 @@ export const FollowButton = ({ userId, isFollowing: initialIsFollowing, classNam
     },
     onSuccess: () => {
       setIsFollowing(true)
-      
+
       queryClient.invalidateQueries({ queryKey: ["profile", userId] })
       queryClient.invalidateQueries({ queryKey: ["followers"] })
       queryClient.invalidateQueries({ queryKey: ["following"] })
@@ -123,7 +123,7 @@ export const FollowButton = ({ userId, isFollowing: initialIsFollowing, classNam
     },
     onSuccess: () => {
       setIsFollowing(false)
-      
+
       queryClient.invalidateQueries({ queryKey: ["profile", userId] })
       queryClient.invalidateQueries({ queryKey: ["followers"] })
       queryClient.invalidateQueries({ queryKey: ["following"] })
@@ -131,7 +131,7 @@ export const FollowButton = ({ userId, isFollowing: initialIsFollowing, classNam
   })
 
   const isPending = followMutation.isPending || unfollowMutation.isPending
-  
+
   const handlePress = () => {
     if (isFollowing) {
       unfollowMutation.mutate()
@@ -139,7 +139,7 @@ export const FollowButton = ({ userId, isFollowing: initialIsFollowing, classNam
       followMutation.mutate()
     }
   }
-  
+
   if (isFollowing === null) {
     return (
       <TouchableOpacity
@@ -150,17 +150,17 @@ export const FollowButton = ({ userId, isFollowing: initialIsFollowing, classNam
       </TouchableOpacity>
     )
   }
-  
+
   return (
     <TouchableOpacity
-      className={`py-2 px-4 ${isFollowing ? 'bg-gray-200' : 'bg-[#E4CAC7]'} ${className}`}
+      className={`py-1 px-4 ${isFollowing ? 'bg-gray-200' : 'bg-[#E4CAC7]'} ${className}`}
       onPress={handlePress}
       disabled={isPending}
     >
       {isPending ? (
         <ActivityIndicator size="small" color="#000" />
       ) : (
-        <Text className="text-center font-semibold">
+        <Text className="text-center font-semibold text-xs">
           {isFollowing ? 'Unfollow' : 'Follow'}
         </Text>
       )}
