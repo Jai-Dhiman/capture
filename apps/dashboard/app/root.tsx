@@ -6,6 +6,7 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
+import { ClerkAppProvider } from "./components/clerk-provider";
 
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -23,6 +24,28 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
+// Theme initialization script to avoid FOUC (Flash of Unstyled Content)
+const themeScript = `
+  (function() {
+    function getThemePreference() {
+      const storedTheme = localStorage.getItem('theme');
+      if (storedTheme) return storedTheme;
+      
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      return prefersDark ? 'dark' : 'light';
+    }
+    
+    const theme = getThemePreference();
+    const root = document.documentElement;
+    
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+  })();
+`;
+
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
@@ -31,6 +54,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
+        {/* Execute the theme script inline before page renders to prevent flash */}
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>
         {children}
@@ -42,7 +67,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  return (
+    <ClerkAppProvider>
+      <Outlet />
+    </ClerkAppProvider>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
