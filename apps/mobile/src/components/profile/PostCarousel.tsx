@@ -33,14 +33,17 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
   const calculateMediaHeight = () => {
     const headerHeight = 50;
     const footerHeight = 80;
-    const paginationHeight = 20;
-    const topMargin = 4;
+    const paginationHeight = 30;
+    const topMargin = 0;
     const bottomSafeArea = 40;
 
-    const availableHeight = height * 0.68;
+    const availableHeight = Math.min(height * 0.65, 580);
+
+    const adaptiveRatio = height > 800 ? 0.55 : 0.5;
+
     return Math.min(
       availableHeight - headerHeight - footerHeight - paginationHeight - topMargin - bottomSafeArea,
-      height * 0.525
+      height * adaptiveRatio
     );
   };
 
@@ -50,8 +53,8 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
     const formattedDate = new Date(post.createdAt).toLocaleDateString();
 
     return (
-      <View className="bg-[#DCDCDE] rounded-lg overflow-hidden mb-2 h-full mx-0">
-        <View className="flex-row justify-between items-center p-2">
+      <View className="bg-[#DCDCDE] rounded-lg overflow-hidden mb-0 h-full mx-0">
+        <View className="flex-row justify-between items-center p-1 pt-2 pb-3">
           <View className="flex-1" />
 
           <TouchableOpacity
@@ -62,7 +65,7 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
           </TouchableOpacity>
         </View>
 
-        <View style={{ width: '100%', height: mediaHeight }}>
+        <View style={{ width: '100%', height: mediaHeight, marginTop: -12 }}>
           {post.media && post.media.length > 0 ? (
             <PostMediaGallery
               mediaItems={post.media}
@@ -75,8 +78,8 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
           )}
         </View>
 
-        <View className="p-4">
-          <View className="flex-row justify-end mb-2">
+        <View className="p-3">
+          <View className="flex-row justify-end mb-1">
             <Text className="text-center text-black text-[10px] font-light leading-3">
               {formattedDate}
             </Text>
@@ -112,42 +115,50 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
   };
 
   return (
-    <View className="flex-1">
-      <Carousel
-        loop={false}
-        width={ITEM_WIDTH}
-        height={height * 0.70}
-        data={posts}
-        renderItem={renderItem}
-        defaultIndex={initialIndex}
-        onSnapToItem={(index) => setActiveIndex(index)}
-        mode="parallax"
-        modeConfig={{
-          parallaxScrollingScale: 0.92,
-          parallaxScrollingOffset: 40,
-        }}
-        snapEnabled={true}
-        overscrollEnabled={false}
-        windowSize={1}
-      />
+    <View className="flex-1 relative pt-0">
+      <View className="flex-1" style={{ marginBottom: 24 }}>
+        <Carousel
+          loop={false}
+          width={ITEM_WIDTH}
+          height={Math.min(height * (height <= 812 ? 0.55 : 0.67), height <= 812 ? 430 : 600)}
+          data={posts}
+          renderItem={renderItem}
+          defaultIndex={initialIndex}
+          onSnapToItem={(index) => setActiveIndex(index)}
+          mode="parallax"
+          modeConfig={{
+            parallaxScrollingScale: 0.94,
+            parallaxScrollingOffset: 35,
+          }}
+          snapEnabled={true}
+          overscrollEnabled={false}
+          windowSize={1}
+        />
+      </View>
 
       <View
-        className="flex-row justify-center"
+        className="w-full items-center justify-center bg-transparent"
         style={{
-          zIndex: 3,
-          position: 'relative',
-          bottom: 20,
+          position: 'absolute',
+          bottom: -10,
+          left: 0,
+          right: 0,
+          paddingBottom: 16,
+          paddingTop: 12,
+          height: 40
         }}
       >
-        {posts.map((_, index) => (
-          <View
-            key={index}
-            className={`mx-1 rounded-full ${index === activeIndex
-              ? 'w-4 h-2 bg-[#E4CAC7]'
-              : 'w-2 h-2 bg-gray-400'
-              }`}
-          />
-        ))}
+        <View className="flex-row justify-center">
+          {posts.map((_, index) => (
+            <View
+              key={index}
+              className={`mx-1 rounded-full ${index === activeIndex
+                ? 'w-4 h-2 bg-[#E4CAC7]'
+                : 'w-2 h-2 bg-gray-400'
+                }`}
+            />
+          ))}
+        </View>
       </View>
     </View>
   );

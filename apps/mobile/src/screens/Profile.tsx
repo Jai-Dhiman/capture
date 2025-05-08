@@ -33,6 +33,11 @@ export default function Profile() {
   const userId = route.params?.userId || user?.id;
   const isOwnProfile = userId === user?.id;
 
+  // Calculate tab bar position (profile header + tab bar height)
+  const profileHeaderHeight = 280; // Estimated header height
+  const tabBarHeight = 56; // Standard tab bar height
+  const tabBarBottomPosition = profileHeaderHeight + tabBarHeight;
+
   const [showFollowers, setShowFollowers] = useState(false);
   const [showPostCarousel, setShowPostCarousel] = useState(false);
   const [initialPostIndex, setInitialPostIndex] = useState(0);
@@ -271,9 +276,10 @@ export default function Profile() {
 
       {carouselPosts.length > 0 && showPostCarousel && (
         <View
-          className="absolute top-0 left-0 right-0 bottom-0 bg-[#DCDCDE]"
+          className="absolute left-0 right-0 bg-[#DCDCDE]"
           style={{
-            top: height * 0.345,
+            top: tabBarBottomPosition - 20,
+            height: height - tabBarBottomPosition - 70,
             zIndex: 1
           }}
         >
