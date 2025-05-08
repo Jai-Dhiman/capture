@@ -27,7 +27,7 @@ export default function ForgotPasswordScreen({ navigation }: Props) {
     },
     onSubmit: async ({ value }) => {
       if (!value.email) {
-        showAlert('Please enter your email address', {type: 'warning'});
+        showAlert('Please enter your email address', { type: 'warning' });
         return;
       }
 
@@ -37,7 +37,7 @@ export default function ForgotPasswordScreen({ navigation }: Props) {
         });
 
         if (error) throw error;
-        
+
         setResetEmailSent(true);
       } catch (error) {
         const formattedError = errorService.handleAuthError(error);
@@ -56,13 +56,14 @@ export default function ForgotPasswordScreen({ navigation }: Props) {
             style={{ width: '100%', height: '100%', position: 'absolute' }}
             resizeMode="cover"
           />
-          <View className="flex-1 px-[26px]">
-            <Header 
-              showBackButton={true}
-              onBackPress={() => navigation.goBack()}
-            />
-            <View className="h-[1px] bg-black/10 mb-[30px]" />
+          <Header
+            showBackButton={true}
+            onBackPress={() => navigation.goBack()}
+            showBackground={true}
+          />
+          <View className="h-[1px] bg-black/10 mb-[30px]" />
 
+          <View className="flex-1 px-[26px]">
             {resetEmailSent ? (
               <View className="items-center justify-center mt-10">
                 <Text className="text-2xl font-roboto font-bold text-center mb-6">
@@ -104,7 +105,7 @@ export default function ForgotPasswordScreen({ navigation }: Props) {
                   {(field) => (
                     <View className="mb-[29px]">
                       <Text className="text-base font-roboto mb-[6px]">Email</Text>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         activeOpacity={1}
                         onPress={() => emailInputRef.current?.focus()}
                         className={`bg-white h-[56px] rounded-[16px] shadow-md flex-row items-center px-[9px] ${isEmailFocused ? 'border-2 border-[#E4CAC7]' : ''}`}

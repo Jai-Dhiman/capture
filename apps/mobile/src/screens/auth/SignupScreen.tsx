@@ -25,15 +25,17 @@ export default function SignupScreen({ navigation }: Props) {
           style={{ width: '100%', height: '100%', position: 'absolute' }}
           resizeMode="cover"
         />
-        
-        <Header 
+
+        <Header
           showBackButton={true}
           onBackPress={() => navigation.goBack()}
+          showBackground={true}
+          height={140}
         />
         <View className="px-6 mt-[120px]">
 
           {/* Email signup button */}
-          <TouchableOpacity 
+          <TouchableOpacity
             className="bg-white h-[56px] rounded-[30px] shadow-md flex-row items-center justify-center mb-[23px]"
             onPress={() => navigation.navigate('EmailSignup')}
           >
@@ -42,11 +44,11 @@ export default function SignupScreen({ navigation }: Props) {
               Sign Up with Email
             </Text>
           </TouchableOpacity>
-          
+
           <OAuth />
-          
+
           {/* Apple signup button (static for now) */}
-          <TouchableOpacity 
+          <TouchableOpacity
             className="bg-white h-[56px] rounded-[30px] shadow-md flex-row items-center justify-center mb-[23px]"
           >
             <AppleIcon width={24} height={24} style={{ marginRight: 16 }} />
@@ -54,17 +56,17 @@ export default function SignupScreen({ navigation }: Props) {
               Sign Up with Apple
             </Text>
           </TouchableOpacity>
-          
+
           {/* Business account button */}
-          <TouchableOpacity 
+          {/* <TouchableOpacity
             className="bg-[#827B85] h-[56px] rounded-[30px] shadow-md flex-row items-center justify-center"
           >
             <Text className="text-base font-bold font-roboto text-white">
               Create Business Account
             </Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
-        
+
       </View>
     </View>
   );

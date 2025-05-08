@@ -120,7 +120,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
                     onPress={() => emailInputRef.current?.focus()}
                     className="h-[56px] bg-white rounded-[16px] w-full"
                   >
-                    <View className="w-[56px] h-[56px] absolute left-0 top-0 bg-white rounded-tl-[16px] rounded-bl-[16px] border-[0.5px] border-stone-300" />
+                    <View className="w-[56px] h-[56px] absolute left-0 top-0 bg-white rounded-tl-[16px] rounded-bl-[16px]" />
                     <View className="absolute left-[12px] top-[12px]">
                       <EmailIcon width={30} height={30} />
                     </View>
@@ -159,7 +159,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
                       onPress={() => passwordInputRef.current?.focus()}
                       className="h-[56px] bg-white rounded-[16px] w-full"
                     >
-                      <View className="w-[56px] h-[56px] absolute left-0 top-0 bg-white rounded-tl-[16px] rounded-bl-[16px] border-[0.5px] border-stone-300" />
+                      <View className="w-[56px] h-[56px] absolute left-0 top-0 bg-white rounded-tl-[16px] rounded-bl-[16px]" />
                       <View className="absolute left-[12px] top-[12px]">
                         <LockIcon width={30} height={30} />
                       </View>
@@ -213,7 +213,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
                       onPress={() => confirmPasswordInputRef.current?.focus()}
                       className="h-[56px] bg-white rounded-[16px] w-full"
                     >
-                      <View className="w-[56px] h-[56px] absolute left-0 top-0 bg-white rounded-tl-[16px] rounded-bl-[16px] border-[0.5px] border-stone-300" />
+                      <View className="w-[56px] h-[56px] absolute left-0 top-0 bg-white rounded-tl-[16px] rounded-bl-[16px]" />
                       <View className="absolute left-[12px] top-[12px]">
                         <LockIcon width={30} height={30} />
                       </View>

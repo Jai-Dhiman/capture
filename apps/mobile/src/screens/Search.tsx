@@ -9,7 +9,7 @@ import { ProfileImage } from '../components/media/ProfileImage';
 import { useSearchHashtags } from '../hooks/useHashtags';
 import { useAuthStore } from '../stores/authStore';
 import { SkeletonLoader, SkeletonElement } from '../components/ui/SkeletonLoader';
-import BackIcon from '../../assets/icons/BackIcon.svg';
+import CustomBackIcon from '../../assets/icons/CustomBackIcon.svg';
 import Background1 from '../../assets/Background1.svg';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
@@ -239,7 +239,7 @@ export default function UserSearch() {
           style={{ boxShadow: "0 4px 6px rgba(0,0,0,0.2)" }}
           onPress={() => navigation.goBack()}
         >
-          <BackIcon width={16} height={16} />
+          <CustomBackIcon width={20} height={20} />
         </TouchableOpacity>
         <View className="flex-1 flex-row items-center bg-white/50 rounded-lg shadow-sm border border-gray-300 py-1">
           <Ionicons name="search" size={18} color="gray" className="absolute left-3 z-10" />

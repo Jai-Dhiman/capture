@@ -11,7 +11,6 @@ import { useSavedPosts, useSavePost, useUnsavePost } from '../hooks/useSavesPost
 import { FollowList } from '../components/profile/FollowList';
 import { PostMenu } from '../components/post/PostMenu';
 import { useBlockUser } from '../hooks/useBlocking';
-import Header from '../components/ui/Header';
 import { useAlert } from '../lib/AlertContext';
 import { useAtom } from 'jotai';
 import { commentDrawerOpenAtom, currentPostIdAtom } from '../atoms/commentAtoms';

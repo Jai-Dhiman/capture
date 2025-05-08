@@ -1,7 +1,7 @@
 import type React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import BackIcon from '../../../assets/icons/BackIcon.svg';
-import MenuDots from '../../../assets/icons/MenuDots.svg';
+import BackIcon from '../../../assets/icons/CustomBackIcon.svg';
+import MenuDots from '../../../assets/icons/CustomMenuIcon.svg';
 import { ProfileImage } from '../media/ProfileImage';
 import { FollowButton } from './FollowButton';
 import { SkeletonElement } from '../ui/SkeletonLoader';
@@ -40,7 +40,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               style={{ boxShadow: "0 4px 6px rgba(0,0,0,0.2)" }}
               onPress={onBackPress}
             >
-              <BackIcon width={20} height={20} />
+              <BackIcon width={28} height={28} />
             </TouchableOpacity>
           ) : (
             <View className="w-10 h-10" />

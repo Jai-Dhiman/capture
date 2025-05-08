@@ -11,7 +11,7 @@ import BlockIcon from '../../../assets/icons/BlockIcon.svg';
 import AlgorithmIcon from '../../../assets/icons/AlgorithmIcon.svg';
 import LockIcon2 from '../../../assets/icons/LockIcon2.svg';
 import EmailIcon from '../../../assets/icons/EmailIcon.svg';
-import BackIcon from '../../../assets/icons/BackIcon.svg';
+import BackIcon from '../../../assets/icons/CustomBackIcon.svg';
 import NotificationIcon from '../../../assets/icons/NotificationIcon.svg';
 import CustomizeIcon from '../../../assets/icons/CustomizeIcon.svg';
 import FontBookIcon from '../../../assets/icons/FontBookIcon.svg';

@@ -3,8 +3,8 @@ import { useState } from 'react';
 import { View, Text, TouchableOpacity, Pressable, Modal, Image, ImageBackground } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../../stores/authStore';
-import BackIcon from '../../../assets/icons/BackIcon.svg';
-import MenuDots from '../../../assets/icons/MenuDots.svg';
+import CustomBackIcon from '../../../assets/icons/CustomBackIcon.svg';
+import CustomMenuIcon from '../../../assets/icons/CustomMenuIcon.svg';
 import ProfileIcon from '../../../assets/icons/ProfileIcon.svg';
 import PlusIcon from '../../../assets/icons/PlusIcon.svg';
 import SearchIcon from '../../../assets/icons/SearchIcon.svg';
@@ -77,11 +77,10 @@ const Header: React.FC<HeaderProps> = ({
         )}
         <View className="absolute left-0 right-0 bottom-8 flex-row items-center justify-between px-8">
           {showBackButton ? (
-            <TouchableOpacity className="w-10 h-10 bg-[#DFD2CD] rounded-full drop-shadow-md flex justify-center items-center"
-              style={{ boxShadow: "0 4px 6px rgba(0,0,0,0.2)" }}
+            <TouchableOpacity className="w-10 h-10 bg-[#DFD2CD] rounded-full flex justify-center items-center"
               onPress={onBackPress}
             >
-              <BackIcon width={20} height={20} />
+              <CustomBackIcon width={30} height={30} />
             </TouchableOpacity>
           ) : (
             <View className="w-10 h-10" />
@@ -89,11 +88,10 @@ const Header: React.FC<HeaderProps> = ({
           <Text className="text-5xl font-light text-center flex-1">Capture</Text>
           {showMenuButton ? (
             <TouchableOpacity
-              className="w-10 h-10 bg-[#DFD2CD] rounded-full drop-shadow-md flex justify-center items-center"
-              style={{ boxShadow: "0 4px 6px rgba(0,0,0,0.2)" }}
+              className="w-10 h-10 bg-[#DFD2CD] rounded-full flex justify-center items-center"
               onPress={toggleMenu}
             >
-              <MenuDots width={24} height={24} />
+              <CustomMenuIcon width={30} height={30} />
             </TouchableOpacity>
           ) : (
             <View className="w-10 h-10" />
