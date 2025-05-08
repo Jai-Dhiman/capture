@@ -140,73 +140,62 @@ export default function Profile() {
 
   if (profileLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#fff' }}>
-        <Header />
-        <View style={{ flex: 1 }}>
-          <View className="flex-1 bg-[#DCDCDE]">
-            <StatusBar barStyle="dark-content" />
-            <View className="flex-1">
-              <View className="px-6 pt-4">
-                <View className="flex-row mb-6">
-                  <View className="w-24 h-24 rounded-full overflow-hidden shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]">
-                    <SkeletonElement width="100%" height="100%" radius="round" />
-                  </View>
-                  <View className="ml-4 flex-1 justify-center">
-                    <View className="flex-row items-center">
-                      <SkeletonElement width={80} height={20} radius={4} />
-                      <View className="ml-2">
-                        <SkeletonElement width={40} height={12} radius={4} />
-                      </View>
-                    </View>
-                    <View className="mt-1">
-                      <SkeletonElement width="90%" height={14} radius={4} />
-                      <SkeletonElement width="80%" height={14} radius={4} />
-                    </View>
-                    <View className="flex-row mt-4">
-                      <View className="mr-2">
-                        <SkeletonElement width={80} height={24} radius={30} />
-                      </View>
-                      <SkeletonElement width={64} height={24} radius={30} />
-                    </View>
-                  </View>
+      <View style={{ flex: 1, backgroundColor: '#dcdcde' }}>
+        <ProfileHeader
+          isLoading
+          showBackButton
+          onBackPress={() => navigation.goBack()}
+          showMenuButton
+          onMenuPress={() => { }}
+        />
+        <StatusBar barStyle="dark-content" />
+        <View style={{ flex: 1, backgroundColor: '#DCDCDE' }}>
+          {/* Skeleton Tab Bar */}
+          <View
+            className="w-full h-12 bg-[#DCDCDE]"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.15,
+              shadowRadius: 6,
+              elevation: 8,
+              zIndex: 10,
+              position: 'relative',
+              marginBottom: spacing,
+            }}
+          >
+            <View className="flex-row justify-between items-end h-full px-4 pb-2">
+              {[0, 1, 2].map((_, idx) => (
+                <View key={idx} className="flex-1 items-center">
+                  <SkeletonElement width={20} height={20} radius={4} />
                 </View>
-              </View>
+              ))}
+            </View>
+          </View>
 
-              <View className="w-full h-16 bg-[#DCDCDE]"
-                style={{
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.15,
-                  shadowRadius: 6,
-                  elevation: 8,
-                  zIndex: 10,
-                  position: 'relative',
-                  marginBottom: 8,
-                }}>
-                <View className="flex-row justify-evenly items-center h-full">
-                  {[0, 1, 2].map((_, index) => (
-                    <View key={index} className="items-center">
-                      <SkeletonElement width={28} height={28} radius={8} />
-                    </View>
-                  ))}
-                </View>
-              </View>
-
-              <View className="flex-1 px-4">
-                <View className="flex-row flex-wrap justify-between">
-                  {Array(9).fill(0).map((_, index) => (
-                    <View key={index}
-                      style={{
-                        width: itemSize,
-                        height: itemSize,
-                        marginBottom: spacing
-                      }}
-                    >
-                      <SkeletonElement width="100%" height="100%" radius={10} />
-                    </View>
-                  ))}
-                </View>
-              </View>
+          {/* Skeleton Posts Grid */}
+          <View
+            style={{
+              flex: 1,
+              paddingHorizontal: containerPadding,
+              paddingTop: spacing,
+            }}
+          >
+            <View className="flex-row flex-wrap justify-between">
+              {Array(9)
+                .fill(0)
+                .map((_, index) => (
+                  <View
+                    key={index}
+                    style={{
+                      width: itemSize,
+                      height: itemSize,
+                      marginBottom: spacing,
+                    }}
+                  >
+                    <SkeletonElement width="100%" height="100%" radius={10} />
+                  </View>
+                ))}
             </View>
           </View>
         </View>

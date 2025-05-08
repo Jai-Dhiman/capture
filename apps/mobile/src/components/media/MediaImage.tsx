@@ -11,12 +11,15 @@ interface MediaImageProps {
   style?: any;
   expirySeconds?: number;
   priority?: boolean;
+  circle?: boolean;
 }
 
 const MediaImageComponent = ({
   media,
   style = {},
-  expirySeconds = 1800
+  expirySeconds = 1800,
+  priority = false,
+  circle = false
 }: MediaImageProps) => {
   const queryClient = useQueryClient();
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -42,9 +45,11 @@ const MediaImageComponent = ({
   }, [imageUrl, media, expirySeconds, isStale, queryClient]);
 
   if (isLoading) {
+    const containerClass = circle ? 'bg-gray-200 flex-1 rounded-full' : 'bg-gray-200 flex-1 rounded-lg';
+    const radiusValue = circle ? 'round' : 8;
     return (
-      <View className="bg-gray-200 flex-1 rounded-lg">
-        <SkeletonElement width="100%" height="100%" radius={8} />
+      <View className={containerClass}>
+        <SkeletonElement width="100%" height="100%" radius={radiusValue} />
       </View>
     );
   }
@@ -100,8 +105,11 @@ const MediaImageComponent = ({
       >
         <View style={{ flex: 1 }}>
           {!imageLoaded && (
-            <View className="absolute top-0 left-0 right-0 bottom-0 bg-gray-200 flex-1 rounded-lg">
-              <SkeletonElement width="100%" height="100%" radius={8} />
+            <View
+              className={`absolute top-0 left-0 right-0 bottom-0 bg-gray-200 flex-1 ${circle ? 'rounded-full' : 'rounded-lg'
+                }`}
+            >
+              <SkeletonElement width="100%" height="100%" radius={circle ? 'round' : 8} />
             </View>
           )}
           <Image

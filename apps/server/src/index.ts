@@ -17,6 +17,7 @@ import seedRouter from "routes/seed";
 import interestsRouter from "routes/interests";
 import { handlePostQueue, handleUserEmbeddingQueue } from "routes/queues";
 import type { MessageBatch, ExecutionContext } from "@cloudflare/workers-types";
+import deeplinkRouter from "routes/deeplink";
 
 const app = new Hono<{
   Bindings: Bindings;
@@ -83,6 +84,8 @@ app.use("/api/*", authMiddleware);
 app.route("/api/media", mediaRouter);
 app.route("/api/profile", profileRouter);
 app.route("/api/interests", interestsRouter);
+app.route("/api/deeplink", deeplinkRouter);
+
 app.onError(errorHandler);
 
 export default {

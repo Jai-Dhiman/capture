@@ -26,5 +26,5 @@ export const ProfileImage = ({ cloudflareId, style = {}, expirySeconds = 1800, i
     height: '100%'
   };
 
-  return <MediaImage media={cloudflareId} style={profileStyle} expirySeconds={expirySeconds} priority={true} />;
+  return <MediaImage media={cloudflareId} style={profileStyle} expirySeconds={expirySeconds} priority={true} circle />;
 };

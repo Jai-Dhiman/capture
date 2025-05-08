@@ -154,7 +154,7 @@ importers:
         specifier: 1.7.3
         version: 1.7.3(@babel/runtime@7.27.1)(react-native@0.76.9(@babel/core@7.27.1)(@babel/preset-env@7.22.20(@babel/core@7.27.1))(@types/react@18.3.20)(react@18.3.1))(react@18.3.1)
       '@shopify/react-native-skia':
-        specifier: ^1.12.4
+        specifier: ^1.5.0
         version: 1.12.4(react-native-reanimated@3.16.7(@babel/core@7.27.1)(react-native@0.76.9(@babel/core@7.27.1)(@babel/preset-env@7.22.20(@babel/core@7.27.1))(@types/react@18.3.20)(react@18.3.1))(react@18.3.1))(react-native@0.76.9(@babel/core@7.27.1)(@babel/preset-env@7.22.20(@babel/core@7.27.1))(@types/react@18.3.20)(react@18.3.1))(react@18.3.1)
       '@supabase/supabase-js':
         specifier: ^2.48.1
@@ -180,6 +180,9 @@ importers:
       expo-auth-session:
         specifier: ~6.0.3
         version: 6.0.3(expo@52.0.46(@babel/core@7.27.1)(@babel/preset-env@7.22.20(@babel/core@7.27.1))(graphql@16.11.0)(react-native@0.76.9(@babel/core@7.27.1)(@babel/preset-env@7.22.20(@babel/core@7.27.1))(@types/react@18.3.20)(react@18.3.1))(react@18.3.1))(react-native@0.76.9(@babel/core@7.27.1)(@babel/preset-env@7.22.20(@babel/core@7.27.1))(@types/react@18.3.20)(react@18.3.1))(react@18.3.1)
+      expo-clipboard:
+        specifier: ~7.0.1
+        version: 7.0.1(expo@52.0.46(@babel/core@7.27.1)(@babel/preset-env@7.22.20(@babel/core@7.27.1))(graphql@16.11.0)(react-native@0.76.9(@babel/core@7.27.1)(@babel/preset-env@7.22.20(@babel/core@7.27.1))(@types/react@18.3.20)(react@18.3.1))(react@18.3.1))(react-native@0.76.9(@babel/core@7.27.1)(@babel/preset-env@7.22.20(@babel/core@7.27.1))(@types/react@18.3.20)(react@18.3.1))(react@18.3.1)
       expo-crypto:
         specifier: ~14.0.2
         version: 14.0.2(expo@52.0.46(@babel/core@7.27.1)(@babel/preset-env@7.22.20(@babel/core@7.27.1))(graphql@16.11.0)(react-native@0.76.9(@babel/core@7.27.1)(@babel/preset-env@7.22.20(@babel/core@7.27.1))(@types/react@18.3.20)(react@18.3.1))(react@18.3.1))
@@ -4267,6 +4270,13 @@ packages:
   expo-auth-session@6.0.3:
     resolution: {integrity: sha512-s7LmmMPiiY1NXrlcXkc4+09Hlfw9X1CpaQOCDkwfQEodG1uCYGQi/WImTnDzw5YDkWI79uC8F1mB8EIerilkDA==}
     peerDependencies:
+      react: '*'
+      react-native: '*'
+
+  expo-clipboard@7.0.1:
+    resolution: {integrity: sha512-rqYk0+WoqitPcPKxmMxSpLonX1E5Ije3LBYfnYMbH3xU5Gr8EAH9QnOWOi4BgahUPvcot6nbFEnx+DqARrmxKQ==}
+    peerDependencies:
+      expo: '*'
       react: '*'
       react-native: '*'
 
@@ -11624,6 +11634,12 @@ snapshots:
     transitivePeerDependencies:
       - expo
       - supports-color
+
+  expo-clipboard@7.0.1(expo@52.0.46(@babel/core@7.27.1)(@babel/preset-env@7.22.20(@babel/core@7.27.1))(graphql@16.11.0)(react-native@0.76.9(@babel/core@7.27.1)(@babel/preset-env@7.22.20(@babel/core@7.27.1))(@types/react@18.3.20)(react@18.3.1))(react@18.3.1))(react-native@0.76.9(@babel/core@7.27.1)(@babel/preset-env@7.22.20(@babel/core@7.27.1))(@types/react@18.3.20)(react@18.3.1))(react@18.3.1):
+    dependencies:
+      expo: 52.0.46(@babel/core@7.27.1)(@babel/preset-env@7.22.20(@babel/core@7.27.1))(graphql@16.11.0)(react-native@0.76.9(@babel/core@7.27.1)(@babel/preset-env@7.22.20(@babel/core@7.27.1))(@types/react@18.3.20)(react@18.3.1))(react@18.3.1)
+      react: 18.3.1
+      react-native: 0.76.9(@babel/core@7.27.1)(@babel/preset-env@7.22.20(@babel/core@7.27.1))(@types/react@18.3.20)(react@18.3.1)
 
   expo-constants@17.0.8(expo@52.0.46(@babel/core@7.27.1)(@babel/preset-env@7.22.20(@babel/core@7.27.1))(graphql@16.11.0)(react-native@0.76.9(@babel/core@7.27.1)(@babel/preset-env@7.22.20(@babel/core@7.27.1))(@types/react@18.3.20)(react@18.3.1))(react@18.3.1))(react-native@0.76.9(@babel/core@7.27.1)(@babel/preset-env@7.22.20(@babel/core@7.27.1))(@types/react@18.3.20)(react@18.3.1)):
     dependencies:

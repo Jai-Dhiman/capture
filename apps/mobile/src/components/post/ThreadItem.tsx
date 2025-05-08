@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, Share, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../Navigators/types/navigation';
@@ -18,6 +18,8 @@ import SavePostIcon from '../../../assets/icons/PlusIcon.svg';
 import CommentIcon from '../../../assets/icons/CommentsIcon.svg';
 import ShareIcon from '../../../assets/icons/PaperPlaneIcon.svg';
 import SettingsIcon from '../../../assets/icons/MenuDots.svg';
+import Clipboard from 'expo-clipboard';
+import { SHARE_URL } from '@env';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 
@@ -79,6 +81,19 @@ export const ThreadItem = ({ thread, isLoading = false }: ThreadItemProps) => {
     }
   };
 
+  const handleShare = async () => {
+    const link = `${SHARE_URL}/post/${thread.id}`;
+    try {
+      const result = await Share.share({ message: `${thread.content ?? ''}\n\nView more: ${link}` });
+      if (result.action === Share.sharedAction) {
+        // TODO: track share analytics
+      }
+    } catch (error) {
+      await Clipboard.setStringAsync(link);
+      Alert.alert('Link copied to clipboard');
+    }
+  };
+
   return (
     <SkeletonLoader isLoading={isLoading}>
       <View className="bg-[#DCDCDE] rounded-lg overflow-hidden mb-4 ">
@@ -125,7 +140,7 @@ export const ThreadItem = ({ thread, isLoading = false }: ThreadItemProps) => {
                 <CommentIcon width={20} height={20} />
               </TouchableOpacity>
 
-              <TouchableOpacity className="mr-10">
+              <TouchableOpacity onPress={handleShare} className="mr-10">
                 <ShareIcon width={20} height={20} />
               </TouchableOpacity>
             </View>

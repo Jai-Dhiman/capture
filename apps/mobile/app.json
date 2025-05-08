@@ -28,13 +28,15 @@
     "scheme": "capture",
     "linking": {
       "prefixes": [
+        "capture://",
         "http://localhost:8081",
         "exp://192.168.1.64:8081",
-        "exp://7kyeaek-anonymous-8081.exp.direct"
+        "exp://7kyeaek-anonymous-8081.exp.direct",
+        "https://www.captureapp.org",
+        "https://capture-api.jai-d.workers.dev"
       ],
       "config": {
         "screens": {
-          "Splash": "splash",
           "Auth": {
             "screens": {
               "Login": "auth/login",
