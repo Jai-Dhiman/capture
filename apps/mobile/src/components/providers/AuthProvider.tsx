@@ -79,9 +79,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
           // Ensure session is ready for use
           isSessionInitialized.current = true;
-          console.log('Auth session successfully initialized');
-        } else {
-          console.log('No session to restore');
         }
       } catch (error) {
         console.error('Failed to initialize session:', error);

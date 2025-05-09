@@ -153,7 +153,7 @@ export const FollowButton = ({ userId, isFollowing: initialIsFollowing, classNam
 
   return (
     <TouchableOpacity
-      className={`py-1 px-4 ${isFollowing ? 'bg-gray-200' : 'bg-[#E4CAC7]'} ${className}`}
+      className={`py-1 px-4 bg-[#E4CAC7]`}
       onPress={handlePress}
       disabled={isPending}
     >

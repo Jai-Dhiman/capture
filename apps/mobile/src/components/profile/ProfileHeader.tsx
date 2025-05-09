@@ -1,10 +1,17 @@
 import type React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { useState } from 'react';
+import { View, Text, TouchableOpacity, Modal, Pressable } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import BackIcon from '../../../assets/icons/CustomBackIcon.svg';
 import MenuDots from '../../../assets/icons/CustomMenuIcon.svg';
 import { ProfileImage } from '../media/ProfileImage';
 import { FollowButton } from './FollowButton';
 import { SkeletonElement } from '../ui/SkeletonLoader';
+import { MotiView } from 'moti';
+import EmptyIcon from '../../../assets/icons/EmptyIcon.svg';
+import SearchIcon from '../../../assets/icons/SearchIcon.svg';
+import ProfileIcon from '../../../assets/icons/ProfileIcon.svg';
+import PlusIcon from '../../../assets/icons/PlusIcon.svg';
 
 interface ProfileHeaderProps {
   profileData?: any;
@@ -31,16 +38,37 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   showMenuButton = false,
   onMenuPress,
 }) => {
+  const [menuVisible, setMenuVisible] = useState(false);
+  const navigation = useNavigation<any>();
+
+  const navigationItems = [
+    { name: 'Feed', icon: EmptyIcon, route: 'Feed' },
+    { name: 'Search', icon: SearchIcon, route: 'Search' },
+    { name: 'Profile', icon: ProfileIcon, route: 'Profile' },
+    { name: 'New Post', icon: PlusIcon, route: 'NewPost' },
+  ];
+
+  const toggleMenu = () => {
+    setMenuVisible(!menuVisible);
+    if (onMenuPress) {
+      onMenuPress();
+    }
+  };
+
+  const handleNavigation = (route: string) => {
+    setMenuVisible(false);
+    navigation.navigate(route);
+  };
+
   return (
     <View>
       <View className="w-full z-10 bg-[#DCDCDE] flex justify-end" style={{ height: 110 }}>
         <View className="flex-row items-center justify-between px-8 mb-4">
           {showBackButton ? (
-            <TouchableOpacity className="w-10 h-10 bg-[#DFD2CD] rounded-full drop-shadow-md flex justify-center items-center"
-              style={{ boxShadow: "0 4px 6px rgba(0,0,0,0.2)" }}
+            <TouchableOpacity className="w-10 h-10 bg-[#DFD2CD] rounded-full flex justify-center items-center"
               onPress={onBackPress}
             >
-              <BackIcon width={28} height={28} />
+              <BackIcon width={30} height={30} />
             </TouchableOpacity>
           ) : (
             <View className="w-10 h-10" />
@@ -51,16 +79,61 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 
           {showMenuButton ? (
             <TouchableOpacity
-              className="w-10 h-10 flex justify-center items-center"
-              onPress={onMenuPress}
+              className="w-10 h-10 bg-[#DFD2CD] rounded-full flex justify-center items-center"
+              onPress={toggleMenu}
             >
-              <MenuDots width={24} height={24} />
+              <MenuDots width={30} height={30} />
             </TouchableOpacity>
           ) : (
             <View className="w-10 h-10" />
           )}
         </View>
       </View>
+
+      {menuVisible && (
+        <Modal
+          transparent={true}
+          visible={menuVisible}
+          animationType="none"
+          onRequestClose={() => setMenuVisible(false)}
+        >
+          <Pressable
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+            onPress={() => setMenuVisible(false)}
+          >
+            <View style={{ flex: 1 }} />
+          </Pressable>
+
+          <MotiView
+            from={{ translateY: -200, opacity: 0 }}
+            animate={{ translateY: menuVisible ? 0 : -200, opacity: menuVisible ? 1 : 0 }}
+            transition={{ type: 'spring', damping: 15, stiffness: 100 }}
+            className="absolute right-4 top-14 z-50 w-56 h-72"
+          >
+            <Pressable onPress={(e) => e.stopPropagation()}>
+              <View className="w-56 h-72 pb-10 flex flex-col justify-start items-start gap-0.5">
+                {navigationItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <TouchableOpacity
+                      key={item.route}
+                      className="self-stretch h-14 relative bg-[#e4cac7] rounded-2xl shadow-sm"
+                      onPress={() => handleNavigation(item.route)}
+                    >
+                      <Text className="left-[60px] top-[16px] absolute justify-center text-neutral-900 text-base font-base leading-normal">
+                        {item.name}
+                      </Text>
+                      <View className="w-10 h-10 left-[8px] top-[8px] absolute bg-white rounded-xl outline outline-1 outline-offset-[-1px] outline-zinc-100 flex justify-center items-center">
+                        <Icon width={22} height={22} />
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </Pressable>
+          </MotiView>
+        </Modal>
+      )}
 
       {isLoading ? (
         <View className="flex-row mb-4 px-6 pt-2">
@@ -106,7 +179,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                 </Text>
               )}
             </View>
-            <Text className="text-black text-base font-light font-['Roboto'] leading-snug mt-1">
+            <Text className="text-black text-sm font-light font-['Roboto'] leading-snug mt-1">
               {profileData?.bio || ''}
             </Text>
             <View className="flex-row mt-3">

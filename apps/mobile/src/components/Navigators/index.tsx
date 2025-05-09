@@ -116,7 +116,6 @@ export function MainNavigator() {
           const currentSession = useAuthStore.getState().session;
           const hasTokenNow = !!currentSession?.access_token;
 
-          console.log("Auth token availability check:", hasTokenNow ? "Token ready" : "No token");
           setIsTokenReady(true);
           setShowTransitionScreen(false);
         }, 800);

@@ -44,8 +44,6 @@ export const apiClient = {
       if (requiresAuth && !token) {
         // If this is the first attempt, wait briefly and retry once
         if (retryCount < 2) {
-          console.log(`No auth token available, retrying (${retryCount + 1}/2)...`);
-          // Exponential backoff
           await new Promise((resolve) => setTimeout(resolve, 500 * Math.pow(2, retryCount)));
           return this.request(method, endpoint, data, requiresAuth, retryCount + 1);
         } else {
@@ -59,7 +57,6 @@ export const apiClient = {
           const refreshedSession = await refreshSession();
           token = refreshedSession?.access_token;
           if (!token && retryCount < 2) {
-            console.log(`Failed to refresh token, retrying request (${retryCount + 1}/2)...`);
             await new Promise((resolve) => setTimeout(resolve, 500 * Math.pow(2, retryCount)));
             return this.request(method, endpoint, data, requiresAuth, retryCount + 1);
           }

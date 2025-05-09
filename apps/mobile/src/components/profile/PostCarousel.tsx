@@ -1,32 +1,41 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, useWindowDimensions, Share, Alert } from 'react-native';
 import Carousel from 'react-native-reanimated-carousel';
 import { PostMediaGallery } from '../post/PostMediaGallery';
 import SettingsIcon from "../../../assets/icons/MenuDots.svg";
 import CommentIcon from "../../../assets/icons/CommentsIcon.svg";
 import ShareIcon from "../../../assets/icons/PaperPlaneIcon.svg";
-import SavePostIcon from "../../../assets/icons/PlusIcon.svg";
 import FavoriteIcon from "../../../assets/icons/FavoriteIcon.svg";
+import FilledFavoriteIcon from "../../../assets/icons/FilledFavoriteIcon.svg";
+import { useAtom } from 'jotai';
+import { commentDrawerOpenAtom, currentPostIdAtom } from '../../atoms/commentAtoms';
+import Clipboard from 'expo-clipboard';
+import { SHARE_URL } from '@env';
+import { useAlert } from '../../lib/AlertContext';
 
 interface PostReanimatedCarouselProps {
   posts: any[];
   initialIndex: number;
   onSettingsPress: (post: any) => void;
   onToggleSave: (post: any) => void;
-  onOpenComments: (postId: string) => void;
+  onOpenComments?: (postId: string) => void;
   isSaving: boolean;
 }
 
 export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
-  posts,
+  posts: initialPosts,
   initialIndex,
   onSettingsPress,
   onToggleSave,
-  onOpenComments,
   isSaving
 }) => {
   const { width, height } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(initialIndex);
+  const [posts, setPosts] = useState(initialPosts);
+  const [, setCommentDrawerOpen] = useAtom(commentDrawerOpenAtom);
+  const [, setCurrentPostId] = useAtom(currentPostIdAtom);
+  const [savingPostId, setSavingPostId] = useState<string | null>(null);
+  const { showAlert } = useAlert();
 
   const ITEM_WIDTH = width - 32;
 
@@ -49,8 +58,51 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
 
   const mediaHeight = calculateMediaHeight();
 
+  const handleOpenComments = (postId: string) => {
+    setCurrentPostId(postId);
+    setCommentDrawerOpen(true);
+  };
+
+  const handleShare = async (post: any) => {
+    const link = `${SHARE_URL}/post/${post.id}`;
+    try {
+      const result = await Share.share({ message: `${post.content ?? ''}\n\nView more: ${link}` });
+      if (result.action === Share.sharedAction) {
+        // TODO: track share analytics
+      }
+    } catch (error) {
+      await Clipboard.setStringAsync(link);
+      Alert.alert('Link copied to clipboard');
+    }
+  };
+
+  const handleToggleSavePost = async (post: any) => {
+    try {
+      setSavingPostId(post.id);
+      // Immediately update UI
+      const updatedPosts = posts.map(p =>
+        p.id === post.id ? { ...p, isSaved: !p.isSaved } : p
+      );
+      setPosts(updatedPosts);
+
+      // Call the parent handler
+      await onToggleSave(post);
+    } catch (error: any) {
+      // Revert UI if there was an error
+      const revertedPosts = posts.map(p =>
+        p.id === post.id ? { ...p, isSaved: !p.isSaved } : p
+      );
+      setPosts(revertedPosts);
+      console.error('Save/Unsave error:', error);
+      showAlert(`Failed to ${post.isSaved ? 'unsave' : 'save'} post`, { type: 'error' });
+    } finally {
+      setSavingPostId(null);
+    }
+  };
+
   const renderItem = ({ item: post, index }: { item: any; index: number }) => {
     const formattedDate = new Date(post.createdAt).toLocaleDateString();
+    const isCurrentPostSaving = savingPostId === post.id;
 
     return (
       <View className="bg-[#DCDCDE] rounded-lg overflow-hidden mb-0 h-full mx-0">
@@ -59,7 +111,7 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
 
           <TouchableOpacity
             onPress={() => onSettingsPress(post)}
-            className="w-6 h-6 justify-center items-center"
+            className="w-8 h-8 justify-center items-center"
           >
             <SettingsIcon width={24} height={24} />
           </TouchableOpacity>
@@ -87,25 +139,35 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
 
           <View className="flex-row justify-between items-center">
             <View className="flex-row">
-              <TouchableOpacity onPress={() => onOpenComments(post.id)} className="mr-10">
+              <TouchableOpacity
+                onPress={() => handleOpenComments(post.id)}
+                className="mr-4 p-2"
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
                 <CommentIcon width={20} height={20} />
               </TouchableOpacity>
 
-              <TouchableOpacity className="mr-10">
+              <TouchableOpacity
+                onPress={() => handleShare(post)}
+                className="mr-4 p-2"
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
                 <ShareIcon width={20} height={20} />
               </TouchableOpacity>
             </View>
 
             <TouchableOpacity
-              onPress={() => onToggleSave(post)}
-              disabled={isSaving}
+              onPress={() => handleToggleSavePost(post)}
+              disabled={isCurrentPostSaving || isSaving}
+              className="p-2"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              {isSaving ? (
+              {isCurrentPostSaving || isSaving ? (
                 <ActivityIndicator size="small" color="#E4CAC7" />
               ) : post.isSaved ? (
-                <FavoriteIcon width={20} height={20} />
+                <FilledFavoriteIcon width={20} height={20} />
               ) : (
-                <SavePostIcon width={20} height={20} />
+                <FavoriteIcon width={20} height={20} />
               )}
             </TouchableOpacity>
           </View>
@@ -116,7 +178,7 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
 
   return (
     <View className="flex-1 relative pt-0">
-      <View className="flex-1" style={{ marginBottom: 24 }}>
+      <View className="flex-1" style={{ marginBottom: 40 }}>
         <Carousel
           loop={false}
           width={ITEM_WIDTH}
@@ -140,7 +202,7 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
         className="w-full items-center justify-center bg-transparent"
         style={{
           position: 'absolute',
-          bottom: -10,
+          bottom: -30,
           left: 0,
           right: 0,
           paddingBottom: 16,

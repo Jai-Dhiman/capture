@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Switch, ScrollView, StatusBar } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AppStackParamList } from '../../components/Navigators/types/navigation';
+import { SettingsStackParamList } from '../../components/Navigators/types/navigation';
 import { useAuthStore } from '../../stores/authStore';
 import { useProfileStore } from '../../stores/profileStore';
 import { ProfileImage } from 'components/media/ProfileImage';
@@ -13,9 +13,9 @@ import BlockIcon from '../../../assets/icons/BlockIcon.svg';
 import AlgorithmIcon from '../../../assets/icons/AlgorithmIcon.svg';
 import LockIcon2 from '../../../assets/icons/LockIcon2.svg';
 import EmailIcon from '../../../assets/icons/EmailIcon.svg';
-import BackIcon from '../../../assets/icons/BackIcon.svg';
+import CustomBackIcon from '../../../assets/icons/CustomBackIcon.svg';
 
-type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
+type NavigationProp = NativeStackNavigationProp<SettingsStackParamList, 'AccountSettings'>;
 
 export default function AccountSettingsScreen() {
   const navigation = useNavigation<NavigationProp>();
@@ -102,16 +102,20 @@ export default function AccountSettingsScreen() {
     updatePrivacyMutation.mutate(newValue);
   };
 
+  const goBack = () => {
+    navigation.goBack();
+  };
+
   return (
     <View className="flex-1 bg-[#DCDCDE]">
       <StatusBar barStyle="dark-content" />
 
       <View className="w-full pt-14 px-4 pb-4 flex-row items-center">
         <TouchableOpacity
-          className="absolute left-4 top-14 bg-stone-300 rounded-full w-8 h-8 flex items-center justify-center shadow-inner"
-          onPress={() => navigation.goBack()}
+          className="absolute left-4 top-14 w-10 h-10 bg-[#DFD2CD] rounded-full flex justify-center items-center"
+          onPress={goBack}
         >
-          <BackIcon height={20} width={20} />
+          <CustomBackIcon width={30} height={30} />
         </TouchableOpacity>
         <Text className="flex-1 text-center text-xl font-semibold">Capture Account</Text>
       </View>

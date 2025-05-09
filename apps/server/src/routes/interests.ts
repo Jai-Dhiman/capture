@@ -27,8 +27,6 @@ interstsRouter.get("/", authMiddleware, async (c) => {
     // 1. Fetch User Embedding Vector & Check Existence
     const userVectorData = await userVectorsKV.get<number[]>(userId, { type: "json" });
     const userVectorExists = userVectorData !== null && Array.isArray(userVectorData) && userVectorData.length > 0;
-    console.log(`[interests] User vector exists for ${userId}: ${userVectorExists}`);
-
     // 2. Fetch Source Posts (Saved & Created)
     const savedPostsQuery = db
       .select({
@@ -70,7 +68,6 @@ interstsRouter.get("/", authMiddleware, async (c) => {
 
     // 3. Fetch Hashtags for these posts if any exist
     if (allPostIds.length > 0) {
-      console.log(`[interests] Fetching hashtags for post IDs: ${allPostIds.join(", ")}`);
       const hashtagsResult = await db
         .select({
           postId: schema.postHashtag.postId,

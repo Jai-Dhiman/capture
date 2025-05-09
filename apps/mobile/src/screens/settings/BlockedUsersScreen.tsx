@@ -7,7 +7,7 @@ import { useBlockedUsers, useUnblockUser } from '../../hooks/useBlocking';
 import { ProfileImage } from '../../components/media/ProfileImage';
 import { SkeletonLoader, SkeletonElement } from '../../components/ui/SkeletonLoader';
 import { EmptyState } from '../../components/ui/EmptyState';
-import BackIcon from '../../../assets/icons/BackIcon.svg';
+import CustomBackIcon from '../../../assets/icons/CustomBackIcon.svg';
 import { format } from 'date-fns';
 
 type NavigationProp = NativeStackNavigationProp<SettingsStackParamList, 'BlockedUsers'>;
@@ -24,6 +24,10 @@ export default function BlockedUsersScreen() {
     } catch (error) {
       console.error('Error unblocking user:', error);
     }
+  };
+
+  const goBack = () => {
+    navigation.goBack();
   };
 
   const renderItem = ({ item }: { item: any }) => {
@@ -65,12 +69,12 @@ export default function BlockedUsersScreen() {
 
       <View className="w-full pt-14 px-4 pb-4">
         <TouchableOpacity
-          className="absolute left-4 top-14 bg-stone-300 rounded-full w-8 h-8 flex items-center justify-center shadow-inner"
-          onPress={() => navigation.goBack()}
+          className="absolute left-4 top-14 w-10 h-10 bg-[#DFD2CD] rounded-full flex justify-center items-center"
+          onPress={goBack}
         >
-          <BackIcon height={20} width={20} />
+          <CustomBackIcon width={30} height={30} />
         </TouchableOpacity>
-        <Text className="text-center text-4xl font-medium">Blocked Accounts</Text>
+        <Text className="text-center text-3xl font-light">Blocked Accounts</Text>
       </View>
 
       {isLoading ? (

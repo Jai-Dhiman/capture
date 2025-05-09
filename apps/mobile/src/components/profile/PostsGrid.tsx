@@ -12,22 +12,24 @@ const GridItem = ({ post, onPress, itemSize }: GridItemProps) => {
   return (
     <TouchableOpacity
       onPress={() => onPress(post)}
-      style={[
-        styles.gridItem,
-        {
-          width: itemSize,
-          height: itemSize,
-        }
-      ]}
+      style={{
+        width: itemSize,
+        height: itemSize,
+        padding: 0.5,
+        backgroundColor: 'transparent'
+      }}
       activeOpacity={0.9}
     >
       <View
         className="bg-stone-400 rounded-2xl overflow-hidden"
-        style={{
-          width: '100%',
-          height: '100%',
-          borderRadius: 16,
-        }}
+        style={[
+          styles.shadowContainer,
+          {
+            width: '100%',
+            height: '100%',
+            borderRadius: 16,
+          }
+        ]}
       >
         {post.media && post.media.length > 0 ? (
           <MediaImage media={post.media[0]} priority={true} />
@@ -42,14 +44,12 @@ const GridItem = ({ post, onPress, itemSize }: GridItemProps) => {
 };
 
 const styles = StyleSheet.create({
-  gridItem: {
+  shadowContainer: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
-    backgroundColor: 'transparent',
-    padding: 0.5
   }
 });
 

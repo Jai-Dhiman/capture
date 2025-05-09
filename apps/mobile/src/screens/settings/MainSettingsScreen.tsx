@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StatusBar, Alert } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, CommonActions } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SettingsStackParamList } from '../../components/Navigators/types/navigation';
 import { useProfileStore } from '../../stores/profileStore'
@@ -11,7 +11,7 @@ import BlockIcon from '../../../assets/icons/BlockIcon.svg';
 import AlgorithmIcon from '../../../assets/icons/AlgorithmIcon.svg';
 import LockIcon2 from '../../../assets/icons/LockIcon2.svg';
 import EmailIcon from '../../../assets/icons/EmailIcon.svg';
-import BackIcon from '../../../assets/icons/CustomBackIcon.svg';
+import CustomBackIcon from '../../../assets/icons/CustomBackIcon.svg';
 import NotificationIcon from '../../../assets/icons/NotificationIcon.svg';
 import CustomizeIcon from '../../../assets/icons/CustomizeIcon.svg';
 import FontBookIcon from '../../../assets/icons/FontBookIcon.svg';
@@ -27,7 +27,7 @@ export default function MainSettingsScreen() {
   const { logout } = useAuth();
 
   const goBack = () => {
-    navigation.getParent()?.goBack();
+    navigation.getParent()?.navigate('Feed');
   };
 
   const handleLogout = () => {
@@ -54,10 +54,11 @@ export default function MainSettingsScreen() {
 
       <View className="w-full pt-14 px-4 pb-4">
         <TouchableOpacity
-          className="absolute left-4 top-14 bg-stone-300 rounded-full w-8 h-8 flex items-center justify-center shadow-inner"
+          className="absolute left-4 top-14 w-10 h-10 bg-[#DFD2CD] rounded-full flex justify-center items-center z-10"
           onPress={goBack}
+          activeOpacity={0.7}
         >
-          <BackIcon height={20} width={20} />
+          <CustomBackIcon width={30} height={30} />
         </TouchableOpacity>
         <Text className="text-center text-4xl font-medium">Settings</Text>
       </View>

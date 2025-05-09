@@ -248,6 +248,7 @@ export default function VerifyPhoneScreen({ navigation }: Props) {
           <Header
             showBackButton
             onBackPress={() => navigation.goBack()}
+            showBackground={false}
           />
 
           <View className="flex-1 px-4 items-center pt-6">
@@ -341,8 +342,8 @@ export default function VerifyPhoneScreen({ navigation }: Props) {
 
             <TouchableOpacity
               className={`h-14 w-4/5 ${(codeSent && isCodeComplete) || (!codeSent && isPhoneComplete)
-                  ? 'bg-[#E4CAC7]'
-                  : 'bg-zinc-500'
+                ? 'bg-[#E4CAC7]'
+                : 'bg-zinc-500'
                 } rounded-[30px] shadow-md mt-8 justify-center items-center`}
               onPress={() => form.handleSubmit()}
               disabled={isLoading || sendingCode || (codeSent && !isCodeComplete) || (!codeSent && !isPhoneComplete)}
@@ -351,8 +352,8 @@ export default function VerifyPhoneScreen({ navigation }: Props) {
                 <LoadingSpinner message={sendingCode ? "Sending..." : "Verifying..."} />
               ) : (
                 <Text className={`text-center ${(codeSent && isCodeComplete) || (!codeSent && isPhoneComplete)
-                    ? 'text-black'
-                    : 'text-white'
+                  ? 'text-black'
+                  : 'text-white'
                   } text-base font-bold font-roboto leading-normal`}>
                   {codeSent ? "Verify Code" : "Send Code"}
                 </Text>
