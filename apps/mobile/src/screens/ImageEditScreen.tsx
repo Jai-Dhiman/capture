@@ -10,7 +10,23 @@ type ImageEditScreenRouteProp = RouteProp<RootStackParamList, 'ImageEditScreen'>
 export default function ImageEditScreen() {
   const navigation = useNavigation();
   const route = useRoute<ImageEditScreenRouteProp>();
-  const { imageUri } = route.params;
+  const imageUri = route.params?.imageUri || '';
+
+  if (!imageUri) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#DCDCDE' }}>
+        <Text style={{ fontSize: 16, color: '#333', textAlign: 'center', padding: 20 }}>
+          No image provided. Please select an image first.
+        </Text>
+        <TouchableOpacity
+          style={{ marginTop: 20, padding: 12, backgroundColor: '#E4CAC7', borderRadius: 30, borderWidth: 1, borderColor: '#D8C0BD' }}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={{ color: 'black' }}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   const skiaImage = useImage(imageUri);
   const filterOptions = ['Exposure', 'Brilliance', 'Highlights', 'Shadows', 'Contrast', 'Brightness', 'Saturation', 'Vibrance', 'Warmth', 'Tint', 'Sharpness', 'Definition', 'Vignette'];

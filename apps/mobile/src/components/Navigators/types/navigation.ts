@@ -3,9 +3,9 @@ import { NavigatorScreenParams } from "@react-navigation/native";
 export type RootStackParamList = {
   Splash: undefined;
   Auth: NavigatorScreenParams<AuthStackParamList> | undefined;
+  AuthFallback: NavigatorScreenParams<AuthStackParamList> | undefined;
   CreateProfile: undefined;
   App: NavigatorScreenParams<AppStackParamList> | undefined;
-  ImageEditScreen: { imageUri: string };
 };
 
 export type AuthStackParamList = {
@@ -25,6 +25,7 @@ export type AppStackParamList = {
   SavedPosts: undefined;
   Search: undefined;
   Settings: NavigatorScreenParams<SettingsStackParamList> | undefined;
+  ImageEditScreen: { imageUri: string };
 };
 
 export type SettingsStackParamList = {

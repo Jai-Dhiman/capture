@@ -12,6 +12,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { errorService } from '../../services/errorService';
 import { useAlert } from '../../lib/AlertContext';
 import { LoadingSpinner } from 'components/ui/LoadingSpinner';
+import { type OnboardingStep } from '../../stores/onboardingStore';
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -23,57 +24,64 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isAuthInitialized, setIsAuthInitialized] = useState(false);
   const [splashMinTimeElapsed, setSplashMinTimeElapsed] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
-  
-  const { 
-    session, 
-    refreshSession, 
+
+  const {
+    session,
+    refreshSession,
     isRefreshing,
-    processOfflineQueue
+    processOfflineQueue,
+    setSession,
+    setUser
   } = useAuthStore();
-  
+
   const queryClient = useQueryClient();
   const { showAlert } = useAlert();
-  
+
   const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
   const appStateRef = useRef(AppState.currentState);
   const refreshRetryCount = useRef(0);
   const MAX_REFRESH_RETRIES = 3;
-  
+  const isSessionInitialized = useRef(false);
+
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener(state => {
       const wasOffline = isOffline;
       setIsOffline(!state.isConnected);
-      
+
       if (wasOffline && state.isConnected) {
         processOfflineQueue();
       }
     });
-    
+
     return () => unsubscribe();
   }, [isOffline, processOfflineQueue]);
-  
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setSplashMinTimeElapsed(true);
     }, 2000);
-    
+
     return () => clearTimeout(timer);
   }, []);
-  
+
   useEffect(() => {
     async function initSession() {
       try {
         const sessionRestored = await authService.restoreSession();
-        
+
         if (sessionRestored) {
           const stage = await authService.determineAuthStage();
           authState.setAuthStage(stage);
-          
-          if (stage === 'phone-verification') {
-            authState.updateOnboardingStep('phone-verification');
-          } else if (stage === 'profile-creation') {
-            authState.updateOnboardingStep('profile-setup');
+
+          if (stage === 'profile-creation') {
+            authState.updateOnboardingStep('profile-setup' as OnboardingStep);
           }
+
+          // Ensure session is ready for use
+          isSessionInitialized.current = true;
+          console.log('Auth session successfully initialized');
+        } else {
+          console.log('No session to restore');
         }
       } catch (error) {
         console.error('Failed to initialize session:', error);
@@ -82,16 +90,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setIsAuthInitialized(true);
       }
     }
-    
+
     initSession();
   }, []);
-  
+
   useEffect(() => {
     if (isAuthInitialized && splashMinTimeElapsed) {
       setIsInitializing(false);
     }
   }, [isAuthInitialized, splashMinTimeElapsed]);
-  
+
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextAppState: AppStateStatus) => {
       if (appStateRef.current.match(/inactive|background/) && nextAppState === "active") {
@@ -106,7 +114,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       subscription.remove();
     };
   }, [session?.access_token, isRefreshing, isOffline]);
-  
+
   useEffect(() => {
     if (!session?.access_token || isOffline) return;
 
@@ -126,9 +134,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     };
   }, [session?.access_token, session?.expires_at, isOffline]);
-  
-    
-  
+
   useEffect(() => {
     const handleDeepLink = async (event: { url: string }) => {
       try {
@@ -141,40 +147,41 @@ export function AuthProvider({ children }: AuthProviderProps) {
         });
       }
     };
-    
+
     Linking.getInitialURL().then(url => {
       if (url) handleDeepLink({ url });
     });
-    
+
     const subscription = Linking.addEventListener('url', handleDeepLink);
-    
+
     return () => {
       subscription.remove();
     };
   }, []);
-  
+
   const handleTokenRefresh = async () => {
     if (isRefreshing || isOffline) return;
-    
+
     authState.beginRefreshingSession();
     try {
       const refreshedSession = await refreshSession();
       if (refreshedSession) {
         refreshRetryCount.current = 0;
+        isSessionInitialized.current = true;
       } else {
         throw new Error("Failed to refresh session");
       }
     } catch (error) {
       console.error("Token refresh error:", error);
-      
+
       if (isOffline) {
         return;
       }
-      
+
       if (refreshRetryCount.current < MAX_REFRESH_RETRIES) {
         refreshRetryCount.current += 1;
         const backoffTime = Math.pow(2, refreshRetryCount.current) * 1000;
-        
+
         setTimeout(() => {
           handleTokenRefresh();
         }, backoffTime);
@@ -183,7 +190,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           "Your session has expired. Please log in again.",
           "auth/session-expired",
           error instanceof Error ? error : undefined
-        ); 
+        );
         Alert.alert(
           "Session Expired",
           "Your session has expired. Please log in again.",
@@ -211,10 +218,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       authState.endRefreshingSession();
     }
   };
-  
+
   if (isInitializing) {
     return <LoadingSpinner />;
   }
-  
+
   return <>{children}</>;
 }

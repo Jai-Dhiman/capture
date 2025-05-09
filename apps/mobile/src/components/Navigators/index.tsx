@@ -9,7 +9,7 @@ import AuthStack from './AuthNavigator';
 import CreateProfile from '../../screens/auth/CreateProfile';
 import { authService } from '../../services/authService';
 import { useOnboardingStore } from '../../stores/onboardingStore';
-import ImageEditScreen from '../../screens/ImageEditScreen';
+import { View, Text, ActivityIndicator } from 'react-native';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -35,6 +35,17 @@ export const linking: LinkingOptions<RootStackParamList> = {
           EmailVerificationPending: 'auth/verify-email'
         }
       },
+      AuthFallback: {
+        screens: {
+          Login: 'auth-fallback/login',
+          Signup: 'auth-fallback/signup',
+          EmailSignup: 'auth-fallback/email-signup',
+          CreateProfile: 'auth-fallback/create-profile',
+          ForgotPassword: 'auth-fallback/forgot-password',
+          ResetPassword: 'auth-fallback/reset-password',
+          EmailVerificationPending: 'auth-fallback/verify-email'
+        }
+      },
       App: {
         screens: {
           Feed: 'feed',
@@ -48,11 +59,11 @@ export const linking: LinkingOptions<RootStackParamList> = {
               AccountSettings: 'settings/account',
               VerifyPhone: 'settings/verify-phone',
             }
-          }
+          },
+          ImageEditScreen: 'image-edit',
         }
       },
       CreateProfile: 'create-profile',
-      ImageEditScreen: 'image-edit',
     }
   },
   async getInitialURL() {
@@ -74,9 +85,11 @@ export const linking: LinkingOptions<RootStackParamList> = {
 };
 
 export function MainNavigator() {
-  const { stage: authStage } = useAuthStore();
+  const { stage: authStage, session, user, status } = useAuthStore();
   const { currentStep } = useOnboardingStore();
   const [isSplashComplete, setIsSplashComplete] = useState(false);
+  const [isTokenReady, setIsTokenReady] = useState(false);
+  const [showTransitionScreen, setShowTransitionScreen] = useState(false);
 
   useEffect(() => {
     const checkForDeepLink = async () => {
@@ -89,6 +102,39 @@ export function MainNavigator() {
     checkForDeepLink();
   }, []);
 
+  useEffect(() => {
+    if (authStage === 'complete' && status === 'authenticated') {
+      setShowTransitionScreen(true);
+
+      const hasToken = !!session?.access_token;
+
+      if (hasToken) {
+        setIsTokenReady(true);
+        setShowTransitionScreen(false);
+      } else {
+        const tokenCheckTimer = setTimeout(() => {
+          const currentSession = useAuthStore.getState().session;
+          const hasTokenNow = !!currentSession?.access_token;
+
+          console.log("Auth token availability check:", hasTokenNow ? "Token ready" : "No token");
+          setIsTokenReady(true);
+          setShowTransitionScreen(false);
+        }, 800);
+
+        return () => clearTimeout(tokenCheckTimer);
+      }
+    }
+  }, [authStage, status, session]);
+
+  if (showTransitionScreen) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#DCDCDE' }}>
+        <ActivityIndicator size="large" color="#000" />
+        <Text style={{ marginTop: 20, color: '#333' }}>Loading your feed...</Text>
+      </View>
+    );
+  }
+
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {authStage === 'unauthenticated' && (
@@ -99,10 +145,15 @@ export function MainNavigator() {
         <Stack.Screen name="CreateProfile" component={CreateProfile} />
       )}
 
-      {authStage === 'complete' && (
+      {authStage === 'complete' && isTokenReady ? (
         <Stack.Screen name="App" component={AppNavigator} />
+      ) : (
+
+        <Stack.Screen
+          name="AuthFallback"
+          component={AuthStack}
+        />
       )}
-      <Stack.Screen name="ImageEditScreen" component={ImageEditScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }

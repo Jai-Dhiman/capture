@@ -15,9 +15,11 @@ export function useAuth() {
     mutationFn: async ({ email, password }: { email: string; password: string }) => {
       return await authService.signIn(email, password);
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       authStore.setUser(data.user);
       authStore.setSession(data.session);
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       if (data.profile) {
         authState.setProfile(data.profile);

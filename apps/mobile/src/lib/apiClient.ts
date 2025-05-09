@@ -28,17 +28,41 @@ export const apiClient = {
     return this.request("DELETE", endpoint, null, requiresAuth);
   },
 
-  async request(method: string, endpoint: string, data: any = null, requiresAuth: boolean = true) {
+  async request<T = any>(
+    method: string,
+    endpoint: string,
+    data: any = null,
+    requiresAuth: boolean = true,
+    retryCount = 0
+  ): Promise<T> {
     try {
       const { session, refreshSession } = useAuthStore.getState();
 
       let token = session?.access_token;
+
+      // If auth is required but no token is available
+      if (requiresAuth && !token) {
+        // If this is the first attempt, wait briefly and retry once
+        if (retryCount < 2) {
+          console.log(`No auth token available, retrying (${retryCount + 1}/2)...`);
+          // Exponential backoff
+          await new Promise((resolve) => setTimeout(resolve, 500 * Math.pow(2, retryCount)));
+          return this.request(method, endpoint, data, requiresAuth, retryCount + 1);
+        } else {
+          throw new APIError("No auth token available", 401);
+        }
+      }
 
       if (requiresAuth && token && session?.expires_at) {
         const isExpiringSoon = session.expires_at - Date.now() < 5 * 60 * 1000;
         if (isExpiringSoon) {
           const refreshedSession = await refreshSession();
           token = refreshedSession?.access_token;
+          if (!token && retryCount < 2) {
+            console.log(`Failed to refresh token, retrying request (${retryCount + 1}/2)...`);
+            await new Promise((resolve) => setTimeout(resolve, 500 * Math.pow(2, retryCount)));
+            return this.request(method, endpoint, data, requiresAuth, retryCount + 1);
+          }
         }
       }
 
@@ -67,7 +91,7 @@ export const apiClient = {
       }
 
       if (response.status === 204) {
-        return null;
+        return null as T;
       }
 
       return await response.json();

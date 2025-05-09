@@ -2,7 +2,6 @@ import { authApi, AuthError } from "../lib/authApi";
 import type { AuthSession, AuthStage, AuthUser, UserProfile } from "../types/authTypes";
 import { authState } from "../stores/authState";
 import { supabaseAuthClient } from "lib/supabaseAuthClient";
-import { getStoredCodeVerifier } from "lib/supabaseAuthClient";
 import { secureStorage } from "lib/storage";
 
 export const authService = {
@@ -16,13 +15,39 @@ export const authService = {
   }> {
     const authData = await authApi.signIn(email, password);
 
-    await authApi.storeSessionData(authData.session, authData.user);
+    if (!authData.session?.access_token) {
+      throw new AuthError("Invalid session data received from server", "auth/invalid-session");
+    }
+
+    // Ensure we have valid token data
+    const session = {
+      access_token: authData.session.access_token,
+      refresh_token: authData.session.refresh_token,
+      expires_at: new Date(authData.session.expires_at || "").getTime() || Date.now() + 3600 * 1000,
+    };
+
+    const user = {
+      id: authData.user.id,
+      email: authData.user.email || "",
+      phone: authData.user.phone || "",
+      phone_confirmed_at: authData.user.phone_confirmed_at || undefined,
+    };
+
+    await authApi.storeSessionData(session, user);
 
     if (!authData.user?.email_confirmed_at) {
       throw new AuthError("Please verify your email before logging in", "auth/email-not-verified");
     }
 
-    const profileData = await authApi.fetchUserProfile(authData.user.id, authData.session.access_token);
+    // Validate session actually works
+    try {
+      await authApi.validateSession(session.access_token);
+    } catch (error) {
+      console.error("Session validation failed:", error);
+      // Continue anyway, but log the error
+    }
+
+    const profileData = await authApi.fetchUserProfile(user.id, session.access_token);
 
     let nextStage: AuthStage = "unauthenticated";
 
@@ -35,17 +60,8 @@ export const authService = {
     authState.setAuthStage(nextStage);
 
     return {
-      user: {
-        id: authData.user.id,
-        email: authData.user.email || "",
-        phone: authData.user.phone || "",
-        phone_confirmed_at: authData.user.phone_confirmed_at || undefined,
-      },
-      session: {
-        access_token: authData.session.access_token,
-        refresh_token: authData.session.refresh_token,
-        expires_at: new Date(authData.session.expires_at || "").getTime(),
-      },
+      user,
+      session,
       profile: profileData,
     };
   },
