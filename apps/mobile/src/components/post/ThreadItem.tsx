@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, Share, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, Share, Alert, GestureResponderEvent } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../Navigators/types/navigation';
@@ -14,7 +14,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { useBlockUser } from '../../hooks/useBlocking';
 import { PostMenu } from './PostMenu';
 import FavoriteIcon from '../../../assets/icons/FavoriteIcon.svg';
-import SavePostIcon from '../../../assets/icons/PlusIcon.svg';
+import FilledFavoriteIcon from '../../../assets/icons/FilledFavoriteIcon.svg';
 import CommentIcon from '../../../assets/icons/CommentsIcon.svg';
 import ShareIcon from '../../../assets/icons/PaperPlaneIcon.svg';
 import SettingsIcon from '../../../assets/icons/MenuDots.svg';
@@ -28,9 +28,14 @@ interface ThreadItemProps {
   isLoading?: boolean;
 }
 
-export const ThreadItem = ({ thread, isLoading = false }: ThreadItemProps) => {
+type MenuPosition = {
+  x: number;
+  y: number;
+} | undefined;
+
+export const ThreadItem = ({ thread: initialThread, isLoading = false }: ThreadItemProps) => {
   const navigation = useNavigation<NavigationProp>();
-  const formattedDate = new Date(thread.createdAt).toLocaleDateString();
+  const formattedDate = new Date(initialThread.createdAt).toLocaleDateString();
 
   const [, setCommentDrawerOpen] = useAtom(commentDrawerOpenAtom);
   const [, setCurrentPostId] = useAtom(currentPostIdAtom);
@@ -40,8 +45,10 @@ export const ThreadItem = ({ thread, isLoading = false }: ThreadItemProps) => {
   const { showAlert } = useAlert();
   const { user } = useAuthStore();
   const [menuVisible, setMenuVisible] = useState(false);
-  const blockUserMutation = useBlockUser(thread.user?.userId);
-  const isOwnPost = thread.user?.userId === user?.id;
+  const [menuPosition, setMenuPosition] = useState<MenuPosition>(undefined);
+  const blockUserMutation = useBlockUser(initialThread.user?.userId);
+  const isOwnPost = initialThread.user?.userId === user?.id;
+  const [thread, setThread] = useState(initialThread);
 
   const handleOpenComments = () => {
     setCurrentPostId(thread.id);
@@ -52,8 +59,10 @@ export const ThreadItem = ({ thread, isLoading = false }: ThreadItemProps) => {
     try {
       if (thread.isSaved) {
         await unsavePostMutation.mutateAsync(thread.id);
+        setThread((prev: typeof initialThread) => ({ ...prev, isSaved: false }));
       } else {
         await savePostMutation.mutateAsync(thread.id);
+        setThread((prev: typeof initialThread) => ({ ...prev, isSaved: true }));
       }
     } catch (error: any) {
       console.error('Save/Unsave error:', error);
@@ -94,6 +103,15 @@ export const ThreadItem = ({ thread, isLoading = false }: ThreadItemProps) => {
     }
   };
 
+  const handleOpenMenu = (event: GestureResponderEvent) => {
+    const { nativeEvent } = event;
+    setMenuPosition({
+      x: nativeEvent.pageX,
+      y: nativeEvent.pageY - 10 // Positioning slightly above the touch point
+    });
+    setMenuVisible(true);
+  };
+
   return (
     <SkeletonLoader isLoading={isLoading}>
       <View className="bg-[#DCDCDE] rounded-lg overflow-hidden mb-4 ">
@@ -115,7 +133,7 @@ export const ThreadItem = ({ thread, isLoading = false }: ThreadItemProps) => {
 
           <TouchableOpacity
             className="w-6 h-6 justify-center items-center"
-            onPress={() => setMenuVisible(true)}
+            onPress={handleOpenMenu}
           >
             <SettingsIcon width={24} height={24} />
           </TouchableOpacity>
@@ -152,9 +170,9 @@ export const ThreadItem = ({ thread, isLoading = false }: ThreadItemProps) => {
               {savePostMutation.isPending || unsavePostMutation.isPending ? (
                 <ActivityIndicator size="small" color="#E4CAC7" />
               ) : thread.isSaved ? (
-                <FavoriteIcon width={20} height={20} />
+                <FilledFavoriteIcon width={20} height={20} />
               ) : (
-                <SavePostIcon width={20} height={20} />
+                <FavoriteIcon width={20} height={20} />
               )}
             </TouchableOpacity>
           </View>
@@ -170,6 +188,7 @@ export const ThreadItem = ({ thread, isLoading = false }: ThreadItemProps) => {
           onEnableNotifications={() => {/* Handle notifications */ }}
           isOwnPost={isOwnPost}
           isLoading={isOwnPost ? deletePostMutation?.isPending : blockUserMutation.isPending}
+          buttonPosition={menuPosition}
         />
       </View>
     </SkeletonLoader>

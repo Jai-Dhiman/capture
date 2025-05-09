@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Text, TouchableOpacity, View, ActivityIndicator, Share, Alert } from 'react-native';
+import { Text, TouchableOpacity, View, ActivityIndicator, Share, Alert, findNodeHandle, UIManager, GestureResponderEvent } from 'react-native';
 import { PostMediaGallery } from './PostMediaGallery';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -15,7 +15,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { useBlockUser } from '../../hooks/useBlocking';
 import { PostMenu } from './PostMenu';
 import FavoriteIcon from '../../../assets/icons/FavoriteIcon.svg';
-import SavePostIcon from '../../../assets/icons/PlusIcon.svg';
+import FilledFavoriteIcon from '../../../assets/icons/FilledFavoriteIcon.svg';
 import CommentIcon from '../../../assets/icons/CommentsIcon.svg';
 import ShareIcon from '../../../assets/icons/PaperPlaneIcon.svg';
 import SettingsIcon from '../../../assets/icons/MenuDots.svg';
@@ -29,10 +29,14 @@ interface PostItemProps {
   isLoading?: boolean;
 }
 
-export const PostItem = ({ post, isLoading = false }: PostItemProps) => {
-  const navigation = useNavigation<NavigationProp>();
-  const formattedDate = new Date(post.createdAt).toLocaleDateString();
+type MenuPosition = {
+  x: number;
+  y: number;
+} | undefined;
 
+export const PostItem = ({ post: initialPost, isLoading = false }: PostItemProps) => {
+  const navigation = useNavigation<NavigationProp>();
+  const formattedDate = new Date(initialPost.createdAt).toLocaleDateString();
   const [, setCommentDrawerOpen] = useAtom(commentDrawerOpenAtom);
   const [, setCurrentPostId] = useAtom(currentPostIdAtom);
   const savePostMutation = useSavePost();
@@ -41,8 +45,10 @@ export const PostItem = ({ post, isLoading = false }: PostItemProps) => {
   const { showAlert } = useAlert();
   const { user } = useAuthStore();
   const [menuVisible, setMenuVisible] = useState(false);
-  const blockUserMutation = useBlockUser(post.userId);
-  const isOwnPost = post.userId === user?.id;
+  const [menuPosition, setMenuPosition] = useState<MenuPosition>(undefined);
+  const blockUserMutation = useBlockUser(initialPost.userId);
+  const isOwnPost = initialPost.userId === user?.id;
+  const [post, setPost] = useState(initialPost);
 
   const handleOpenComments = () => {
     setCurrentPostId(post.id);
@@ -53,8 +59,10 @@ export const PostItem = ({ post, isLoading = false }: PostItemProps) => {
     try {
       if (post.isSaved) {
         await unsavePostMutation.mutateAsync(post.id);
+        setPost((prev: typeof initialPost) => ({ ...prev, isSaved: false }));
       } else {
         await savePostMutation.mutateAsync(post.id);
+        setPost((prev: typeof initialPost) => ({ ...prev, isSaved: true }));
       }
     } catch (error: any) {
       console.error('Save/Unsave error:', error);
@@ -95,6 +103,15 @@ export const PostItem = ({ post, isLoading = false }: PostItemProps) => {
     }
   };
 
+  const handleOpenMenu = (event: GestureResponderEvent) => {
+    const { nativeEvent } = event;
+    setMenuPosition({
+      x: nativeEvent.pageX,
+      y: nativeEvent.pageY - 10
+    });
+    setMenuVisible(true);
+  };
+
   return (
     <SkeletonLoader isLoading={isLoading}>
       <View className="bg-[#DCDCDE] rounded-lg overflow-hidden mb-4">
@@ -116,7 +133,7 @@ export const PostItem = ({ post, isLoading = false }: PostItemProps) => {
 
           <TouchableOpacity
             className="w-6 h-6 justify-center items-center"
-            onPress={() => setMenuVisible(true)}
+            onPress={handleOpenMenu}
           >
             <SettingsIcon width={24} height={24} />
           </TouchableOpacity>
@@ -160,9 +177,9 @@ export const PostItem = ({ post, isLoading = false }: PostItemProps) => {
               {savePostMutation.isPending || unsavePostMutation.isPending ? (
                 <ActivityIndicator size="small" color="#E4CAC7" />
               ) : post.isSaved ? (
-                <FavoriteIcon width={20} height={20} />
+                <FilledFavoriteIcon width={20} height={20} />
               ) : (
-                <SavePostIcon width={20} height={20} />
+                <FavoriteIcon width={20} height={20} />
               )}
             </TouchableOpacity>
           </View>
@@ -177,6 +194,7 @@ export const PostItem = ({ post, isLoading = false }: PostItemProps) => {
           onEnableNotifications={() => {/* Handle notifications */ }}
           isOwnPost={isOwnPost}
           isLoading={isOwnPost ? deletePostMutation?.isPending : blockUserMutation.isPending}
+          buttonPosition={menuPosition}
         />
       </View>
     </SkeletonLoader>

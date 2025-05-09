@@ -1,5 +1,12 @@
 import React from 'react';
-import { View, Text, Modal, TouchableOpacity } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, Pressable, Dimensions } from 'react-native';
+import { MotiView } from 'moti';
+import EmptyIcon from '../../../assets/icons/EmptyIcon.svg';
+import TrashIcon from '../../../assets/icons/TrashIcon.svg';
+import BlockIcon from '../../../assets/icons/BlockIcon.svg';
+import ReportIcon from '../../../assets/icons/ReportIcon.svg';
+import QuestionIcon from '../../../assets/icons/QuestionIcon.svg';
+import NotificationIcon from '../../../assets/icons/NotificationIcon.svg';
 
 interface PostMenuProps {
   isVisible: boolean;
@@ -11,6 +18,8 @@ interface PostMenuProps {
   onDeletePost?: () => void;
   isOwnPost: boolean;
   isLoading?: boolean;
+  position?: { top: number; right: number };
+  buttonPosition?: { x: number; y: number };
 }
 
 export const PostMenu = ({
@@ -23,97 +32,101 @@ export const PostMenu = ({
   onDeletePost,
   isOwnPost,
   isLoading = false,
+  position = { top: 50, right: 20 },
+  buttonPosition,
 }: PostMenuProps) => {
+  const menuItems = isOwnPost
+    ? [
+      {
+        text: isLoading ? 'Deleting...' : 'Delete Post',
+        onPress: onDeletePost,
+        disabled: isLoading,
+        icon: TrashIcon
+      }
+    ]
+    : [
+      {
+        text: isLoading ? 'Blocking...' : 'Block User',
+        onPress: onBlockUser,
+        disabled: isLoading,
+        icon: BlockIcon
+      },
+      {
+        text: 'Report Post',
+        onPress: onReportPost,
+        icon: ReportIcon
+      },
+      {
+        text: 'Why Am I Seeing This?',
+        onPress: onWhySeeing,
+        icon: QuestionIcon
+      },
+      {
+        text: 'Enable Notifications',
+        onPress: onEnableNotifications,
+        icon: NotificationIcon
+      }
+    ];
+
+  const screenWidth = Dimensions.get('window').width;
+  const menuWidth = 224; // 56*4 (w-56 class)
+
+  // Calculate menu position based on button position
+  const menuPosition = buttonPosition
+    ? {
+      top: buttonPosition.y,
+      right: screenWidth - buttonPosition.x,
+    }
+    : position;
+
+  const from = buttonPosition
+    ? { translateY: -10, opacity: 0 }
+    : { translateY: 20, opacity: 0 };
+
   return (
     <Modal
-      visible={isVisible}
       transparent={true}
-      animationType="fade"
+      visible={isVisible}
+      animationType="none"
       onRequestClose={onClose}
     >
-      <TouchableOpacity
-        className="flex-1 bg-black/50 justify-center items-center"
-        activeOpacity={1}
+      <Pressable
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
         onPress={onClose}
       >
-        <View className="w-[240px] bg-stone-300 rounded-2xl overflow-hidden">
-          {isOwnPost ? (
-            <TouchableOpacity
-              className="h-14 flex-row items-center border-b border-black/10"
-              onPress={onDeletePost}
-              disabled={isLoading}
-            >
-              <View className="w-10 h-10 ml-2 mr-3 bg-white rounded-xl justify-center items-center border border-gray-100">
-                <View className="w-4 h-4 justify-center items-center">
-                  {/* Delete icon */}
-                </View>
-              </View>
-              <Text className="text-base font-medium text-stone-900">
-                {isLoading ? 'Deleting...' : 'Delete Post'}
-              </Text>
-            </TouchableOpacity>
-          ) : (
-            <>
-              <TouchableOpacity
-                className="h-14 flex-row items-center border-b border-black/10"
-                onPress={onBlockUser}
-                disabled={isLoading}
-              >
-                <View className="w-10 h-10 ml-2 mr-3 bg-white rounded-xl justify-center items-center border border-gray-100">
-                  <View className="w-4 h-4 justify-center items-center">
-                    {/* Block icon */}
+        <View style={{ flex: 1 }} />
+      </Pressable>
+
+      <MotiView
+        from={from}
+        animate={{ translateY: 0, translateX: 0, opacity: isVisible ? 1 : 0 }}
+        transition={{ type: 'spring', damping: 15, stiffness: 100 }}
+        className="absolute z-50 w-56"
+        style={{ top: menuPosition.top, right: menuPosition.right }}
+      >
+        <Pressable onPress={(e) => e.stopPropagation()}>
+          <View className="w-56 pb-2 flex flex-col justify-start items-start gap-0.5">
+            {menuItems.map((item, index) => {
+              const Icon = item.icon || EmptyIcon;
+              return (
+                <TouchableOpacity
+                  key={index}
+                  className="self-stretch h-14 relative bg-[#e4cac7] rounded-2xl shadow-sm"
+                  onPress={item.onPress}
+                  disabled={item.disabled}
+                >
+                  <Text className="left-[60px] top-[16px] absolute justify-center text-neutral-900 text-base font-base leading-normal">
+                    {item.text}
+                  </Text>
+                  <View className="w-10 h-10 left-[8px] top-[8px] absolute bg-white rounded-xl outline outline-1 outline-offset-[-1px] outline-zinc-100 flex justify-center items-center">
+                    <Icon width={22} height={22} />
                   </View>
-                </View>
-                <Text className="text-base font-medium text-stone-900">
-                  {isLoading ? 'Blocking...' : 'Block User'}
-                </Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                className="h-14 flex-row items-center border-b border-black/10"
-                onPress={onReportPost}
-              >
-                <View className="w-10 h-10 ml-2 mr-3 bg-white rounded-xl justify-center items-center border border-gray-100">
-                  <View className="w-4 h-4 justify-center items-center">
-                    {/* Report icon */}
-                  </View>
-                </View>
-                <Text className="text-base font-medium text-stone-900">
-                  Report Post
-                </Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                className="h-14 flex-row items-center border-b border-black/10"
-                onPress={onWhySeeing}
-              >
-                <View className="w-10 h-10 ml-2 mr-3 bg-white rounded-xl justify-center items-center border border-gray-100">
-                  <View className="w-4 h-4 justify-center items-center">
-                    {/* Question icon */}
-                  </View>
-                </View>
-                <Text className="text-base font-medium text-stone-900">
-                  Why Am I Seeing This?
-                </Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                className="h-14 flex-row items-center border-b border-black/10"
-                onPress={onEnableNotifications}
-              >
-                <View className="w-10 h-10 ml-2 mr-3 bg-white rounded-xl justify-center items-center border border-gray-100">
-                  <View className="w-4 h-4 justify-center items-center">
-                    {/* Notification icon */}
-                  </View>
-                </View>
-                <Text className="text-base font-medium text-stone-900">
-                  Enable Notifications
-                </Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
-      </TouchableOpacity>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </Pressable>
+      </MotiView>
     </Modal>
   );
 };

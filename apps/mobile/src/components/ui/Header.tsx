@@ -116,7 +116,7 @@ const Header: React.FC<HeaderProps> = ({
                 from={{ translateY: -200, opacity: 0 }}
                 animate={{ translateY: menuVisible ? 0 : -200, opacity: menuVisible ? 1 : 0 }}
                 transition={{ type: 'spring', damping: 15, stiffness: 100 }}
-                className="absolute right-4 top-14 z-50 bg-white shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] w-56 h-72"
+                className="absolute right-4 top-14 z-50 w-56 h-72"
               >
                 <Pressable onPress={(e) => e.stopPropagation()}>
                   <View className="w-56 h-72 pb-10 flex flex-col justify-start items-start gap-0.5">
@@ -125,14 +125,14 @@ const Header: React.FC<HeaderProps> = ({
                       return (
                         <TouchableOpacity
                           key={item.route}
-                          className="self-stretch h-14 relative bg-[#e4cac7] rounded-2xl"
+                          className="self-stretch h-14 relative bg-[#e4cac7] rounded-2xl shadow-sm"
                           onPress={() => handleNavigation(item.route)}
                         >
-                          <Text className="left-[60px] top-[16px] absolute justify-center text-neutral-900 text-base font-medium font-['Inter'] leading-normal">
+                          <Text className="left-[60px] top-[16px] absolute justify-center text-neutral-900 text-base font-base leading-normal">
                             {item.name}
                           </Text>
                           <View className="w-10 h-10 left-[8px] top-[8px] absolute bg-white rounded-xl outline outline-1 outline-offset-[-1px] outline-zinc-100 flex justify-center items-center">
-                            <Icon width={16} height={16} />
+                            <Icon width={22} height={22} />
                           </View>
                         </TouchableOpacity>
                       );
