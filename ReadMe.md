@@ -126,12 +126,7 @@ cd capture
 # Install dependencies
 pnpm install
 
-# Start the mobile app
-cd apps/mobile
-pnpm dev
-
-# Start the backend server
-cd apps/server
+# Start both servers
 pnpm dev
 ```
 

@@ -24,9 +24,12 @@ export const commentsQueryAtom = atomWithQuery((get) => {
       const { session } = useAuthStore.getState();
 
       if (!session?.access_token) {
+        console.error("No auth token available for comments query");
         throw errorService.createError("No auth token available", "auth/no-token");
       }
-      if (!postId) return { comments: [], totalCount: 0, hasNextPage: false };
+      if (!postId) {
+        return { comments: [], totalCount: 0, hasNextPage: false };
+      }
 
       try {
         const response = await fetch(`${API_URL}/graphql`, {
@@ -58,17 +61,23 @@ export const commentsQueryAtom = atomWithQuery((get) => {
                 }
               }
             `,
-            variables: { postId, sort, cursor, limit },
+            variables: {
+              postId,
+              sort,
+              cursor,
+              limit,
+            },
           }),
         });
 
         const data = await response.json();
 
         if (data.errors) {
+          console.error("GraphQL errors:", data.errors);
           throw errorService.createError(data.errors[0].message || "Failed to fetch comments", "server/graphql-error");
         }
 
-        return data.data.commentConnection;
+        return data.data?.commentConnection;
       } catch (error) {
         throw errorService.createError(
           "Unable to load comments",
@@ -87,7 +96,9 @@ export const combinedCommentsAtom = atom((get) => {
   const queryResult = get(commentsQueryAtom);
   const optimisticComments = get(optimisticCommentsAtom);
 
-  if (!queryResult.data) return optimisticComments;
+  if (!queryResult.data) {
+    return optimisticComments;
+  }
 
   const serverComments = queryResult.data.comments || [];
 
@@ -95,7 +106,7 @@ export const combinedCommentsAtom = atom((get) => {
     (optimistic) => !serverComments.some((server: { id: string }) => server.id === optimistic.id)
   );
 
-  return [...serverComments, ...filteredOptimistic];
+  return [...filteredOptimistic, ...serverComments];
 });
 
 export const createCommentMutationAtom = atomWithMutation((get) => {
@@ -223,6 +234,7 @@ export const loadMoreCommentsAtom = atom(null, (get, set) => {
   const queryResult = get(commentsQueryAtom);
 
   if (queryResult.data?.hasNextPage && queryResult.data?.nextCursor) {
+    console.log(`Loading more comments with cursor ${queryResult.data.nextCursor}`);
     set(commentCursorAtom, queryResult.data.nextCursor);
   }
 });

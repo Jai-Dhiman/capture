@@ -30,10 +30,15 @@ export const useCommentActions = () => {
     const parentId = replyingTo?.id;
     const parentPath = replyingTo?.path;
 
+    let newPath = "01";
+    if (parentPath) {
+      newPath = `${parentPath}.01`;
+    }
+
     const optimisticComment: Comment = {
       id: tempId,
       content: content.trim(),
-      path: parentPath ? `${parentPath}.01` : "01",
+      path: newPath,
       depth: parentPath ? parentPath.split(".").length : 0,
       parentId,
       createdAt: now,
@@ -49,11 +54,13 @@ export const useCommentActions = () => {
     setReplyingTo(null);
 
     try {
-      await createMutation.mutateAsync({
+      const result = await createMutation.mutateAsync({
         postId,
         content: content.trim(),
         parentId,
       });
+
+      setOptimisticComments((prev) => prev.filter((c) => c.id !== tempId));
     } catch (error) {
       const appError = errorService.createError(
         "Failed to post comment",

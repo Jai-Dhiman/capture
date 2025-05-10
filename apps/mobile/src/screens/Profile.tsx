@@ -253,7 +253,6 @@ export default function Profile() {
           showBackButton={true}
           onBackPress={() => navigation.goBack()}
           showMenuButton={true}
-          onMenuPress={() => {/* your menu logic here */ }}
         />
         <StatusBar barStyle="dark-content" />
         <View className="flex-1">
@@ -279,7 +278,7 @@ export default function Profile() {
           className="absolute left-0 right-0 bg-[#DCDCDE]"
           style={{
             top: tabBarBottomPosition - 20,
-            height: height - tabBarBottomPosition - 70,
+            height: height - tabBarBottomPosition - (isOwnProfile ? 70 : 50),
             zIndex: 1
           }}
         >

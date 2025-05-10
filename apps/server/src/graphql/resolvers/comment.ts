@@ -1,8 +1,8 @@
-import { createD1Client } from '../../db';
-import { eq, desc, asc, count, or, gt, and, lt, isNull, SQL, sql } from 'drizzle-orm';
-import * as schema from '../../db/schema';
-import { nanoid } from 'nanoid';
-import type { ContextType } from '../../types';
+import { createD1Client } from "../../db";
+import { eq, desc, asc, count, or, gt, and, lt, isNull, SQL, sql } from "drizzle-orm";
+import * as schema from "../../db/schema";
+import { nanoid } from "nanoid";
+import type { ContextType } from "../../types";
 
 export const commentResolvers = {
   Query: {
@@ -11,20 +11,20 @@ export const commentResolvers = {
       {
         postId,
         parentId = null,
-        sortBy = 'newest',
+        sortBy = "newest",
         cursor = null,
         limit = 10,
       }: {
         postId: string;
         parentId?: string | null;
-        sortBy?: 'newest' | 'oldest';
+        sortBy?: "newest" | "oldest";
         cursor?: string | null;
         limit?: number;
       },
-      context: ContextType,
+      context: ContextType
     ) {
       if (!context.user) {
-        throw new Error('Authentication required');
+        throw new Error("Authentication required");
       }
 
       const db = createD1Client(context.env);
@@ -33,7 +33,7 @@ export const commentResolvers = {
         const post = await db.select().from(schema.post).where(eq(schema.post.id, postId)).get();
 
         if (!post) {
-          throw new Error('Post not found');
+          throw new Error("Post not found");
         }
 
         const conditions: SQL<unknown>[] = [eq(schema.comment.postId, postId)];
@@ -47,33 +47,25 @@ export const commentResolvers = {
         const baseQuery = db.select().from(schema.comment);
 
         if (cursor) {
-          const decodedCursor = Buffer.from(cursor, 'base64').toString('utf-8');
-          const [cursorTimestamp, cursorId] = decodedCursor.split('::');
+          const decodedCursor = Buffer.from(cursor, "base64").toString("utf-8");
+          const [cursorTimestamp, cursorId] = decodedCursor.split("::");
 
           const cursorConditions =
-            sortBy === 'newest'
+            sortBy === "newest"
               ? or(
                   lt(schema.comment.createdAt, cursorTimestamp),
-                  and(
-                    eq(schema.comment.createdAt, cursorTimestamp),
-                    lt(schema.comment.id, cursorId),
-                  ),
+                  and(eq(schema.comment.createdAt, cursorTimestamp), lt(schema.comment.id, cursorId))
                 )
               : or(
                   gt(schema.comment.createdAt, cursorTimestamp),
-                  and(
-                    eq(schema.comment.createdAt, cursorTimestamp),
-                    gt(schema.comment.id, cursorId),
-                  ),
+                  and(eq(schema.comment.createdAt, cursorTimestamp), gt(schema.comment.id, cursorId))
                 );
           conditions.push(cursorConditions as SQL<unknown>);
         }
 
         const query = baseQuery
           .where(sql`${and(...conditions)}`)
-          .orderBy(
-            sortBy === 'newest' ? desc(schema.comment.createdAt) : asc(schema.comment.createdAt),
-          );
+          .orderBy(sortBy === "newest" ? desc(schema.comment.createdAt) : asc(schema.comment.createdAt));
 
         const countQuery = db
           .select({ count: count() })
@@ -91,7 +83,7 @@ export const commentResolvers = {
         let nextCursor = null;
         if (hasNextPage && limitedComments.length > 0) {
           const lastItem = limitedComments[limitedComments.length - 1];
-          nextCursor = Buffer.from(`${lastItem.createdAt}::${lastItem.id}`).toString('base64');
+          nextCursor = Buffer.from(`${lastItem.createdAt}::${lastItem.id}`).toString("base64");
         }
 
         return {
@@ -101,10 +93,8 @@ export const commentResolvers = {
           nextCursor,
         };
       } catch (error) {
-        console.error('Error fetching comments:', error);
-        throw new Error(
-          `Failed to fetch comments: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        );
+        console.error("Error fetching comments:", error);
+        throw new Error(`Failed to fetch comments: ${error instanceof Error ? error.message : "Unknown error"}`);
       }
     },
   },
@@ -121,23 +111,19 @@ export const commentResolvers = {
           parentId?: string | null;
         };
       },
-      context: ContextType,
+      context: ContextType
     ) {
       if (!context.user) {
-        throw new Error('Authentication required');
+        throw new Error("Authentication required");
       }
 
       const db = createD1Client(context.env);
 
       try {
-        const post = await db
-          .select()
-          .from(schema.post)
-          .where(eq(schema.post.id, input.postId))
-          .get();
+        const post = await db.select().from(schema.post).where(eq(schema.post.id, input.postId)).get();
 
         if (!post) {
-          throw new Error('Post not found');
+          throw new Error("Post not found");
         }
 
         let newPath: string;
@@ -147,33 +133,31 @@ export const commentResolvers = {
           const parentComment = await db
             .select()
             .from(schema.comment)
-            .where(
-              and(eq(schema.comment.path, input.parentId), eq(schema.comment.postId, input.postId)),
-            )
+            .where(and(eq(schema.comment.path, input.parentId), eq(schema.comment.postId, input.postId)))
             .get();
 
           if (!parentComment) {
-            throw new Error('Parent comment not found');
+            throw new Error("Parent comment not found");
           }
 
           const siblings = await db
             .select()
             .from(schema.comment)
             .where(
-              sql`${schema.comment.path} LIKE ${`${input.parentId}.%`} AND ${
-                schema.comment.depth
-              } = ${parentComment.depth + 1}`,
+              sql`${schema.comment.path} LIKE ${`${input.parentId}.%`} AND ${schema.comment.depth} = ${
+                parentComment.depth + 1
+              }`
             )
             .all();
 
           const siblingPaths = siblings.map((s: { path: string }) => s.path);
           const childIndices = siblingPaths.map((path: string) => {
-            const lastSegment = path.split('.').pop();
-            return parseInt(lastSegment || '0', 10);
+            const lastSegment = path.split(".").pop();
+            return parseInt(lastSegment || "0", 10);
           });
 
           const nextIndex = childIndices.length > 0 ? Math.max(...childIndices) + 1 : 1;
-          newPath = `${input.parentId}.${nextIndex.toString().padStart(2, '0')}`;
+          newPath = `${input.parentId}.${nextIndex.toString().padStart(2, "0")}`;
           depth = parentComment.depth + 1;
         } else {
           const topLevelComments = await db
@@ -187,7 +171,7 @@ export const commentResolvers = {
           });
 
           const nextIndex = topLevelIndices.length > 0 ? Math.max(...topLevelIndices) + 1 : 1;
-          newPath = nextIndex.toString().padStart(2, '0');
+          newPath = nextIndex.toString().padStart(2, "0");
           depth = 0;
         }
 
@@ -208,50 +192,40 @@ export const commentResolvers = {
           .set({ _commentCount: sql`${schema.post._commentCount} + 1` })
           .where(eq(schema.post.id, input.postId));
 
-        const createdComment = await db
-          .select()
-          .from(schema.comment)
-          .where(eq(schema.comment.id, commentId))
-          .get();
+        const createdComment = await db.select().from(schema.comment).where(eq(schema.comment.id, commentId)).get();
 
         if (!createdComment) {
-          throw new Error('Failed to create comment');
+          throw new Error("Failed to create comment");
         }
 
         return createdComment;
       } catch (error) {
-        console.error('Error creating comment:', error);
-        throw new Error(
-          `Failed to create comment: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        );
+        console.error("Error creating comment:", error);
+        throw new Error(`Failed to create comment: ${error instanceof Error ? error.message : "Unknown error"}`);
       }
     },
 
     async deleteComment(_: unknown, { id }: { id: string }, context: ContextType) {
       if (!context.user) {
-        throw new Error('Authentication required');
+        throw new Error("Authentication required");
       }
 
       const db = createD1Client(context.env);
 
       try {
-        const comment = await db
-          .select()
-          .from(schema.comment)
-          .where(eq(schema.comment.id, id))
-          .get();
+        const comment = await db.select().from(schema.comment).where(eq(schema.comment.id, id)).get();
 
         if (!comment) {
-          throw new Error('Comment not found');
+          throw new Error("Comment not found");
         }
 
         if (comment.userId !== context.user.id) {
-          throw new Error('Not authorized to delete this comment');
+          throw new Error("Not authorized to delete this comment");
         }
 
         await db
           .update(schema.comment)
-          .set({ content: '[Comment deleted]', isDeleted: 1 })
+          .set({ content: "[Comment deleted]", isDeleted: 1 })
           .where(eq(schema.comment.id, id))
           .execute();
 
@@ -260,10 +234,8 @@ export const commentResolvers = {
           success: true,
         };
       } catch (error) {
-        console.error('Error deleting comment:', error);
-        throw new Error(
-          `Failed to delete comment: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        );
+        console.error("Error deleting comment:", error);
+        throw new Error(`Failed to delete comment: ${error instanceof Error ? error.message : "Unknown error"}`);
       }
     },
   },
@@ -272,11 +244,7 @@ export const commentResolvers = {
     async user(parent: { userId: string }, _: unknown, context: ContextType) {
       const db = createD1Client(context.env);
 
-      const profile = await db
-        .select()
-        .from(schema.profile)
-        .where(eq(schema.profile.userId, parent.userId))
-        .get();
+      const profile = await db.select().from(schema.profile).where(eq(schema.profile.userId, parent.userId)).get();
 
       return profile;
     },
@@ -284,11 +252,7 @@ export const commentResolvers = {
     async post(parent: { postId: string }, _: unknown, context: ContextType) {
       const db = createD1Client(context.env);
 
-      const post = await db
-        .select()
-        .from(schema.post)
-        .where(eq(schema.post.id, parent.postId))
-        .get();
+      const post = await db.select().from(schema.post).where(eq(schema.post.id, parent.postId)).get();
 
       return post;
     },

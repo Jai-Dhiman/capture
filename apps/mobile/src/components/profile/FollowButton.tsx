@@ -143,7 +143,7 @@ export const FollowButton = ({ userId, isFollowing: initialIsFollowing, classNam
   if (isFollowing === null) {
     return (
       <TouchableOpacity
-        className={`py-2 px-4 bg-gray-100 ${className}`}
+        className={`py-2 px-4 bg-gray-100 rounded-[30px] ${className}`}
         disabled={true}
       >
         <ActivityIndicator size="small" color="#000" />
@@ -153,7 +153,7 @@ export const FollowButton = ({ userId, isFollowing: initialIsFollowing, classNam
 
   return (
     <TouchableOpacity
-      className={`py-1 px-4 bg-[#E4CAC7]`}
+      className={`py-1 px-4 bg-[#E4CAC7] rounded-[30px] ${className}`}
       onPress={handlePress}
       disabled={isPending}
     >

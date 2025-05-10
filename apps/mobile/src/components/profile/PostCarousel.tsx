@@ -86,7 +86,7 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
       setPosts(updatedPosts);
 
       // Call the parent handler
-      await onToggleSave(post);
+      onToggleSave(post);
     } catch (error: any) {
       // Revert UI if there was an error
       const revertedPosts = posts.map(p =>
@@ -106,7 +106,7 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
 
     return (
       <View className="bg-[#DCDCDE] rounded-lg overflow-hidden mb-0 h-full mx-0">
-        <View className="flex-row justify-between items-center p-1 pt-2 pb-3">
+        <View className="flex-row justify-between items-center p-1 pt-0 pb-2">
           <View className="flex-1" />
 
           <TouchableOpacity
@@ -178,7 +178,7 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
 
   return (
     <View className="flex-1 relative pt-0">
-      <View className="flex-1" style={{ marginBottom: 40 }}>
+      <View className="flex-1" style={{ marginBottom: 40, marginTop: -15 }}>
         <Carousel
           loop={false}
           width={ITEM_WIDTH}

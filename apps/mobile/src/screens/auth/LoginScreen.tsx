@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react'
 import {
-  View, Text, TouchableOpacity, TextInput, Image, Button,
+  View, Text, TouchableOpacity, TextInput, Image, Button, ActivityIndicator,
 } from 'react-native'
 import { useForm } from '@tanstack/react-form'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -10,7 +10,6 @@ import ViewPasswordIcon from '../../../assets/icons/ViewPasswordIcon.svg'
 import HidePasswordIcon from '../../../assets/icons/HidePasswordIcon.svg'
 import { AuthStackParamList } from '../../components/Navigators/types/navigation'
 import { useAuth } from '../../hooks/auth/useAuth'
-import { LoadingSpinner } from 'components/ui/LoadingSpinner'
 import OAuth from '../../components/providers/OAuth';
 import Header from 'components/ui/Header'
 import { useAlert } from '../../lib/AlertContext';
@@ -183,7 +182,10 @@ export default function LoginScreen({ navigation }: Props) {
                 disabled={login.isPending || isSubmitting}
               >
                 {login.isPending ? (
-                  <LoadingSpinner fullScreen message="Logging in..." />
+                  <View className="flex-row justify-center items-center">
+                    <ActivityIndicator size="small" color="#000" />
+                    <Text className="text-base font-bold font-roboto ml-2">Logging in...</Text>
+                  </View>
                 ) : (
                   <Text className="text-base font-bold font-roboto text-center">
                     Log In

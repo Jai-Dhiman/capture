@@ -10,7 +10,7 @@ export const typeDefs = `
       postId: ID!, 
       parentPath: String,
       sortBy: CommentSortOption,
-      page: Int,
+      cursor: String,
       limit: Int
     ): CommentConnection!
     savedPosts(limit: Int, offset: Int): [Post!]!

@@ -13,8 +13,8 @@ interface CommentListProps {
   onLoadMore: () => void;
 }
 
-export const CommentList: React.FC<CommentListProps> = ({ 
-  comments, 
+export const CommentList: React.FC<CommentListProps> = ({
+  comments,
   loading,
   loadingMore,
   hasNextPage,
@@ -29,7 +29,7 @@ export const CommentList: React.FC<CommentListProps> = ({
       </View>
     );
   }
-  
+
   if (comments.length === 0) {
     return (
       <View className="py-8 items-center">
@@ -37,7 +37,7 @@ export const CommentList: React.FC<CommentListProps> = ({
       </View>
     );
   }
-  
+
   return (
     <FlashList
       data={comments}
@@ -46,7 +46,7 @@ export const CommentList: React.FC<CommentListProps> = ({
         <CommentItem comment={item} />
       )}
       estimatedItemSize={100}
-      contentContainerStyle={{ paddingVertical: 16 }}
+      contentContainerStyle={{ paddingVertical: 16, paddingBottom: 50 }}
       ItemSeparatorComponent={() => <View className="h-2" />}
       onEndReached={hasNextPage ? onLoadMore : undefined}
       onEndReachedThreshold={0.5}
@@ -55,18 +55,21 @@ export const CommentList: React.FC<CommentListProps> = ({
         return item.isDeleted ? 'deleted' : 'active';
       }}
       ListFooterComponent={
-        loadingMore ? (
-          <View className="py-4 items-center">
-            <ActivityIndicator size="small" color="#0000ff" />
-          </View>
-        ) : hasNextPage ? (
-          <TouchableOpacity 
-            onPress={onLoadMore}
-            className="py-4 items-center"
-          >
-            <Text className="text-blue-500">Load more comments</Text>
-          </TouchableOpacity>
-        ) : null
+        <>
+          {loadingMore ? (
+            <View className="py-4 items-center">
+              <ActivityIndicator size="small" color="#e4cac7" />
+            </View>
+          ) : hasNextPage ? (
+            <TouchableOpacity
+              onPress={onLoadMore}
+              className="py-4 items-center"
+            >
+              <Text className="text-blue-500">Load more comments</Text>
+            </TouchableOpacity>
+          ) : null}
+          <View style={{ height: 60 }} />
+        </>
       }
     />
   );
