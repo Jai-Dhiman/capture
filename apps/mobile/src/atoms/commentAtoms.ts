@@ -11,15 +11,17 @@ export const commentSortAtom = atom<"newest" | "oldest">("newest");
 export const replyingToCommentAtom = atom<{ id: string; username?: string; path?: string } | null>(null);
 export const commentCursorAtom = atom<string | null>(null);
 export const commentLimitAtom = atom(10);
+export const refetchTriggerAtom = atom(0);
 
 export const commentsQueryAtom = atomWithQuery((get) => {
   const postId = get(currentPostIdAtom);
   const sort = get(commentSortAtom);
   const cursor = get(commentCursorAtom);
   const limit = get(commentLimitAtom);
+  const refetchTrigger = get(refetchTriggerAtom);
 
   return {
-    queryKey: ["comments", postId, sort, cursor, limit],
+    queryKey: ["comments", postId, sort, cursor, limit, refetchTrigger],
     queryFn: async ({ queryKey }) => {
       const { session } = useAuthStore.getState();
 

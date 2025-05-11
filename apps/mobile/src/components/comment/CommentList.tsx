@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, ActivityIndicator, TouchableOpacity, Dimensions } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Comment } from '../../types/commentTypes';
 import { CommentItem } from './CommentItem';
@@ -11,6 +11,7 @@ interface CommentListProps {
   loadingMore: boolean;
   hasNextPage: boolean;
   onLoadMore: () => void;
+  drawerIndex?: number;
 }
 
 export const CommentList: React.FC<CommentListProps> = ({
@@ -18,7 +19,8 @@ export const CommentList: React.FC<CommentListProps> = ({
   loading,
   loadingMore,
   hasNextPage,
-  onLoadMore
+  onLoadMore,
+  drawerIndex = 0
 }) => {
   if (loading && comments.length === 0) {
     return (
@@ -38,6 +40,12 @@ export const CommentList: React.FC<CommentListProps> = ({
     );
   }
 
+  // Adjust padding based on current drawer index (0 = 50%, 1 = 90%)
+  const screenHeight = Dimensions.get('window').height;
+  const baseMinPadding = 120;
+  const paddingMultiplier = drawerIndex === 0 ? 0.5 : 0; // More padding for 50% height
+  const paddingBottom = Math.max(baseMinPadding, screenHeight * paddingMultiplier);
+
   return (
     <FlashList
       data={comments}
@@ -46,7 +54,7 @@ export const CommentList: React.FC<CommentListProps> = ({
         <CommentItem comment={item} />
       )}
       estimatedItemSize={100}
-      contentContainerStyle={{ paddingVertical: 16, paddingBottom: 50 }}
+      contentContainerStyle={{ paddingVertical: 16, paddingBottom }}
       ItemSeparatorComponent={() => <View className="h-2" />}
       onEndReached={hasNextPage ? onLoadMore : undefined}
       onEndReachedThreshold={0.5}
@@ -68,7 +76,7 @@ export const CommentList: React.FC<CommentListProps> = ({
               <Text className="text-blue-500">Load more comments</Text>
             </TouchableOpacity>
           ) : null}
-          <View style={{ height: 60 }} />
+          <View style={{ height: 20 }} />
         </>
       }
     />

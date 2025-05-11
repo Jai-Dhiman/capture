@@ -1,14 +1,14 @@
-import React, { useRef, useMemo, useCallback, useEffect } from 'react';
+import React, { useRef, useMemo, useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Keyboard, Platform } from 'react-native';
 import { useAtom } from 'jotai';
-import BottomSheet, { 
-  BottomSheetView, 
+import BottomSheet, {
+  BottomSheetView,
   BottomSheetBackdrop,
   BottomSheetFooter,
 } from '@gorhom/bottom-sheet';
 import { KeyboardAccessoryView } from 'react-native-keyboard-accessory';
-import { 
-  commentDrawerOpenAtom, 
+import {
+  commentDrawerOpenAtom,
   currentPostIdAtom,
   combinedCommentsAtom,
   commentsQueryAtom,
@@ -24,7 +24,8 @@ export const CommentDrawer = () => {
   const [, loadMoreComments] = useAtom(loadMoreCommentsAtom);
   const queryResult = useAtom(commentsQueryAtom)[0];
   const insets = useSafeAreaInsets();
-  
+  const [currentIndex, setCurrentIndex] = useState(0);
+
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ['50%', '90%'], []);
 
@@ -33,18 +34,25 @@ export const CommentDrawer = () => {
       bottomSheetRef.current.snapToIndex(0);
     }
   }, [isOpen]);
-  
+
   useEffect(() => {
     if (!isOpen) {
       Keyboard.dismiss();
     }
   }, [isOpen]);
-  
+
   const handleLoadMore = useCallback(() => {
     if (queryResult.data?.hasNextPage && !queryResult.isFetching) {
       loadMoreComments();
     }
   }, [queryResult, loadMoreComments]);
+
+  const handleSheetChange = useCallback((index: number) => {
+    const newIsOpen = index > -1;
+    setIsOpen(newIsOpen);
+    setCurrentIndex(newIsOpen ? index : 0);
+    if (!newIsOpen) Keyboard.dismiss();
+  }, [setIsOpen]);
 
   return (
     <>
@@ -52,11 +60,7 @@ export const CommentDrawer = () => {
         ref={bottomSheetRef}
         index={isOpen ? 0 : -1}
         snapPoints={snapPoints}
-        onChange={(index) => {
-          const newIsOpen = index > -1;
-          setIsOpen(newIsOpen);
-          if (!newIsOpen) Keyboard.dismiss();
-        }}
+        onChange={handleSheetChange}
         handleIndicatorStyle={{ backgroundColor: '#999', width: 40 }}
         backgroundStyle={{ backgroundColor: '#fff' }}
         enablePanDownToClose={true}
@@ -76,21 +80,22 @@ export const CommentDrawer = () => {
               {comments.length} COMMENTS
             </Text>
           </View>
-          
+
           <View style={styles.commentListContainer}>
-            <CommentList 
-              comments={comments} 
+            <CommentList
+              comments={comments}
               loading={queryResult.isLoading}
               hasNextPage={queryResult.data?.hasNextPage || false}
               loadingMore={queryResult.isFetching}
               onLoadMore={handleLoadMore}
+              drawerIndex={currentIndex}
             />
           </View>
         </BottomSheetView>
       </BottomSheet>
 
       {isOpen && (
-        <KeyboardAccessoryView 
+        <KeyboardAccessoryView
           style={styles.keyboardAccessory}
           androidAdjustResize
           alwaysVisible={true}

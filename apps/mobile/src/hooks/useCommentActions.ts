@@ -6,6 +6,8 @@ import {
   replyingToCommentAtom,
   currentPostIdAtom,
   deleteCommentMutationAtom,
+  commentsQueryAtom,
+  refetchTriggerAtom,
 } from "../atoms/commentAtoms";
 import { useProfileStore } from "../stores/profileStore";
 import { Comment } from "../types/commentTypes";
@@ -18,8 +20,14 @@ export const useCommentActions = () => {
   const [deleteMutation] = useAtom(deleteCommentMutationAtom);
   const [replyingTo, setReplyingTo] = useAtom(replyingToCommentAtom);
   const [postId] = useAtom(currentPostIdAtom);
+  const [, setRefetchTrigger] = useAtom(refetchTriggerAtom);
   const { profile } = useProfileStore();
   const { showAlert } = useAlert();
+
+  // Trigger refetch by incrementing the trigger counter
+  const triggerRefetch = () => {
+    setRefetchTrigger((count) => count + 1);
+  };
 
   const createComment = async (content: string) => {
     if (!postId || !content.trim()) return;
@@ -54,13 +62,17 @@ export const useCommentActions = () => {
     setReplyingTo(null);
 
     try {
-      const result = await createMutation.mutateAsync({
+      await createMutation.mutateAsync({
         postId,
         content: content.trim(),
         parentId,
       });
 
+      // Remove optimistic comment
       setOptimisticComments((prev) => prev.filter((c) => c.id !== tempId));
+
+      // Trigger a refetch by incrementing the counter
+      triggerRefetch();
     } catch (error) {
       const appError = errorService.createError(
         "Failed to post comment",
@@ -89,6 +101,9 @@ export const useCommentActions = () => {
         commentId,
         postId,
       });
+
+      // Trigger a refetch by incrementing the counter
+      triggerRefetch();
     } catch (error) {
       const appError = errorService.createError(
         "Failed to delete comment",
