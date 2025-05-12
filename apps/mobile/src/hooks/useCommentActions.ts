@@ -43,11 +43,13 @@ export const useCommentActions = () => {
       newPath = `${parentPath}.01`;
     }
 
+    const depth = parentPath ? parentPath.split(".").length : 0;
+
     const optimisticComment: Comment = {
       id: tempId,
       content: content.trim(),
       path: newPath,
-      depth: parentPath ? parentPath.split(".").length : 0,
+      depth,
       parentId,
       createdAt: now,
       user: {
@@ -119,7 +121,7 @@ export const useCommentActions = () => {
     }
   };
 
-  const startReply = (comment: { id: string; path: string }) => {
+  const startReply = (comment: { id: string; path: string; username?: string }) => {
     setReplyingTo(comment);
   };
 
