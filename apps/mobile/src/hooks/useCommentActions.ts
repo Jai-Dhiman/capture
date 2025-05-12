@@ -36,19 +36,15 @@ export const useCommentActions = () => {
     const now = new Date().toISOString();
 
     const parentId = replyingTo?.id;
-    const parentPath = replyingTo?.path;
 
-    let newPath = "01";
-    if (parentPath) {
-      newPath = `${parentPath}.01`;
-    }
-
-    const depth = parentPath ? parentPath.split(".").length : 0;
+    // Generate optimistic comment with appropriate depth
+    const parentDepth = replyingTo?.path ? replyingTo.path.split(".").length : 0;
+    const depth = parentId ? parentDepth + 1 : 0;
 
     const optimisticComment: Comment = {
       id: tempId,
       content: content.trim(),
-      path: newPath,
+      path: replyingTo?.path ? `${replyingTo.path}.01` : "01", // Simple path just for UI rendering
       depth,
       parentId,
       createdAt: now,
@@ -64,7 +60,7 @@ export const useCommentActions = () => {
     setReplyingTo(null);
 
     try {
-      await createMutation.mutateAsync({
+      const result = await createMutation.mutateAsync({
         postId,
         content: content.trim(),
         parentId,
@@ -76,6 +72,8 @@ export const useCommentActions = () => {
       // Trigger a refetch by incrementing the counter
       triggerRefetch();
     } catch (error) {
+      console.error("Full error details:", error);
+
       const appError = errorService.createError(
         "Failed to post comment",
         "network/comment-create-failed",
@@ -122,6 +120,14 @@ export const useCommentActions = () => {
   };
 
   const startReply = (comment: { id: string; path: string; username?: string }) => {
+    if (!comment.path) {
+      console.error("Cannot reply to a comment without a path", comment);
+      showAlert("Cannot reply to this comment", {
+        type: "error",
+      });
+      return;
+    }
+
     setReplyingTo(comment);
   };
 

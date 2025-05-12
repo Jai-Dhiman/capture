@@ -27,14 +27,9 @@ export const CommentInput = () => {
   }, [replyingTo]);
 
   const handleSubmit = async () => {
-    if (!content.trim() && !replyingTo) return;
+    if (!content.trim()) return;
 
-    let finalContent = content;
-    if (replyingTo?.username) {
-      finalContent = `@${replyingTo.username} ${content}`;
-    }
-
-    await createComment(finalContent.trim());
+    await createComment(content.trim());
     setContent('');
     Keyboard.dismiss();
   };
@@ -56,7 +51,7 @@ export const CommentInput = () => {
         <TextInput
           ref={inputRef}
           style={styles.textInput}
-          placeholder={replyingTo ? "" : "Add a comment..."}
+          placeholder={replyingTo ? "Add your reply..." : "Add a comment..."}
           value={content}
           onChangeText={setContent}
           onFocus={() => setIsFocused(true)}
@@ -68,8 +63,8 @@ export const CommentInput = () => {
 
         <TouchableOpacity
           onPress={handleSubmit}
-          disabled={!content.trim() && !replyingTo}
-          style={[styles.sendButton, { opacity: (content.trim() || replyingTo) ? 1 : 0.5 }]}
+          disabled={!content.trim()}
+          style={[styles.sendButton, { opacity: content.trim() ? 1 : 0.5 }]}
         >
           <SendCommentIcon width={24} height={24} />
         </TouchableOpacity>

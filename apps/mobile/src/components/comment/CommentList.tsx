@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, ActivityIndicator, TouchableOpacity, Dimensions } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Comment } from '../../types/commentTypes';
@@ -22,6 +22,11 @@ export const CommentList: React.FC<CommentListProps> = ({
   onLoadMore,
   drawerIndex = 0
 }) => {
+  // Filter to get only top-level comments (those without a parentId)
+  const topLevelComments = useMemo(() => {
+    return comments.filter(comment => !comment.parentId);
+  }, [comments]);
+
   if (loading && comments.length === 0) {
     return (
       <View className="py-2">
@@ -48,7 +53,7 @@ export const CommentList: React.FC<CommentListProps> = ({
 
   return (
     <FlashList
-      data={comments}
+      data={topLevelComments}
       keyExtractor={item => item.id}
       renderItem={({ item }) => (
         <CommentItem comment={item} />

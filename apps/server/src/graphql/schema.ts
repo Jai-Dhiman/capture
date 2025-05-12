@@ -8,7 +8,7 @@ export const typeDefs = `
     comment(id: ID!): Comment
     commentConnection(
       postId: ID!, 
-      parentPath: String,
+      parentId: ID,
       sortBy: CommentSortOption,
       cursor: String,
       limit: Int

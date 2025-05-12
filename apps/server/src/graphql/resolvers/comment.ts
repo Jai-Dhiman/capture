@@ -133,7 +133,7 @@ export const commentResolvers = {
           const parentComment = await db
             .select()
             .from(schema.comment)
-            .where(and(eq(schema.comment.path, input.parentId), eq(schema.comment.postId, input.postId)))
+            .where(eq(schema.comment.id, input.parentId))
             .get();
 
           if (!parentComment) {
@@ -144,20 +144,15 @@ export const commentResolvers = {
             .select()
             .from(schema.comment)
             .where(
-              sql`${schema.comment.path} LIKE ${`${input.parentId}.%`} AND ${schema.comment.depth} = ${
+              sql`${schema.comment.parentId} = ${input.parentId} AND ${schema.comment.depth} = ${
                 parentComment.depth + 1
               }`
             )
             .all();
 
-          const siblingPaths = siblings.map((s: { path: string }) => s.path);
-          const childIndices = siblingPaths.map((path: string) => {
-            const lastSegment = path.split(".").pop();
-            return parseInt(lastSegment || "0", 10);
-          });
-
-          const nextIndex = childIndices.length > 0 ? Math.max(...childIndices) + 1 : 1;
-          newPath = `${input.parentId}.${nextIndex.toString().padStart(2, "0")}`;
+          const siblingCount = siblings.length;
+          const nextIndex = siblingCount + 1;
+          newPath = `${parentComment.path}.${nextIndex.toString().padStart(2, "0")}`;
           depth = parentComment.depth + 1;
         } else {
           const topLevelComments = await db
@@ -182,6 +177,7 @@ export const commentResolvers = {
           postId: input.postId,
           userId: context.user.id,
           content: input.content,
+          parentId: input.parentId || null,
           path: newPath,
           depth,
           createdAt: new Date().toISOString(),
