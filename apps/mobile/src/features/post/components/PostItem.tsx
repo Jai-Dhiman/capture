@@ -6,7 +6,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '@navigation/types';
 import { ProfileImage } from './ProfileImage';
 import { useAtom } from 'jotai';
-import { commentDrawerOpenAtom, currentPostIdAtom } from '../../comments/atoms/commentAtoms';
+import { commentDrawerOpenAtom, currentPostIdAtom } from '@features/comments/atoms/commentAtoms';
 import { useSavePost, useUnsavePost } from '../hooks/useSavesPosts';
 import { useAlert } from '@shared/lib/AlertContext';
 import { useDeletePost } from '../hooks/usePosts';

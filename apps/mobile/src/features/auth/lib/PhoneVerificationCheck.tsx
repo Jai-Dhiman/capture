@@ -2,7 +2,7 @@ import type React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../stores/authStore';
-import Header from '../../../shared/components/Header';
+import Header from '@shared/components/Header';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '@navigation/types';
 

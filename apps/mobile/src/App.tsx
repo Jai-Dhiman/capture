@@ -7,13 +7,13 @@ import { View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 import "../global.css";
-import { ApolloProvider } from './components/providers/ApolloProvider';
-import { MainNavigator, linking } from './components/Navigators';
-import { AlertProvider } from './lib/AlertContext';
+import { ApolloProvider } from '@shared/providers/ApolloProvider';
+import { MainNavigator, linking } from '@navigation/index';
+import { AlertProvider } from '@shared/lib/AlertContext';
 import { Provider as JotaiProvider } from 'jotai'
-import { JotaiInitializer } from './components/providers/JotaiProvider';
-import { AuthProvider } from './components/providers/AuthProvider';
-import { CommentDrawer } from './components/comment/CommentDrawer';
+import { JotaiInitializer } from '@shared/providers/JotaiProvider';
+import { AuthProvider } from '@features/auth/components/AuthProvider';
+import { CommentDrawer } from '@features/comments//components/CommentDrawer';
 import * as Sentry from '@sentry/react-native';
 
 Sentry.init({

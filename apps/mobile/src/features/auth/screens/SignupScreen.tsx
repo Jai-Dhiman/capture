@@ -5,12 +5,12 @@ import {
   TouchableOpacity,
   Image
 } from 'react-native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AuthStackParamList } from '../../../old/components/Navigators/types/navigation';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { AuthStackParamList } from '@navigation/types';
 import OAuth from '../components/OAuth';
-import AppleIcon from '../../../assets/icons/AppleLogo.svg';
-import EmailIcon from '../../../assets/icons/EmailIcon.svg';
-import Header from '../../../shared/components/Header';
+import AppleIcon from '@assets/icons/AppleLogo.svg';
+import EmailIcon from '@assets/icons/EmailIcon.svg';
+import Header from '@shared/components/Header';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'EmailSignup'>
@@ -21,7 +21,7 @@ export default function SignupScreen({ navigation }: Props) {
     <View style={{ flex: 1 }}>
       <View className="flex-1 bg-[#DCDCDE] rounded-[30px] overflow-hidden">
         <Image
-          source={require('../../../assets/DefaultBackground.png')}
+          source={require('@assets/DefaultBackground.png')}
           style={{ width: '100%', height: '100%', position: 'absolute' }}
           resizeMode="cover"
         />

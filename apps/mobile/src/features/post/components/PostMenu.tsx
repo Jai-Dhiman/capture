@@ -1,12 +1,12 @@
 import React from 'react';
 import { View, Text, Modal, TouchableOpacity, Pressable, Dimensions } from 'react-native';
 import { MotiView } from 'moti';
-import EmptyIcon from '../../../assets/icons/EmptyIcon.svg';
-import TrashIcon from '../../../assets/icons/TrashIcon.svg';
-import BlockIcon from '../../../assets/icons/BlockIcon.svg';
-import ReportIcon from '../../../assets/icons/ReportIcon.svg';
-import QuestionIcon from '../../../assets/icons/QuestionIcon.svg';
-import NotificationIcon from '../../../assets/icons/NotificationIcon.svg';
+import EmptyIcon from '@assets/icons/EmptyIcon.svg';
+import TrashIcon from '@assets/icons/TrashIcon.svg';
+import BlockIcon from '@assets/icons/BlockIcon.svg';
+import ReportIcon from '@assets/icons/ReportIcon.svg';
+import QuestionIcon from '@assets/icons/QuestionIcon.svg';
+import NotificationIcon from '@assets/icons/NotificationIcon.svg';
 
 interface PostMenuProps {
   isVisible: boolean;

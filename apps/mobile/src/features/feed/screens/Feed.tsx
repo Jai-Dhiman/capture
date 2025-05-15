@@ -4,7 +4,7 @@ import { useDiscoverFeed } from '../hooks/useDiscoverFeed';
 import { PostItem } from '@features/post/components/PostItem';
 import { ThreadItem } from '@features/post/components/ThreadItem';
 import Header from '@shared/components/Header';
-import { EmptyState } from '../EmptyState';
+import { EmptyState } from '../components/EmptyState';
 import type { Post, Thread } from '@features/post/types/postTypes';
 import { FlashList } from '@shopify/flash-list';
 import { SkeletonElement } from '@shared/components/SkeletonLoader';

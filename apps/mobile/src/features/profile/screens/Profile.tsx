@@ -18,7 +18,7 @@ import { ProfileHeader } from '../components/ProfileHeader';
 import { ProfileTabView } from '../components/ProfileTabView';
 import { PostCarousel } from '../components/PostCarousel';
 import { NewPostButton } from '../components/NewPostButton';
-import LockIcon2 from '../../assets/icons/LockIcon2.svg';
+import LockIcon2 from '@assets/icons/LockIcon2.svg';
 import { SkeletonElement } from '@shared/components/SkeletonLoader';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;

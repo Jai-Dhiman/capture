@@ -67,7 +67,7 @@ const Header: React.FC<HeaderProps> = ({
       >
         {showBackground && (
           <ImageBackground
-            source={require('../../../assets/DefaultBackground.png')}
+            source={require('@assets/DefaultBackground.png')}
             style={{
               width: '100%',
               height: '100%',

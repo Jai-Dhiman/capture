@@ -3,16 +3,16 @@ import {
   View, Text, TouchableOpacity, TextInput, Image, Alert, ScrollView,
 } from 'react-native';
 import { useForm } from '@tanstack/react-form';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RouteProp } from '@react-navigation/native';
-import { AuthStackParamList } from '../../../old/components/Navigators/types/navigation';
-import { LoadingSpinner } from 'components/ui/LoadingSpinner';
-import { useAlert } from '../../../old/lib/AlertContext';
-import { errorService } from '../../../old/services/errorService';
-import Header from 'components/ui/Header';
-import LockIcon from '../../../assets/icons/LockIcon.svg';
-import ViewPasswordIcon from '../../../assets/icons/ViewPasswordIcon.svg';
-import HidePasswordIcon from '../../../assets/icons/HidePasswordIcon.svg';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RouteProp } from '@react-navigation/native';
+import type { AuthStackParamList } from '@navigation/types';
+import { LoadingSpinner } from '@shared/components/LoadingSpinner';
+import { useAlert } from '@shared/lib/AlertContext';
+import { errorService } from '@shared/services/errorService';
+import Header from '@shared/components/Header';
+import LockIcon from '@assets/icons/LockIcon.svg';
+import ViewPasswordIcon from '@assets/icons/ViewPasswordIcon.svg';
+import HidePasswordIcon from '@assets/icons/HidePasswordIcon.svg';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'ResetPassword'>;
@@ -123,7 +123,7 @@ export default function ResetPasswordScreen({ navigation, route }: Props) {
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View className="flex-1 bg-[#DCDCDE] rounded-[30px] overflow-hidden">
           <Image
-            source={require('../../../assets/DefaultBackground.png')}
+            source={require('@assets/DefaultBackground.png')}
             style={{ width: '100%', height: '100%', position: 'absolute' }}
             resizeMode="cover"
           />

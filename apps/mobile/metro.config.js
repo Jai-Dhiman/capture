@@ -21,11 +21,11 @@ config.resolver = {
 };
 
 const webExtensions = ["web.ts", "web.tsx", "web.js"];
-webExtensions.forEach((ext) => {
+for (const ext of webExtensions) {
   if (!config.resolver.sourceExts.includes(ext)) {
     config.resolver.sourceExts.push(ext);
   }
-});
+}
 
 config.resolver.unstable_enablePackageExports = config.resolver.unstable_enablePackageExports ?? false;
 config.resolver.unstable_enableSymlinks = config.resolver.unstable_enableSymlinks ?? true;

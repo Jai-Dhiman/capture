@@ -1,7 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { MediaImage } from './MediaImage';
-import { SkeletonElement } from '../../../shared/components/SkeletonLoader';
+import { SkeletonElement } from '@shared/components/SkeletonLoader';
 
 interface ProfileImageProps {
   cloudflareId: string;

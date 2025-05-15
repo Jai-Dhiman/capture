@@ -1,7 +1,18 @@
 import { createExpoWebpackConfigAsync } from "@expo/webpack-config";
+import path from 'node:path';
 
 export default async function (env, argv) {
   const config = await createExpoWebpackConfigAsync(env, argv);
+
+  config.resolve = config.resolve || {};
+  config.resolve.alias = config.resolve.alias || {};
+
+  const __dirname = path.dirname(new URL(import.meta.url).pathname);
+  config.resolve.alias['@features'] = path.resolve(__dirname, './src/features');
+  config.resolve.alias['@shared'] = path.resolve(__dirname, './src/shared');
+  config.resolve.alias['@navigation'] = path.resolve(__dirname, './src/navigation');
+  config.resolve.alias['@app'] = path.resolve(__dirname, './src');
+  config.resolve.alias['@assets'] = path.resolve(__dirname, './assets');
 
   config.devServer = config.devServer || {};
   config.devServer.headers = {
