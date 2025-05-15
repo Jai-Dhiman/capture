@@ -18,8 +18,9 @@ export const typeDefs = `
     following(userId: ID!): [Profile!]!
     blockedUsers: [Profile!]!
     isUserBlocked(userId: ID!): Boolean!
-    feed(limit: Int = 10, cursor: String): FeedPayload
     discoverFeed(limit: Int = 10, cursor: String): FeedPayload
+    notifications(limit: Int = 20, offset: Int = 0, includeRead: Boolean = false): [Notification!]!
+    unreadNotificationCount: Int!
   }
 
   type Mutation {
@@ -37,6 +38,8 @@ export const typeDefs = `
     updatePrivacySettings(isPrivate: Boolean!): Profile!
     blockUser(userId: ID!): BlockResponse!
     unblockUser(userId: ID!): UnblockResponse!
+    markNotificationRead(id: ID!): NotificationReadResponse!
+    markAllNotificationsRead: NotificationReadResponse!
   }
 
   type Subscription {
@@ -192,5 +195,30 @@ type UnblockResponse {
 type FeedPayload {
   posts: [Post!]!
   nextCursor: String
+}
+
+type Notification {
+  id: ID!
+  type: NotificationType!
+  actionUser: Profile
+  resourceId: ID
+  resourceType: String
+  message: String!
+  isRead: Boolean!
+  createdAt: String!
+}
+
+enum NotificationType {
+  FOLLOW_REQUEST
+  NEW_FOLLOW
+  NEW_COMMENT
+  COMMENT_REPLY
+  MENTION
+  POST_SAVE
+}
+
+type NotificationReadResponse {
+  success: Boolean!
+  count: Int
 }
 `;

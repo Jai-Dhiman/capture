@@ -3,6 +3,7 @@ import { eq, desc, asc, count, or, gt, and, lt, isNull, SQL, sql } from "drizzle
 import * as schema from "../../db/schema";
 import { nanoid } from "nanoid";
 import type { ContextType } from "../../types";
+import { createNewCommentNotification, createCommentReplyNotification } from "../../lib/notificationService";
 
 export const commentResolvers = {
   Query: {
@@ -128,6 +129,7 @@ export const commentResolvers = {
 
         let newPath: string;
         let depth: number = 0;
+        let parentCommentUserId: string | null = null;
 
         if (input.parentId) {
           const parentComment = await db
@@ -139,6 +141,8 @@ export const commentResolvers = {
           if (!parentComment) {
             throw new Error("Parent comment not found");
           }
+
+          parentCommentUserId = parentComment.userId;
 
           const siblings = await db
             .select()
@@ -192,6 +196,36 @@ export const commentResolvers = {
 
         if (!createdComment) {
           throw new Error("Failed to create comment");
+        }
+
+        // Get the commenter's username for notifications
+        const commenter = await db
+          .select()
+          .from(schema.profile)
+          .where(eq(schema.profile.userId, context.user.id))
+          .get();
+
+        if (commenter) {
+          // Send notification for comment reply if this is a reply
+          if (input.parentId && parentCommentUserId) {
+            await createCommentReplyNotification({
+              parentCommentAuthorId: parentCommentUserId,
+              actionUserId: context.user.id,
+              actionUsername: commenter.username,
+              commentId: commentId,
+              env: context.env,
+            });
+          }
+          // Send notification to post author for new comment
+          else {
+            await createNewCommentNotification({
+              postAuthorId: post.userId,
+              actionUserId: context.user.id,
+              actionUsername: commenter.username,
+              commentId: commentId,
+              env: context.env,
+            });
+          }
         }
 
         return createdComment;

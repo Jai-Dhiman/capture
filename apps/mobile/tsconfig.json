@@ -13,7 +13,14 @@
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "strict": true,
-    "baseUrl": "src"
+    "baseUrl": "src",
+    "paths": {
+      "@features/*": ["features/*"],
+      "@shared/*": ["shared/*"],
+      "@navigation/*": ["navigation/*"],
+      "@app/*": ["./*"],
+      "@assets/*": ["../assets/*"]
+    }
   },
   "include": [
     "src",

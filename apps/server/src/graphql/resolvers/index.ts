@@ -1,13 +1,20 @@
-import { hashtagResolvers } from './hashtag';
-import { postResolvers } from './post';
-import { profileResolvers } from './profile';
-import { commentResolvers } from './comment';
-import { relationshipResolvers } from './relationship';
-import { savedPostResolvers } from './savedPost';
-import { blockingResolvers } from './blocking';
-import { discoveryResolvers } from './discovery';
+import { hashtagResolvers } from "./hashtag";
+import { postResolvers } from "./post";
+import { profileResolvers } from "./profile";
+import { commentResolvers } from "./comment";
+import { relationshipResolvers } from "./relationship";
+import { savedPostResolvers } from "./savedPost";
+import { blockingResolvers } from "./blocking";
+import { discoveryResolvers } from "./discovery";
+import { notificationResolvers } from "./notification";
 
-export const resolvers = {
+type ResolverMap = {
+  Query: Record<string, any>;
+  Mutation: Record<string, any>;
+  [key: string]: any;
+};
+
+export const resolvers: ResolverMap = {
   Query: {
     ...postResolvers.Query,
     ...profileResolvers.Query,
@@ -17,6 +24,7 @@ export const resolvers = {
     ...relationshipResolvers.Query,
     ...blockingResolvers.Query,
     ...discoveryResolvers.Query,
+    ...notificationResolvers.Query,
   },
   Mutation: {
     ...postResolvers.Mutation,
@@ -25,6 +33,7 @@ export const resolvers = {
     ...commentResolvers.Mutation,
     ...savedPostResolvers.Mutation,
     ...blockingResolvers.Mutation,
+    ...notificationResolvers.Mutation,
   },
 
   Post: {
@@ -37,4 +46,5 @@ export const resolvers = {
   },
   Hashtag: hashtagResolvers.Hashtag || {},
   Comment: commentResolvers.Comment,
+  Notification: notificationResolvers.Notification,
 };
