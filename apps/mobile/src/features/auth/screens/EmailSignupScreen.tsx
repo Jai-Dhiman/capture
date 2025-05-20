@@ -265,7 +265,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
                 state.values.confirmPassword
               ]}
             >
-              {([isSubmitting, password, confirmPassword]) => {
+              {([canSubmit, isFormSubmitting, password, confirmPassword]) => {
                 const buttonColorChange = passwordsMatch(String(password), String(confirmPassword));
 
                 return (
@@ -274,9 +274,9 @@ export default function EmailSignupScreen({ navigation }: Props) {
                     onPress={() => {
                       form.handleSubmit();
                     }}
-                    disabled={!!isSubmitting || !!signup.isPending}
+                    disabled={Boolean(!canSubmit || isFormSubmitting || signup.isPending)}
                   >
-                    {signup.isPending || isSubmitting ? (
+                    {isFormSubmitting || signup.isPending ? (
                       <LoadingSpinner message="Creating account..." />
                     ) : (
                       <Text className="text-center text-black text-[16px] font-bold font-['Roboto']">

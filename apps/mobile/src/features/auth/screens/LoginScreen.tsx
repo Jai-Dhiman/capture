@@ -173,13 +173,13 @@ export default function LoginScreen({ navigation }: Props) {
           <form.Subscribe
             selector={(state) => [state.canSubmit, state.isSubmitting]}
           >
-            {([isSubmitting]) => (
+            {([canSubmit, isFormSubmitting]) => (
               <TouchableOpacity
                 className="bg-[#E4CAC7] h-[56px] rounded-[30px] shadow-md justify-center mt-[59px]"
                 onPress={() => form.handleSubmit()}
-                disabled={login.isPending || isSubmitting}
+                disabled={!canSubmit || isFormSubmitting || login.isPending}
               >
-                {login.isPending ? (
+                {isFormSubmitting || login.isPending ? (
                   <View className="flex-row justify-center items-center">
                     <ActivityIndicator size="small" color="#000" />
                     <Text className="text-base font-bold font-roboto ml-2">Logging in...</Text>
