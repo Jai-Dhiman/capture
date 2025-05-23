@@ -20,7 +20,7 @@
     },
     "android": {
       "package": "com.captureapp.mobile",
-      "softwareKeyboardLayoutmode": "pan",
+      "softwareKeyboardLayoutMode": "pan",
       "adaptiveIcon": {
         "foregroundImage": "./assets/CaptureLogo.png",
         "backgroundColor": "#ffffff"

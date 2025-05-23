@@ -306,6 +306,9 @@ importers:
       react-native-web:
         specifier: ^0.19.13
         version: 0.19.13(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      typescript:
+        specifier: 5.5.4
+        version: 5.5.4
       zod:
         specifier: ^3.24.1
         version: 3.25.23
@@ -352,9 +355,6 @@ importers:
       tailwindcss:
         specifier: 3.3.2
         version: 3.3.2
-      typescript:
-        specifier: 5.5.4
-        version: 5.5.4
 
   apps/server:
     dependencies:
