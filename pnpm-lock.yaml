@@ -177,6 +177,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.75.2
         version: 5.76.2(react@18.3.1)
+      babel-plugin-module-resolver:
+        specifier: ^5.0.2
+        version: 5.0.2
       base-64:
         specifier: ^1.0.0
         version: 1.0.0
@@ -346,9 +349,6 @@ importers:
       '@types/react':
         specifier: ~18.3.12
         version: 18.3.22
-      babel-plugin-module-resolver:
-        specifier: ^5.0.2
-        version: 5.0.2
       metro-react-native-babel-preset:
         specifier: ^0.77.0
         version: 0.77.0(@babel/core@7.27.1)
