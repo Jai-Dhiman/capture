@@ -19,6 +19,8 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.captureapp.mobile",
+      "versionCode": 1,
       "softwareKeyboardLayoutmode": "pan",
       "adaptiveIcon": {
         "foregroundImage": "./assets/CaptureLogo.png",
@@ -83,6 +85,11 @@
           "organization": "capture-7u"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "cad78a77-57e1-4d5e-b730-c779cdd2b6cb"
+      }
+    }
   }
 }

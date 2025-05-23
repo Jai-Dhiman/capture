@@ -1,0 +1,30 @@
+{
+  "cli": {
+    "version": ">= 16.6.2",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "API_URL": "API_URL",
+        "SUPABASE_ANON_PUBLIC": "SUPABASE_ANON_PUBLIC",
+        "SUPABASE_URL": "SUPABASE_URL",
+        "SHARE_URL": "SHARE_URL"
+      }
+    },
+    "production": {
+      "autoIncrement": true
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
