@@ -19,11 +19,10 @@ import {
 } from "lucide-react";
 import { useUser, useClerk } from "@clerk/clerk-react";
 
-import { cn } from "../lib/utils";
-import { ScrollArea } from "./ui/scroll-area";
-import { Separator } from "./ui/separator";
-import { ThemeToggle } from "./theme-toggle";
-import { AuthMiddleware } from "./auth-middleware";
+import { cn } from "../../lib/utils";
+import { ScrollArea } from "../ui/scroll-area";
+import { Separator } from "../ui/separator";
+import { AuthMiddleware } from "../auth/RequireAuth";
 
 interface SidebarNavProps extends React.HTMLAttributes<HTMLElement> {
   items: {
@@ -65,7 +64,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const sidebarNavItems = [
     {
       title: "Dashboard",
-      href: "/dashboard",
+      href: "/",
       icon: <LayoutDashboard className="h-4 w-4" />,
     },
     {
@@ -139,18 +138,20 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           <ScrollArea className="flex-1">
             <div className="py-4">
               <div className={cn("px-3 py-2", sidebarCollapsed && "px-1")}>
-                <h2 className={cn(
-                  "mb-2 text-xs font-semibold tracking-wide text-slate-500 uppercase font-poppins transition-all duration-200 dark:text-slate-400",
-                  sidebarCollapsed && "text-center"
-                )}>ANALYTICS</h2>
+                {!sidebarCollapsed && (
+                  <h2 className="mb-2 text-xs font-semibold tracking-wide text-slate-500 uppercase font-poppins transition-all duration-200 dark:text-slate-400">
+                    ANALYTICS
+                  </h2>
+                )}
                 <SidebarNav items={sidebarNavItems} collapsed={sidebarCollapsed} />
               </div>
               <Separator className="my-2" />
               <div className={cn("px-3 py-2", sidebarCollapsed && "px-1")}>
-                <h2 className={cn(
-                  "mb-2 text-xs font-semibold tracking-wide text-slate-500 uppercase font-poppins transition-all duration-200 dark:text-slate-400",
-                  sidebarCollapsed && "text-center"
-                )}>ADMIN</h2>
+                {!sidebarCollapsed && (
+                  <h2 className="mb-2 text-xs font-semibold tracking-wide text-slate-500 uppercase font-poppins transition-all duration-200 dark:text-slate-400">
+                    ADMIN
+                  </h2>
+                )}
                 <SidebarNav items={adminNavItems} collapsed={sidebarCollapsed} />
               </div>
             </div>
@@ -159,6 +160,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           {/* Sign out button at bottom of sidebar */}
           <div className="border-t border-gray-200 p-3 dark:border-gray-800">
             <button
+              type="button"
               onClick={handleSignOut}
               className={cn(
                 "flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20",
@@ -202,7 +204,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                   </div>
                 </div>
               )}
-              <ThemeToggle />
             </div>
           </header>
           {/* Main Dashboard Content */}

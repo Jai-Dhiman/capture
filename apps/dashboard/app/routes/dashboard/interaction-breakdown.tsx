@@ -1,7 +1,5 @@
-import React from "react";
-import { DashboardLayout } from "../components/dashboard-layout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
-import { Progress } from "../components/ui/progress";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
+import { Progress } from "../../components/ui/progress";
 
 export function meta() {
   return [
@@ -12,7 +10,7 @@ export function meta() {
 
 export default function InteractionBreakdown() {
   return (
-    <DashboardLayout>
+    <>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Interaction Breakdown</h1>
       </div>
@@ -191,6 +189,6 @@ export default function InteractionBreakdown() {
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
+    </>
   );
 }

@@ -1,11 +1,9 @@
 import type { Route } from "./+types/home";
-import { DashboardLayout } from "../components/dashboard-layout";
+import { DashboardLayout } from "../components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
 import { Progress } from "../components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 
-export function meta({ }: Route.MetaArgs) {
+export function meta(_: Route.MetaArgs) {
   return [
     { title: "Dashboard - Capture" },
     { name: "description", content: "Capture Analytics Dashboard" },
@@ -21,7 +19,7 @@ export async function loader({ context }: Route.LoaderArgs) {
   }
 }
 
-export default function Home({ loaderData }: Route.ComponentProps) {
+export default function Home(_: Route.ComponentProps) {
   return (
     <DashboardLayout>
       <div className="flex items-center justify-between">
@@ -40,9 +38,9 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               2.1% vs last week
             </p>
             <div className="h-[80px] mt-4 flex items-end gap-2">
-              {[40, 30, 45, 25, 55, 65, 45, 40, 55, 40, 50, 70].map((height, i) => (
+              {[40, 30, 45, 25, 55, 65, 45, 40, 55, 40, 50, 70].map((height, index) => (
                 <div
-                  key={i}
+                  key={`bar-${index}-${height}`}
                   className="bg-blue-500 rounded-sm w-full"
                   style={{ height: `${height}%` }}
                 />

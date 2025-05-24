@@ -1,11 +1,8 @@
 "use client";
 
 import { SignIn } from "@clerk/clerk-react";
-import { useNavigate } from "react-router";
 
 export default function SignInPage() {
-  const navigate = useNavigate();
-
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4 dark:bg-gray-900">
       <div className="w-full max-w-md">

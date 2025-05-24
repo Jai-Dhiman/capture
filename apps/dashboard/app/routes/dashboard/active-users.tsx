@@ -1,11 +1,8 @@
-import type React from "react";
-import type { Route } from "./+types/home";
-import { DashboardLayout } from "../components/dashboard-layout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
-import { Badge } from "../components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { Pagination } from "../components/ui/pagination";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
+import { Badge } from "../../components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
+import { Pagination } from "../../components/ui/pagination";
 
 export function meta() {
   return [
@@ -16,7 +13,7 @@ export function meta() {
 
 export default function ActiveUsersReport() {
   return (
-    <DashboardLayout>
+    <>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Active Users Report</h1>
       </div>
@@ -237,6 +234,6 @@ export default function ActiveUsersReport() {
           </Tabs>
         </Card>
       </div>
-    </DashboardLayout>
+    </>
   );
 }

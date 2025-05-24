@@ -3,7 +3,7 @@
 import { ClerkProvider } from "@clerk/clerk-react";
 import { dark } from "@clerk/themes";
 import { useEffect, useState } from "react";
-import { env } from "../lib/env";
+import { env } from "../../lib/env";
 
 export function ClerkAppProvider({ children }: { children: React.ReactNode }) {
   // To detect dark mode for Clerk UI
@@ -16,7 +16,7 @@ export function ClerkAppProvider({ children }: { children: React.ReactNode }) {
 
     // Listen for theme changes
     const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
+      for (const mutation of mutations) {
         if (
           mutation.attributeName === "class" &&
           mutation.target === document.documentElement
@@ -24,7 +24,7 @@ export function ClerkAppProvider({ children }: { children: React.ReactNode }) {
           const isDarkNow = document.documentElement.classList.contains("dark");
           setIsDarkMode(isDarkNow);
         }
-      });
+      }
     });
 
     observer.observe(document.documentElement, { attributes: true });
