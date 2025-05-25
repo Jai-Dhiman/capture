@@ -51,22 +51,47 @@ export async function loader({ context }: LoaderFunctionArgs) {
     .bind(isoStart)
     .all();
 
-  // 3) merge + cumulative totalUsers
-  const map: Record<string, { date: string; activeUsers: number; signups: number }> = {};
-  for (const { date, activeUsers } of activity.results) {
-    map[date] = { date, activeUsers, signups: 0 };
+  // 3) build a full 30-day window and initialize per-day data
+  const dates: string[] = [];
+  for (let i = 0; i < days; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    dates.push(d.toISOString().split("T")[0]);
   }
-  for (const { date, signups } of signup.results) {
-    map[date] = map[date] || { date, activeUsers: 0, signups: 0 };
-    map[date].signups = signups;
+
+  // 4) count profiles that existed before our window
+  const countBeforeResult = await db
+    .prepare('SELECT COUNT(*) AS count FROM profile WHERE created_at < ?')
+    .bind(isoStart)
+    .all();
+  const beforeCount = Number(countBeforeResult.results[0]?.count || 0);
+
+  // 5) initialize signups and activeUsers to zero for each date
+  const map: Record<string, { date: string; signups: number; activeUsers: number }> = {};
+  for (const date of dates) {
+    map[date] = { date, signups: 0, activeUsers: 0 };
   }
-  let cumulative = 0;
-  const metrics: Metrics = Object.keys(map)
-    .sort()
-    .map((date) => {
-      cumulative += map[date].signups;
-      return { date, totalUsers: cumulative, activeUsers: map[date].activeUsers };
-    });
+
+  // 6) populate map from our signup and activity queries
+  for (const entry of signup.results as any[]) {
+    const key = entry.date as string;
+    if (map[key]) {
+      map[key].signups = Number(entry.signups);
+    }
+  }
+  for (const entry of activity.results as any[]) {
+    const key = entry.date as string;
+    if (map[key]) {
+      map[key].activeUsers = Number(entry.activeUsers);
+    }
+  }
+
+  // 7) compute cumulative totalUsers per day
+  let cumulative = beforeCount;
+  const metrics: Metrics = dates.map((date) => {
+    cumulative += map[date].signups;
+    return { date, totalUsers: cumulative, activeUsers: map[date].activeUsers };
+  });
 
   // 4) return a standard Response
   return new Response(JSON.stringify({ metrics }), {
