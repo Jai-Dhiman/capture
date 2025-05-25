@@ -2,32 +2,32 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAlert } from "@shared/lib/AlertContext";
 import { errorService } from "@shared/services/errorService";
 import { authService } from "../lib/authService";
-import { authState } from "../stores/authState";
 import { useAuthStore } from "../stores/authStore";
-import { UserProfile } from "../types/authTypes";
+import type { UserProfile, AuthUser, AuthSession, AuthStage } from "../types/authTypes";
+
+interface SignInServiceResponse {
+  session: AuthSession;
+  user: AuthUser;
+  profileExists: boolean;
+  profile?: UserProfile;
+}
 
 export function useAuth() {
   const queryClient = useQueryClient();
   const { showAlert } = useAlert();
-  const authStore = useAuthStore();
+  const setAuthenticatedData = useAuthStore((state) => state.setAuthenticatedData);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
+  const setAuthStage = useAuthStore((state) => state.setAuthStage);
+  const storeUser = useAuthStore((state) => state.user);
+  const storeSession = useAuthStore((state) => state.session);
+  const storeProfileExists = useAuthStore((state) => state.profileExists);
 
   const login = useMutation({
-    mutationFn: async ({ email, password }: { email: string; password: string }) => {
-      return await authService.signIn(email, password);
+    mutationFn: async ({ email, password }: { email: string; password: string }): Promise<SignInServiceResponse> => {
+      return await authService.signIn(email, password) as SignInServiceResponse;
     },
     onSuccess: async (data) => {
-      authStore.setUser(data.user);
-      authStore.setSession(data.session);
-
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      if (data.profile) {
-        authState.setProfile(data.profile);
-        authStore.setAuthStage("complete");
-      } else {
-        authStore.setAuthStage("profile-creation");
-      }
-
+      setAuthenticatedData(data.user, data.session, data.profileExists);
       queryClient.invalidateQueries({ queryKey: ["profile"] });
     },
     onError: (error) => {
@@ -43,6 +43,9 @@ export function useAuth() {
     mutationFn: async ({ email, password }: { email: string; password: string }) => {
       return await authService.signUp(email, password);
     },
+    onSuccess: (_data) => {
+      showAlert("Signup successful! Please check your email to verify your account.", { type: "success" });
+    },
     onError: (error) => {
       console.error("Signup error:", error);
       const appError = errorService.handleAuthError(error);
@@ -57,7 +60,7 @@ export function useAuth() {
       return await authService.logout();
     },
     onSuccess: () => {
-      authState.clearAuth();
+      clearAuth();
       queryClient.clear();
     },
     onError: (error) => {
@@ -102,9 +105,18 @@ export function useAuth() {
     mutationFn: async ({ phone, code }: { phone: string; code: string }) => {
       return await authService.verifyOTP(phone, code);
     },
-    onSuccess: (_, variables) => {
-      authState.setPhoneVerified(variables.phone);
-      authState.setAuthStage("complete");
+    onSuccess: (_data, variables) => {
+      if (storeUser && storeSession) {
+        const updatedUser: AuthUser = {
+          ...storeUser,
+          phone: variables.phone,
+          phone_confirmed_at: new Date().toISOString()
+        };
+        setAuthenticatedData(updatedUser, storeSession, storeProfileExists, "complete");
+      } else {
+        setAuthStage("complete");
+      }
+      showAlert("Phone verified successfully!", { type: "success" });
     },
     onError: (error) => {
       const appError = errorService.handleAuthError(error);

@@ -6,6 +6,7 @@ import { authRateLimiter, passwordResetRateLimiter, otpRateLimiter } from "../mi
 import { createD1Client } from "../db";
 import * as schema from "../db/schema";
 import { nanoid } from "nanoid";
+import { eq } from "drizzle-orm";
 
 const router = new Hono<{
   Bindings: Bindings;
@@ -81,16 +82,36 @@ router.post("/signin", authRateLimiter, async (c) => {
       return c.json({ error: error.message, code: "auth/invalid-credentials" }, 400);
     }
 
-    // record login event
-    const db = createD1Client(c.env);
-    await db.insert(schema.userActivity).values({
-      id: nanoid(),
-      userId: data.user?.id,
-      eventType: "login",
-      createdAt: new Date().toISOString(),
-    });
+    if (!data.user || !data.session) {
+      return c.json({ error: "Authentication failed: no user session", code: "auth/no-session" }, 400);
+    }
 
-    return c.json(data);
+    const db = createD1Client(c.env);
+    let profileExists = false;
+    try {
+      const existingProfile = await db.select({ id: schema.profile.id }).from(schema.profile).where(eq(schema.profile.userId, data.user.id)).get();
+      
+    if (existingProfile) {
+      profileExists = true;
+      await db.insert(schema.userActivity).values({
+        id: nanoid(),
+        userId: data.user.id,
+        eventType: "login",
+        createdAt: new Date().toISOString(),
+      }).execute();
+    }
+    } catch (dbError) {
+      console.error("Error during D1 profile check or userActivity logging on signin:", dbError);
+    }
+
+    return c.json({
+      session: data.session,
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+      },
+      profileExists: profileExists
+    });
   } catch (error) {
     console.error("Sign in error:", error);
     return c.json({ error: "Authentication failed", code: "auth/server-error" }, 500);
@@ -161,14 +182,34 @@ router.post("/refresh", authRateLimiter, async (c) => {
       return c.json({ error: error.message, code: "auth/refresh-failed" }, 401);
     }
 
-    if (!data.session) {
-      return c.json({ error: "Failed to refresh session", code: "auth/refresh-failed" }, 401);
+    if (!data.session || !data.user) {
+      return c.json({ error: "Failed to refresh session: no session or user returned", code: "auth/refresh-failed" }, 401);
+    }
+
+    // Check D1 profile existence
+    const db = createD1Client(c.env);
+    let profileExists = false;
+    try {
+      const existingProfile = await db.select({ id: schema.profile.id })
+                                      .from(schema.profile)
+                                      .where(eq(schema.profile.userId, data.user.id))
+                                      .get();
+      if (existingProfile) {
+        profileExists = true;
+      }
+    } catch (dbProfileError) {
+      console.error("Error checking D1 profile during token refresh:", dbProfileError);
+
     }
 
     return c.json({
-      access_token: data.session.access_token,
-      refresh_token: data.session.refresh_token,
-      expires_at: data.session.expires_at,
+      session: data.session,
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+        phone: data.user.phone || null,
+      },
+      profileExists: profileExists
     });
   } catch (error) {
     console.error("Token refresh error:", error);
@@ -339,29 +380,41 @@ router.post("/validate-session", authRateLimiter, async (c) => {
     const { session, user } = body;
 
     if (!session || !session.access_token || !user || !user.id) {
-      return c.json({ error: "Invalid session data", code: "auth/invalid-session" }, 400);
+      return c.json({ error: "Invalid session data provided", code: "auth/invalid-session-data" }, 400);
     }
 
     const supabase = getSupabaseClient(c);
 
-    const { data: validatedUser, error: validationError } = await supabase.auth.getUser(session.access_token);
+    const { data: validatedSupabaseUser, error: validationError } = await supabase.auth.getUser(session.access_token);
 
-    if (validationError || !validatedUser) {
-      return c.json({ error: "Invalid session", code: "auth/invalid-session" }, 401);
+    if (validationError || !validatedSupabaseUser || !validatedSupabaseUser.user) {
+      return c.json({ error: validationError?.message || "Invalid session token", code: "auth/invalid-session-token" }, 401);
     }
 
-    if (validatedUser.user.id !== user.id) {
+    if (validatedSupabaseUser.user.id !== user.id) {
       return c.json({ error: "User ID mismatch", code: "auth/user-mismatch" }, 401);
+    }
+
+    const db = createD1Client(c.env);
+    let profileExists = false;
+    try {
+      const existingProfile = await db.select({ id: schema.profile.id }).from(schema.profile).where(eq(schema.profile.userId, validatedSupabaseUser.user.id)).get();
+      
+      if (existingProfile) {
+        profileExists = true;
+      }
+    } catch (dbProfileError) {
+      console.error("Error checking D1 profile during session validation:", dbProfileError);
     }
 
     return c.json({
       success: true,
       user: {
-        id: user.id,
-        email: user.email,
-        phone: user.phone || null,
-        phone_confirmed_at: user.phone_confirmed_at || null,
+        id: validatedSupabaseUser.user.id,
+        email: validatedSupabaseUser.user.email,
+        phone: validatedSupabaseUser.user.phone || null,
       },
+      profileExists: profileExists
     });
   } catch (error) {
     console.error("Session validation error:", error);

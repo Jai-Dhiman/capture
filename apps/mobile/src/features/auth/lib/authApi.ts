@@ -3,6 +3,9 @@ import { secureStorage } from "@shared/lib/storage";
 import * as Random from "expo-crypto";
 import { encode as base64encode } from "base-64";
 import crypto from "crypto-js";
+import type { Session as SupabaseSession, User as SupabaseUser } from '@supabase/supabase-js';
+
+import type { AuthSession, AuthUser } from '../types/authTypes';
 
 export const AUTH_STORAGE_KEYS = {
   SESSION: "auth_session",
@@ -17,6 +20,31 @@ export class AuthError extends Error {
     this.name = "AuthError";
     this.code = code;
   }
+}
+
+interface SignInResponse {
+  session: AuthSession;
+  user: AuthUser;
+  profileExists: boolean;
+}
+
+interface RefreshResponse {
+  session: AuthSession;
+  user: AuthUser;
+  profileExists: boolean;
+}
+
+interface ValidateSessionPayload {
+  session: AuthSession; 
+  user?: AuthUser;
+}
+
+interface ValidateSessionResponse {
+  success: boolean;
+  user?: AuthUser;
+  profileExists?: boolean;
+  error?: string;
+  code?: string;
 }
 
 export const authApi = {
@@ -57,7 +85,7 @@ export const authApi = {
     await secureStorage.removeItem(AUTH_STORAGE_KEYS.CODE_VERIFIER);
   },
 
-  async storeSessionData(session: any, user: any): Promise<void> {
+  async storeSessionData(session: AuthSession, user: AuthUser): Promise<void> {
     try {
       await secureStorage.setItem(AUTH_STORAGE_KEYS.SESSION, JSON.stringify(session));
       await secureStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(user));
@@ -67,18 +95,14 @@ export const authApi = {
     }
   },
 
-  async getStoredSessionData(): Promise<{ session: any; user: any } | null> {
+  async getStoredSessionData(): Promise<{ session: AuthSession; user: AuthUser } | null> {
     try {
       const sessionData = await secureStorage.getItem(AUTH_STORAGE_KEYS.SESSION);
       const userData = await secureStorage.getItem(AUTH_STORAGE_KEYS.USER);
-
-      if (!sessionData || !userData) {
-        return null;
-      }
-
+      if (!sessionData || !userData) return null;
       return {
-        session: JSON.parse(sessionData),
-        user: JSON.parse(userData),
+        session: JSON.parse(sessionData) as AuthSession,
+        user: JSON.parse(userData) as AuthUser,
       };
     } catch (error) {
       console.error("Failed to retrieve session data:", error);
@@ -95,24 +119,22 @@ export const authApi = {
     }
   },
 
-  async signIn(email: string, password: string) {
+  async signIn(email: string, password: string): Promise<SignInResponse> {
     try {
       const response = await fetch(`${API_URL}/auth/signin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-
       const data = await response.json();
-
       if (!response.ok) {
-        console.error(`Authentication failed with status ${response.status}:`, data);
         throw new AuthError(data.error || "Authentication failed", data.code || "auth/sign-in-failed");
       }
-
-      return data;
+      if (!data.session || !data.user || typeof data.profileExists !== 'boolean') {
+         throw new AuthError("Sign in failed: Invalid response structure", "auth/invalid-response");
+      }
+      return data as SignInResponse;
     } catch (error) {
-      console.error("Sign-in error details:", error);
       if (error instanceof AuthError) throw error;
       throw new AuthError(error instanceof Error ? error.message : "Authentication failed");
     }
@@ -138,20 +160,21 @@ export const authApi = {
     }
   },
 
-  async refreshToken(refreshToken: string) {
+  async refreshToken(refreshTokenValue: string): Promise<RefreshResponse> {
     try {
       const response = await fetch(`${API_URL}/auth/refresh`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refresh_token: refreshToken }),
+        body: JSON.stringify({ refresh_token: refreshTokenValue }),
       });
-
       const data = await response.json();
       if (!response.ok) {
         throw new AuthError(data.error || "Failed to refresh token", data.code || "auth/refresh-failed");
       }
-
-      return data;
+      if (!data.session || !data.user || typeof data.profileExists !== 'boolean') {
+         throw new AuthError("Refresh token failed: Invalid response structure", "auth/invalid-response");
+      }
+      return data as RefreshResponse;
     } catch (error) {
       if (error instanceof AuthError) throw error;
       throw new AuthError(error instanceof Error ? error.message : "Token refresh failed");
@@ -379,19 +402,26 @@ export const authApi = {
     }
   },
 
-  async validateSession(token: string): Promise<boolean> {
+  async validateSession(sessionToValidate: AuthSession, userFromClient?: AuthUser): Promise<ValidateSessionResponse> {
     try {
-      const response = await fetch(`${API_URL}/auth/validate-token`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const payload: ValidateSessionPayload = { session: sessionToValidate };
+      if (userFromClient) {
+        payload.user = userFromClient; 
+      }
+      const response = await fetch(`${API_URL}/auth/validate-session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
-
-      return response.ok;
+      const data = await response.json();
+      return data as ValidateSessionResponse;
     } catch (error) {
-      console.error("Token validation error:", error);
-      return false;
+      console.error("Token validation API call error:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Validation request failed locally",
+        code: "auth/client-request-failed"
+      };
     }
   },
 };

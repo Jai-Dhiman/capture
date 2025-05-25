@@ -2,11 +2,12 @@ export interface AuthSession {
   access_token: string;
   refresh_token: string;
   expires_at: number;
+  user?: AuthUser;
 }
 
 export interface AuthUser {
   id: string;
-  email: string;
+  email?: string;
   phone?: string;
   phone_confirmed_at?: string;
 }
@@ -30,13 +31,15 @@ export interface AuthState {
   stage: AuthStage;
   user: AuthUser | null;
   session: AuthSession | null;
+  profileExists?: boolean;
   otpMessageId?: string;
   isRefreshing: boolean;
   lastRefreshError?: string;
   offlineRequests: Array<() => Promise<void>>;
 
-  setUser: (user: AuthUser | null) => void;
-  setSession: (session: AuthSession | null) => void;
+  setUser: (user: AuthUser | null, profileExists?: boolean) => void;
+  setSession: (session: AuthSession | null, profileExists?: boolean) => void;
+  setAuthenticatedData: (user: AuthUser | null, session: AuthSession | null, profileExists: boolean | undefined, stageOverride?: AuthStage) => void;
   setAuthStage: (stage: AuthStage) => void;
   clearAuth: () => void;
   setOtpMessageId: (id: string | undefined) => void;
@@ -47,6 +50,7 @@ export interface AuthState {
   processOfflineQueue: () => Promise<void>;
   setIsRefreshing: (value: boolean) => void;
   setLastRefreshError: (error: string | undefined) => void;
+  checkInitialSession: () => Promise<void>;
 }
 
 export interface UserProfile {
@@ -60,5 +64,5 @@ export interface UserProfile {
   isFollowing?: boolean | null;
 }
 
-export type AuthStatus = "idle" | "loading" | "authenticated" | "unauthenticated";
+export type AuthStatus = "idle" | "loading" | "authenticated" | "unauthenticated" | "error";
 export type AuthStage = "unauthenticated" | "profile-creation" | "phone-unverified" | "phone-verified" | "complete";
