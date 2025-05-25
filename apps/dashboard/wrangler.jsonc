@@ -20,7 +20,8 @@
       "binding": "DB",
       "database_name": "capture-db",
       "database_id": "adb1ae42-b82f-44d2-968c-0e7ac0d92200",
-      "migrations_dir": "drizzle"
+      "preview_database_id": "adb1ae42-b82f-44d2-968c-0e7ac0d92200",
+      "migrations_dir": "../server/drizzle"
     }
   ]
   /**

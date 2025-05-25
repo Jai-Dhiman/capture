@@ -151,6 +151,14 @@ export const postResolvers = {
         const mediaItems: Array<any> = [];
         const hashtagItems: Array<any> = [];
 
+        // record post event
+        await db.insert(schema.userActivity).values({
+          id: nanoid(),
+          userId: context.user.id,
+          eventType: "post",
+          createdAt: new Date().toISOString(),
+        });
+
         return {
           ...createdPost,
           type: createdPost.type || "post",

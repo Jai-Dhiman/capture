@@ -209,3 +209,17 @@ export const notificationSettings = sqliteTable("notification_settings", {
   createdAt: numeric("created_at").default(new Date().toISOString()).notNull(),
   updatedAt: numeric("updated_at").default(new Date().toISOString()).notNull(),
 });
+
+export const userActivity = sqliteTable("user_activity", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => profile.userId),
+  eventType: text("event_type").notNull(),
+  createdAt: numeric("created_at")
+    .notNull()
+    .default(new Date().toISOString()),
+}, (table) => [
+  index("user_activity_user_idx").on(table.userId),
+  index("user_activity_time_idx").on(table.createdAt),
+]);

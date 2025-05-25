@@ -1,5 +1,5 @@
 import { createD1Client } from "../../db";
-import { eq, desc, asc, count, or, gt, and, lt, isNull, SQL, sql } from "drizzle-orm";
+import { eq, desc, asc, count, or, gt, and, lt, isNull, type SQL, sql } from "drizzle-orm";
 import * as schema from "../../db/schema";
 import { nanoid } from "nanoid";
 import type { ContextType } from "../../types";
@@ -128,7 +128,7 @@ export const commentResolvers = {
         }
 
         let newPath: string;
-        let depth: number = 0;
+        let depth = 0;
         let parentCommentUserId: string | null = null;
 
         if (input.parentId) {
@@ -166,7 +166,7 @@ export const commentResolvers = {
             .all();
 
           const topLevelIndices = topLevelComments.map((c) => {
-            return parseInt(c.path, 10);
+            return Number.parseInt(c.path, 10);
           });
 
           const nextIndex = topLevelIndices.length > 0 ? Math.max(...topLevelIndices) + 1 : 1;
@@ -227,6 +227,14 @@ export const commentResolvers = {
             });
           }
         }
+
+        // record comment event
+        await db.insert(schema.userActivity).values({
+          id: nanoid(),
+          userId: context.user.id,
+          eventType: "comment",
+          createdAt: new Date().toISOString(),
+        });
 
         return createdComment;
       } catch (error) {

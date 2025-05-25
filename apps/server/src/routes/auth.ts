@@ -3,6 +3,9 @@ import { createClient } from "@supabase/supabase-js";
 import type { Bindings, Variables } from "../types";
 import { z } from "zod";
 import { authRateLimiter, passwordResetRateLimiter, otpRateLimiter } from "../middleware/rateLimit";
+import { createD1Client } from "../db";
+import * as schema from "../db/schema";
+import { nanoid } from "nanoid";
 
 const router = new Hono<{
   Bindings: Bindings;
@@ -77,6 +80,15 @@ router.post("/signin", authRateLimiter, async (c) => {
     if (error) {
       return c.json({ error: error.message, code: "auth/invalid-credentials" }, 400);
     }
+
+    // record login event
+    const db = createD1Client(c.env);
+    await db.insert(schema.userActivity).values({
+      id: nanoid(),
+      userId: data.user?.id,
+      eventType: "login",
+      createdAt: new Date().toISOString(),
+    });
 
     return c.json(data);
   } catch (error) {

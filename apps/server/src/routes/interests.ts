@@ -63,8 +63,8 @@ interstsRouter.get("/", authMiddleware, async (c) => {
       (id) => id != null
     ) as string[]; // Ensure filtering non-null IDs
 
-    let postHashtagsMap = new Map<string, string[]>();
-    let relevantHashtagsSet = new Set<string>();
+    const postHashtagsMap = new Map<string, string[]>();
+    const relevantHashtagsSet = new Set<string>();
 
     // 3. Fetch Hashtags for these posts if any exist
     if (allPostIds.length > 0) {

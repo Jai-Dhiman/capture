@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "a09e611e-1d25-4688-8ee4-1da46b906bf1",
+  "id": "0aae77a1-2f7d-4638-9ea1-5cd4d7cbfcb9",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "blocked_user": {
@@ -34,7 +34,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-05-10T05:00:45.634Z'"
+          "default": "'2025-05-25T05:26:15.012Z'"
         }
       },
       "indexes": {
@@ -160,7 +160,15 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-05-10T05:00:45.634Z'"
+          "default": "'2025-05-25T05:26:15.012Z'"
+        },
+        "_like_count": {
+          "name": "_like_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
         }
       },
       "indexes": {
@@ -238,6 +246,95 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
+    "comment_like": {
+      "name": "comment_like",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "comment_id": {
+          "name": "comment_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'2025-05-25T05:26:15.012Z'"
+        }
+      },
+      "indexes": {
+        "user_comment_likes_idx": {
+          "name": "user_comment_likes_idx",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": false
+        },
+        "comment_likes_idx": {
+          "name": "comment_likes_idx",
+          "columns": [
+            "comment_id"
+          ],
+          "isUnique": false
+        },
+        "comment_like_composite_idx": {
+          "name": "comment_like_composite_idx",
+          "columns": [
+            "user_id",
+            "comment_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "comment_like_user_id_profile_user_id_fk": {
+          "name": "comment_like_user_id_profile_user_id_fk",
+          "tableFrom": "comment_like",
+          "tableTo": "profile",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "comment_like_comment_id_comment_id_fk": {
+          "name": "comment_like_comment_id_comment_id_fk",
+          "tableFrom": "comment_like",
+          "tableTo": "comment",
+          "columnsFrom": [
+            "comment_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "hashtag": {
       "name": "hashtag",
       "columns": {
@@ -261,7 +358,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-05-10T05:00:45.634Z'"
+          "default": "'2025-05-25T05:26:15.012Z'"
         }
       },
       "indexes": {
@@ -336,7 +433,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-05-10T05:00:45.633Z'"
+          "default": "'2025-05-25T05:26:15.011Z'"
         }
       },
       "indexes": {
@@ -387,6 +484,216 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
+    "notification": {
+      "name": "notification",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "action_user_id": {
+          "name": "action_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "resource_id": {
+          "name": "resource_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "resource_type": {
+          "name": "resource_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "message": {
+          "name": "message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "is_read": {
+          "name": "is_read",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'2025-05-25T05:26:15.012Z'"
+        }
+      },
+      "indexes": {
+        "user_notifications_idx": {
+          "name": "user_notifications_idx",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": false
+        },
+        "notification_time_idx": {
+          "name": "notification_time_idx",
+          "columns": [
+            "created_at"
+          ],
+          "isUnique": false
+        },
+        "notification_read_idx": {
+          "name": "notification_read_idx",
+          "columns": [
+            "is_read"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "notification_user_id_profile_user_id_fk": {
+          "name": "notification_user_id_profile_user_id_fk",
+          "tableFrom": "notification",
+          "tableTo": "profile",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "notification_action_user_id_profile_user_id_fk": {
+          "name": "notification_action_user_id_profile_user_id_fk",
+          "tableFrom": "notification",
+          "tableTo": "profile",
+          "columnsFrom": [
+            "action_user_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "notification_settings": {
+      "name": "notification_settings",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "enable_in_app": {
+          "name": "enable_in_app",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        },
+        "enable_push": {
+          "name": "enable_push",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        },
+        "frequency": {
+          "name": "frequency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'IMMEDIATE'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'2025-05-25T05:26:15.013Z'"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'2025-05-25T05:26:15.013Z'"
+        }
+      },
+      "indexes": {
+        "notification_settings_user_id_unique": {
+          "name": "notification_settings_user_id_unique",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "notification_settings_user_id_profile_user_id_fk": {
+          "name": "notification_settings_user_id_profile_user_id_fk",
+          "tableFrom": "notification_settings",
+          "tableTo": "profile",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "post": {
       "name": "post",
       "columns": {
@@ -425,7 +732,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-05-10T05:00:45.633Z'"
+          "default": "'2025-05-25T05:26:15.011Z'"
         },
         "_save_count": {
           "name": "_save_count",
@@ -502,7 +809,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-05-10T05:00:45.634Z'"
+          "default": "'2025-05-25T05:26:15.012Z'"
         }
       },
       "indexes": {
@@ -621,7 +928,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-05-10T05:00:45.625Z'"
+          "default": "'2025-05-25T05:26:15.005Z'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -629,7 +936,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-05-10T05:00:45.632Z'"
+          "default": "'2025-05-25T05:26:15.009Z'"
         }
       },
       "indexes": {
@@ -683,7 +990,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-05-10T05:00:45.634Z'"
+          "default": "'2025-05-25T05:26:15.012Z'"
         }
       },
       "indexes": {
@@ -772,7 +1079,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-05-10T05:00:45.634Z'"
+          "default": "'2025-05-25T05:26:15.012Z'"
         }
       },
       "indexes": {
@@ -814,6 +1121,74 @@
           ],
           "columnsTo": [
             "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "user_activity": {
+      "name": "user_activity",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "event_type": {
+          "name": "event_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'2025-05-25T05:26:15.013Z'"
+        }
+      },
+      "indexes": {
+        "user_activity_user_idx": {
+          "name": "user_activity_user_idx",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": false
+        },
+        "user_activity_time_idx": {
+          "name": "user_activity_time_idx",
+          "columns": [
+            "created_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "user_activity_user_id_profile_user_id_fk": {
+          "name": "user_activity_user_id_profile_user_id_fk",
+          "tableFrom": "user_activity",
+          "tableTo": "profile",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "user_id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"

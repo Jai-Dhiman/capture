@@ -113,6 +113,14 @@ export const savedPostResolvers = {
           .set({ _saveCount: sql`${schema.post._saveCount} + 1` })
           .where(eq(schema.post.id, postId));
 
+        // record save event
+        await db.insert(schema.userActivity).values({
+          id: nanoid(),
+          userId: context.user.id,
+          eventType: "save",
+          createdAt: new Date().toISOString(),
+        });
+
         try {
           await context.env.USER_VECTOR_QUEUE.send({ userId: context.user.id });
         } catch (queueError) {
