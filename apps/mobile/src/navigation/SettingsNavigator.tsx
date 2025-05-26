@@ -4,7 +4,6 @@ import type { SettingsStackParamList } from './types';
 import MainSettingsScreen from '@features/settings/screens/MainSettingsScreen';
 import BlockedUsersScreen from '@features/settings/screens/BlockedUsersScreen';
 import AccountSettingsScreen from '@features/settings/screens/AccountSettingsScreen';
-import VerifyPhoneScreen from '@features/settings/screens/VerifyPhoneNumber';
 
 const Stack = createNativeStackNavigator<SettingsStackParamList>();
 
@@ -14,7 +13,6 @@ export default function SettingsNavigator() {
       <Stack.Screen name="MainSettings" component={MainSettingsScreen} />
       <Stack.Screen name="BlockedUsers" component={BlockedUsersScreen} />
       <Stack.Screen name="AccountSettings" component={AccountSettingsScreen} />
-      <Stack.Screen name="VerifyPhone" component={VerifyPhoneScreen} />
     </Stack.Navigator>
   );
 }

@@ -10,7 +10,6 @@ import ViewPasswordIcon from '@assets/icons/ViewPasswordIcon.svg'
 import HidePasswordIcon from '@assets/icons/HidePasswordIcon.svg'
 import type { AuthStackParamList } from '@navigation/types'
 import { useAuth } from '../hooks/useAuth'
-import OAuth from '../components/OAuth';
 import Header from '@shared/components/Header'
 import { useAlert } from '@shared/lib/AlertContext';
 import { errorService } from '@shared/services/errorService';
@@ -42,10 +41,10 @@ export default function LoginScreen({ navigation }: Props) {
       login.mutate(
         { email: value.email, password: value.password },
         {
-          onError: (error) => {
-            const formattedError = errorService.handleAuthError(error);
-            const alertType = errorService.getAlertType(formattedError.category);
-            showAlert(formattedError.message, { type: alertType });
+          onError: () => {
+            // Error is already handled by the useAuth hook's onError, 
+            // but if specific screen handling is needed, it can be done here.
+            // For now, relying on the hook's alert.
           }
         }
       )
@@ -89,6 +88,7 @@ export default function LoginScreen({ navigation }: Props) {
                 >
                   <EmailIcon width={35} height={35} style={{ marginRight: 14 }} />
                   <TextInput
+                    ref={emailInputRef}
                     onFocus={() => {
                       setIsEmailFocused(true);
                     }}
@@ -134,6 +134,7 @@ export default function LoginScreen({ navigation }: Props) {
                 >
                   <LockIcon width={35} height={35} style={{ marginRight: 14 }} />
                   <TextInput
+                    ref={passwordInputRef}
                     onFocus={() => {
                       setIsPasswordFocused(true);
                     }}
@@ -192,10 +193,6 @@ export default function LoginScreen({ navigation }: Props) {
               </TouchableOpacity>
             )}
           </form.Subscribe>
-
-          <View className="h-[1px] bg-[#7B7B7B] my-[29px]" />
-          <OAuth />
-          <View className="h-[1px] bg-[#7B7B7B] my-[29px]" />
 
           <View className="items-center mt-[32px]">
             <Text className="text-base font-roboto mb-[5px]">Don't have an account?</Text>

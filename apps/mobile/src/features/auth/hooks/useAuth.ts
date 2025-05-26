@@ -1,50 +1,47 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAlert } from "@shared/lib/AlertContext";
 import { errorService } from "@shared/services/errorService";
-import { authService } from "../lib/authService";
+import { workersAuthApi } from "../lib/workersAuthApi";
 import { useAuthStore } from "../stores/authStore";
-import type { UserProfile, AuthUser, AuthSession, AuthStage } from "../types/authTypes";
+import type { User, Session, AuthResponse, LoginCredentials, RegisterData, BasicSuccessResponse, RegisterResponse as ApiRegisterResponse } from "../types";
 
-interface SignInServiceResponse {
-  session: AuthSession;
-  user: AuthUser;
-  profileExists: boolean;
-  profile?: UserProfile;
-}
+interface LoginMutationParams extends LoginCredentials {}
+interface SignupMutationParams extends RegisterData {}
 
 export function useAuth() {
   const queryClient = useQueryClient();
   const { showAlert } = useAlert();
-  const setAuthenticatedData = useAuthStore((state) => state.setAuthenticatedData);
+  
+  const setAuthData = useAuthStore((state) => state.setAuthData);
   const clearAuth = useAuthStore((state) => state.clearAuth);
-  const setAuthStage = useAuthStore((state) => state.setAuthStage);
-  const storeUser = useAuthStore((state) => state.user);
-  const storeSession = useAuthStore((state) => state.session);
-  const storeProfileExists = useAuthStore((state) => state.profileExists);
+  // const setStage = useAuthStore((state) => state.setStage); // Corrected, but may not be frequently used here
+  // User and Session can be accessed if needed for specific logic, but mutations primarily call actions.
+  // const user = useAuthStore((state) => state.user);
+  // const session = useAuthStore((state) => state.session);
 
-  const login = useMutation({
-    mutationFn: async ({ email, password }: { email: string; password: string }): Promise<SignInServiceResponse> => {
-      return await authService.signIn(email, password) as SignInServiceResponse;
+  const loginMutation = useMutation<AuthResponse, Error, LoginMutationParams>({
+    mutationFn: async ({ email, password }: LoginMutationParams) => {
+      return await workersAuthApi.login({ email, password });
     },
-    onSuccess: async (data) => {
-      setAuthenticatedData(data.user, data.session, data.profileExists);
-      queryClient.invalidateQueries({ queryKey: ["profile"] });
+    onSuccess: (data) => {
+      setAuthData(data); 
+      queryClient.invalidateQueries({ queryKey: ["profile"] }); 
     },
     onError: (error) => {
       console.error("Login error:", error);
-      const appError = errorService.handleAuthError(error);
+      const appError = errorService.handleAuthError(error); 
       showAlert(appError.message, {
         type: errorService.getAlertType(appError.category),
       });
     },
   });
 
-  const signup = useMutation({
-    mutationFn: async ({ email, password }: { email: string; password: string }) => {
-      return await authService.signUp(email, password);
+  const signupMutation = useMutation<ApiRegisterResponse, Error, SignupMutationParams>({
+    mutationFn: async ({ email, password }: SignupMutationParams) => {
+      return await workersAuthApi.register({ email, password });
     },
-    onSuccess: (_data) => {
-      showAlert("Signup successful! Please check your email to verify your account.", { type: "success" });
+    onSuccess: (data) => {
+      showAlert(data.message || "Signup successful! Please check your email to verify your account, then login.", { type: "success" });
     },
     onError: (error) => {
       console.error("Signup error:", error);
@@ -55,18 +52,18 @@ export function useAuth() {
     },
   });
 
-  const logout = useMutation({
+  const logoutMutation = useMutation<void, Error, void>({
     mutationFn: async () => {
-      return await authService.logout();
+      await clearAuth(); 
     },
     onSuccess: () => {
-      clearAuth();
-      queryClient.clear();
+      queryClient.clear(); 
+      showAlert("You have been logged out.", { type: "info" });
     },
     onError: (error) => {
       console.error("Logout error:", error);
       const appError = errorService.createError(
-        "Failed to sign out. Please try again.",
+        "Failed to sign out properly. Your local session is cleared.",
         "auth/logout-error",
         error instanceof Error ? error : undefined
       );
@@ -76,87 +73,14 @@ export function useAuth() {
     },
   });
 
-  const sendOTP = useMutation({
-    mutationFn: async ({ phone, token }: { phone: string; token: string }) => {
-      return await authService.sendOTP(phone, token);
-    },
-    onError: (error) => {
-      const appError = errorService.handleAuthError(error);
-
-      const isTwilioError =
-        appError.message.toLowerCase().includes("twilio") ||
-        appError.code.includes("otp") ||
-        appError.code.includes("verify");
-
-      showAlert(appError.message, {
-        type: errorService.getAlertType(appError.category),
-        duration: isTwilioError ? undefined : 3000,
-        action: isTwilioError
-          ? {
-              label: "Dismiss",
-              onPress: () => {},
-            }
-          : undefined,
-      });
-    },
-  });
-
-  const verifyOTP = useMutation({
-    mutationFn: async ({ phone, code }: { phone: string; code: string }) => {
-      return await authService.verifyOTP(phone, code);
-    },
-    onSuccess: (_data, variables) => {
-      if (storeUser && storeSession) {
-        const updatedUser: AuthUser = {
-          ...storeUser,
-          phone: variables.phone,
-          phone_confirmed_at: new Date().toISOString()
-        };
-        setAuthenticatedData(updatedUser, storeSession, storeProfileExists, "complete");
-      } else {
-        setAuthStage("complete");
-      }
-      showAlert("Phone verified successfully!", { type: "success" });
-    },
-    onError: (error) => {
-      const appError = errorService.handleAuthError(error);
-
-      const isTwilioError =
-        appError.message.toLowerCase().includes("twilio") ||
-        appError.code.includes("otp") ||
-        appError.code.includes("verify");
-
-      showAlert(appError.message, {
-        type: errorService.getAlertType(appError.category),
-        duration: isTwilioError ? undefined : 3000,
-        action: isTwilioError
-          ? {
-              label: "Dismiss",
-              onPress: () => {},
-            }
-          : undefined,
-      });
-    },
-  });
-
-  const oauthSignIn = useMutation({
-    mutationFn: async (provider: "google" | "apple") => {
-      return await authService.signInWithProvider(provider);
-    },
-    onError: (error) => {
-      const appError = errorService.handleAuthError(error);
-      showAlert(appError.message, {
-        type: errorService.getAlertType(appError.category),
-      });
-    },
-  });
+  // OTP and OAuth are commented out as they are being phased out.
+  /*
+  // ... (commented out OTP and OAuth code)
+  */
 
   return {
-    login,
-    signup,
-    logout,
-    sendOTP,
-    verifyOTP,
-    oauthSignIn,
+    login: loginMutation, 
+    signup: signupMutation, 
+    logout: logoutMutation, 
   };
 }

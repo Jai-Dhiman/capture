@@ -1,8 +1,21 @@
 import { sqliteTable, text, integer, numeric, index, foreignKey } from "drizzle-orm/sqlite-core";
 
+export const users = sqliteTable("users", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  emailVerified: integer("email_verified").default(0).notNull(),
+  phone: text("phone"),
+  createdAt: numeric("created_at").default(new Date().toISOString()).notNull(),
+  updatedAt: numeric("updated_at").default(new Date().toISOString()).notNull(),
+});
+
 export const profile = sqliteTable("profile", {
   id: text("id").primaryKey(),
-  userId: text("user_id").notNull().unique(),
+  userId: text("user_id")
+    .notNull()
+    .unique()
+    .references(() => users.id),
   username: text("username").notNull().unique(),
   profileImage: text("profile_image"),
   bio: text("bio"),
@@ -18,7 +31,7 @@ export const post = sqliteTable(
     id: text("id").primaryKey(),
     userId: text("user_id")
       .notNull()
-      .references(() => profile.userId),
+      .references(() => users.id),
     content: text("content").notNull(),
     type: text("type").default("post").notNull(),
     createdAt: numeric("created_at").default(new Date().toISOString()).notNull(),
@@ -34,7 +47,7 @@ export const media = sqliteTable(
     id: text("id").primaryKey(),
     userId: text("user_id")
       .notNull()
-      .references(() => profile.userId),
+      .references(() => users.id),
     postId: text("post_id").references(() => post.id),
     type: text("type").notNull(),
     storageKey: text("storage_key").notNull(),
@@ -53,7 +66,7 @@ export const comment = sqliteTable(
       .references(() => post.id),
     userId: text("user_id")
       .notNull()
-      .references(() => profile.userId),
+      .references(() => users.id),
     parentId: text("parent_id"),
     content: text("content").notNull(),
     path: text("path").notNull(),
@@ -81,7 +94,7 @@ export const savedPost = sqliteTable(
     id: text("id").primaryKey(),
     userId: text("user_id")
       .notNull()
-      .references(() => profile.userId),
+      .references(() => users.id),
     postId: text("post_id")
       .notNull()
       .references(() => post.id),
@@ -124,10 +137,10 @@ export const relationship = sqliteTable(
     id: text("id").primaryKey(),
     followerId: text("follower_id")
       .notNull()
-      .references(() => profile.userId),
+      .references(() => users.id),
     followedId: text("followed_id")
       .notNull()
-      .references(() => profile.userId),
+      .references(() => users.id),
     createdAt: numeric("created_at").default(new Date().toISOString()).notNull(),
   },
   (table) => [
@@ -143,10 +156,10 @@ export const blockedUser = sqliteTable(
     id: text("id").primaryKey(),
     blockerId: text("blocker_id")
       .notNull()
-      .references(() => profile.userId),
+      .references(() => users.id),
     blockedId: text("blocked_id")
       .notNull()
-      .references(() => profile.userId),
+      .references(() => users.id),
     createdAt: numeric("created_at").default(new Date().toISOString()).notNull(),
   },
   (table) => [
@@ -162,7 +175,7 @@ export const commentLike = sqliteTable(
     id: text("id").primaryKey(),
     userId: text("user_id")
       .notNull()
-      .references(() => profile.userId),
+      .references(() => users.id),
     commentId: text("comment_id")
       .notNull()
       .references(() => comment.id),
@@ -181,9 +194,9 @@ export const notification = sqliteTable(
     id: text("id").primaryKey(),
     userId: text("user_id")
       .notNull()
-      .references(() => profile.userId),
+      .references(() => users.id),
     type: text("type").notNull(),
-    actionUserId: text("action_user_id").references(() => profile.userId),
+    actionUserId: text("action_user_id").references(() => users.id),
     resourceId: text("resource_id"),
     resourceType: text("resource_type"),
     message: text("message").notNull(),
@@ -201,7 +214,7 @@ export const notificationSettings = sqliteTable("notification_settings", {
   id: text("id").primaryKey(),
   userId: text("user_id")
     .notNull()
-    .references(() => profile.userId)
+    .references(() => users.id)
     .unique(),
   enableInApp: integer("enable_in_app").default(1).notNull(),
   enablePush: integer("enable_push").default(1).notNull(),
@@ -214,7 +227,7 @@ export const userActivity = sqliteTable("user_activity", {
   id: text("id").primaryKey(),
   userId: text("user_id")
     .notNull()
-    .references(() => profile.userId),
+    .references(() => users.id),
   eventType: text("event_type").notNull(),
   createdAt: numeric("created_at")
     .notNull()

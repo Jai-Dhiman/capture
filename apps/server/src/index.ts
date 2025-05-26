@@ -31,6 +31,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:8081",
+      "http://localhost:8787",
       "http://localhost:19000",
       "http://localhost:19006",
       "http://localhost:8969/stream",

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -12,7 +12,7 @@ import { MainNavigator, linking } from '@navigation/index';
 import { AlertProvider } from '@shared/lib/AlertContext';
 import { Provider as JotaiProvider } from 'jotai'
 import { JotaiInitializer } from '@shared/providers/JotaiProvider';
-import { AuthProvider } from '@features/auth/components/AuthProvider';
+import { initializeAuth } from '@features/auth/stores/authStore';
 import { CommentDrawer } from '@features/comments//components/CommentDrawer';
 import * as Sentry from '@sentry/react-native';
 
@@ -33,6 +33,10 @@ const queryClient = new QueryClient({
 });
 
 export default Sentry.wrap(function App() {
+  useEffect(() => {
+    initializeAuth();
+  }, []);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
@@ -44,10 +48,8 @@ export default Sentry.wrap(function App() {
                 <View className="flex-1 bg-black">
                   <StatusBar style="light" />
                   <NavigationContainer linking={linking}>
-                    <AuthProvider>
-                      <MainNavigator />
-                      <CommentDrawer />
-                    </AuthProvider>
+                    <MainNavigator />
+                    <CommentDrawer />
                   </NavigationContainer>
                 </View>
               </AlertProvider>

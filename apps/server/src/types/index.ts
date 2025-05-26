@@ -1,10 +1,11 @@
-import type { User } from '@supabase/supabase-js';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 import type { Ai, Queue } from '@cloudflare/workers-types';
 
 export type Bindings = {
   DB: D1Database;
   BUCKET: R2Bucket;
   KV: KVNamespace;
+  REFRESH_TOKEN_KV: KVNamespace;
   Capture_Rate_Limits: KVNamespace;
   POST_VECTORS: KVNamespace;
   USER_VECTORS: KVNamespace;
@@ -16,16 +17,22 @@ export type Bindings = {
   CLOUDFLARE_IMAGES_TOKEN: string;
   CLOUDFLARE_IMAGES_KEY: string;
   SEED_SECRET: string;
+  JWT_SECRET: string;
   AI: Ai;
   POST_QUEUE: Queue<{ postId: string }>;
   USER_VECTOR_QUEUE: Queue<{ userId: string }>;
 };
 
+export interface AppUser {
+  id: string;
+  email?: string;
+}
+
 export type Variables = {
-  user: User;
+  user: AppUser;
 };
 
 export type ContextType = {
   env: Bindings;
-  user: any;
+  user: AppUser;
 };

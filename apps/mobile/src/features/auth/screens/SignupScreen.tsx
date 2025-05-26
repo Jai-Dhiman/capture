@@ -7,7 +7,6 @@ import {
 } from 'react-native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '@navigation/types';
-import OAuth from '../components/OAuth';
 import AppleIcon from '@assets/icons/AppleLogo.svg';
 import EmailIcon from '@assets/icons/EmailIcon.svg';
 import Header from '@shared/components/Header';
@@ -45,7 +44,7 @@ export default function SignupScreen({ navigation }: Props) {
             </Text>
           </TouchableOpacity>
 
-          <OAuth />
+          {/* OAuth */}
 
           {/* Apple signup button (static for now) */}
           <TouchableOpacity

@@ -14,6 +14,10 @@ database_id = "adb1ae42-b82f-44d2-968c-0e7ac0d92200"
 migrations_dir = "drizzle"
 
 [[kv_namespaces]]
+binding = "REFRESH_TOKEN_KV"
+id = "26595ad6034b4448922107a1cc70e012"
+
+[[kv_namespaces]]
 binding = "Capture_Rate_Limits"
 id = "94122c41067e4db7b87b7618ecf06b49"
 

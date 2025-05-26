@@ -1,199 +1,149 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { secureStorage } from "@shared/lib/storage";
-import type { AuthState, AuthUser, AuthSession, AuthStage } from "../types/authTypes";
-import { authApi, AuthError } from "../lib/authApi";
+import type { AuthStoreState, AuthStoreActions, User, Session, AuthResponse, AuthStage, AuthStatus } from "../types";
 
-const initialStateForStore = {
-  status: "idle" as AuthState["status"],
-  stage: "unauthenticated" as AuthState["stage"],
-  user: null as AuthUser | null,
-  session: null as AuthSession | null,
-  profileExists: undefined as boolean | undefined,
-  otpMessageId: undefined as string | undefined,
-  isRefreshing: false as boolean,
-  lastRefreshError: undefined as string | undefined,
-  offlineRequests: [] as Array<() => Promise<void>>,
+const initialState: AuthStoreState = {
+  user: null,
+  session: null,
+  stage: "unauthenticated",
+  status: "checking",
+  error: null,
 };
 
-export const useAuthStore = create<AuthState>()(
+export const useAuthStore = create<AuthStoreState & AuthStoreActions>()(
   persist(
     (set, get) => ({
-      ...initialStateForStore,
+      ...initialState,
 
-      setUser: (user, profileExistsCurrent) =>
-        set((state) => ({
-          user,
-          profileExists: profileExistsCurrent !== undefined ? profileExistsCurrent : state.profileExists,
-          status: user ? "authenticated" : "unauthenticated",
-        })),
-
-      setSession: (session, profileExistsCurrent) =>
-        set((state) => {
-          const currentUser = state.user;
-          const newStatus = session && currentUser ? "authenticated" : "unauthenticated";
-          return {
-            session,
-            user: session ? currentUser : null,
-            profileExists: session ? (profileExistsCurrent !== undefined ? profileExistsCurrent : state.profileExists) : undefined,
-            status: newStatus,
-          };
-        }),
-
-      setAuthenticatedData: (user: AuthUser | null, session: AuthSession | null, profileExistsValue: boolean | undefined, stageOverride?: AuthStage) => {
-        set(state => {
-          const newStatus = user && session ? "authenticated" : "unauthenticated";
-          let newStage = state.stage;
-
-          if (newStatus === "authenticated") {
-            if (stageOverride) {
-              newStage = stageOverride;
-            } else if (profileExistsValue === false) {
-              newStage = "profile-creation";
-            } else if (profileExistsValue === true) {
-              if (state.stage !== "phone-verified" && state.stage !== "complete") {
-                if (user && !user.phone_confirmed_at) {
-                  newStage = "phone-unverified";
-                } else {
-                  newStage = "complete";
-                }
-              } else {
-                newStage = state.stage;
-              }
-            }
-          } else {
-            newStage = "unauthenticated";
-          }
-
-          return {
-            user,
-            session,
-            profileExists: profileExistsValue,
-            status: newStatus,
-            stage: newStage,
-            isRefreshing: false,
-            lastRefreshError: undefined,
-          };
+      setAuthData: (data: AuthResponse) => {
+        set({
+          user: data.user,
+          session: data.session,
+          status: "success",
+          stage: data.profileExists === false ? "profileRequired" : "authenticated",
+          error: null,
         });
       },
 
-      setAuthStage: (stage) => set({ stage }),
-
-      clearAuth: () => {
-        set({ ...initialStateForStore, status: "unauthenticated", profileExists: undefined });
-        authApi.clearSessionData();
+      setUser: (user: User | null) => {
+        set({ user });
       },
 
-      setOtpMessageId: (id) => set({ otpMessageId: id }),
-
-      resetPhoneVerification: () =>
-        set((state) => ({
-          user: state.user
-            ? {
-                ...state.user,
-                phone_confirmed_at: undefined,
-              }
-            : null,
-          otpMessageId: undefined,
-          stage: state.user ? "phone-unverified" : state.stage,
-        })),
-
-      simulatePhoneVerification: () =>
-        set((state) => ({
-          user: state.user
-            ? {
-                ...state.user,
-                phone_confirmed_at: new Date().toISOString(),
-              }
-            : null,
-          stage: state.user ? "phone-verified" : state.stage,
-        })),
-
-      setIsRefreshing: (value) => set({ isRefreshing: value }),
-      setLastRefreshError: (error) => set({ lastRefreshError: error }),
-
-      queueOfflineRequest: (request) =>
-        set((state) => ({
-          offlineRequests: [...state.offlineRequests, request],
-        })),
-
-      processOfflineQueue: async () => {
-        const { offlineRequests } = get();
-        if (offlineRequests.length === 0) return;
-
-        const requests = [...offlineRequests];
-        set({ offlineRequests: [] });
-
-        for (const request of requests) {
+      clearAuth: async () => {
+        const currentSession = get().session;
+        if (currentSession?.refresh_token) {
           try {
-            await request();
-          } catch (error) {
-            console.error("Failed to process offline request:", error);
+            const { workersAuthApi } = await import("../lib/workersAuthApi");
+            await workersAuthApi.logout(currentSession.refresh_token);
+          } catch (e) {
+            console.warn("Logout API call failed during clearAuth:", e);
           }
         }
+        set({ 
+          user: null,
+          session: null,
+          stage: "unauthenticated", 
+          status: "success",
+          error: null 
+        });
       },
 
       refreshSession: async () => {
         const currentSession = get().session;
         if (!currentSession?.refresh_token) {
-          get().clearAuth();
+          await get().clearAuth();
           return null;
         }
 
-        set({ isRefreshing: true, lastRefreshError: undefined });
+        set({ status: "pending", error: null });
         try {
-          const response = await authApi.refreshToken(currentSession.refresh_token);
-          get().setAuthenticatedData(response.user, response.session, response.profileExists);
-          await authApi.storeSessionData(response.session, response.user);
-          return response.session;
-        } catch (error) {
+          const { workersAuthApi } = await import("../lib/workersAuthApi");
+          const authResponse = await workersAuthApi.refresh(currentSession.refresh_token);
+          get().setAuthData(authResponse);
+          return authResponse.session;
+        } catch (error: any) {
           console.error("Failed to refresh session (store):", error);
-          set({ lastRefreshError: error instanceof Error ? error.message : "Unknown refresh error", isRefreshing: false });
-          if (error instanceof AuthError && (error.code === 'auth/refresh-failed' || error.message.includes("Invalid Refresh Token"))) {
-            get().clearAuth();
+          if (error?.response?.data?.code === "auth/invalid-refresh-token" || error?.statusCode === 401) {
+            await get().clearAuth();
+          } else {
+            set({ status: "error", error: error.message || "Unknown refresh error" });
           }
           return null;
         }
       },
 
       checkInitialSession: async () => {
-        set({ status: "loading" });
-        try {
-          const storedData = await authApi.getStoredSessionData();
-          if (storedData?.session && storedData?.user) {
-            const validationResponse = await authApi.validateSession(storedData.session, storedData.user);
-            if (validationResponse.success && validationResponse.user && validationResponse.profileExists !== undefined) {
-              get().setAuthenticatedData(validationResponse.user as AuthUser, storedData.session as AuthSession, validationResponse.profileExists);
-              await authApi.storeSessionData(storedData.session, validationResponse.user as AuthUser);
-            } else if (storedData.session.refresh_token) {
-              console.log("Initial session validation failed or profileExists missing, attempting refresh...");
-              await get().refreshSession();
-            } else {
+        set({ status: "checking", error: null });
+        const currentSession = get().session;
+
+        if (currentSession?.access_token && currentSession?.refresh_token) {
+          const now = Date.now();
+          const fiveMinutes = 5 * 60 * 1000;
+          if (currentSession.expires_at && currentSession.expires_at - now < fiveMinutes) {
+            console.log("Access token expired or expiring soon, attempting refresh...");
+            const refreshed = await get().refreshSession();
+            if (!refreshed) {
               get().clearAuth();
             }
+          } else if (currentSession.expires_at && currentSession.expires_at - now >= fiveMinutes) {
+            try {
+              const { workersAuthApi } = await import("../lib/workersAuthApi");
+              const userFromApi = await workersAuthApi.getMe();  
+              if (userFromApi) {
+                set((state) => ({
+                  ...state,
+                  user: userFromApi,
+                  status: "success",
+                  stage: state.stage === 'profileRequired' ? 'profileRequired' : 'authenticated',
+                  error: null,
+                }));
+              } else {
+                await get().clearAuth();
+              }
+            } catch (e) {
+              console.warn("checkInitialSession: getMe failed, attempting refresh or clearing auth", e);
+              const refreshed = await get().refreshSession();
+              if (!refreshed) {
+                await get().clearAuth();
+              }
+            }
           } else {
-            get().clearAuth();
-            set({ status: "unauthenticated" });
+            console.log("Session exists but expiry is unclear or missing, attempting refresh...");
+            const refreshed = await get().refreshSession();
+            if (!refreshed) await get().clearAuth();
           }
-        } catch (error) {
-          console.error("Error during checkInitialSession:", error);
-          get().clearAuth();
-          set({ status: "error" });
+        } else {
+          await get().clearAuth();
         }
       },
+
+      setStage: (stage: AuthStage) => set({ stage }),
+      setStatus: (status: AuthStatus) => set({ status }),
+      setError: (error: string | null) => set((state) => ({ ...state, error, status: error ? "error" : state.status })),
+
     }),
     {
-      name: "auth-storage",
+      name: "auth-session-storage",
       storage: createJSONStorage(() => secureStorage),
       partialize: (state) => ({
-        status: state.status,
+        user: state.user,
+        session: state.session,
         stage: state.stage,
-        otpMessageId: state.otpMessageId,
       }),
+      onRehydrateStorage: (_state) => {
+        return (_hydratedState, error) => {
+          if (error) {
+            console.error("Failed to rehydrate auth store:", error);
+          } else {
+          }
+        };
+      },
     }
   )
 );
 
-export function initAuthState(store: typeof useAuthStore) {
-  store.getState().checkInitialSession();
+export function initializeAuth() {
+  const { checkInitialSession } = useAuthStore.getState();
+  checkInitialSession();
 }

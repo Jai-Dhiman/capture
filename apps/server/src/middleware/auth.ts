@@ -1,8 +1,9 @@
 import type { Context, Next } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { createClient } from "@supabase/supabase-js";
+import { verify } from "hono/jwt";
+import type { Bindings, Variables, AppUser } from "../types";
 
-export async function authMiddleware(c: Context, next: Next) {
+export async function authMiddleware(c: Context<{ Bindings: Bindings, Variables: Variables }>, next: Next) {
   const authHeader = c.req.header("Authorization");
 
   if (!authHeader?.startsWith("Bearer ")) {
@@ -12,40 +13,43 @@ export async function authMiddleware(c: Context, next: Next) {
 
   const token = authHeader.split(" ")[1];
 
+  if (!token) {
+    console.error("[AuthMiddleware] Error: No token provided.");
+    throw new HTTPException(401, { message: "Unauthorized: No token" });
+  }
+
   try {
-    if (!c.env.SUPABASE_URL || !c.env.SUPABASE_KEY) {
-      console.error("[AuthMiddleware] Error: Supabase URL or Key is missing.");
-      throw new Error("Missing Supabase configuration");
+    if (!c.env.JWT_SECRET) {
+      console.error("[AuthMiddleware] Error: JWT_SECRET is not configured.");
+      throw new HTTPException(500, { message: "Internal Server Error: Auth configuration missing" });
     }
 
-    const supabase = createClient(c.env.SUPABASE_URL, c.env.SUPABASE_KEY);
+    const payload = await verify(token, c.env.JWT_SECRET);
 
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser(token);
+    // Runtime checks for payload properties
+    if (typeof payload.sub !== 'string' || typeof payload.exp !== 'number') {
+      console.error("[AuthMiddleware] Error: Invalid token payload - sub or exp missing or wrong type.");
+      throw new HTTPException(401, { message: "Invalid token: Payload structure issue" });
+    }
+    
+    const emailFromPayload = typeof payload.email === 'string' ? payload.email : undefined;
 
-    if (error || !user) {
-      console.error("[AuthMiddleware] Supabase auth error or no user returned.");
-      throw new HTTPException(401, { message: "Invalid token" });
+    // Check if token is expired (verify should handle this, but an explicit check is fine too)
+    if (Date.now() > payload.exp * 1000) {
+        console.error("[AuthMiddleware] Error: Token expired.");
+        throw new HTTPException(401, { message: "Token expired" });
     }
 
-    const userContext = {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      ...user.user_metadata,
+    const userContext: AppUser = { 
+      id: payload.sub, // Now known to be a string
+      email: emailFromPayload, // Now string or undefined
     };
 
     c.set("user", userContext);
     await next();
-  } catch (error) {
-    console.error("[AuthMiddleware] Caught error:", error);
-    if (error instanceof HTTPException) {
-      throw error; // Re-throw Hono exceptions
-    }
-    // For unexpected errors not already wrapped in HTTPException
-    console.error("[AuthMiddleware] Throwing generic 500 error for unexpected issue.");
-    throw new HTTPException(500, { message: "Internal Server Error" });
+  } catch (e) {
+    const error = e as Error;
+    console.error("[AuthMiddleware] JWT verification error:", error.message);
+    throw new HTTPException(401, { message: "Invalid or expired token" });
   }
 }

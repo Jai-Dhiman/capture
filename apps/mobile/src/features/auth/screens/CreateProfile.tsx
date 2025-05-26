@@ -10,6 +10,7 @@ import { useAlert } from '@shared/lib/AlertContext';
 import { useNavigation } from '@react-navigation/native';
 import type { RootStackParamList } from '@navigation/types';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Header from '@shared/components/Header';
 
 export default function CreateProfile() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -88,159 +89,220 @@ export default function CreateProfile() {
   };
 
   return (
-    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-      <View className="flex-1 bg-[#DCDCDE] rounded-[30px] overflow-hidden p-6">
-        <Text className="text-[32px] font-roboto text-center mt-8 mb-8">
-          Create Your Profile
-        </Text>
+    <View className="flex-1">
+      <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1 }}>
+        <View className="flex-1 bg-[#DCDCDE] overflow-hidden">
+          <Image
+            source={require('@assets/DefaultBackground.png')}
+            style={{
+              width: '100%',
+              height: '100%',
+              position: 'absolute',
+              top: 0,
+              left: 0
+            }}
+            resizeMode="cover"
+          />
 
-        <TouchableOpacity
-          className="w-32 h-32 rounded-full bg-gray-200 mx-auto mb-8 items-center justify-center overflow-hidden"
-          onPress={pickImage}
-        >
-          {profileImage ? (
-            <Image source={{ uri: profileImage }} className="w-full h-full" />
-          ) : (
-            <View className="items-center justify-center">
-              <Text className="text-gray-500 text-center">Add Photo</Text>
-            </View>
-          )}
-        </TouchableOpacity>
+          <Header
+            showBackButton={true}
+            onBackPress={() => navigation.goBack()}
+          />
 
-        <form.Field
-          name="username"
-          validators={{
-            onChange: ({ value }) => {
-              if (!value.trim()) return 'Username is required';
-              if (value.length < 3) return 'Username must be at least 3 characters';
-              if (value.length > USERNAME_MAX_LENGTH) return `Username must be ${USERNAME_MAX_LENGTH} characters or less`;
-              if (!/^[a-zA-Z0-9_]+$/.test(value)) return 'Username can only contain letters, numbers, and underscores';
-              return undefined;
-            }
-          }}
-        >
-          {(field) => (
-            <View className="mb-6">
-              <Text className="text-base font-roboto mb-2">Username *</Text>
-              <TouchableOpacity
-                activeOpacity={1}
-                onPress={() => usernameInputRef.current?.focus()}
-                className={`bg-white h-[56px] rounded-[16px] shadow-md px-4 text-base font-roboto ${isUsernameFocused ? 'border-2 border-[#E4CAC7]' : ''}`}
-              >
-                <TextInput
-                  ref={usernameInputRef}
-                  onFocus={() => setIsUsernameFocused(true)}
-                  onBlur={() => {
-                    setIsUsernameFocused(false);
-                    field.handleBlur();
-                  }}
-                  className="flex-1 h-full"
-                  value={field.state.value}
-                  onChangeText={(text) => {
-                    if (text.length <= USERNAME_MAX_LENGTH) {
-                      field.handleChange(text);
-                    }
-                  }}
-                  placeholder="Choose a unique username"
-                  autoCapitalize="none"
-                  maxLength={USERNAME_MAX_LENGTH}
-                />
-              </TouchableOpacity>
-              <View className="flex-row justify-end">
-                <Text className={`text-xs mt-1 ${field.state.value.length >= USERNAME_MAX_LENGTH ? 'text-red-500' : 'text-gray-500'}`}>
-                  {field.state.value.length}/{USERNAME_MAX_LENGTH}
-                </Text>
-              </View>
-              {field.state.meta.errors.length > 0 && (
-                <Text className="text-red-500 text-xs mt-1">
-                  {field.state.meta.errors.join(', ')}
-                </Text>
-              )}
-            </View>
-          )}
-        </form.Field>
+          <View className="w-full h-full absolute top-0 left-0 bg-zinc-300/60" />
 
-        <form.Field
-          name="bio"
-          validators={{
-            onChange: ({ value }) => {
-              if (value.length > BIO_MAX_LENGTH) return `Bio must be ${BIO_MAX_LENGTH} characters or less`;
-              return undefined;
-            }
-          }}
-        >
-          {(field) => (
-            <View className="mb-8">
-              <Text className="text-base font-roboto mb-2">Bio (Optional)</Text>
-              <TouchableOpacity
-                activeOpacity={1}
-                onPress={() => bioInputRef.current?.focus()}
-                className={`bg-white rounded-[16px] shadow-md p-4 text-base font-roboto min-h-[100px] ${isBioFocused ? 'border-2 border-[#E4CAC7]' : ''}`}
-              >
-                <TextInput
-                  ref={bioInputRef}
-                  onFocus={() => setIsBioFocused(true)}
-                  onBlur={() => {
-                    setIsBioFocused(false);
-                    field.handleBlur();
-                  }}
-                  className="flex-1"
-                  value={field.state.value}
-                  onChangeText={(text) => {
-                    if (text.length <= BIO_MAX_LENGTH) {
-                      field.handleChange(text);
-                    }
-                  }}
-                  placeholder="Create a Bio..."
-                  multiline
-                  textAlignVertical="top"
-                  maxLength={BIO_MAX_LENGTH}
-                />
-              </TouchableOpacity>
-              <View className="flex-row justify-end">
-                <Text className={`text-xs mt-1 ${field.state.value.length >= BIO_MAX_LENGTH ? 'text-red-500' : 'text-gray-500'}`}>
-                  {field.state.value.length}/{BIO_MAX_LENGTH}
-                </Text>
-              </View>
-              {field.state.meta.errors.length > 0 && (
-                <Text className="text-red-500 text-xs mt-1">
-                  {field.state.meta.errors.join(', ')}
-                </Text>
-              )}
-            </View>
-          )}
-        </form.Field>
-
-        <form.Subscribe
-          selector={(state) => [state.canSubmit, state.isSubmitting]}
-        >
-          {([canSubmit, isSubmitting]) => (
+          <View className="flex-row items-start mt-6 px-[22px] mb-4">
             <TouchableOpacity
-              className={`bg-[#E4CAC7] h-[56px] rounded-[30px] shadow-md justify-center mt-4 items-center ${!canSubmit ? 'opacity-70' : ''}`}
-              onPress={() => form.handleSubmit()}
-              disabled={createProfileMutation.isPending || isSubmitting}
+              className="w-20 h-20 rounded-full bg-gray-200 items-center justify-center overflow-hidden shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] mr-[18px]"
+              onPress={pickImage}
             >
-              {createProfileMutation.isPending || isSubmitting ? (
-                <LoadingSpinner />
+              {profileImage ? (
+                <Image source={{ uri: profileImage }} className="w-full h-full" />
               ) : (
-                <Text className="text-base font-bold font-roboto text-center">
-                  Create Profile
-                </Text>
+                <View className="items-center justify-center">
+                  <Text className="text-gray-500 text-center font-roboto text-xs">Add Photo</Text>
+                </View>
               )}
             </TouchableOpacity>
-          )}
-        </form.Subscribe>
 
-        <TouchableOpacity
-          className="mt-6 items-center"
-          onPress={handleLogout}
-          disabled={logout.isPending}
-        >
-          <Text className="text-blue-600 underline text-base">
-            {logout.isPending ? 'Logging out...' : 'Log out'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+            {profileImage && (
+              <Text className="w-5 h-2.5 absolute left-[44px] top-[215px] text-center justify-start text-blue-700 text-xs font-normal font-roboto leading-3">Edit</Text>
+            )}
+
+            <View className="flex-1 mt-[8px]">
+              <Text className="text-black text-sm font-semibold font-roboto leading-none mb-1">Create Your @username</Text>
+              <form.Field
+                name="username"
+                validators={{
+                  onChange: ({ value }) => {
+                    if (!value.trim()) return 'Username is required';
+                    if (value.length < 3) return 'Username must be at least 3 characters';
+                    if (value.length > USERNAME_MAX_LENGTH) return `Username must be ${USERNAME_MAX_LENGTH} characters or less`;
+                    if (!/^[a-zA-Z0-9_]+$/.test(value)) return 'Username can only contain letters, numbers, and underscores';
+                    return undefined;
+                  }
+                }}
+              >
+                {(field) => (
+                  <View className="mb-2">
+                    <TouchableOpacity
+                      activeOpacity={1}
+                      onPress={() => usernameInputRef.current?.focus()}
+                      className={`bg-transparent h-[48px] rounded-2xl shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] px-4 text-base font-roboto outline outline-1 outline-offset-[-1px] outline-black ${isUsernameFocused ? 'border-2 border-[#E4CAC7]' : ''}`}
+                    >
+                      <TextInput
+                        ref={usernameInputRef}
+                        onFocus={() => setIsUsernameFocused(true)}
+                        onBlur={() => {
+                          setIsUsernameFocused(false);
+                          field.handleBlur();
+                        }}
+                        className="flex-1 h-full text-black font-semibold font-roboto"
+                        value={field.state.value}
+                        onChangeText={(text) => {
+                          if (text.length <= USERNAME_MAX_LENGTH) {
+                            field.handleChange(text);
+                          }
+                        }}
+                        placeholder="@JohnDoe"
+                        placeholderTextColor="#A0A0A0"
+                        autoCapitalize="none"
+                        maxLength={USERNAME_MAX_LENGTH}
+                      />
+                    </TouchableOpacity>
+                    <View className="flex-row justify-end">
+                      <Text className={`text-xs mt-1 font-roboto ${field.state.value.length >= USERNAME_MAX_LENGTH ? 'text-red-500' : 'text-black/60 font-light'}`}>
+                        {field.state.value.length}/{USERNAME_MAX_LENGTH}
+                      </Text>
+                    </View>
+                    {field.state.meta.errors.length > 0 && (
+                      <Text className="text-red-500 text-xs mt-1 font-roboto">
+                        {field.state.meta.errors.join(', ')}
+                      </Text>
+                    )}
+                  </View>
+                )}
+              </form.Field>
+            </View>
+          </View>
+
+          <View className="px-[26px] mt-4 mb-3">
+            <form.Field
+              name="bio"
+              validators={{
+                onChange: ({ value }) => {
+                  if (value.length > BIO_MAX_LENGTH) return `Bio must be ${BIO_MAX_LENGTH} characters or less`;
+                  return undefined;
+                }
+              }}
+            >
+              {(field) => (
+                <View className="mb-2">
+                  <TouchableOpacity
+                    activeOpacity={1}
+                    onPress={() => bioInputRef.current?.focus()}
+                    className={`bg-transparent rounded-2xl shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] p-4 text-base font-roboto min-h-[128px] outline outline-1 outline-offset-[-1px] outline-black ${isBioFocused ? 'border-2 border-[#E4CAC7]' : ''}`}
+                  >
+                    <TextInput
+                      ref={bioInputRef}
+                      onFocus={() => setIsBioFocused(true)}
+                      onBlur={() => {
+                        setIsBioFocused(false);
+                        field.handleBlur();
+                      }}
+                      className="flex-1 text-black font-semibold font-roboto"
+                      value={field.state.value}
+                      onChangeText={(text) => {
+                        if (text.length <= BIO_MAX_LENGTH) {
+                          field.handleChange(text);
+                        }
+                      }}
+                      placeholder="Create a Bio..."
+                      placeholderTextColor="#A0A0A0"
+                      multiline
+                      textAlignVertical="top"
+                      maxLength={BIO_MAX_LENGTH}
+                    />
+                  </TouchableOpacity>
+                  <View className="flex-row justify-end">
+                    <Text className={`text-xs mt-1 font-roboto ${field.state.value.length >= BIO_MAX_LENGTH ? 'text-red-500' : 'text-black/60 font-light'}`}>
+                      {field.state.value.length}/{BIO_MAX_LENGTH}
+                    </Text>
+                  </View>
+                  {field.state.meta.errors.length > 0 && (
+                    <Text className="text-red-500 text-xs mt-1 font-roboto">
+                      {field.state.meta.errors.join(', ')}
+                    </Text>
+                  )}
+                </View>
+              )}
+            </form.Field>
+          </View>
+
+          <View className="px-[18px] mt-0">
+            <Text className="justify-start text-black text-xs font-bold font-roboto leading-3">Profile Background Design</Text>
+            <Text className="justify-start text-black text-[10px] font-light font-roboto leading-3 mt-2">Give your profile a pop of color and a personal flair by selecting the design people will see when visiting your profile. </Text>
+
+            <View className="flex-row mt-4">
+              <View className="w-16 h-6 bg-stone-300 rounded-[30px] border border-black items-center justify-center mr-4">
+                <Text className="text-center justify-start text-black text-xs font-normal font-roboto leading-3">Fluid</Text>
+              </View>
+              <View className="w-16 h-6 bg-stone-300/0 rounded-[30px] border border-black items-center justify-center mr-4">
+                <Text className="text-center justify-start text-black text-xs font-normal font-roboto leading-3">Splatter</Text>
+              </View>
+              <View className="w-16 h-6 bg-stone-300/0 rounded-[30px] border border-black items-center justify-center">
+                <Text className="text-center justify-start text-black text-xs font-normal font-roboto leading-3">Smokey</Text>
+              </View>
+            </View>
+
+            <View className="flex-row mt-6">
+              <View className="w-32 h-60 rounded-[10px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] outline outline-1 outline-offset-[-1px] outline-black/10 mr-4">
+                <Image className="w-32 h-60 rounded-[10px]" source={{ uri: 'https://placehold.co/124x236' }} />
+              </View>
+              <View className="w-32 h-60 rounded-[10px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] outline outline-1 outline-offset-[-1px] outline-black/10 mr-4">
+                <Image className="w-32 h-60 rounded-[10px]" source={{ uri: 'https://placehold.co/124x236' }} />
+              </View>
+              <View className="w-32 h-60 rounded-[10px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] outline outline-1 outline-offset-[-1px] outline-black/10">
+                <Image className="w-32 h-60 rounded-[10px]" source={{ uri: 'https://placehold.co/124x236' }} />
+              </View>
+            </View>
+          </View>
+
+          <form.Subscribe
+            selector={(state) => [state.canSubmit, state.isSubmitting]}
+          >
+            {([canSubmit, isSubmitting]) => (
+              <TouchableOpacity
+                className={`bg-stone-300 h-[56px] rounded-[30px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] justify-center mt-8 items-center backdrop-blur-[2px] mx-[26px] ${!canSubmit ? 'opacity-70' : ''}`}
+                onPress={() => form.handleSubmit()}
+                disabled={createProfileMutation.isPending || isSubmitting}
+              >
+                {createProfileMutation.isPending || isSubmitting ? (
+                  <LoadingSpinner />
+                ) : (
+                  <Text className="text-base font-bold font-roboto text-center text-black">
+                    Create Profile
+                  </Text>
+                )}
+              </TouchableOpacity>
+            )}
+          </form.Subscribe>
+
+          <TouchableOpacity
+            className="mt-6 items-center mb-8 mx-[26px]"
+            onPress={handleLogout}
+            disabled={logout.isPending}
+          >
+            <Text className="text-blue-600 underline text-base font-roboto">
+              {logout.isPending ? 'Logging out...' : 'Log out'}
+            </Text>
+          </TouchableOpacity>
+
+          <View className="h-5 left-0 bottom-0 w-full items-center justify-center">
+            <View className="w-36 h-[5px] bg-black rounded-[100px]" />
+          </View>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
