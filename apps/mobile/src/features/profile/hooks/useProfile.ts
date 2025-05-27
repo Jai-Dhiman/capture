@@ -63,34 +63,3 @@ export function useProfile(
     ...options,
   });
 }
-
-export function useCheckProfileExists(userId?: string) {
-  return useQuery({
-    queryKey: ["profileExists", userId],
-    queryFn: async () => {
-      if (!userId) return false;
-
-      const { session } = useAuthStore.getState();
-
-      if (!session?.access_token) return false;
-
-      try {
-        const response = await fetch(`${API_URL}/api/profile/check/${userId}`, {
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        });
-
-        if (!response.ok) return false;
-
-        const data = await response.json();
-        return data.exists;
-      } catch (error) {
-        console.error("Error checking profile:", error);
-        return false;
-      }
-    },
-    enabled: !!userId,
-    staleTime: 5 * 60 * 1000,
-  });
-}

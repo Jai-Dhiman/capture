@@ -5,7 +5,6 @@ import { useForm } from '@tanstack/react-form';
 import { LoadingSpinner } from '@shared/components/LoadingSpinner';
 import { useAuth } from '../hooks/useAuth';
 import { useCreateProfile } from '../hooks/useCreateProfile';
-import { useOnboardingStore } from '../stores/onboardingStore';
 import { useAlert } from '@shared/lib/AlertContext';
 import { useNavigation } from '@react-navigation/native';
 import type { RootStackParamList } from '@navigation/types';
@@ -20,7 +19,6 @@ export default function CreateProfile() {
   const { showAlert } = useAlert();
 
   const { logout } = useAuth();
-  const { completeStep } = useOnboardingStore();
   const createProfileMutation = useCreateProfile();
 
   const usernameInputRef = useRef<TextInput>(null);
@@ -69,7 +67,6 @@ export default function CreateProfile() {
         {
           onSuccess: () => {
             showAlert('Profile created successfully!', { type: 'success', duration: 3000 });
-            completeStep('profile-setup');
             navigation.navigate('App');
           },
           onError: (error) => {

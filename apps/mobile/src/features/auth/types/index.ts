@@ -59,7 +59,7 @@ export interface BasicSuccessResponse {
 }
 
 // Zustand store related types
-export type AuthStage = 'idle' | 'unauthenticated' | 'authenticated' | 'profileRequired' | 'emailVerificationRequired';
+export type AuthStage = 'unauthenticated' | 'profileRequired' | 'authenticated';
 export type AuthStatus = 'checking' | 'pending' | 'error' | 'success';
 
 export interface AuthStoreState {

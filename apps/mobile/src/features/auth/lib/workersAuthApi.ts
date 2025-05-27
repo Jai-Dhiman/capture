@@ -1,33 +1,11 @@
 import { apiClient } from '@shared/lib/apiClient';
-// Making the import more explicit to ../types/index.ts
 import type { LoginCredentials, RegisterData, ResetPasswordPayload, UpdatePasswordPayload, VerifyEmailPayload, SendVerificationEmailPayload, AuthResponse, RegisterResponse, BasicSuccessResponse } from '../types/index'; 
+import type { User } from '../types/index';
 
-// Define specific request/response types based on your backend API
-// These were previously defined inline, now they should come from ../types if aligned
-// For example:
-// interface AuthResponse { // Now imported
-//   session: {
-//     access_token: string;
-//     refresh_token: string;
-//     expires_at: number; 
-//   };
-//   user: {
-//     id: string;
-//     email: string;
-//   };
-//   profileExists?: boolean;
-// }
-
-// interface RegisterResponse { // Now imported
-//   message: string;
-//   userId: string;
-// }
-
-// interface BasicSuccessResponse { // Now imported
-//   success: boolean;
-//   message: string;
-// }
-
+// Response shape for GET /auth/me
+export interface MeResponse extends User {
+  profileExists: boolean;
+}
 
 export const workersAuthApi = {
   async register(data: RegisterData): Promise<RegisterResponse> {
@@ -86,15 +64,12 @@ export const workersAuthApi = {
   },
   
   // Optional: /auth/me endpoint to validate token and get user info
-  async getMe(): Promise<AuthResponse['user'] | null> {
+  async getMe(): Promise<MeResponse | null> {
     try {
-      // This endpoint isn't explicitly defined in your auth.ts, but is common
-      // It would be a protected GET route that returns the current user from token
-      // e.g. GET /auth/me
-      // If you don't have one, token validation can happen by calling any protected endpoint
-      return apiClient.get('/auth/me', true); // Assuming /auth/me exists and is protected
+      // GET /auth/me returns { id, email, profileExists }
+      const me = await apiClient.get('/auth/me', true);
+      return me as MeResponse;
     } catch (error) {
-      // If the /auth/me call fails (e.g. 401), it means the token is invalid or expired
       console.warn('getMe failed, possibly invalid token:', error);
       return null;
     }

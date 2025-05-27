@@ -42,7 +42,17 @@ export default function MainSettingsScreen() {
         {
           text: "Logout",
           style: "destructive",
-          onPress: () => logout.mutate()
+          onPress: () => logout.mutate(undefined, {
+            onSuccess: () => {
+              // Reset navigation to Login screen after logout
+              navigation.dispatch(
+                CommonActions.reset({
+                  index: 0,
+                  routes: [{ name: 'Login' }],
+                })
+              );
+            }
+          })
         }
       ]
     );

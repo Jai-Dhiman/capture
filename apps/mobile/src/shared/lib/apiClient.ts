@@ -46,9 +46,8 @@ export const apiClient = {
         if (retryCount < 2) {
           await new Promise((resolve) => setTimeout(resolve, 500 * 2 ** retryCount));
           return this.request(method, endpoint, data, requiresAuth, retryCount + 1);
-        } else {
-          throw new APIError("No auth token available", 401);
         }
+        throw new APIError("No auth token available", 401);
       }
 
       if (requiresAuth && token && session?.expires_at) {

@@ -36,7 +36,7 @@ const Header: React.FC<HeaderProps> = ({
   const navigation = useNavigation<any>();
   const { stage } = useAuthStore();
 
-  const showMenuButton = stage === 'complete' && !forceHideMenu;
+  const showMenuButton = stage === 'authenticated' && !forceHideMenu;
   const headerHeight = height ?? HEADER_HEIGHT;
 
   const navigationItems = [

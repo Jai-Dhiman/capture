@@ -1,12 +1,13 @@
 import { Hono } from "hono";
 import type { Bindings, Variables } from "../types";
 import { z } from "zod";
-import { authRateLimiter, passwordResetRateLimiter, otpRateLimiter } from "../middleware/rateLimit";
+import { authRateLimiter, passwordResetRateLimiter } from "../middleware/rateLimit";
 import { createD1Client } from "../db";
 import * as schema from "../db/schema";
 import { nanoid } from "nanoid";
 import { eq } from "drizzle-orm";
-import { sign, verify } from "hono/jwt"; // Import Hono JWT
+import { sign } from "hono/jwt"; // Import Hono JWT
+import { authMiddleware } from "../middleware/auth";
 
 // crypto is a global in Cloudflare Workers
 // import { subtle } from 'crypto'; // Not needed for global crypto.subtle
@@ -129,7 +130,7 @@ async function verifyPassword(password: string, storedHashString: string): Promi
   return result === 0;
 }
 
-const ACCESS_TOKEN_EXPIRATION = "15m"; // 15 minutes
+// const ACCESS_TOKEN_EXPIRATION = "15m"; // 15 minutes
 const REFRESH_TOKEN_EXPIRATION_SECONDS = 60 * 60 * 24 * 7; // 7 days in seconds
 
 async function generateJwtToken(userId: string, email: string, env: Bindings): Promise<{accessToken: string, refreshToken: string, accessTokenExpiresAt: number}> {
@@ -397,7 +398,7 @@ router.post("/reset-password", passwordResetRateLimiter, async (c) => {
         400
       );
     }
-    const { email } = validation.data;
+    // const { email } = validation.data; // email not used yet
     // TODO: 
     // 1. Check if email exists in `users` table.
     // 2. Generate a unique, short-lived reset token.
@@ -498,5 +499,18 @@ router.post("/logout", async (c) => {
     return c.json({ success: true, message: "Logged out successfully." });
 });
 
+// Add GET /me to return current user info and profile existence
+router.get("/me", authMiddleware, async (c) => {
+  const user = c.get("user");
+  const db = createD1Client(c.env);
+  let profileExists = false;
+  try {
+    const existingProfile = await db.select().from(schema.profile).where(eq(schema.profile.userId, user.id)).get();
+    profileExists = Boolean(existingProfile);
+  } catch (e) {
+    console.error("Error checking profile existence in /auth/me:", e);
+  }
+  return c.json({ id: user.id, email: user.email, profileExists });
+});
 
 export default router;

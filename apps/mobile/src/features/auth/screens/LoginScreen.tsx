@@ -11,8 +11,8 @@ import HidePasswordIcon from '@assets/icons/HidePasswordIcon.svg'
 import type { AuthStackParamList } from '@navigation/types'
 import { useAuth } from '../hooks/useAuth'
 import Header from '@shared/components/Header'
-import { useAlert } from '@shared/lib/AlertContext';
-import { errorService } from '@shared/services/errorService';
+import { useAlert } from '@shared/lib/AlertContext'
+import { errorService } from '@shared/services/errorService'
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'Login'>
@@ -170,6 +170,12 @@ export default function LoginScreen({ navigation }: Props) {
               </View>
             )}
           </form.Field>
+
+          {login.isError && (
+            <Text className="text-red-500 text-xs mt-2 mb-4 text-center">
+              {"Incorrect Username or Password"}
+            </Text>
+          )}
 
           <form.Subscribe
             selector={(state) => [state.canSubmit, state.isSubmitting]}

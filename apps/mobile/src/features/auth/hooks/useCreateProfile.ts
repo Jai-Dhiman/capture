@@ -9,10 +9,9 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@navigation/types";
 
 export function useCreateProfile() {
-  const { user, session } = useAuthStore();
+  const { user, session, setStage } = useAuthStore();
   const { setProfile } = useProfileStore();
   const { showAlert } = useAlert();
-  const { setAuthStage } = useAuthStore();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const uploadImage = async (imageUri: string) => {
@@ -150,7 +149,7 @@ export function useCreateProfile() {
         profileImage: profileData.profileImage || undefined,
       });
 
-      setAuthStage("complete");
+      setStage("authenticated");
 
       setTimeout(() => {
         navigation.navigate("App");

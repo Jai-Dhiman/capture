@@ -1,579 +1,199 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { Hono } from "hono";
-import authRouter from "../auth";
-import { createMockBindings } from "../../test/utils/test-utils";
-import type { Bindings, Variables } from "../../types";
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { Hono } from 'hono'
+import authRouter from '../auth'
+import { createMockBindings } from '../../test/utils/test-utils'
+import type { Bindings, Variables } from '../../types'
+import { mockQueryBuilder } from '../../test/mocks/db-mock'
 
-interface ErrorResponse {
-  error: string;
-  code: string;
-}
+// Stub JWT sign and verify
+vi.mock('hono/jwt', () => ({
+  sign: vi.fn().mockResolvedValue('mock-access-token'),
+  verify: vi.fn(),
+}))
 
-const mockSignInWithPassword = vi.fn();
-const mockSignUp = vi.fn();
-const mockRefreshSession = vi.fn();
-const mockResetPasswordForEmail = vi.fn();
-const mockUpdateUser = vi.fn();
-const mockSignInWithOtp = vi.fn();
-const mockVerifyOtp = vi.fn();
-const mockSignInWithOAuth = vi.fn();
-const mockExchangeCodeForSession = vi.fn();
-const mockSetSession = vi.fn();
-const mockGetUser = vi.fn();
+// Stub nanoid for consistent IDs
+vi.mock('nanoid', () => ({ nanoid: vi.fn().mockReturnValue('mock-refresh-token') }))
 
-vi.mock("@supabase/supabase-js", () => {
-  return {
-    createClient: vi.fn(() => ({
-      auth: {
-        signInWithPassword: mockSignInWithPassword,
-        signUp: mockSignUp,
-        refreshSession: mockRefreshSession,
-        resetPasswordForEmail: mockResetPasswordForEmail,
-        updateUser: mockUpdateUser,
-        signInWithOtp: mockSignInWithOtp,
-        verifyOtp: mockVerifyOtp,
-        signInWithOAuth: mockSignInWithOAuth,
-        exchangeCodeForSession: mockExchangeCodeForSession,
-        setSession: mockSetSession,
-        getUser: mockGetUser,
-      },
-    })),
-  };
-});
+// Mock createD1Client to return mockQueryBuilder
+vi.mock('../../db', () => ({
+  createD1Client: () => mockQueryBuilder,
+}))
 
-vi.mock("../../middleware/rateLimit", () => ({
-  authRateLimiter: vi.fn().mockImplementation((c, next) => next()),
-  passwordResetRateLimiter: vi.fn().mockImplementation((c, next) => next()),
-  otpRateLimiter: vi.fn().mockImplementation((c, next) => next()),
-}));
-
-describe("Auth Routes", () => {
-  let app: Hono<{ Bindings: Bindings; Variables: Variables }>;
-  let mockBindings: Bindings;
+describe('Auth Routes', () => {
+  let app: Hono<{ Bindings: Bindings; Variables: Variables }>
+  let mockBindings: Bindings
 
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockBindings = createMockBindings();
+    vi.clearAllMocks()
+    mockBindings = createMockBindings()
+    app = new Hono<{ Bindings: Bindings; Variables: Variables }>()
 
-    app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
+    // Set environment for each request
+    app.use('*', async (c, next) => {
+      c.env = mockBindings
+      await next()
+    })
 
-    app.use("*", async (c, next) => {
-      c.env = mockBindings;
-      await next();
-    });
+    app.route('/auth', authRouter)
 
-    app.route("/auth", authRouter);
-  });
+    // Setup mockQueryBuilder for DB chains
+    mockQueryBuilder.select.mockReturnValue(mockQueryBuilder)
+    mockQueryBuilder.from.mockReturnValue(mockQueryBuilder)
+    mockQueryBuilder.where.mockReturnValue(mockQueryBuilder)
+    mockQueryBuilder.insert.mockReturnValue({
+      values: vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([{ id: 'new-id' }]),
+        execute: vi.fn().mockResolvedValue({ insertId: 'new-id' }),
+      }),
+    })
+    mockQueryBuilder.update.mockReturnValue({
+      set: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({ execute: vi.fn().mockResolvedValue({ rowsAffected: 1 }) }),
+      }),
+    })
+  })
 
-  describe("POST /signin", () => {
-    it("should successfully sign in a user with valid credentials", async () => {
-      // Setup
-      const mockSessionData = {
-        user: { id: "test-user-id", email: "test@example.com" },
-        session: { access_token: "test-token", refresh_token: "test-refresh" },
-      };
+  describe('POST /auth/register', () => {
+    it('should return 400 for invalid input', async () => {
+      const res = await app.request('/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'invalid', password: 'short' }),
+      })
+      expect(res.status).toBe(400)
+      const data: any = await res.json()
+      expect(data.error).toBe('Invalid input')
+      expect(data.code).toBe('auth/invalid-input')
+    })
 
-      mockSignInWithPassword.mockResolvedValue({ data: mockSessionData, error: null });
+    it('should return 409 when email already in use', async () => {
+      mockQueryBuilder.get.mockResolvedValue({ id: '1', email: 'test@example.com' })
+      const res = await app.request('/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'test@example.com', password: 'password123' }),
+      })
+      expect(res.status).toBe(409)
+      const data: any = await res.json()
+      expect(data.error).toBe('Email already in use')
+      expect(data.code).toBe('auth/email-in-use')
+    })
 
-      // Execute
-      const res = await app.request("/auth/signin", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: "test@example.com",
-          password: "password123",
-        }),
-      });
+    it('should register user successfully', async () => {
+      mockQueryBuilder.get.mockResolvedValue(null)
+      const res = await app.request('/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'new@example.com', password: 'password123' }),
+      })
+      expect(res.status).toBe(201)
+      const data: any = await res.json()
+      expect(data.message).toBe('User registered successfully. Please verify your email.')
+      expect(data.userId).toBe('mock-refresh-token')
+    })
+  })
 
-      // Assert
-      expect(res.status).toBe(200);
-      const data = await res.json();
-      expect(data).toEqual(mockSessionData);
-      expect(mockSignInWithPassword).toHaveBeenCalledWith({
-        email: "test@example.com",
-        password: "password123",
-      });
-    });
+  describe('POST /auth/login', () => {
+    it('should return 400 for invalid input', async () => {
+      const res = await app.request('/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'invalid', password: 'short' }),
+      })
+      expect(res.status).toBe(400)
+      const data: any = await res.json()
+      expect(data.error).toBe('Invalid input')
+      expect(data.code).toBe('auth/invalid-input')
+    })
 
-    it("should return 400 with invalid credentials", async () => {
-      // Setup
-      mockSignInWithPassword.mockResolvedValue({
-        data: null,
-        error: { message: "Invalid login credentials" },
-      });
+    it('should return 401 for invalid credentials', async () => {
+      mockQueryBuilder.get.mockResolvedValue(null)
+      const res = await app.request('/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'test@example.com', password: 'password123' }),
+      })
+      expect(res.status).toBe(401)
+      const data: any = await res.json()
+      expect(data.error).toBe('Invalid credentials')
+      expect(data.code).toBe('auth/invalid-credentials')
+    })
+  })
 
-      // Execute
-      const res = await app.request("/auth/signin", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: "test@example.com",
-          password: "wrongpassword",
-        }),
-      });
+  describe('POST /auth/logout', () => {
+    it('should logout successfully without token', async () => {
+      const res = await app.request('/auth/logout', { method: 'POST' })
+      expect(res.status).toBe(200)
+      const data: any = await res.json()
+      expect(data).toEqual({ success: true, message: 'Logged out successfully.' })
+    })
 
-      // Assert
-      expect(res.status).toBe(400);
-      const data = (await res.json()) as ErrorResponse;
-      expect(data).toEqual({
-        error: "Invalid login credentials",
-        code: "auth/invalid-credentials",
-      });
-    });
+    it('should delete refresh token when provided', async () => {
+      mockBindings.REFRESH_TOKEN_KV = { delete: vi.fn() } as any
+      const res = await app.request('/auth/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: 'token123' }),
+      })
+      expect(res.status).toBe(200)
+      expect(mockBindings.REFRESH_TOKEN_KV.delete).toHaveBeenCalledWith('rt_token123')
+    })
+  })
 
-    it("should validate input and return 400 for invalid data", async () => {
-      // Execute
-      const res = await app.request("/auth/signin", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: "not-an-email",
-          password: "123", // too short
-        }),
-      });
+  describe('POST /auth/reset-password', () => {
+    it('should return 400 for invalid input', async () => {
+      const res = await app.request('/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'invalid' }),
+      })
+      expect(res.status).toBe(400)
+      const data: any = await res.json()
+      expect(data.error).toBe('Invalid input')
+      expect(data.code).toBe('auth/invalid-input')
+    })
 
-      // Assert
-      expect(res.status).toBe(400);
-      const data = (await res.json()) as ErrorResponse;
-      expect(data.error).toBe("Invalid input");
-      expect(data.code).toBe("auth/invalid-input");
-      expect(mockSignInWithPassword).not.toHaveBeenCalled();
-    });
-  });
+    it('should return success message for valid input', async () => {
+      const res = await app.request('/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'test@example.com' }),
+      })
+      expect(res.status).toBe(200)
+      const data: any = await res.json()
+      expect(data.success).toBe(true)
+    })
+  })
 
-  describe("POST /signup", () => {
-    it("should successfully sign up a new user", async () => {
-      // Setup
-      const mockSignupData = {
-        user: { id: "new-user-id", email: "newuser@example.com" },
-        session: null,
-      };
+  describe('POST /auth/update-password', () => {
+    it('should return 401 if not authenticated', async () => {
+      const unauthApp = new Hono<{ Bindings: Bindings; Variables: Variables }>()
+      unauthApp.use('*', async (c, next) => { c.env = mockBindings; await next() })
+      unauthApp.route('/auth', authRouter)
+      const res = await unauthApp.request('/auth/update-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: 'newpassword123' }),
+      })
+      expect(res.status).toBe(401)
+      const data: any = await res.json()
+      expect(data.error).toBe('Unauthorized: No user session')
+      expect(data.code).toBe('auth/no-session')
+    })
 
-      mockSignUp.mockResolvedValue({
-        data: mockSignupData,
-        error: null,
-      });
-
-      // Execute
-      const res = await app.request("/auth/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          origin: "http://localhost:8081",
-        },
-        body: JSON.stringify({
-          email: "newuser@example.com",
-          password: "password123",
-        }),
-      });
-
-      // Assert
-      expect(res.status).toBe(200);
-      const data = await res.json();
-      expect(data).toEqual(mockSignupData);
-      expect(mockSignUp).toHaveBeenCalledWith({
-        email: "newuser@example.com",
-        password: "password123",
-        options: {
-          emailRedirectTo: "http://localhost:8081/auth/callback",
-        },
-      });
-    });
-
-    it("should return 400 when signup fails", async () => {
-      // Setup
-      mockSignUp.mockResolvedValue({
-        data: null,
-        error: { message: "User already exists" },
-      });
-
-      // Execute
-      const res = await app.request("/auth/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          origin: "http://localhost:8081",
-        },
-        body: JSON.stringify({
-          email: "existing@example.com",
-          password: "password123",
-        }),
-      });
-
-      // Assert
-      expect(res.status).toBe(400);
-      const data = (await res.json()) as ErrorResponse;
-      expect(data).toEqual({
-        error: "User already exists",
-        code: "auth/signup-failed",
-      });
-    });
-  });
-
-  describe("POST /refresh", () => {
-    it("should successfully refresh a token", async () => {
-      // Setup
-      const mockRefreshData = {
-        session: {
-          access_token: "new-access-token",
-          refresh_token: "new-refresh-token",
-          expires_at: 1234567890,
-        },
-      };
-
-      mockRefreshSession.mockResolvedValue({
-        data: mockRefreshData,
-        error: null,
-      });
-
-      // Execute
-      const res = await app.request("/auth/refresh", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          refresh_token: "old-refresh-token",
-        }),
-      });
-
-      // Assert
-      expect(res.status).toBe(200);
-      const data = await res.json();
-      expect(data).toEqual({
-        access_token: "new-access-token",
-        refresh_token: "new-refresh-token",
-        expires_at: 1234567890,
-      });
-      expect(mockRefreshSession).toHaveBeenCalledWith({
-        refresh_token: "old-refresh-token",
-      });
-    });
-
-    it("should return 401 when refresh fails", async () => {
-      // Setup
-      mockRefreshSession.mockResolvedValue({
-        data: { session: null },
-        error: { message: "Invalid refresh token" },
-      });
-
-      // Execute
-      const res = await app.request("/auth/refresh", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          refresh_token: "invalid-refresh-token",
-        }),
-      });
-
-      // Assert
-      expect(res.status).toBe(401);
-      const data = (await res.json()) as ErrorResponse;
-      expect(data).toEqual({
-        error: "Invalid refresh token",
-        code: "auth/refresh-failed",
-      });
-    });
-  });
-
-  describe("POST /reset-password", () => {
-    it("should successfully request a password reset", async () => {
-      // Setup
-      mockResetPasswordForEmail.mockResolvedValue({
-        data: {},
-        error: null,
-      });
-
-      // Execute
-      const res = await app.request("/auth/reset-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          origin: "http://localhost:8081",
-        },
-        body: JSON.stringify({
-          email: "user@example.com",
-        }),
-      });
-
-      // Assert
-      expect(res.status).toBe(200);
-      const data = await res.json();
-      expect(data).toEqual({ success: true });
-      expect(mockResetPasswordForEmail).toHaveBeenCalledWith("user@example.com", {
-        redirectTo: "http://localhost:8081/auth/reset-password",
-      });
-    });
-
-    it("should return 400 when password reset fails", async () => {
-      // Setup
-      mockResetPasswordForEmail.mockResolvedValue({
-        data: null,
-        error: { message: "Email not found" },
-      });
-
-      // Execute
-      const res = await app.request("/auth/reset-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          origin: "http://localhost:8081",
-        },
-        body: JSON.stringify({
-          email: "nonexistent@example.com",
-        }),
-      });
-
-      // Assert
-      expect(res.status).toBe(400);
-      const data = (await res.json()) as ErrorResponse;
-      expect(data).toEqual({
-        error: "Email not found",
-        code: "auth/reset-failed",
-      });
-    });
-  });
-
-  describe("POST /update-password", () => {
-    it("should update password successfully with valid token", async () => {
-      // Setup
-      mockUpdateUser.mockResolvedValue({
-        data: { user: { id: "test-user-id" } },
-        error: null,
-      });
-
-      // Execute
-      const res = await app.request("/auth/update-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer valid-token",
-        },
-        body: JSON.stringify({
-          password: "new-password123",
-        }),
-      });
-
-      // Assert
-      expect(res.status).toBe(200);
-      const data = await res.json();
-      expect(data).toEqual({ success: true });
-      expect(mockUpdateUser).toHaveBeenCalledWith({
-        password: "new-password123",
-      });
-    });
-
-    it("should return 401 when no token is provided", async () => {
-      // Execute
-      const res = await app.request("/auth/update-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          password: "new-password123",
-        }),
-      });
-
-      // Assert
-      expect(res.status).toBe(401);
-      const data = (await res.json()) as ErrorResponse;
-      expect(data).toEqual({
-        error: "No token provided",
-        code: "auth/no-token",
-      });
-      expect(mockUpdateUser).not.toHaveBeenCalled();
-    });
-
-    it("should return 400 when password update fails", async () => {
-      // Setup
-      mockUpdateUser.mockResolvedValue({
-        data: null,
-        error: { message: "Invalid token" },
-      });
-
-      // Execute
-      const res = await app.request("/auth/update-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer invalid-token",
-        },
-        body: JSON.stringify({
-          password: "new-password123",
-        }),
-      });
-
-      // Assert
-      expect(res.status).toBe(400);
-      const data = (await res.json()) as ErrorResponse;
-      expect(data).toEqual({
-        error: "Invalid token",
-        code: "auth/update-failed",
-      });
-    });
-  });
-
-  describe("POST /send-otp", () => {
-    it("should send OTP successfully", async () => {
-      // Setup
-      mockGetUser.mockResolvedValue({
-        data: { user: { id: "test-user-id" } },
-        error: null,
-      });
-
-      mockSignInWithOtp.mockResolvedValue({
-        data: {
-          messageHash: "test-hash",
-        },
-        error: null,
-      });
-
-      // Execute
-      const res = await app.request("/auth/send-otp", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer valid-token",
-        },
-        body: JSON.stringify({
-          phone: "+1234567890",
-        }),
-      });
-
-      // Assert
-      expect(res.status).toBe(200);
-      const data = await res.json();
-      expect(data).toEqual({
-        messageHash: "test-hash",
-      });
-      expect(mockSignInWithOtp).toHaveBeenCalledWith({
-        phone: "+1234567890",
-      });
-    });
-
-    it("should return 401 when no token is provided", async () => {
-      // Execute
-      const res = await app.request("/auth/send-otp", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          phone: "+1234567890",
-        }),
-      });
-
-      // Assert
-      expect(res.status).toBe(401);
-      const data = (await res.json()) as ErrorResponse;
-      expect(data).toEqual({
-        error: "No token provided",
-        code: "auth/no-token",
-      });
-      expect(mockSignInWithOtp).not.toHaveBeenCalled();
-    });
-
-    it("should return 401 when user token is invalid", async () => {
-      // Setup
-      mockGetUser.mockResolvedValue({
-        data: { user: null },
-        error: { message: "Invalid token" },
-      });
-
-      // Execute
-      const res = await app.request("/auth/send-otp", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer invalid-token",
-        },
-        body: JSON.stringify({
-          phone: "+1234567890",
-        }),
-      });
-
-      // Assert
-      expect(res.status).toBe(401);
-      const data = (await res.json()) as ErrorResponse;
-      expect(data).toEqual({
-        error: "Invalid token",
-        code: "auth/invalid-token",
-      });
-      expect(mockSignInWithOtp).not.toHaveBeenCalled();
-    });
-  });
-
-  describe("POST /verify-otp", () => {
-    it("should verify OTP successfully", async () => {
-      // Setup
-      const mockVerifyData = {
-        user: { id: "test-user-id" },
-        session: { access_token: "test-token" },
-      };
-
-      mockVerifyOtp.mockResolvedValue({
-        data: mockVerifyData,
-        error: null,
-      });
-
-      // Execute
-      const res = await app.request("/auth/verify-otp", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          phone: "+1234567890",
-          token: "123456",
-        }),
-      });
-
-      // Assert
-      expect(res.status).toBe(200);
-      const data = await res.json();
-      expect(data).toEqual(mockVerifyData);
-      expect(mockVerifyOtp).toHaveBeenCalledWith({
-        phone: "+1234567890",
-        token: "123456",
-        type: "sms",
-      });
-    });
-
-    it("should return 400 when OTP verification fails", async () => {
-      // Setup
-      mockVerifyOtp.mockResolvedValue({
-        data: null,
-        error: { message: "Invalid OTP" },
-      });
-
-      // Execute
-      const res = await app.request("/auth/verify-otp", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          phone: "+1234567890",
-          token: "invalid",
-        }),
-      });
-
-      // Assert
-      expect(res.status).toBe(400);
-      const data = (await res.json()) as ErrorResponse;
-      expect(data).toEqual({
-        error: "Invalid OTP",
-        code: "auth/verify-failed",
-      });
-    });
-  });
-});
+    it('should update password successfully when authenticated', async () => {
+      const authApp = new Hono<{ Bindings: Bindings; Variables: Variables }>()
+      authApp.use('*', async (c, next) => { c.env = mockBindings; c.set('user', { id: 'test-user-id' }); await next() })
+      authApp.route('/auth', authRouter)
+      const res = await authApp.request('/auth/update-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: 'newpassword123' }),
+      })
+      expect(res.status).toBe(200)
+      const data: any = await res.json()
+      expect(data.success).toBe(true)
+      expect(data.message).toBe('Password updated successfully.')
+    })
+  })
+})

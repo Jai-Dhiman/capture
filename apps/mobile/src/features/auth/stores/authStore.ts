@@ -89,15 +89,14 @@ export const useAuthStore = create<AuthStoreState & AuthStoreActions>()(
           } else if (currentSession.expires_at && currentSession.expires_at - now >= fiveMinutes) {
             try {
               const { workersAuthApi } = await import("../lib/workersAuthApi");
-              const userFromApi = await workersAuthApi.getMe();  
-              if (userFromApi) {
-                set((state) => ({
-                  ...state,
-                  user: userFromApi,
+              const me = await workersAuthApi.getMe();
+              if (me) {
+                set({
+                  user: { id: me.id, email: me.email },
                   status: "success",
-                  stage: state.stage === 'profileRequired' ? 'profileRequired' : 'authenticated',
+                  stage: me.profileExists ? 'authenticated' : 'profileRequired',
                   error: null,
-                }));
+                });
               } else {
                 await get().clearAuth();
               }

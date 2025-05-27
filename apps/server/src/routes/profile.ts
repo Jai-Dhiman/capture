@@ -75,15 +75,6 @@ router.post("/", async (c) => {
   }
 });
 
-router.get("/check/:userId", async (c) => {
-  const userId = c.req.param("userId");
-  const db = drizzle(c.env.DB);
-
-  const existingProfile = await db.select().from(profile).where(eq(profile.userId, userId)).get();
-
-  return c.json({ exists: Boolean(existingProfile) });
-});
-
 router.delete("/:userId", async (c) => {
   const userId = c.req.param("userId");
   const user = c.get("user");
