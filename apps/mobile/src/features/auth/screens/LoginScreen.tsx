@@ -8,11 +8,12 @@ import EmailIcon from '@assets/icons/EmailIcon.svg'
 import LockIcon from '@assets/icons/LockIcon.svg'
 import ViewPasswordIcon from '@assets/icons/ViewPasswordIcon.svg'
 import HidePasswordIcon from '@assets/icons/HidePasswordIcon.svg'
+import GoogleLogo from '@assets/icons/GoogleLogo.svg'
+import AppleIcon from '@assets/icons/AppleLogo.svg'
 import type { AuthStackParamList } from '@navigation/types'
 import { useAuth } from '../hooks/useAuth'
 import Header from '@shared/components/Header'
 import { useAlert } from '@shared/lib/AlertContext'
-import { errorService } from '@shared/services/errorService'
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'Login'>
@@ -25,7 +26,7 @@ export default function LoginScreen({ navigation }: Props) {
   const emailInputRef = useRef<TextInput>(null)
   const passwordInputRef = useRef<TextInput>(null)
   const { showAlert } = useAlert()
-  const { login } = useAuth()
+  const { login, loginWithGoogle, loginWithApple } = useAuth()
 
   const form = useForm({
     defaultValues: {
@@ -182,7 +183,7 @@ export default function LoginScreen({ navigation }: Props) {
           >
             {([canSubmit, isFormSubmitting]) => (
               <TouchableOpacity
-                className="bg-[#E4CAC7] h-[56px] rounded-[30px] shadow-md justify-center mt-[59px]"
+                className="bg-[#E4CAC7] h-[56px] rounded-[30px] shadow-md justify-center mt-[40px]"
                 onPress={() => form.handleSubmit()}
                 disabled={!canSubmit || isFormSubmitting || login.isPending}
               >
@@ -200,7 +201,44 @@ export default function LoginScreen({ navigation }: Props) {
             )}
           </form.Subscribe>
 
-          <View className="items-center mt-[32px]">
+          <View className="w-80 h-0 outline outline-1 outline-neutral-500 mt-[29px] self-center opacity-50" />
+
+          <TouchableOpacity
+            onPress={() => loginWithGoogle.mutate()}
+            disabled={loginWithGoogle.isPending}
+            className={`bg-white h-[56px] rounded-[30px] shadow-md flex-row items-center justify-center mb-[23px] mt-[29px] ${loginWithGoogle.isPending ? 'opacity-50' : ''}`}
+          >
+            {loginWithGoogle.isPending ? (
+              <ActivityIndicator size="small" color="#000" />
+            ) : (
+              <>
+                <GoogleLogo width={24} height={24} style={{ marginRight: 16 }} />
+                <Text className="text-base font-bold font-roboto text-[#1C1C1C]">
+                  Sign In with Google
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          {/* Apple login button */}
+          <TouchableOpacity
+            onPress={() => loginWithApple.mutate()}
+            disabled={loginWithApple.isPending}
+            className={`bg-white h-[56px] rounded-[30px] shadow-md flex-row items-center justify-center mb-[23px] ${loginWithApple.isPending ? 'opacity-50' : ''}`}
+          >
+            {loginWithApple.isPending ? (
+              <ActivityIndicator size="small" color="#000" />
+            ) : (
+              <>
+                <AppleIcon width={24} height={24} style={{ marginRight: 16 }} />
+                <Text className="text-base font-bold font-roboto text-[#1C1C1C]">
+                  Sign In with Apple
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          <View className="items-center">
             <Text className="text-base font-roboto mb-[5px]">Don't have an account?</Text>
             <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
               <Text className="text-base font-semibold font-roboto text-[#827B85] underline">

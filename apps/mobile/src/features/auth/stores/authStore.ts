@@ -81,7 +81,6 @@ export const useAuthStore = create<AuthStoreState & AuthStoreActions>()(
           const now = Date.now();
           const fiveMinutes = 5 * 60 * 1000;
           if (currentSession.expires_at && currentSession.expires_at - now < fiveMinutes) {
-            console.log("Access token expired or expiring soon, attempting refresh...");
             const refreshed = await get().refreshSession();
             if (!refreshed) {
               get().clearAuth();
@@ -108,7 +107,6 @@ export const useAuthStore = create<AuthStoreState & AuthStoreActions>()(
               }
             }
           } else {
-            console.log("Session exists but expiry is unclear or missing, attempting refresh...");
             const refreshed = await get().refreshSession();
             if (!refreshed) await get().clearAuth();
           }

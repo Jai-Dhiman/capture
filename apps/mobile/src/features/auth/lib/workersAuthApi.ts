@@ -63,6 +63,14 @@ export const workersAuthApi = {
     return apiClient.post('/auth/verify-email', payload, false); // Verification via token doesn't need prior JWT auth
   },
   
+  // OAuth exchanges
+  async oauthGoogle(data: { code: string; codeVerifier: string; redirectUri: string }): Promise<AuthResponse> {
+    return apiClient.post('/auth/oauth/google', data, false);
+  },
+  async oauthApple(data: { code: string; identityToken: string }): Promise<AuthResponse> {
+    return apiClient.post('/auth/oauth/apple', data, false);
+  },
+  
   // Optional: /auth/me endpoint to validate token and get user info
   async getMe(): Promise<MeResponse | null> {
     try {

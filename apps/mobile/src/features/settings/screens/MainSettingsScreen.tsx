@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StatusBar, Alert } from 'react-native';
-import { useNavigation, CommonActions } from '@react-navigation/native';
+import { View, Text, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { SettingsStackParamList } from '@navigation/types';
 import { useProfileStore } from '@features/profile/stores/profileStore'
@@ -31,31 +31,7 @@ export default function MainSettingsScreen() {
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      "Logout",
-      "Are you sure you want to log out?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel"
-        },
-        {
-          text: "Logout",
-          style: "destructive",
-          onPress: () => logout.mutate(undefined, {
-            onSuccess: () => {
-              // Reset navigation to Login screen after logout
-              navigation.dispatch(
-                CommonActions.reset({
-                  index: 0,
-                  routes: [{ name: 'Login' }],
-                })
-              );
-            }
-          })
-        }
-      ]
-    );
+    logout.mutate(undefined);
   };
 
   return (

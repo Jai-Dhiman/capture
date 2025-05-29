@@ -1,5 +1,7 @@
 # Project Plan: User Interest Theme Discovery via UMAP and API Integration
 
+(Start by moving from Cloudflare Vectorize to Qdrant, and making sure Qdrant is hooked up correctly and working )
+
 ## 1. Goal
 
 - To analyze the high-dimensional user interest vectors (derived from saved/created post embeddings and associated hashtags) using UMAP to discover latent thematic clusters within the user base.

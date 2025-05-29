@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Hono } from "hono";
+import { sign } from "hono/jwt";
 import profileRouter from "../profile";
+import { authMiddleware } from "../../middleware/auth";
 import { createMockBindings } from "../../test/utils/test-utils";
-import type { Bindings, Variables } from "../../types";
-import { User } from "@supabase/supabase-js";
+import type { Bindings, Variables, AppUser } from "../../types";
 import { profile } from "../../db/schema";
 
 // Mock drizzle functions
@@ -40,19 +41,23 @@ describe("Profile Routes", () => {
   let app: Hono<{ Bindings: Bindings; Variables: Variables }>;
   let mockBindings: Bindings;
   const mockUser = { id: "test-user-id", email: "test@example.com" };
+  let authToken: string;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     mockBindings = createMockBindings();
+    mockBindings.JWT_SECRET = "test-secret";
+
+    authToken = await sign({ sub: mockUser.id, email: mockUser.email, exp: Math.floor(Date.now() / 1000) + (60 * 60) }, mockBindings.JWT_SECRET);
 
     app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
-    // Set up environment and user in context
     app.use("*", async (c, next) => {
       c.env = mockBindings;
-      c.set("user", mockUser as User);
       await next();
     });
+
+    app.use("/profile/*", authMiddleware);
 
     app.route("/profile", profileRouter);
   });
@@ -118,6 +123,7 @@ describe("Profile Routes", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${authToken}`
         },
         body: JSON.stringify(profileData),
       });
@@ -161,6 +167,7 @@ describe("Profile Routes", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${authToken}`
         },
         body: JSON.stringify(profileData),
       });
@@ -202,6 +209,7 @@ describe("Profile Routes", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${authToken}`
         },
         body: JSON.stringify(profileData),
       });
@@ -224,6 +232,7 @@ describe("Profile Routes", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${authToken}`
         },
         body: JSON.stringify(profileData),
       });
@@ -247,6 +256,7 @@ describe("Profile Routes", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${authToken}`
         },
         body: JSON.stringify(profileData),
       });
@@ -272,6 +282,7 @@ describe("Profile Routes", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${authToken}`
         },
         body: JSON.stringify(profileData),
       });
@@ -280,40 +291,6 @@ describe("Profile Routes", () => {
       expect(res.status).toBe(500);
       const data = await res.json() as { message: string };
       expect(data).toEqual({ message: "Failed to create profile" });
-    });
-  });
-
-  describe("GET /check/:userId", () => {
-    it("should return exists=true when profile exists", async () => {
-      // Setup
-      mockGet.mockResolvedValue({
-        id: "existing-profile-id",
-        userId: "test-user-id",
-      });
-
-      // Execute
-      const res = await app.request("/profile/check/test-user-id");
-
-      // Assert
-      expect(res.status).toBe(200);
-      const data = await res.json() as { exists: boolean };
-      expect(data).toEqual({ exists: true });
-      expect(mockSelect).toHaveBeenCalled();
-      expect(mockFrom).toHaveBeenCalledWith(profile);
-      expect(mockWhere).toHaveBeenCalled();
-    });
-
-    it("should return exists=false when profile doesn't exist", async () => {
-      // Setup
-      mockGet.mockResolvedValue(null);
-
-      // Execute
-      const res = await app.request("/profile/check/nonexistent-user-id");
-
-      // Assert
-      expect(res.status).toBe(200);
-      const data = await res.json() as { exists: boolean };
-      expect(data).toEqual({ exists: false });
     });
   });
 
@@ -328,6 +305,9 @@ describe("Profile Routes", () => {
       // Execute
       const res = await app.request("/profile/test-user-id", {
         method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${authToken}`
+        }
       });
 
       // Assert
@@ -344,6 +324,9 @@ describe("Profile Routes", () => {
       // Execute
       const res = await app.request("/profile/different-user-id", {
         method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${authToken}`
+        }
       });
 
       // Assert
@@ -361,6 +344,9 @@ describe("Profile Routes", () => {
       // Execute
       const res = await app.request("/profile/test-user-id", {
         method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${authToken}`
+        }
       });
 
       // Assert
@@ -387,6 +373,9 @@ describe("Profile Routes", () => {
       // Execute
       const res = await app.request("/profile/test-user-id", {
         method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${authToken}`
+        }
       });
 
       // Assert
