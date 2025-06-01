@@ -17,6 +17,13 @@ Capture is a full-stack mobile application that reimagines social media by prior
 - Creating a scalable serverless backend with Cloudflare Workers
 - Establishing a robust CI/CD pipeline with automated testing
 
+## Core Principles
+
+- **Privacy by Design**: No invasive tracking or data harvesting
+- **User Control**: Chronological feeds, content filtering, and customizable experience
+- **Simplified Experience**: Clean interface focusing on meaningful connections
+- **Mental Wellbeing**: Removing addictive algorithms and harmful content
+
 ## Architecture
 
 ### Frontend (React Native + Expo)
@@ -88,6 +95,12 @@ apps/dashboard/
 - **Jotai**: Atomic state management
 - **Recharts**: Charting library for data visualization
 
+### Security
+
+- **Signal Protocol implementation**: End-to-end encrypted messaging
+- **TweetNaCl.js**: Cryptographic operations
+- **Zod**: Runtime type validation and request sanitization
+
 ### DevOps
 
 - **Turborepo**: Monorepo build system
@@ -106,6 +119,20 @@ This project employs modern development practices including:
 - **Testing**: Automated test suites for critical functionality
 - **Performance Optimization**: React Query caching, lazy loading, and minimal re-renders
 - **Security**: End-to-end encryption for messages, secure storage for sensitive data
+
+## Key Differentiators
+
+1. No engagement-maximizing algorithms that promote addictive behavior
+2. Complete user control over content consumption
+3. Transparent data policies with minimal collection
+4. Built with modern, scalable technologies
+
+## Development Priorities
+
+1. MVP with core social features (profiles, posts, following)
+2. Privacy and security infrastructure
+3. User control features (feed customization, filtering)
+4. Performance optimization for smooth experience
 
 ## Running the Project
 

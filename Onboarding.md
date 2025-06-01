@@ -53,9 +53,8 @@ git push origin feature/what-youre-building
 ```
 
 ### GitHub Workflow
-1. **Issues** - Pick tasks from our project board
+1. **Issues** - If you find a problem, go to the item on the Capture Dev Project Board, convert into an issue, and add a label (bug, question, help wanted, etc...)
 2. **Pull Requests** - All changes go through code review
-3. **Discussions** - For bigger architectural questions
 
 **Branch naming**: `feature/add-user-auth`, `bugfix/fix-cors-issue`
 
