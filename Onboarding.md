@@ -56,7 +56,7 @@ git push origin feature/what-youre-building
 1. **Issues** - If you find a problem, go to the item on the Capture Dev Project Board, convert into an issue, and add a label (bug, question, help wanted, etc...)
 2. **Pull Requests** - All changes go through code review
 
-**Branch naming**: `feature/add-user-auth`, `bugfix/fix-cors-issue`
+**Branch naming**: `feature/add-user-auth`, `bugfix/fix-cors-issue`, etc..
 
 ## Key Commands
 ```bash
