@@ -53,11 +53,11 @@ git push origin feature/what-youre-building
 ```
 
 ### GitHub Workflow
-1. **Issues** - Pick tasks from our project board
+1. **Issues** - For any Issues
 2. **Pull Requests** - All changes go through code review
 3. **Discussions** - For bigger architectural questions
 
-**Branch naming**: `feature/add-user-auth`, `bugfix/fix-cors-issue`
+**Branch naming**: `feature/add-user-auth`, `bugfix/fix-cors-issue`, etc..
 
 ## Key Commands
 ```bash
