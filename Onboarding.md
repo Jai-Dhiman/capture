@@ -36,10 +36,13 @@ pnpm db:generate
 pnpm db:migrate
 ```
 
-### 4. Start Coding
+### 4. Check Health
 ```bash
 pnpm run dev
-# Server runs on localhost:8787
+
+# Open a browser to https://localhost:8787
+
+# It should say "status": "ok"
 ```
 
 ## Backend Info
