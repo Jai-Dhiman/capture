@@ -23,7 +23,19 @@ cd capture/apps/server
 pnpm install
 ```
 
-### 3. Start Coding
+### 3. Create DB
+```bash
+# Navigate to server 
+cd apps/server
+
+# Create the drizzle migration
+pnpm db:generate 
+
+# Migrate 
+pnpm db:migrate
+```
+
+### 4. Start Coding
 ```bash
 pnpm run dev
 # Server runs on localhost:8787
