@@ -24,10 +24,25 @@ cd capture/apps/server
 pnpm install
 ```
 
-### 3. Start Coding
+### 3. Create DB
+```bash
+# Navigate to server 
+cd apps/server
+
+# Create the drizzle migration
+pnpm db:generate 
+
+# Migrate 
+pnpm db:migrate
+```
+
+### 4. Check Health
 ```bash
 pnpm run dev
-# Server runs on localhost:8787
+
+# Open a browser to https://localhost:8787
+
+# It should say "status": "ok"
 ```
 
 ## Backend Info
@@ -41,15 +56,15 @@ pnpm run dev
 ### Working on Features
 ```bash
 # Create feature branch  
-git checkout -b feature/what-youre-building
+git checkout -b feat/what-you-built
 
 # Code, test, commit
 pnpm run dev    # develop
 pnpm run test   # test your changes
-git add . && git commit -m "feat: what you built"
+git add . && git commit -m "feat/what-you-built"
 
 # Push and create Pull Request
-git push origin feature/what-youre-building
+git push origin feat/what-you-built
 # Then create a Pull Request on GitHub
 ```
 
@@ -57,7 +72,7 @@ git push origin feature/what-youre-building
 1. **Issues** - If you find a problem, go to the item on the Capture Dev Project Board, convert into an issue, and add a label (bug, question, help wanted, etc...)
 2. **Pull Requests** - All changes go through code review
 
-**Branch naming**: `feature/add-user-auth`, `bugfix/fix-cors-issue`, etc..
+**Branch naming**: `feat/add-user-auth`, `bugfix/fix-cors-issue`, etc..
 
 ## Key Commands
 ```bash
