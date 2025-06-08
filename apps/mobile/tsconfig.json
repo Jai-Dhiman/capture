@@ -15,7 +15,8 @@
     "strict": true,
     "baseUrl": "src",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@assets/*": ["../assets/*"]
     }
   },
   "include": [

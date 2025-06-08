@@ -102,32 +102,18 @@ function createD1ClientMock(): MockD1ClientAndQueryBuilder {
     updateValues = null;
   };
 
+  function extractTableName(query: string): string {
+    const match = query.match(/(?:from|into|update)\s+("?(\w+)"?)/i);
+    if (match?.[2]) {
+      return match[2].toLowerCase();
+    }
+    console.error(`Could not extract table name from query: "${query}"`);
+    return 'unknown_table';
+  }
+
   // helper to evaluate a single where condition on an item
   function evaluateCondition(item: any, condition: any): boolean {
     // Handle Drizzle ORM condition objects
-    
-    // Comprehensive debug logging
-    if (process.env.NODE_ENV === 'test') {
-      console.log('DEBUG: evaluateCondition - condition keys:', Object.keys(condition || {}));
-      console.log('DEBUG: evaluateCondition - condition type:', typeof condition);
-      console.log('DEBUG: evaluateCondition - condition constructor:', condition?.constructor?.name);
-      
-      // Log queryChunks in detail
-      if (condition?.queryChunks) {
-        console.log('DEBUG: queryChunks length:', condition.queryChunks.length);
-        condition.queryChunks.forEach((chunk: any, index: number) => {
-          if (chunk && typeof chunk === 'object') {
-            console.log(`DEBUG: queryChunk[${index}] keys:`, Object.keys(chunk));
-            console.log(`DEBUG: queryChunk[${index}] constructor:`, chunk.constructor?.name);
-            console.log(`DEBUG: queryChunk[${index}] operator:`, chunk.operator);
-            console.log(`DEBUG: queryChunk[${index}] left:`, chunk.left?.name || chunk.left?.column?.name || chunk.left?._?.name);
-            console.log(`DEBUG: queryChunk[${index}] right:`, chunk.right);
-          } else {
-            console.log(`DEBUG: queryChunk[${index}]:`, typeof chunk, chunk);
-          }
-        });
-      }
-    }
     
     // Handle 'and' conditions (typically from and() function)
     if (condition && condition.operator === 'and' && Array.isArray(condition.left) && Array.isArray(condition.right)) {
@@ -184,7 +170,6 @@ function createD1ClientMock(): MockD1ClientAndQueryBuilder {
     }
     
     // For unhandled conditions, return false (this was the main fix)
-    console.log('DEBUG: Unhandled condition, returning false');
     return false;
   };
 
@@ -202,7 +187,7 @@ function createD1ClientMock(): MockD1ClientAndQueryBuilder {
       const column = orderByColumn as string;
       results.sort((a, b) => {
         if (!Object.prototype.hasOwnProperty.call(a, column) || !Object.prototype.hasOwnProperty.call(b, column)) {
-            return 0; 
+            throw new Error(`OrderBy column '${column}' not found on one or both items during sort.`);
         }
         if (a[column] === b[column]) return 0;
         if (orderDirection === "asc") {
@@ -341,13 +326,7 @@ function createD1ClientMock(): MockD1ClientAndQueryBuilder {
       return queryBuilder;
     },
     from: (table: any) => {
-      // Correctly get table name from Drizzle schema object
-      const tableName = table[Symbol.for("drizzle:BaseName")] || 
-                        table[Symbol.for("drizzle:SQLiteName")] || 
-                        table["_->tableName"] || 
-                        table.dbName || 
-                        (table._?.name) || 
-                        table.name;
+      const tableName = extractTableName(table.toString());
 
       if (!tableName) {
         console.error("Mock DB (from): Could not determine table name from Drizzle object provided:", table);
@@ -407,12 +386,7 @@ function createD1ClientMock(): MockD1ClientAndQueryBuilder {
     }),
     insert: vi.fn((table: any) => {
       operationType = "insert";
-      const tableName = table[Symbol.for("drizzle:BaseName")] || 
-                        table[Symbol.for("drizzle:SQLiteName")] || 
-                        table["_->tableName"] || 
-                        table.dbName || 
-                        (table._?.name) || 
-                        table.name;
+      const tableName = extractTableName(table.toString());
       if (!tableName) {
         console.error("Mock DB (insert): Could not determine table name from Drizzle object provided:", table);
         currentTable = "unknown_table_error_insert";
@@ -439,12 +413,7 @@ function createD1ClientMock(): MockD1ClientAndQueryBuilder {
     }),
     update: vi.fn((table: any) => {
       operationType = "update";
-      const tableName = table[Symbol.for("drizzle:BaseName")] || 
-                        table[Symbol.for("drizzle:SQLiteName")] || 
-                        table["_->tableName"] || 
-                        table.dbName || 
-                        (table._?.name) || 
-                        table.name;
+      const tableName = extractTableName(table.toString());
       if (!tableName) {
         console.error("Mock DB (update): Could not determine table name from Drizzle object provided:", table);
         currentTable = "unknown_table_error_update";
@@ -471,12 +440,7 @@ function createD1ClientMock(): MockD1ClientAndQueryBuilder {
     }),
     delete: vi.fn((table: any) => {
       operationType = "delete";
-      const tableName = table[Symbol.for("drizzle:BaseName")] || 
-                        table[Symbol.for("drizzle:SQLiteName")] || 
-                        table["_->tableName"] || 
-                        table.dbName || 
-                        (table._?.name) || 
-                        table.name;
+      const tableName = extractTableName(table.toString());
       if (!tableName) {
         console.error("Mock DB (delete): Could not determine table name from Drizzle object provided:", table);
         currentTable = "unknown_table_error_delete";
@@ -556,7 +520,7 @@ export const testData = {
       depth: 1,
       isDeleted: 0,
       createdAt: new Date().toISOString(),
-      // updatedAt is missing here based on original, but usually present
+      updatedAt: new Date().toISOString(),
     },
   ],
   relationships: [

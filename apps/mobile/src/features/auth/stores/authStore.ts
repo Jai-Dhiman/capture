@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { secureStorage } from "@shared/lib/storage";
+import { secureStorage } from "@/shared/lib/storage";
 import type { AuthStoreState, AuthStoreActions, User, Session, AuthResponse, AuthStage, AuthStatus } from "../types";
 
 const initialState: AuthStoreState = {

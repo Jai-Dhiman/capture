@@ -1,13 +1,13 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from './types';
-import LoginScreen from '@features/auth/screens/LoginScreen';
-import SignupScreen from '@features/auth/screens/SignupScreen';
-import EmailSignupScreen from '@features/auth/screens/EmailSignupScreen';
-import CreateProfile from '@features/auth/screens/CreateProfile';
-import ForgotPasswordScreen from '@features/auth/screens/ForgotPasswordScreen';
-import ResetPasswordScreen from '@features/auth/screens/ResetPasswordScreen';
-import EmailVerificationPendingScreen from '@features/auth/screens/EmailVerificationPendingScreen';
+import LoginScreen from '@/features/auth/screens/LoginScreen';
+import SignupScreen from '@/features/auth/screens/SignupScreen';
+import EmailSignupScreen from '@/features/auth/screens/EmailSignupScreen';
+import CreateProfile from '@/features/auth/screens/CreateProfile';
+import ForgotPasswordScreen from '@/features/auth/screens/ForgotPasswordScreen';
+import ResetPasswordScreen from '@/features/auth/screens/ResetPasswordScreen';
+import EmailVerificationPendingScreen from '@/features/auth/screens/EmailVerificationPendingScreen';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 

@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { AuthStackParamList } from '@navigation/types';
-import Header from '@shared/components/Header';
+import type { AuthStackParamList } from '@/navigation/types';
+import Header from '@/shared/components/Header';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'EmailVerificationPending'>

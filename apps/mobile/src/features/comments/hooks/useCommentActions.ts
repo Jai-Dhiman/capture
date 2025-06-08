@@ -8,10 +8,10 @@ import {
   deleteCommentMutationAtom,
   refetchTriggerAtom,
 } from "../atoms/commentAtoms";
-import { useProfileStore } from "@features/profile/stores/profileStore";
+import { useProfileStore } from "@/features/profile/stores/profileStore";
 import type { Comment } from "../types/commentTypes";
-import { errorService } from "@shared/services/errorService";
-import { useAlert } from "@shared/lib/AlertContext";
+import { errorService } from "@/shared/services/errorService";
+import { useAlert } from "@/shared/lib/AlertContext";
 
 export const useCommentActions = () => {
   const [, setOptimisticComments] = useAtom(optimisticCommentsAtom);

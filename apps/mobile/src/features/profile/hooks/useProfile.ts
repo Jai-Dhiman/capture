@@ -1,5 +1,5 @@
 import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
-import { useAuthStore } from "@features/auth/stores/authStore";
+import { useAuthStore } from "@/features/auth/stores/authStore";
 import { API_URL } from "@env";
 import type { UserProfile } from "../stores/profileStore";
 

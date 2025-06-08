@@ -5,11 +5,11 @@ import {
 import { useForm } from '@tanstack/react-form';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
-import type { AuthStackParamList } from '@navigation/types';
-import { LoadingSpinner } from '@shared/components/LoadingSpinner';
-import { useAlert } from '@shared/lib/AlertContext';
-import { errorService } from '@shared/services/errorService';
-import Header from '@shared/components/Header';
+import type { AuthStackParamList } from '@/navigation/types';
+import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
+import { useAlert } from '@/shared/lib/AlertContext';
+import { errorService } from '@/shared/services/errorService';
+import Header from '@/shared/components/Header';
 import LockIcon from '@assets/icons/LockIcon.svg';
 import ViewPasswordIcon from '@assets/icons/ViewPasswordIcon.svg';
 import HidePasswordIcon from '@assets/icons/HidePasswordIcon.svg';

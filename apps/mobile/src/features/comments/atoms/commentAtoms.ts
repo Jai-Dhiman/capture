@@ -1,9 +1,9 @@
 import { atom } from "jotai";
 import { atomWithQuery, atomWithMutation } from "jotai-tanstack-query";
-import { useAuthStore } from "@features/auth/stores/authStore";
+import { useAuthStore } from "@/features/auth/stores/authStore";
 import type { Comment } from "../types/commentTypes";
 import { API_URL } from "@env";
-import { errorService } from "@shared/services/errorService";
+import { errorService } from "@/shared/services/errorService";
 
 export const commentDrawerOpenAtom = atom(false);
 export const currentPostIdAtom = atom<string | null>(null);

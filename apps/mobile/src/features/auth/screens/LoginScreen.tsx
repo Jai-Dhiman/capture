@@ -10,10 +10,10 @@ import ViewPasswordIcon from '@assets/icons/ViewPasswordIcon.svg'
 import HidePasswordIcon from '@assets/icons/HidePasswordIcon.svg'
 import GoogleLogo from '@assets/icons/GoogleLogo.svg'
 import AppleIcon from '@assets/icons/AppleLogo.svg'
-import type { AuthStackParamList } from '@navigation/types'
+import type { AuthStackParamList } from '@/navigation/types'
 import { useAuth } from '../hooks/useAuth'
-import Header from '@shared/components/Header'
-import { useAlert } from '@shared/lib/AlertContext'
+import Header from '@/shared/components/Header'
+import { useAlert } from '@/shared/lib/AlertContext'
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'Login'>

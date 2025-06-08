@@ -4,12 +4,12 @@ import {
 } from 'react-native';
 import { useForm } from '@tanstack/react-form';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { AuthStackParamList } from '@navigation/types';
-import { LoadingSpinner } from '@shared/components/LoadingSpinner';
-import Header from '@shared/components/Header';
+import type { AuthStackParamList } from '@/navigation/types';
+import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
+import Header from '@/shared/components/Header';
 import EmailIcon from '@assets/icons/EmailIcon.svg';
-import { useAlert } from '@shared/lib/AlertContext';
-import { errorService } from '@shared/services/errorService';
+import { useAlert } from '@/shared/lib/AlertContext';
+import { errorService } from '@/shared/services/errorService';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'ForgotPassword'>

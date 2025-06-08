@@ -1,7 +1,7 @@
 import { useInfiniteQuery, type QueryFunctionContext } from '@tanstack/react-query';
-import { useAuthStore } from '@features/auth/stores/authStore';
+import { useAuthStore } from '@/features/auth/stores/authStore';
 import { API_URL } from '@env';
-import type { Post } from '@features/post/types/postTypes';
+import type { Post } from '@/features/post/types/postTypes';
 
 interface DiscoverFeedResponse {
   posts: Post[];
