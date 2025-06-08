@@ -2,11 +2,11 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { LinkingOptions } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
-import { useAuthStore } from '@features/auth/stores/authStore';
+import { useAuthStore } from '@/features/auth/stores/authStore';
 import type { RootStackParamList } from './types';
 import AppNavigator from './AppNavigator';
 import AuthStack from './AuthNavigator';
-import CreateProfile from '@features/auth/screens/CreateProfile';
+import CreateProfile from '@/features/auth/screens/CreateProfile';
 import { View, Text, ActivityIndicator } from 'react-native';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();

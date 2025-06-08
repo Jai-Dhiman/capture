@@ -15,12 +15,7 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": "src",
     "paths": {
-      "lib/*": ["lib/*"],
-      "middleware/*": ["middleware/*"],
-      "routes/*": ["routes/*"],
-      "types/*": ["types/*"],
-      "db/*": ["db/*"],
-      "graphql/*": ["graphql/*"]
+      "@/*": ["./*"]
     }
   },
   "include": ["src/**/*"],

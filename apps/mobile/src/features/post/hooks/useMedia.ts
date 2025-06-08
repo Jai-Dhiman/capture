@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { useAuthStore } from '@features/auth/stores/authStore'
+import { useAuthStore } from '@/features/auth/stores/authStore'
 import { API_URL } from '@env'
 
 export const useImageUrl = (mediaId?: string, expirySeconds = 1800) => {

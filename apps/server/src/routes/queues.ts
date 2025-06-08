@@ -1,6 +1,6 @@
-import { createD1Client } from '../db';
-import * as schema from '../db/schema';
-import type { Bindings } from 'types';
+import { createD1Client } from '@/db';
+import * as schema from '@/db/schema';
+import type { Bindings } from '@/types';
 import {
   generatePostEmbedding,
   storePostEmbedding,

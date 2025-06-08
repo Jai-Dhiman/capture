@@ -1,11 +1,11 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { AppStackParamList } from './types';
-import Feed from '@features/feed/screens/Feed';
-import NewPost from '@features/post/screens/NewPost';
-import Profile from '@features/profile/screens/Profile';
-import Search from '@features/search/screens/Search';
+import Feed from '@/features/feed/screens/Feed';
+import NewPost from '@/features/post/screens/NewPost';
+import Profile from '@/features/profile/screens/Profile';
+import Search from '@/features/search/screens/Search';
 import SettingsNavigator from './SettingsNavigator';
-import ImageEditScreen from '@features/post/screens/ImageEditScreen';
+import ImageEditScreen from '@/features/post/screens/ImageEditScreen';
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
 

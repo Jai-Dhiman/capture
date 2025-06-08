@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuthStore } from "@features/auth/stores/authStore";
+import { useAuthStore } from "@/features/auth/stores/authStore";
 import { API_URL } from "@env";
 import { useAtom } from "jotai";
 import { isFollowingAtom } from "../atoms/followingAtoms";

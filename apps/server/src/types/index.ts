@@ -1,4 +1,3 @@
-import type { User as SupabaseUser } from '@supabase/supabase-js';
 import type { Ai, Queue } from '@cloudflare/workers-types';
 
 export type Bindings = {
@@ -10,8 +9,6 @@ export type Bindings = {
   POST_VECTORS: KVNamespace;
   USER_VECTORS: KVNamespace;
   VECTORIZE: VectorizeIndex;
-  SUPABASE_URL: string;
-  SUPABASE_KEY: string;
   CLOUDFLARE_ACCOUNT_ID: string;
   CLOUDFLARE_ACCOUNT_HASH: string;
   CLOUDFLARE_IMAGES_TOKEN: string;

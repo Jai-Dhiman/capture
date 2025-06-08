@@ -2,11 +2,11 @@ import React from 'react';
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StatusBar } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { SettingsStackParamList } from '@navigation/types';
-import { useBlockedUsers, useUnblockUser } from '@features/profile/hooks/useBlocking';
-import { ProfileImage } from '@features/post/components/ProfileImage';
-import { SkeletonLoader, SkeletonElement } from '@shared/components/SkeletonLoader';
-import { EmptyState } from '@features/feed/components/EmptyState';
+import type { SettingsStackParamList } from '@/navigation/types';
+import { useBlockedUsers, useUnblockUser } from '@/features/profile/hooks/useBlocking';
+import { ProfileImage } from '@/features/post/components/ProfileImage';
+import { SkeletonLoader, SkeletonElement } from '@/shared/components/SkeletonLoader';
+import { EmptyState } from '@/features/feed/components/EmptyState';
 import CustomBackIcon from '@assets/icons/CustomBackIcon.svg';
 import { format } from 'date-fns';
 

@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { MediaImage } from '@features/post/components/MediaImage';
+import { MediaImage } from '@/features/post/components/MediaImage';
 
 interface GridItemProps {
   post: any;

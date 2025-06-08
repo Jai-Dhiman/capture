@@ -20,10 +20,7 @@ module.exports = (api) => {
           root: ["./src"],
           extensions: [".ios.js", ".android.js", ".js", ".ts", ".tsx", ".json"],
           alias: {
-            "@features": "./src/features",
-            "@shared": "./src/shared",
-            "@navigation": "./src/navigation",
-            "@app": "./src",
+            "@": "./src",
             "@assets": "./assets"
           }
         }

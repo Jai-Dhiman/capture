@@ -2,7 +2,7 @@ import type React from 'react';
 import { useState } from 'react';
 import { View, Text, TouchableOpacity, Pressable, Modal, ImageBackground } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useAuthStore } from '@features/auth/stores/authStore';
+import { useAuthStore } from '@/features/auth/stores/authStore';
 import CustomBackIcon from '@assets/icons/CustomBackIcon.svg';
 import CustomMenuIcon from '@assets/icons/CustomMenuIcon.svg';
 import ProfileIcon from '@assets/icons/ProfileIcon.svg';
