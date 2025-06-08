@@ -1,4 +1,5 @@
 import type { Ai } from '@cloudflare/workers-types';
+import type { QdrantClient } from './qdrantClient';
 
 export interface VectorData {
   postId?: string;
@@ -76,7 +77,7 @@ export async function generatePostEmbedding(
 export async function storePostEmbedding(
   vectorData: VectorData,
   kv: KVNamespace,
-  vectorize: VectorizeIndex,
+  qdrantClient: QdrantClient,
 ): Promise<void> {
   if (!vectorData.postId) {
     throw new Error('Post ID is required for storing post embeddings');
@@ -111,34 +112,32 @@ export async function storePostEmbedding(
       );
     }
 
-    // Structure payload and log it
-    const payload = {
+    // Store in Qdrant
+    await qdrantClient.upsertVector({
       id: `post:${vectorData.postId}`,
-      values: vectorData.vector,
-      metadata: {
-        type: 'post',
-        postId: vectorData.postId,
+      vector: vectorData.vector,
+      payload: {
+        post_id: vectorData.postId,
         text: vectorData.text,
-        createdAt: vectorData.createdAt,
+        created_at: vectorData.createdAt,
+        content_type: 'text',
       },
-    };
+    });
 
-    // Debug log before upsert
-    console.debug(
-      `[storePostEmbedding] Upserting vector id=${payload.id}, length=${payload.values.length}`,
-    );
-    await vectorize.upsert([payload]);
+    console.debug(`[storePostEmbedding] Successfully stored vector for post ${vectorData.postId}`);
   } catch (error) {
-    console.error('Failed to store vector in Vectorize:', error);
+    console.error('Failed to store vector in Qdrant:', error);
     // Log more details about the error
-    if (error.response) {
-      console.error('Vectorize API response:', {
-        status: error.response.status,
-        statusText: error.response.statusText,
-        data: error.response.data,
+    if (error && typeof error === 'object' && 'response' in error) {
+      const errorWithResponse = error as { response: { status: number; statusText: string; data: any } };
+      console.error('Qdrant API response:', {
+        status: errorWithResponse.response.status,
+        statusText: errorWithResponse.response.statusText,
+        data: errorWithResponse.response.data,
       });
     }
-    throw new Error(`Vectorize storage failed: ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new Error(`Qdrant storage failed: ${errorMessage}`);
   }
 }
 
