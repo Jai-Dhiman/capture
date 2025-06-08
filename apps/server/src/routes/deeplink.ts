@@ -1,7 +1,7 @@
-import { createD1Client } from "db";
-import * as schema from "db/schema";
+import { createD1Client } from "@/db";
+import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
-import type { Bindings } from "types";
+import type { Bindings } from "@/types";
 import { Hono } from "hono";
 
 const deeplinkRouter = new Hono<{ Bindings: Bindings }>();

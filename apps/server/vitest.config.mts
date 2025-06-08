@@ -1,11 +1,11 @@
 import { defineConfig } from 'vitest/config'
-import { resolve } from 'path'
+import { resolve } from 'node:path'
 
 export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
-    setupFiles: ['./src/test/setup/vitest.setup.ts'],
+    setupFiles: ['./src/test/setup/vitest.setup.ts', './src/test/setup/mocks.ts'],
     include: ['src/**/*.test.ts'],
     coverage: {
       provider: 'v8',
@@ -16,12 +16,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      lib: resolve(__dirname, './src/lib'),
-      middleware: resolve(__dirname, './src/middleware'),
-      routes: resolve(__dirname, './src/routes'),
-      types: resolve(__dirname, './src/types'),
-      db: resolve(__dirname, './src/db'),
-      graphql: resolve(__dirname, './src/graphql'),
+      '@': resolve(__dirname, './src'),
     },
   },
 })

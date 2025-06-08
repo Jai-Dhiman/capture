@@ -84,8 +84,6 @@ export function createMockBindings(): Bindings {
       getByIds: vi.fn(),
       deleteByIds: vi.fn(),
     } as unknown as VectorizeIndex,
-    SUPABASE_URL: 'mock-supabase-url',
-    SUPABASE_KEY: 'mock-supabase-key',
     CLOUDFLARE_ACCOUNT_ID: 'mock-cf-account-id',
     CLOUDFLARE_ACCOUNT_HASH: 'mock-cf-account-hash',
     CLOUDFLARE_IMAGES_TOKEN: 'mock-cf-images-token',

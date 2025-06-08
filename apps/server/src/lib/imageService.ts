@@ -1,8 +1,8 @@
 import { nanoid } from "nanoid";
 import { eq } from "drizzle-orm";
-import { createD1Client } from "../db";
-import * as schema from "db/schema";
-import type { Bindings } from "../types/index";
+import { createD1Client } from "@/db";
+import * as schema from "@/db/schema";
+import type { Bindings } from "@/types";
 import { generateImageSignature, verifyImageSignature } from "./crypto";
 
 export interface ImageService {
@@ -110,7 +110,7 @@ export function createImageService(env: Bindings): ImageService {
 
 				const imageId = segments[1];
 				const variant = segments[2];
-				const expiry = parseInt(urlObj.searchParams.get("exp") || "0");
+				const expiry = Number.parseInt(urlObj.searchParams.get("exp") || "0");
 				const signature = urlObj.searchParams.get("sig") || "";
 
 				return await verifyImageSignature(
