@@ -28,8 +28,12 @@ pnpm install
 ```
 
 ### 3. Setup Environment Variables
-Ask for the environment variables file with API keys and secrets.
-(Never add or commit these API keys to git)
+The app uses these environment variables:
+
+In the frontend .env file:
+API_URL="http://localhost:8787"
+SHARE_URL=https://www.captureapp.org
+
 
 ### 4. Start Development
 ```bash
@@ -148,11 +152,6 @@ Install these extensions:
 ### Data Fetching
 - **Tanstack Query** - REST API + GraphQL calls and caching
 - **Jotai Tanstack Query** - Integration between Jotai and Tanstack Query
-
-## Environment Variables
-The app uses these environment variables:
-API_URL="http://localhost:8787"
-SHARE_URL=https://www.captureapp.org
 
 ## Database Setup
 ```bash
