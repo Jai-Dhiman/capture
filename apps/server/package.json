@@ -3,12 +3,16 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "wrangler dev src/index.ts --experimental-vectorize-bind-to-prod",
-    "deploy": "wrangler deploy src/index.ts",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "wrangler d1 migrations apply capture-db",
-    "test": "vitest",
-    "test:coverage": "vitest run --coverage"
+  "dev": "wrangler dev src/index.ts --experimental-vectorize-bind-to-prod",
+  "deploy": "wrangler deploy src/index.ts",
+  "db:generate": "drizzle-kit generate",
+  "db:migrate": "wrangler d1 migrations apply capture-db",
+  "test": "vitest",
+  "test:coverage": "vitest run --coverage",
+  "test:unit": "vitest run --include src/**/*.unit.test.ts",
+  "test:integration": "vitest run --include src/**/*.int.test.ts",
+  "test:e2e": "vitest run --include tests/e2e/**/*.test.ts",
+  "test:smoke": "vitest run --include tests/smoke/**/*.test.ts"
   },
   "dependencies": {
     "@apollo/server": "^4.11.3",
