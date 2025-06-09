@@ -3,7 +3,7 @@ import { faker } from "@faker-js/faker";
 import type { createD1Client } from "../db";
 import type { Bindings } from "../types";
 import { profile, post, comment, relationship, media, hashtag, postHashtag } from "../db/schema";
-import { generatePostEmbedding, storePostEmbedding } from "./embeddings";
+// import { generatePostEmbedding, storePostEmbedding } from "./embeddings";
 
 const BATCH_SIZE = 10;
 
@@ -100,7 +100,7 @@ async function batchInsert(db: any, table: any, rows: any[]) {
 
 export async function seedDatabase(
   db: ReturnType<typeof createD1Client>,
-  env: Bindings,
+  _env: Bindings,
   userCount = 50,
   postsPerUser = 5,
   commentsPerPost = 3
@@ -194,17 +194,17 @@ export async function seedDatabase(
   await batchInsert(db, media, mediaItems);
 
   // ── seed post vectors ──
-  await Promise.all(
-    posts.map(async (p) => {
-      try {
-        const tagsForPost = postHashtagMap[p.id] || [];
-        const vecData = await generatePostEmbedding(p.id, p.content, tagsForPost, env.AI);
-        await storePostEmbedding(vecData, env.POST_VECTORS, env.VECTORIZE);
-      } catch (err) {
-        console.error(`seedDatabase> embedding failed for post ${p.id}:`, err);
-      }
-    })
-  );
+  // await Promise.all(
+  //   posts.map(async (p) => {
+  //     try {
+  //       const tagsForPost = postHashtagMap[p.id] || [];
+  //       const vecData = await generatePostEmbedding(p.id, p.content, tagsForPost, env.AI);
+  //       await storePostEmbedding(vecData, env.POST_VECTORS, env.VECTORIZE);
+  //     } catch (err) {
+  //       console.error(`seedDatabase> embedding failed for post ${p.id}:`, err);
+  //     }
+  //   })
+  // );
 
   const comments = [];
   for (const p of posts) {
