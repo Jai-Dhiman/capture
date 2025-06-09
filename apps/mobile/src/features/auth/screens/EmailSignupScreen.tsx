@@ -4,11 +4,11 @@ import {
 } from 'react-native';
 import { useForm } from '@tanstack/react-form';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { AuthStackParamList } from '@navigation/types';
+import type { AuthStackParamList } from '@/navigation/types';
 import { useAuth } from '../hooks/useAuth';
-import { LoadingSpinner } from '@shared/components/LoadingSpinner';
-import Header from '@shared/components/Header';
-import { useAlert } from '@shared/lib/AlertContext';
+import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
+import Header from '@/shared/components/Header';
+import { useAlert } from '@/shared/lib/AlertContext';
 import EmailIcon from '@assets/icons/EmailIcon.svg'
 import LockIcon from '@assets/icons/LockIcon.svg'
 import ViewPasswordIcon from '@assets/icons/ViewPasswordIcon.svg'

@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAlert } from "@shared/lib/AlertContext";
-import { errorService } from "@shared/services/errorService";
+import { useAlert } from "@/shared/lib/AlertContext";
+import { errorService } from "@/shared/services/errorService";
 import { workersAuthApi } from "../lib/workersAuthApi";
 import * as AuthSession from 'expo-auth-session';
 import { buildCodeAsync } from 'expo-auth-session/build/PKCE';

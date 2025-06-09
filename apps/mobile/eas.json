@@ -15,8 +15,6 @@
       },
       "env": {
         "API_URL": "API_URL",
-        "SUPABASE_ANON_PUBLIC": "SUPABASE_ANON_PUBLIC",
-        "SUPABASE_URL": "SUPABASE_URL",
         "SHARE_URL": "SHARE_URL"
       }
     },

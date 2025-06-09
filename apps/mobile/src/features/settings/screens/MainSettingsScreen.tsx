@@ -2,10 +2,10 @@ import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { SettingsStackParamList } from '@navigation/types';
-import { useProfileStore } from '@features/profile/stores/profileStore'
-import { ProfileImage } from '@features/post/components/ProfileImage';
-import { useAuth } from '@features/auth/hooks/useAuth';
+import type { SettingsStackParamList } from '@/navigation/types';
+import { useProfileStore } from '@/features/profile/stores/profileStore'
+import { ProfileImage } from '@/features/post/components/ProfileImage';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import EmptyIcon from '@assets/icons/EmptyIcon.svg';
 import BlockIcon from '@assets/icons/BlockIcon.svg';
 import AlgorithmIcon from '@assets/icons/AlgorithmIcon.svg';

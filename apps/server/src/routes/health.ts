@@ -1,7 +1,7 @@
-import { createD1Client } from 'db'
+import { createD1Client } from '@/db'
 import { Hono } from 'hono'
-import * as schema from 'db/schema'
-import type { Bindings } from 'types'
+import * as schema from '@/db/schema'
+import type { Bindings } from '@/types'
 
 const healthRouter = new Hono<{
   Bindings: Bindings

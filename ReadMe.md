@@ -1,5 +1,9 @@
 # Capture: Privacy-First Social Media Platform
 
+**© 2024 Obscura Technologies LLC. All rights reserved.**
+
+> **IMPORTANT**: This software is proprietary and confidential. Unauthorized copying, distribution, modification, or use of this software, via any medium, is strictly prohibited without explicit written permission from the copyright holder.
+
 <div align="center">
   <img src="apps/mobile/assets/CaptureLogo.png" alt="Capture Logo" width="120" height="120" style="border-radius: 20px;">
   <p><em>Reimagining social media with privacy as the foundation</em></p>
@@ -163,6 +167,21 @@ This project is in active development as a solo venture. It is currently a portf
 
 ---
 
+## Legal Notice
+
+This project and all associated code, documentation, and assets are the exclusive property of Obscura Technologies LLC. This repository is made available for portfolio and demonstration purposes only.
+
+**Usage Restrictions:**
+- No commercial use permitted without written authorization
+- No redistribution or modification allowed
+- Viewing for educational/portfolio purposes only
+- Any use requires explicit permission from the copyright holder
+
+**Contact:** capture@obscuratechnologies.com for licensing inquiries.
+
+---
+
 <div align="center">
   <p>Built with modern web technologies for a privacy-first digital experience</p>
+  <p><strong>© 2024 Obscura Technologies LLC. All rights reserved.</strong></p>
 </div>

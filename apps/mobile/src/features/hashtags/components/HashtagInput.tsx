@@ -7,10 +7,10 @@ import {
   FlatList,
   ActivityIndicator,
 } from 'react-native';
-import { useSearchHashtags, useCreateHashtag } from '@features/post/hooks/useHashtags';
+import { useSearchHashtags, useCreateHashtag } from '@/features/post/hooks/useHashtags';
 import { debounce } from 'lodash';
-import { useAlert } from '@shared/lib/AlertContext';
-import { errorService } from '@shared/services/errorService';
+import { useAlert } from '@/shared/lib/AlertContext';
+import { errorService } from '@/shared/services/errorService';
 
 
 interface HashtagInputProps {

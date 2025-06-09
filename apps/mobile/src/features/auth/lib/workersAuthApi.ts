@@ -1,4 +1,4 @@
-import { apiClient } from '@shared/lib/apiClient';
+import { apiClient } from '@/shared/lib/apiClient';
 import type { LoginCredentials, RegisterData, ResetPasswordPayload, UpdatePasswordPayload, VerifyEmailPayload, SendVerificationEmailPayload, AuthResponse, RegisterResponse, BasicSuccessResponse } from '../types/index'; 
 import type { User } from '../types/index';
 

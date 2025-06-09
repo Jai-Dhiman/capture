@@ -3,7 +3,6 @@ import { Hono } from "hono";
 import mediaRouter from "../media";
 import { createMockBindings } from "../../test/utils/test-utils";
 import type { Bindings, Variables } from "../../types";
-import { User } from "@supabase/supabase-js";
 
 // Mock the image service functions
 const mockGetUploadUrl = vi.fn();
@@ -39,7 +38,7 @@ describe("Media Routes", () => {
     // Set up environment and user in context
     app.use("*", async (c, next) => {
       c.env = mockBindings;
-      c.set("user", mockUser as User);
+      c.set("user", mockUser as any);
       await next();
     });
 

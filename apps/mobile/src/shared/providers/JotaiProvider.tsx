@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react'
 import { useAtom } from 'jotai'
-import { followingMapAtom } from '@features/profile/atoms/followingAtoms'
+import { followingMapAtom } from '@/features/profile/atoms/followingAtoms'
 import { useQueryClient } from '@tanstack/react-query'
-import type { FollowingState } from '@features/profile/types/followingTypes'
+import type { FollowingState } from '@/features/profile/types/followingTypes'
 
 export const JotaiInitializer = () => {
   const [_, setFollowingMap] = useAtom(followingMapAtom)

@@ -1,13 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, ActivityIndicator, TouchableOpacity, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native';
 import { useDiscoverFeed } from '../hooks/useDiscoverFeed';
-import { PostItem } from '@features/post/components/PostItem';
-import { ThreadItem } from '@features/post/components/ThreadItem';
-import Header from '@shared/components/Header';
+import { PostItem } from '@/features/post/components/PostItem';
+import { ThreadItem } from '@/features/post/components/ThreadItem';
+import Header from '@/shared/components/Header';
 import { EmptyState } from '../components/EmptyState';
-import type { Post, Thread } from '@features/post/types/postTypes';
+import type { Post, Thread } from '@/features/post/types/postTypes';
 import { FlashList } from '@shopify/flash-list';
-import { SkeletonElement } from '@shared/components/SkeletonLoader';
+import { SkeletonElement } from '@/shared/components/SkeletonLoader';
 import { MotiView } from 'moti';
 
 const HEADER_HEIGHT = 150;

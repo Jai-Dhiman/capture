@@ -1,5 +1,5 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { handlePostQueue, handleUserEmbeddingQueue } from '../../routes/queues';
+import { handlePostQueue, handleUserEmbeddingQueue } from '../queues';
 import { createMockBindings } from '../../test/utils/test-utils';
 import type { Bindings } from '../../types';
 import type { MessageBatch } from '@cloudflare/workers-types';

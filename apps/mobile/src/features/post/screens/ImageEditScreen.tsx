@@ -2,7 +2,7 @@ import type React from 'react';
 import { useState } from 'react';
 import { View, TouchableOpacity, Text, FlatList, Image as RNImage, StyleSheet } from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
-import type { RootStackParamList } from '@navigation/types';
+import type { RootStackParamList } from '@/navigation/types';
 import { Canvas, Image as SkiaImage, useImage, ColorMatrix } from '@shopify/react-native-skia';
 import { Ionicons } from '@expo/vector-icons';
 

@@ -7,6 +7,10 @@ compatibility_flags = ["nodejs_compat"]
 ENV = "development"
 SENTRY_DSN = "https://74904d3bf1ebb2b0747f5356b0a83624@o4509049381519360.ingest.us.sentry.io/4509049386434560"
 
+QDRANT_URL = "http://localhost:6333"
+QDRANT_API_KEY = ""
+QDRANT_COLLECTION_NAME = "posts"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "capture-db"
@@ -28,10 +32,6 @@ id = "7edac15c451741d28833d410037d090a"
 [[kv_namespaces]]
 binding = "USER_VECTORS"
 id = "99abeb7032754aa59283001ec4ed4006"
-
-[[vectorize]]
-binding = "VECTORIZE"
-index_name = "capture-vectors"
 
 [[queues.producers]]
 binding = "POST_QUEUE"

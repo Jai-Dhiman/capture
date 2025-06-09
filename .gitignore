@@ -47,6 +47,7 @@ Thumbs.db
 .dev.vars
 .react-router
 
+qdrant_storage/
 
 # Expo
 .expo/

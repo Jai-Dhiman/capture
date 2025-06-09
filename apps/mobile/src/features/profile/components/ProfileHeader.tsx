@@ -4,15 +4,15 @@ import { View, Text, TouchableOpacity, Modal, Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import BackIcon from '@assets/icons/CustomBackIcon.svg';
 import MenuDots from '@assets/icons/CustomMenuIcon.svg';
-import { ProfileImage } from '@features/post/components/ProfileImage';
+import { ProfileImage } from '@/features/post/components/ProfileImage';
 import { FollowButton } from './FollowButton';
-import { SkeletonElement } from '@shared/components/SkeletonLoader';
+import { SkeletonElement } from '@/shared/components/SkeletonLoader';
 import { MotiView } from 'moti';
 import EmptyIcon from '@assets/icons/EmptyIcon.svg';
 import SearchIcon from '@assets/icons/SearchIcon.svg';
 import ProfileIcon from '@assets/icons/ProfileIcon.svg';
 import PlusIcon from '@assets/icons/PlusIcon.svg';
-import { NotificationButton } from '@features/notification/components/NotificationButton';
+import { NotificationButton } from '@/features/notification/components/NotificationButton';
 
 interface ProfileHeaderProps {
   profileData?: any;
