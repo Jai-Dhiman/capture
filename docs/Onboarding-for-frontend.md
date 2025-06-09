@@ -172,16 +172,17 @@ pnpm db:migrate
 cd apps/server
 pnpm run dev
 
-# In another terminal, make a POST request to seed the database
+# In apps/server, add a .dev.vars file with:
+SEED_SECRET="Purple_Elephant"
+
+# Then in a new terminal tab, make a POST request to seed the database
 curl -X POST http://localhost:8787/seed \
-  -H "x-seed-secret: SEED_SECRET" \
+  -H "x-seed-secret: Purple_Elephant" \
   -H "Content-Type: application/json"
 
-# Alternative: Use a tool like Postman or Thunder Client VS Code extension
+# Alternative: Use a tool like Postman or another API tester
 # POST to: http://localhost:8787/seed
-# Header: x-seed-secret: SEED_SECRET
-
-#Just text me when you get here, and ill send over what SEED_SECRET is 
+# Header: x-seed-secret: Purple_Elephant
 ```
 
 ## Testing on Device
