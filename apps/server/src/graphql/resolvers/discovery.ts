@@ -3,11 +3,7 @@ import * as schema from '../../db/schema';
 import type { ContextType } from '../../types';
 import { createD1Client } from '../../db';
 import { computeScore } from '../../lib/recommendation';
-
-type VectorizeMatch = {
-  id: string;
-  score: number;
-};
+import { QdrantClient, type QdrantSearchResult } from '../../lib/qdrantClient';
 
 type GraphQLPostType = 'post' | 'thread';
 
@@ -52,11 +48,12 @@ export const discoveryResolvers = {
       }
 
       const db = createD1Client(env);
+      const qdrantClient = new QdrantClient(env);
       const userId = user.id;
-      const { USER_VECTORS, VECTORIZE } = env;
+      const { USER_VECTORS } = env;
 
-      if (!USER_VECTORS || !VECTORIZE) {
-        console.error('USER_VECTORS KV or VECTORIZE binding missing');
+      if (!USER_VECTORS) {
+        console.error('USER_VECTORS KV binding missing');
         throw new Error('Server configuration error: Bindings missing');
       }
 
@@ -73,14 +70,16 @@ export const discoveryResolvers = {
         return { posts: [], nextCursor: null };
       }
 
-      // 2. Vector Search in Vectorize
-      let vectorMatches: VectorizeMatch[] = [];
+      // 2. Vector Search in Qdrant
+      let vectorMatches: QdrantSearchResult[] = [];
       const vectorQueryLimit = limit * 10;
       try {
-        const queryResult = await VECTORIZE.query(userVector, { topK: vectorQueryLimit });
-        vectorMatches = queryResult.matches as VectorizeMatch[];
+        vectorMatches = await qdrantClient.searchVectors({
+          vector: userVector,
+          limit: vectorQueryLimit,
+        });
       } catch (e) {
-        console.error(`Vectorize query failed for user ${userId}:`, e);
+        console.error(`Qdrant query failed for user ${userId}:`, e);
         throw new Error('Failed to query recommendations');
       }
 

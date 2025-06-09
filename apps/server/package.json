@@ -8,7 +8,13 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "wrangler d1 migrations apply capture-db",
     "test": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "qdrant:start": "docker run -d --name qdrant -p 6333:6333 -v $(pwd)/qdrant_storage:/qdrant/storage qdrant/qdrant && echo 'Qdrant started on http://localhost:6333' && echo 'Dashboard: http://localhost:6333/dashboard'",
+    "qdrant:stop": "docker stop qdrant",
+    "qdrant:restart": "docker stop qdrant 2>/dev/null || true && docker rm qdrant 2>/dev/null || true && pnpm run qdrant:start",
+    "qdrant:logs": "docker logs qdrant",
+    "qdrant:status": "if docker ps | grep -q qdrant; then echo 'Qdrant is running' && docker ps | grep qdrant; else echo 'Qdrant is not running'; fi",
+    "qdrant:clean": "docker stop qdrant 2>/dev/null || true && docker rm qdrant 2>/dev/null || true && rm -rf qdrant_storage && echo 'Qdrant data cleaned'"
   },
   "dependencies": {
     "@apollo/server": "^4.11.3",
