@@ -108,10 +108,8 @@ Ask for the `.dev.vars` file - it has all the API keys and secrets you need.
 - [Cloudflare Workers Docs](https://developers.cloudflare.com/workers/)
 
 ## Projects
-There are basically 2 projects you can choose from:
+This is an in depth project to slowly start working on:
 
 Using Typescript and YAML:
 -[CI/CD pipelines](CI-CD-Context-Doc.md)
 
-Using Python:
--[UMAP analysis to assign themes to vector clusters](UMAP-Analysis-Doc.md)
