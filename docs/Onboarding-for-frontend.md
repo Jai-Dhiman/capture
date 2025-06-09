@@ -154,6 +154,36 @@ The app uses these environment variables:
 API_URL="http://localhost:8787"
 SHARE_URL=https://www.captureapp.org
 
+## Database Setup
+```bash
+# Navigate to server directory
+cd apps/server
+
+# Create the drizzle migration
+pnpm db:generate 
+
+# Migrate the database
+pnpm db:migrate
+```
+
+## Seed Local Database
+```bash
+# First, make sure your backend server is running
+cd apps/server
+pnpm run dev
+
+# In another terminal, make a POST request to seed the database
+curl -X POST http://localhost:8787/seed \
+  -H "x-seed-secret: SEED_SECRET" \
+  -H "Content-Type: application/json"
+
+# Alternative: Use a tool like Postman or Thunder Client VS Code extension
+# POST to: http://localhost:8787/seed
+# Header: x-seed-secret: SEED_SECRET
+
+#Just text me when you get here, and ill send over what SEED_SECRET is 
+```
+
 ## Testing on Device
 
 ```bash
@@ -169,7 +199,7 @@ pnpm run dev
 - [NativeWind Documentation](https://www.nativewind.dev/)
 - [React Navigation Documentation](https://reactnavigation.org/)
 - [Apollo Client Documentation](https://www.apollographql.com/docs/react/)
-
+- [Tanstack Query Documentation](https://tanstack.com/query/latest/docs/framework/react/overview)
 
 ### Dependencies Issues
 ```bash
@@ -179,13 +209,3 @@ npx expo install --fix
 # Clean install
 rm -rf node_modules && rm -rf pnpm-lock.yaml && pnpm install
 ```
-
-## Getting Started Checklist
-- [ ] Install all required tools (Node.js, Expo CLI, EAS CLI)
-- [ ] Clone repository and install dependencies
-- [ ] Get environment variables from team
-- [ ] Start development server with `pnpm run dev`
-- [ ] Test on iOS Simulator or Android Emulator
-- [ ] Install recommended VS Code extensions
-- [ ] Join the team Discord for questions
-- [ ] Review the codebase structure in `src/` folder 
