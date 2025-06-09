@@ -159,9 +159,6 @@ Install these extensions:
 # Navigate to server directory
 cd apps/server
 
-# Create the drizzle migration
-pnpm db:generate 
-
 # Migrate the database
 pnpm db:migrate
 ```
