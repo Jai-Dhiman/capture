@@ -33,7 +33,7 @@ The app uses these environment variables:
 In the frontend .env file:
 ```bash
 API_URL="http://localhost:8787"
-SHARE_URL=https://www.captureapp.org
+SHARE_URL="https://www.captureapp.org"
 ```
 
 ### 4. Start Development
