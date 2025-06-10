@@ -1,37 +1,34 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import app from '../../index'
 
-const mockQueryBuilder = {
-  select: vi.fn(),
-  from: vi.fn(),
-  limit: vi.fn(),
-  execute: vi.fn(),
-}
+let mockExecute: any
 
 vi.mock('drizzle-orm/d1', () => ({
-  drizzle: vi.fn(() => mockQueryBuilder),
+  drizzle: vi.fn(),
 }))
 
 vi.mock('../db', () => ({
-  createD1Client: vi.fn(() => mockQueryBuilder),
+  createD1Client: vi.fn(() => ({
+    select: () => ({
+      from: () => ({
+        limit: () => ({
+          execute: mockExecute,
+        }),
+      }),
+    }),
+  })),
 }))
 
 describe('Health Route', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-
-    mockQueryBuilder.select.mockReturnValue(mockQueryBuilder)
-    mockQueryBuilder.from.mockReturnValue(mockQueryBuilder)
-    mockQueryBuilder.limit.mockReturnValue(mockQueryBuilder)
   })
 
   it('should return ok status when database is connected and has records', async () => {
-    mockQueryBuilder.execute.mockResolvedValue([{ id: 1 }])
+    mockExecute = vi.fn().mockResolvedValue([{ id: 1 }])
 
     const req = new Request('http://localhost/')
-    const env = {
-      DB: {},
-    }
+    const env = { DB: {} }
 
     const res = await app.fetch(req, env)
     const data = await res.json()
@@ -46,14 +43,12 @@ describe('Health Route', () => {
   })
 
   it('should return degraded status when database connection fails', async () => {
-    mockQueryBuilder.execute.mockImplementation(() => {
+    mockExecute = vi.fn(() => {
       throw new Error('Database connection failed')
     })
 
     const req = new Request('http://localhost/')
-    const env = {
-      DB: {},
-    }
+    const env = { DB: {} }
 
     const res = await app.fetch(req, env)
     const data = await res.json()
@@ -68,12 +63,10 @@ describe('Health Route', () => {
   })
 
   it('should return no records message when database is empty', async () => {
-    mockQueryBuilder.execute.mockResolvedValue([])
+    mockExecute = vi.fn().mockResolvedValue([])
 
     const req = new Request('http://localhost/')
-    const env = {
-      DB: {},
-    }
+    const env = { DB: {} }
 
     const res = await app.fetch(req, env)
     const data = await res.json()
