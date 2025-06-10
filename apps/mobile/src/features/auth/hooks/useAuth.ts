@@ -8,10 +8,13 @@ import * as WebBrowser from 'expo-web-browser';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import Constants from 'expo-constants';
 import { useAuthStore } from "../stores/authStore";
-import type { User, Session, AuthResponse, LoginCredentials, RegisterData, BasicSuccessResponse, RegisterResponse as ApiRegisterResponse } from "../types";
-
-interface LoginMutationParams extends LoginCredentials {}
-interface SignupMutationParams extends RegisterData {}
+import type { 
+  AuthResponse, 
+  SendCodeRequest, 
+  SendCodeResponse, 
+  VerifyCodeRequest,
+  BasicSuccessResponse 
+} from "../types";
 
 export function useAuth() {
   const queryClient = useQueryClient();
@@ -19,21 +22,14 @@ export function useAuth() {
   
   const setAuthData = useAuthStore((state) => state.setAuthData);
   const clearAuth = useAuthStore((state) => state.clearAuth);
-  // const setStage = useAuthStore((state) => state.setStage); // Corrected, but may not be frequently used here
-  // User and Session can be accessed if needed for specific logic, but mutations primarily call actions.
-  // const user = useAuthStore((state) => state.user);
-  // const session = useAuthStore((state) => state.session);
 
-  const loginMutation = useMutation<AuthResponse, Error, LoginMutationParams>({
-    mutationFn: async ({ email, password }: LoginMutationParams) => {
-      return await workersAuthApi.login({ email, password });
-    },
-    onSuccess: (data) => {
-      setAuthData(data); 
-      queryClient.invalidateQueries({ queryKey: ["profile"] }); 
+  // Send verification code mutation
+  const sendCodeMutation = useMutation<SendCodeResponse, Error, SendCodeRequest>({
+    mutationFn: async (data: SendCodeRequest) => {
+      return await workersAuthApi.sendCode(data);
     },
     onError: (error) => {
-      console.error("Login error:", error);
+      console.error("Send code error:", error);
       const appError = errorService.handleAuthError(error); 
       showAlert(appError.message, {
         type: errorService.getAlertType(appError.category),
@@ -41,16 +37,18 @@ export function useAuth() {
     },
   });
 
-  const signupMutation = useMutation<ApiRegisterResponse, Error, SignupMutationParams>({
-    mutationFn: async ({ email, password }: SignupMutationParams) => {
-      return await workersAuthApi.register({ email, password });
+  // Verify code mutation
+  const verifyCodeMutation = useMutation<AuthResponse, Error, VerifyCodeRequest>({
+    mutationFn: async (data: VerifyCodeRequest) => {
+      return await workersAuthApi.verifyCode(data);
     },
     onSuccess: (data) => {
-      showAlert(data.message || "Signup successful! Please check your email to verify your account, then login.", { type: "success" });
+      setAuthData(data); 
+      queryClient.invalidateQueries({ queryKey: ["profile"] }); 
     },
     onError: (error) => {
-      console.error("Signup error:", error);
-      const appError = errorService.handleAuthError(error);
+      console.error("Verify code error:", error);
+      const appError = errorService.handleAuthError(error); 
       showAlert(appError.message, {
         type: errorService.getAlertType(appError.category),
       });
@@ -143,8 +141,8 @@ export function useAuth() {
   });
 
   return {
-    login: loginMutation,
-    signup: signupMutation,
+    sendCode: sendCodeMutation,
+    verifyCode: verifyCodeMutation,
     logout: logoutMutation,
     loginWithGoogle: googleLoginMutation,
     loginWithApple: appleLoginMutation,

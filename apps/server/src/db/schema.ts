@@ -3,9 +3,9 @@ import { sqliteTable, text, integer, numeric, index, foreignKey } from "drizzle-
 export const users = sqliteTable("users", {
   id: text("id").primaryKey(),
   email: text("email").notNull().unique(),
-  passwordHash: text("password_hash").notNull(),
   emailVerified: integer("email_verified").default(0).notNull(),
   phone: text("phone"),
+  phoneVerified: integer("phone_verified").default(0).notNull(),
   createdAt: numeric("created_at").default(new Date().toISOString()).notNull(),
   updatedAt: numeric("updated_at").default(new Date().toISOString()).notNull(),
 });
@@ -24,6 +24,34 @@ export const profile = sqliteTable("profile", {
   createdAt: numeric("created_at").default(new Date().toISOString()).notNull(),
   updatedAt: numeric("updated_at").default(new Date().toISOString()).notNull(),
 });
+
+export const emailCodes = sqliteTable("email_codes", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull(),
+  code: text("code").notNull(),
+  type: text("type").notNull(), // 'login_register' or 'verification'
+  expiresAt: numeric("expires_at").notNull(),
+  createdAt: numeric("created_at").default(new Date().toISOString()).notNull(),
+  usedAt: numeric("used_at"), // null until used
+}, (table) => [
+  index("email_codes_email_idx").on(table.email),
+  index("email_codes_expires_idx").on(table.expiresAt),
+  index("email_codes_code_idx").on(table.code),
+]);
+
+export const passkeys = sqliteTable("passkeys", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id),
+  credentialId: text("credential_id").notNull().unique(),
+  publicKey: text("public_key").notNull(),
+  counter: integer("counter").default(0).notNull(),
+  deviceName: text("device_name"),
+  createdAt: numeric("created_at").default(new Date().toISOString()).notNull(),
+  lastUsedAt: numeric("last_used_at"),
+}, (table) => [
+  index("passkeys_user_idx").on(table.userId),
+  index("passkeys_credential_idx").on(table.credentialId),
+]);
 
 export const post = sqliteTable(
   "post",
@@ -169,6 +197,25 @@ export const blockedUser = sqliteTable(
   ]
 );
 
+export const postLike = sqliteTable(
+  "post_like",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    postId: text("post_id")
+      .notNull()
+      .references(() => post.id),
+    createdAt: numeric("created_at").default(new Date().toISOString()).notNull(),
+  },
+  (table) => [
+    index("user_post_likes_idx").on(table.userId),
+    index("post_likes_idx").on(table.postId),
+    index("post_like_composite_idx").on(table.userId, table.postId),
+  ]
+);
+
 export const commentLike = sqliteTable(
   "comment_like",
   {
@@ -236,3 +283,4 @@ export const userActivity = sqliteTable("user_activity", {
   index("user_activity_user_idx").on(table.userId),
   index("user_activity_time_idx").on(table.createdAt),
 ]);
+

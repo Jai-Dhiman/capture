@@ -12,11 +12,18 @@ vi.mock('hono/jwt', () => ({
 }))
 
 // Stub nanoid for consistent IDs
-vi.mock('nanoid', () => ({ nanoid: vi.fn().mockReturnValue('mock-refresh-token') }))
+vi.mock('nanoid', () => ({ nanoid: vi.fn().mockReturnValue('mock-id') }))
 
 // Mock createD1Client to return mockQueryBuilder
 vi.mock('../../db', () => ({
   createD1Client: () => mockQueryBuilder,
+}))
+
+// Mock email service
+vi.mock('../../lib/emailService', () => ({
+  createEmailService: () => ({
+    sendVerificationCode: vi.fn().mockResolvedValue(undefined),
+  }),
 }))
 
 describe('Auth Routes', () => {
@@ -51,14 +58,17 @@ describe('Auth Routes', () => {
         where: vi.fn().mockReturnValue({ execute: vi.fn().mockResolvedValue({ rowsAffected: 1 }) }),
       }),
     })
+    mockQueryBuilder.delete.mockReturnValue({
+      where: vi.fn().mockReturnValue({ execute: vi.fn().mockResolvedValue({ rowsAffected: 1 }) }),
+    })
   })
 
-  describe('POST /auth/register', () => {
-    it('should return 400 for invalid input', async () => {
-      const res = await app.request('/auth/register', {
+  describe('POST /auth/send-code', () => {
+    it('should return 400 for invalid email', async () => {
+      const res = await app.request('/auth/send-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'invalid', password: 'short' }),
+        body: JSON.stringify({ email: 'invalid-email' }),
       })
       expect(res.status).toBe(400)
       const data: any = await res.json()
@@ -66,39 +76,41 @@ describe('Auth Routes', () => {
       expect(data.code).toBe('auth/invalid-input')
     })
 
-    it('should return 409 when email already in use', async () => {
-      mockQueryBuilder.get.mockResolvedValue({ id: '1', email: 'test@example.com' })
-      const res = await app.request('/auth/register', {
+    it('should send code for new user', async () => {
+      mockQueryBuilder.get.mockResolvedValue(null) // No existing user
+      const res = await app.request('/auth/send-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'test@example.com', password: 'password123' }),
+        body: JSON.stringify({ email: 'new@example.com', phone: '+1234567890' }),
       })
-      expect(res.status).toBe(409)
+      expect(res.status).toBe(200)
       const data: any = await res.json()
-      expect(data.error).toBe('Email already in use')
-      expect(data.code).toBe('auth/email-in-use')
+      expect(data.success).toBe(true)
+      expect(data.isNewUser).toBe(true)
+      expect(data.message).toContain('Welcome!')
     })
 
-    it('should register user successfully', async () => {
-      mockQueryBuilder.get.mockResolvedValue(null)
-      const res = await app.request('/auth/register', {
+    it('should send code for existing user', async () => {
+      mockQueryBuilder.get.mockResolvedValue({ id: '1', email: 'existing@example.com' })
+      const res = await app.request('/auth/send-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'new@example.com', password: 'password123' }),
+        body: JSON.stringify({ email: 'existing@example.com' }),
       })
-      expect(res.status).toBe(201)
+      expect(res.status).toBe(200)
       const data: any = await res.json()
-      expect(data.message).toBe('User registered successfully. Please verify your email.')
-      expect(data.userId).toBe('mock-refresh-token')
+      expect(data.success).toBe(true)
+      expect(data.isNewUser).toBe(false)
+      expect(data.message).toContain('Welcome back!')
     })
   })
 
-  describe('POST /auth/login', () => {
+  describe('POST /auth/verify-code', () => {
     it('should return 400 for invalid input', async () => {
-      const res = await app.request('/auth/login', {
+      const res = await app.request('/auth/verify-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'invalid', password: 'short' }),
+        body: JSON.stringify({ email: 'invalid', code: '123' }),
       })
       expect(res.status).toBe(400)
       const data: any = await res.json()
@@ -106,17 +118,120 @@ describe('Auth Routes', () => {
       expect(data.code).toBe('auth/invalid-input')
     })
 
-    it('should return 401 for invalid credentials', async () => {
-      mockQueryBuilder.get.mockResolvedValue(null)
-      const res = await app.request('/auth/login', {
+    it('should return 401 for invalid code', async () => {
+      mockQueryBuilder.get.mockResolvedValue(null) // No valid code found
+      const res = await app.request('/auth/verify-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'test@example.com', password: 'password123' }),
+        body: JSON.stringify({ email: 'test@example.com', code: '123456' }),
       })
       expect(res.status).toBe(401)
       const data: any = await res.json()
-      expect(data.error).toBe('Invalid credentials')
-      expect(data.code).toBe('auth/invalid-credentials')
+      expect(data.error).toBe('Invalid or expired verification code')
+      expect(data.code).toBe('auth/invalid-code')
+    })
+
+    it('should create new user and return auth data', async () => {
+      // Mock valid code
+      mockQueryBuilder.get
+        .mockResolvedValueOnce({
+          id: 'code-id',
+          email: 'new@example.com',
+          code: '123456',
+          expiresAt: (Date.now() + 10 * 60 * 1000).toString(), // Valid for 10 minutes
+          usedAt: '',
+        })
+        .mockResolvedValueOnce(null) // No existing user
+        .mockResolvedValueOnce({ id: 'new-user-id', email: 'new@example.com' }) // New user after creation
+        .mockResolvedValueOnce(null) // No existing profile
+
+      const res = await app.request('/auth/verify-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'new@example.com', code: '123456', phone: '+1234567890' }),
+      })
+      expect(res.status).toBe(200)
+      const data: any = await res.json()
+      expect(data.session).toBeDefined()
+      expect(data.user).toBeDefined()
+      expect(data.isNewUser).toBe(true)
+      expect(data.profileExists).toBe(false)
+    })
+
+    it('should authenticate existing user', async () => {
+      // Mock valid code
+      mockQueryBuilder.get
+        .mockResolvedValueOnce({
+          id: 'code-id',
+          email: 'existing@example.com',
+          code: '123456',
+          expiresAt: (Date.now() + 10 * 60 * 1000).toString(),
+          usedAt: '',
+        })
+        .mockResolvedValueOnce({ id: 'existing-user-id', email: 'existing@example.com' }) // Existing user
+        .mockResolvedValueOnce({ id: 'existing-user-id', email: 'existing@example.com' }) // User after update
+        .mockResolvedValueOnce({ id: 'profile-id' }) // Existing profile
+
+      const res = await app.request('/auth/verify-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'existing@example.com', code: '123456' }),
+      })
+      expect(res.status).toBe(200)
+      const data: any = await res.json()
+      expect(data.session).toBeDefined()
+      expect(data.user).toBeDefined()
+      expect(data.isNewUser).toBe(false)
+      expect(data.profileExists).toBe(true)
+    })
+  })
+
+  describe('POST /auth/refresh', () => {
+    it('should return 400 for missing refresh token', async () => {
+      const res = await app.request('/auth/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+      expect(res.status).toBe(400)
+      const data: any = await res.json()
+      expect(data.error).toBe('Invalid input')
+      expect(data.code).toBe('auth/invalid-input')
+    })
+
+    it('should return 401 for invalid refresh token', async () => {
+      mockBindings.REFRESH_TOKEN_KV = { get: vi.fn().mockResolvedValue(null), delete: vi.fn() } as any
+      const res = await app.request('/auth/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: 'invalid-token' }),
+      })
+      expect(res.status).toBe(401)
+      const data: any = await res.json()
+      expect(data.error).toBe('Invalid or expired refresh token')
+      expect(data.code).toBe('auth/invalid-refresh-token')
+    })
+
+    it('should refresh tokens successfully', async () => {
+      mockBindings.REFRESH_TOKEN_KV = { 
+        get: vi.fn().mockResolvedValue('user-id'), 
+        delete: vi.fn(),
+        put: vi.fn()
+      } as any
+      mockQueryBuilder.get
+        .mockResolvedValueOnce({ id: 'user-id', email: 'test@example.com' })
+        .mockResolvedValueOnce({ id: 'profile-id' })
+
+      const res = await app.request('/auth/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: 'valid-token' }),
+      })
+      expect(res.status).toBe(200)
+      const data: any = await res.json()
+      expect(data.session).toBeDefined()
+      expect(data.user).toBeDefined()
+      expect(data.profileExists).toBe(true)
     })
   })
 
@@ -140,60 +255,29 @@ describe('Auth Routes', () => {
     })
   })
 
-  describe('POST /auth/reset-password', () => {
-    it('should return 400 for invalid input', async () => {
-      const res = await app.request('/auth/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'invalid' }),
-      })
-      expect(res.status).toBe(400)
-      const data: any = await res.json()
-      expect(data.error).toBe('Invalid input')
-      expect(data.code).toBe('auth/invalid-input')
-    })
-
-    it('should return success message for valid input', async () => {
-      const res = await app.request('/auth/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'test@example.com' }),
-      })
-      expect(res.status).toBe(200)
-      const data: any = await res.json()
-      expect(data.success).toBe(true)
-    })
-  })
-
-  describe('POST /auth/update-password', () => {
+  describe('GET /auth/me', () => {
     it('should return 401 if not authenticated', async () => {
-      const unauthApp = new Hono<{ Bindings: Bindings; Variables: Variables }>()
-      unauthApp.use('*', async (c, next) => { c.env = mockBindings; await next() })
-      unauthApp.route('/auth', authRouter)
-      const res = await unauthApp.request('/auth/update-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: 'newpassword123' }),
-      })
+      const res = await app.request('/auth/me', { method: 'GET' })
       expect(res.status).toBe(401)
-      const data: any = await res.json()
-      expect(data.error).toBe('Unauthorized: No user session')
-      expect(data.code).toBe('auth/no-session')
     })
 
-    it('should update password successfully when authenticated', async () => {
+    it('should return user info when authenticated', async () => {
       const authApp = new Hono<{ Bindings: Bindings; Variables: Variables }>()
-      authApp.use('*', async (c, next) => { c.env = mockBindings; c.set('user', { id: 'test-user-id' }); await next() })
-      authApp.route('/auth', authRouter)
-      const res = await authApp.request('/auth/update-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: 'newpassword123' }),
+      authApp.use('*', async (c, next) => { 
+        c.env = mockBindings
+        c.set('user', { id: 'test-user-id', email: 'test@example.com' })
+        await next() 
       })
+      authApp.route('/auth', authRouter)
+      
+      mockQueryBuilder.get.mockResolvedValue({ id: 'profile-id' })
+
+      const res = await authApp.request('/auth/me', { method: 'GET' })
       expect(res.status).toBe(200)
       const data: any = await res.json()
-      expect(data.success).toBe(true)
-      expect(data.message).toBe('Password updated successfully.')
+      expect(data.id).toBe('test-user-id')
+      expect(data.email).toBe('test@example.com')
+      expect(data.profileExists).toBe(true)
     })
   })
 })
