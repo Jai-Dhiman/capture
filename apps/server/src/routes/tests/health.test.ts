@@ -1,28 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import app from '../../index'
 
-let executeMock: any
+const mockQueryBuilder = {
+  select: vi.fn().mockReturnThis(),
+  from: vi.fn().mockReturnThis(),
+  limit: vi.fn().mockReturnThis(),
+  execute: vi.fn(),
+}
 
-const limitMock = () => ({
-  execute: () => executeMock(),
-})
-
-const fromMock = () => ({
-  limit: limitMock,
-})
-
-const selectMock = () => ({
-  from: fromMock,
-})
-
-vi.mock('drizzle-orm/d1', () => ({
-  drizzle: vi.fn(),
-}))
-
-vi.mock('../db', () => ({
-  createD1Client: vi.fn(() => ({
-    select: selectMock,
-  })),
+vi.mock('@/db', () => ({
+  createD1Client: vi.fn(() => mockQueryBuilder),
 }))
 
 describe('Health Route', () => {
@@ -31,7 +18,7 @@ describe('Health Route', () => {
   })
 
   it('should return ok status when database is connected and has records', async () => {
-    executeMock = vi.fn().mockResolvedValue([{ id: 1 }])
+    mockQueryBuilder.execute.mockResolvedValue([{ id: 1 }])
 
     const req = new Request('http://localhost/')
     const env = { DB: {} }
@@ -49,7 +36,7 @@ describe('Health Route', () => {
   })
 
   it('should return degraded status when database connection fails', async () => {
-    executeMock = vi.fn(() => {
+    mockQueryBuilder.execute.mockImplementation(() => {
       throw new Error('Database connection failed')
     })
 
@@ -69,7 +56,7 @@ describe('Health Route', () => {
   })
 
   it('should return no records message when database is empty', async () => {
-    executeMock = vi.fn().mockResolvedValue([])
+    mockQueryBuilder.execute.mockResolvedValue([])
 
     const req = new Request('http://localhost/')
     const env = { DB: {} }
