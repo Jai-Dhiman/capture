@@ -46,7 +46,9 @@ describe('Health Route', () => {
   })
 
   it('should return degraded status when database connection fails', async () => {
-    mockQueryBuilder.execute.mockRejectedValue(new Error('Database connection failed'))
+    mockQueryBuilder.execute.mockImplementation(() => {
+      throw new Error('Database connection failed')
+    })
 
     const req = new Request('http://localhost/')
     const env = {
