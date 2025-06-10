@@ -1,7 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import app from '../../index'
 
-let mockExecute: any
+let executeMock: any
+
+const limitMock = () => ({
+  execute: () => executeMock(),
+})
+
+const fromMock = () => ({
+  limit: limitMock,
+})
+
+const selectMock = () => ({
+  from: fromMock,
+})
 
 vi.mock('drizzle-orm/d1', () => ({
   drizzle: vi.fn(),
@@ -9,13 +21,7 @@ vi.mock('drizzle-orm/d1', () => ({
 
 vi.mock('../db', () => ({
   createD1Client: vi.fn(() => ({
-    select: () => ({
-      from: () => ({
-        limit: () => ({
-          execute: mockExecute,
-        }),
-      }),
-    }),
+    select: selectMock,
   })),
 }))
 
@@ -25,7 +31,7 @@ describe('Health Route', () => {
   })
 
   it('should return ok status when database is connected and has records', async () => {
-    mockExecute = vi.fn().mockResolvedValue([{ id: 1 }])
+    executeMock = vi.fn().mockResolvedValue([{ id: 1 }])
 
     const req = new Request('http://localhost/')
     const env = { DB: {} }
@@ -43,7 +49,7 @@ describe('Health Route', () => {
   })
 
   it('should return degraded status when database connection fails', async () => {
-    mockExecute = vi.fn(() => {
+    executeMock = vi.fn(() => {
       throw new Error('Database connection failed')
     })
 
@@ -63,7 +69,7 @@ describe('Health Route', () => {
   })
 
   it('should return no records message when database is empty', async () => {
-    mockExecute = vi.fn().mockResolvedValue([])
+    executeMock = vi.fn().mockResolvedValue([])
 
     const req = new Request('http://localhost/')
     const env = { DB: {} }
