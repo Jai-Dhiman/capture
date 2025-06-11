@@ -6,11 +6,11 @@ import {
   Image
 } from 'react-native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { AuthStackParamList } from '@navigation/types';
+import type { AuthStackParamList } from '@/navigation/types';
 import AppleIcon from '@assets/icons/AppleLogo.svg';
 import GoogleLogo from '@assets/icons/GoogleLogo.svg';
 import EmailIcon from '@assets/icons/EmailIcon.svg';
-import Header from '@shared/components/Header';
+import Header from '@/shared/components/Header';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'EmailSignup'>

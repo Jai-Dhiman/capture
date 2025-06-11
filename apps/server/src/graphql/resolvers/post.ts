@@ -4,6 +4,7 @@ import * as schema from "../../db/schema";
 import { nanoid } from "nanoid";
 import type { ContextType } from "../../types";
 import { createImageService } from "../../lib/imageService";
+import { QdrantClient } from "../../lib/qdrantClient";
 
 export const postResolvers = {
   Query: {
@@ -176,13 +177,13 @@ export const postResolvers = {
     },
 
     async deletePost(_parent: unknown, { id }: { id: string }, context: ContextType) {
-      if (!context?.user?.id || !context?.env?.VECTORIZE) {
-        throw new Error("Authentication required or environment/VECTORIZE binding missing");
+      if (!context?.user?.id) {
+        throw new Error("Authentication required");
       }
 
       const db = createD1Client(context.env);
       const imageService = createImageService(context.env);
-      const vectorizeIndex = context.env.VECTORIZE;
+      const qdrantClient = new QdrantClient(context.env);
 
       try {
         const post = await db
@@ -216,11 +217,11 @@ export const postResolvers = {
           deletionPromises.push(imageService.delete(mediaItem.id, context.user.id));
         }
 
-        // Delete vector from Vectorize
+        // Delete vector from Qdrant
         const vectorIdToDelete = `post:${post.id}`;
         deletionPromises.push(
-          vectorizeIndex.deleteByIds([vectorIdToDelete]).catch((err) => {
-            console.error(`Failed to delete vector ${vectorIdToDelete} via binding:`, err);
+          qdrantClient.deleteVector(vectorIdToDelete).catch((err) => {
+            console.error(`Failed to delete vector ${vectorIdToDelete} from Qdrant:`, err);
           })
         );
 

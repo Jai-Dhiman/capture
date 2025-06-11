@@ -2,7 +2,7 @@ import React, { useState, useEffect, memo } from 'react';
 import { View, Text, Image, Modal, Pressable, Dimensions } from 'react-native';
 import { useMediaSource } from '../hooks/useMedia';
 import { useQueryClient } from '@tanstack/react-query';
-import { SkeletonElement } from '@shared/components/SkeletonLoader';
+import { SkeletonElement } from '@/shared/components/SkeletonLoader';
 import { LongPressGestureHandler, State as GestureState } from 'react-native-gesture-handler';
 import { MotiView } from 'moti';
 

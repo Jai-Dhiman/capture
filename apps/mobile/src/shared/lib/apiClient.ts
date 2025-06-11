@@ -1,4 +1,4 @@
-import { useAuthStore } from '@features/auth/stores/authStore';
+import { useAuthStore } from '@/features/auth/stores/authStore';
 import { API_URL } from '@env';
 
 class APIError extends Error {

@@ -13,7 +13,7 @@ vi.mock('drizzle-orm/d1', () => ({
 }))
 
 vi.mock('../db', () => ({
-  createD1Client: vi.fn((bindings) => mockQueryBuilder),
+  createD1Client: vi.fn(() => mockQueryBuilder),
 }))
 
 describe('Health Route', () => {

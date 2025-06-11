@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, FlatList } from 'react-native';
 import { NotificationItem } from './NotificationItem';
 import { useNotifications, useMarkAllNotificationsRead } from '../hooks/useNotifications';
-import { EmptyState } from '@features/feed/components/EmptyState';
+import { EmptyState } from '@/features/feed/components/EmptyState';
 
 interface NotificationListProps {
   onClose: () => void;

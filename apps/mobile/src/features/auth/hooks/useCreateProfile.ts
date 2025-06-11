@@ -1,12 +1,12 @@
 import { useMutation } from "@tanstack/react-query";
 import { API_URL } from "@env";
 import { useAuthStore } from "../stores/authStore";
-import { useProfileStore } from "@features/profile/stores/profileStore";
-import { useAlert } from "@shared/lib/AlertContext";
-import { errorService } from "@shared/services/errorService";
+import { useProfileStore } from "@/features/profile/stores/profileStore";
+import { useAlert } from "@/shared/lib/AlertContext";
+import { errorService } from "@/shared/services/errorService";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import type { RootStackParamList } from "@navigation/types";
+import type { RootStackParamList } from "@/navigation/types";
 
 export function useCreateProfile() {
   const { user, session, setStage } = useAuthStore();

@@ -6,7 +6,7 @@ import type { ContextType } from "../../types";
 
 export const blockingResolvers = {
   Query: {
-    async blockedUsers(_: unknown, __: {}, context: ContextType) {
+    async blockedUsers(_: unknown, __: Record<string, never>, context: ContextType) {
       if (!context?.user) {
         throw new Error("Authentication required");
       }
@@ -54,6 +54,7 @@ export const blockingResolvers = {
     },
 
     async isUserBlocked(_: unknown, { userId }: { userId: string }, context: ContextType) {
+
       if (!context?.user) {
         return false;
       }
@@ -62,7 +63,7 @@ export const blockingResolvers = {
       const blockedId = userId;
 
       const db = createD1Client(context.env);
-
+      
       const blockRelationship = await db
         .select()
         .from(schema.blockedUser)

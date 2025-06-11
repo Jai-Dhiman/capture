@@ -2,17 +2,17 @@ import type React from 'react';
 import { useState } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, useWindowDimensions, Share, Alert } from 'react-native';
 import Carousel from 'react-native-reanimated-carousel';
-import { PostMediaGallery } from '@features/post/components/PostMediaGallery';
+import { PostMediaGallery } from '@/features/post/components/PostMediaGallery';
 import SettingsIcon from "@assets/icons/MenuDots.svg";
 import CommentIcon from "@assets/icons/CommentsIcon.svg";
 import ShareIcon from "@assets/icons/PaperPlaneIcon.svg";
 import FavoriteIcon from "@assets/icons/FavoriteIcon.svg";
 import FilledFavoriteIcon from "@assets/icons/FilledFavoriteIcon.svg";
 import { useAtom } from 'jotai';
-import { commentDrawerOpenAtom, currentPostIdAtom } from '@features/comments/atoms/commentAtoms';
+import { commentDrawerOpenAtom, currentPostIdAtom } from '@/features/comments/atoms/commentAtoms';
 import Clipboard from 'expo-clipboard';
 import { SHARE_URL } from '@env';
-import { useAlert } from '@shared/lib/AlertContext';
+import { useAlert } from '@/shared/lib/AlertContext';
 
 interface PostReanimatedCarouselProps {
   posts: any[];

@@ -1,9 +1,9 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { SettingsStackParamList } from './types';
-import MainSettingsScreen from '@features/settings/screens/MainSettingsScreen';
-import BlockedUsersScreen from '@features/settings/screens/BlockedUsersScreen';
-import AccountSettingsScreen from '@features/settings/screens/AccountSettingsScreen';
+import MainSettingsScreen from '@/features/settings/screens/MainSettingsScreen';
+import BlockedUsersScreen from '@/features/settings/screens/BlockedUsersScreen';
+import AccountSettingsScreen from '@/features/settings/screens/AccountSettingsScreen';
 
 const Stack = createNativeStackNavigator<SettingsStackParamList>();
 

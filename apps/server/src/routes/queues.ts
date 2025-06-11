@@ -1,12 +1,13 @@
-import { createD1Client } from '../db';
-import * as schema from '../db/schema';
-import type { Bindings } from 'types';
+import { createD1Client } from '@/db';
+import * as schema from '@/db/schema';
+import type { Bindings } from '@/types';
 import {
   generatePostEmbedding,
   storePostEmbedding,
   generateEmbedding,
   type VectorData,
 } from '../lib/embeddings';
+import { QdrantClient } from '../lib/qdrantClient';
 import { inArray, eq, desc } from 'drizzle-orm';
 import type { MessageBatch } from '@cloudflare/workers-types';
 
@@ -14,8 +15,8 @@ function calculateAverageVector(
   savedVectors: number[][],
   createdVectors: number[][],
   hashtagVectors: number[][] = [],
-  savedWeight: number = 2,
-  tagWeight: number = 1,
+  savedWeight = 2,
+  tagWeight = 1,
 ): number[] | null {
   const allVectors = [
     ...savedVectors.flatMap((v) => Array(savedWeight).fill(v)),
@@ -50,6 +51,7 @@ export async function handlePostQueue(
   env: Bindings,
 ): Promise<void> {
   const db = createD1Client(env);
+  const qdrantClient = new QdrantClient(env);
   const promises: Promise<void>[] = [];
 
   for (const message of batch.messages) {
@@ -95,8 +97,8 @@ export async function handlePostQueue(
           message.retry();
           return;
         }
-        // Store embedding
-        await storePostEmbedding(vectorData, env.POST_VECTORS, env.VECTORIZE);
+        // Store embedding using Qdrant
+        await storePostEmbedding(vectorData, env.POST_VECTORS, qdrantClient);
 
         // --- Trigger user embedding update ---
         try {

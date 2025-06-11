@@ -2,14 +2,14 @@ import React, { useState, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Image } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useForm } from '@tanstack/react-form';
-import { LoadingSpinner } from '@shared/components/LoadingSpinner';
+import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 import { useAuth } from '../hooks/useAuth';
 import { useCreateProfile } from '../hooks/useCreateProfile';
-import { useAlert } from '@shared/lib/AlertContext';
+import { useAlert } from '@/shared/lib/AlertContext';
 import { useNavigation } from '@react-navigation/native';
-import type { RootStackParamList } from '@navigation/types';
+import type { RootStackParamList } from '@/navigation/types';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Header from '@shared/components/Header';
+import Header from '@/shared/components/Header';
 
 export default function CreateProfile() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();

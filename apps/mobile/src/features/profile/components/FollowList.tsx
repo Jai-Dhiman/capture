@@ -2,12 +2,12 @@ import React from 'react'
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
-import type { AppStackParamList } from '@navigation/types'
-import { ProfileImage } from '@features/post/components/ProfileImage'
+import type { AppStackParamList } from '@/navigation/types'
+import { ProfileImage } from '@/features/post/components/ProfileImage'
 import { FollowButton } from './FollowButton'
-import { useSyncFollowingState } from '@features/profile/hooks/useRelationships'
-import Header from '@shared/components/Header'
-import { SkeletonLoader, SkeletonElement } from '@shared/components/SkeletonLoader';
+import { useSyncFollowingState } from '@/features/profile/hooks/useRelationships'
+import Header from '@/shared/components/Header'
+import { SkeletonLoader, SkeletonElement } from '@/shared/components/SkeletonLoader';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>
 

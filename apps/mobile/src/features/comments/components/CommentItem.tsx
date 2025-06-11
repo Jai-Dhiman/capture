@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useAtom } from 'jotai';
-import { ProfileImage } from '@features/post/components/ProfileImage';
+import { ProfileImage } from '@/features/post/components/ProfileImage';
 import { useCommentActions } from '../hooks/useCommentActions';
 import { replyingToCommentAtom, currentPostIdAtom } from '../atoms/commentAtoms';
 import type { Comment } from '../types/commentTypes';
 import XIcon from '@assets/icons/XIcon.svg';
 import { useQuery } from '@tanstack/react-query';
-import { useAuthStore } from '@features/auth/stores/authStore';
+import { useAuthStore } from '@/features/auth/stores/authStore';
 import { API_URL } from '@env';
-import { errorService } from '@shared/services/errorService';
+import { errorService } from '@/shared/services/errorService';
 
 export const CommentItem = ({ comment }: { comment: Comment }) => {
   const { startReply, cancelReply } = useCommentActions();

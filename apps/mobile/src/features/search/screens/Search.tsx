@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, SectionList, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { AppStackParamList } from '@navigation/types';
+import type { AppStackParamList } from '@/navigation/types';
 import { Ionicons } from '@expo/vector-icons';
 import { API_URL } from '@env';
-import { ProfileImage } from '@features/post/components/ProfileImage';
-import { useSearchHashtags } from '@features/post/hooks/useHashtags';
-import { useAuthStore } from '@features/auth/stores/authStore';
-import { SkeletonLoader, SkeletonElement } from '@shared/components/SkeletonLoader';
+import { ProfileImage } from '@/features/post/components/ProfileImage';
+import { useSearchHashtags } from '@/features/post/hooks/useHashtags';
+import { useAuthStore } from '@/features/auth/stores/authStore';
+import { SkeletonLoader, SkeletonElement } from '@/shared/components/SkeletonLoader';
 import CustomBackIcon from '@assets/icons/CustomBackIcon.svg';
 import Background1 from '@assets/Background1.svg';
 
