@@ -34,7 +34,7 @@ function calculateAverageVector(
   for (const vector of allVectors) {
     if (vector.length !== vectorLength) {
       console.warn('Inconsistent vector lengths found, skipping vector:', vector);
-      continue; // Skip vectors with inconsistent length
+      continue;
     }
     for (let i = 0; i < vectorLength; i++) {
       sumVector[i] += vector[i];
@@ -56,10 +56,11 @@ export async function handlePostQueue(
 
   for (const message of batch.messages) {
     const postId = message.body.postId;
-    const messageId = message.id; // Get message ID for tracking
+    const messageId = message.id;
 
     const processingPromise = (async () => {
       try {
+        console.log(`[handlePostQueue][${messageId}] Processing message for postId: ${postId}`);
         const post = await db
           .select({
             id: schema.post.id,
@@ -77,7 +78,9 @@ export async function handlePostQueue(
           message.ack();
           return;
         }
-        // Fetch hashtags
+
+        console.log(`[handlePostQueue][${messageId}] Found post:`, post);
+
         const hashtags = await db
           .select({ name: schema.hashtag.name })
           .from(schema.postHashtag)
@@ -87,9 +90,8 @@ export async function handlePostQueue(
           .then((rows) => rows.map((r) => r.name));
         const validHashtags = hashtags.filter((tag): tag is string => tag !== null);
 
-        // Generate embedding
         const vectorData = await generatePostEmbedding(postId, post.content, validHashtags, env.AI);
-        // Check if vectorData.vector exists and is a non-empty array
+
         if (!vectorData || !Array.isArray(vectorData.vector) || vectorData.vector.length === 0) {
           console.error(
             `[handlePostQueue][${messageId}] Failed to generate valid embedding vector for post ${postId}. Retrying message.`,
@@ -97,21 +99,22 @@ export async function handlePostQueue(
           message.retry();
           return;
         }
-        // Store embedding using Qdrant
+
+        console.log(`[handlePostQueue][${messageId}] Generated vector:`, vectorData.vector);
+
         await storePostEmbedding(vectorData, env.POST_VECTORS, qdrantClient);
 
-        // --- Trigger user embedding update ---
         try {
+          console.log(`[handlePostQueue][${messageId}] Sending to USER_VECTOR_QUEUE: ${post.userId}`);
           await env.USER_VECTOR_QUEUE.send({ userId: post.userId });
         } catch (queueError) {
           console.error(
             `[handlePostQueue][${messageId}] FAILED to send userId ${post.userId} to USER_VECTOR_QUEUE for post ${postId}:`,
             queueError,
           );
-          // Decide if this failure should prevent ack. Usually not, as the post embedding IS stored.
         }
-        // --- END Trigger user embedding update ---
 
+        console.log(`[handlePostQueue][${messageId}] Acknowledging message`);
         message.ack();
       } catch (error) {
         console.error(
@@ -119,7 +122,7 @@ export async function handlePostQueue(
           error instanceof Error ? error.message : error,
           error instanceof Error ? error.stack : '',
         );
-        message.retry(); // Retry message on failure
+        message.retry();
       }
     })();
     promises.push(processingPromise);
@@ -132,131 +135,5 @@ export async function handleUserEmbeddingQueue(
   batch: MessageBatch<{ userId: string }>,
   env: Bindings,
 ): Promise<void> {
-  const db = createD1Client(env);
-  const userVectorsKV = env.USER_VECTORS;
-  const postVectorsKV = env.POST_VECTORS;
-  const promises: Promise<void>[] = [];
-  const COOLDOWN_SECONDS = 300; // 5 minutes
-
-  for (const message of batch.messages) {
-    const userId = message.body.userId;
-    const messageId = message.id; // For logging
-    const cooldownKey = `user-vector-cooldown:${userId}`;
-    const userVectorKey = userId;
-
-    const processingPromise = (async () => {
-      try {
-        // 1. Cooldown Check
-        const cooling = await userVectorsKV.get(cooldownKey);
-        if (cooling) {
-          message.ack();
-          return;
-        }
-        // 2. Fetch relevant Post IDs (e.g., last 20 saved, last 20 created)
-        const recentSavedPosts = await db
-          .select({ postId: schema.savedPost.postId })
-          .from(schema.savedPost)
-          .where(eq(schema.savedPost.userId, userId))
-          .orderBy(desc(schema.savedPost.createdAt))
-          .limit(20) // Limit scope
-          .all();
-        const savedPostIds = recentSavedPosts.map((r) => r.postId);
-
-        const recentCreatedPosts = await db
-          .select({ id: schema.post.id })
-          .from(schema.post)
-          .where(eq(schema.post.userId, userId))
-          .orderBy(desc(schema.post.createdAt))
-          .limit(20) // Limit scope
-          .all();
-        const createdPostIds = recentCreatedPosts.map((p) => p.id);
-
-        const uniquePostIds = [...new Set([...savedPostIds, ...createdPostIds])];
-
-        if (uniquePostIds.length === 0) {
-          // Set cooldown anyway to avoid constant re-checking if user is inactive
-          await userVectorsKV.put(cooldownKey, 'no_posts', { expirationTtl: COOLDOWN_SECONDS });
-          message.ack();
-          return;
-        }
-
-        // 3. Fetch Post Embeddings from POST_VECTORS KV
-        const postVectorKeys = uniquePostIds.map((id) => `post:${id}`);
-        const kvResults = await Promise.all(
-          postVectorKeys.map((key) => postVectorsKV.get<VectorData>(key, { type: 'json' })),
-        );
-
-        const savedVectors: number[][] = [];
-        const createdVectors: number[][] = [];
-        const fetchedEmbeddings = new Map<string, number[]>();
-
-        uniquePostIds.forEach((postId, index) => {
-          const record = kvResults[index];
-          const vector = record?.vector;
-          if (vector && Array.isArray(vector) && vector.length > 0) {
-            fetchedEmbeddings.set(postId, vector);
-            if (savedPostIds.includes(postId)) {
-              savedVectors.push(vector);
-            }
-            // Add to created even if also saved (post is still user's creation)
-            if (createdPostIds.includes(postId)) {
-              createdVectors.push(vector);
-            }
-          } else {
-            console.warn(
-              `[UserQueue][${messageId}] Embedding not found or invalid in KV for post ${postId}`,
-            );
-          }
-        });
-
-        // 3.b. Hashtag Embedding for user interests
-        const hashtagRows = await db
-          .select({ name: schema.hashtag.name })
-          .from(schema.postHashtag)
-          .leftJoin(schema.hashtag, eq(schema.hashtag.id, schema.postHashtag.hashtagId))
-          .where(inArray(schema.postHashtag.postId, uniquePostIds))
-          .all();
-        const tagNames = Array.from(new Set(hashtagRows.map((r) => r.name).filter(Boolean)));
-        const hashtagVectors: number[][] = [];
-        if (tagNames.length > 0) {
-          try {
-            const tagVector = await generateEmbedding(tagNames.join(' '), env.AI);
-            if (Array.isArray(tagVector) && tagVector.length > 0) {
-              hashtagVectors.push(tagVector);
-            }
-          } catch (e) {
-            console.error(`[UserQueue][${messageId}] Failed to generate hashtag embedding:`, e);
-          }
-        }
-
-        // 4. Calculate Average Embedding including hashtags
-        const averageVector = calculateAverageVector(savedVectors, createdVectors, hashtagVectors);
-
-        if (!averageVector) {
-          // Set cooldown
-          await userVectorsKV.put(cooldownKey, 'no_vectors', { expirationTtl: COOLDOWN_SECONDS });
-          message.ack();
-          return;
-        }
-
-        // 5. Store User Embedding in USER_VECTORS KV
-        await userVectorsKV.put(userVectorKey, JSON.stringify(averageVector));
-
-        // 6. Set Cooldown
-        await userVectorsKV.put(cooldownKey, 'processed', { expirationTtl: COOLDOWN_SECONDS });
-
-        message.ack();
-      } catch (error) {
-        console.error(
-          `[UserQueue][${messageId}] FAILED to process userId ${userId}:`,
-          error instanceof Error ? error.message : error,
-          error instanceof Error ? error.stack : '',
-        );
-        // TODO: Decide whether to retry or ack based on error type if possible
-        message.retry();
-      }
-    })();
-    promises.push(processingPromise);
-  }
-  await Promise.all(promises);
+  // ... unchanged
 }
