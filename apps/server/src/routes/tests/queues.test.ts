@@ -86,9 +86,6 @@ describe('Queue Handlers', () => {
 
     await handlePostQueue(batch as any, env as any)
 
-    console.log('[TEST] mockAck called?', mockAck.mock.calls.length)
-    console.log('[TEST] mockSend called?', mockSend.mock.calls.length)
-
     expect(mockAck).toHaveBeenCalled()
     expect(mockSend).toHaveBeenCalledWith({ userId: 'user-id' })
   })

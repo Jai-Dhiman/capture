@@ -11,15 +11,13 @@ export class EmailService {
   private resendApiKey: string;
 
   constructor(resendApiKey: string) {
+    if (!resendApiKey || resendApiKey.trim() === "") {
+      throw new Error("RESEND_API_KEY is not configured or is invalid.");
+    }
     this.resendApiKey = resendApiKey;
   }
 
   async sendEmail(options: SendEmailOptions): Promise<void> {
-    if (!this.resendApiKey) {
-      console.error("RESEND_API_KEY not configured");
-      throw new Error("Email service not configured");
-    }
-
     // Use onboarding@resend.dev for development - this is Resend's testing domain
     const fromEmail = "onboarding@resend.dev";
 

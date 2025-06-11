@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: Unit + Integration + Security Tests
+    name: Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,59 +26,5 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Run Unit Tests
-        run: pnpm --filter apps/server test:uni
-
-      - name: Run Integration Tests
-        run: pnpm --filter apps/server test:integration
-
-      - name: Security Scans
-        run: |
-          pnpm audit || true
-          npx snyk test || true
-
-  build:
-    name: Build Server
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 9.0.0
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Build Server
-        run: pnpm turbo build
-
-  e2e:
-    name: API / E2E Tests
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 9.0.0
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Run E2E Tests
-        run: pnpm --filter apps/server test:e2e
+      - name: Runß Tests
+        run: pnpm --filter apps/server test

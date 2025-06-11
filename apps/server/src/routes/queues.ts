@@ -60,7 +60,6 @@ export async function handlePostQueue(
 
     const processingPromise = (async () => {
       try {
-        console.log(`[handlePostQueue][${messageId}] Processing message for postId: ${postId}`);
         const post = await db
           .select({
             id: schema.post.id,
@@ -78,8 +77,6 @@ export async function handlePostQueue(
           message.ack();
           return;
         }
-
-        console.log(`[handlePostQueue][${messageId}] Found post:`, post);
 
         const hashtags = await db
           .select({ name: schema.hashtag.name })
@@ -100,12 +97,9 @@ export async function handlePostQueue(
           return;
         }
 
-        console.log(`[handlePostQueue][${messageId}] Generated vector:`, vectorData.vector);
-
         await storePostEmbedding(vectorData, env.POST_VECTORS, qdrantClient);
 
         try {
-          console.log(`[handlePostQueue][${messageId}] Sending to USER_VECTOR_QUEUE: ${post.userId}`);
           await env.USER_VECTOR_QUEUE.send({ userId: post.userId });
         } catch (queueError) {
           console.error(
@@ -114,7 +108,6 @@ export async function handlePostQueue(
           );
         }
 
-        console.log(`[handlePostQueue][${messageId}] Acknowledging message`);
         message.ack();
       } catch (error) {
         console.error(

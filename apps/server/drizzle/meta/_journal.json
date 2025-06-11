@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1749436366205,
-      "tag": "0000_nasty_nomad",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1749249890817,
-      "tag": "0001_lowly_medusa",
+      "when": 1749681946987,
+      "tag": "0000_magenta_steve_rogers",
       "breakpoints": true
     }
   ]
