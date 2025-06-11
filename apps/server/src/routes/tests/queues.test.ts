@@ -20,32 +20,40 @@ vi.mock('@/routes/lib/qdrantClient', () => {
   }
 })
 
-vi.mock('@/db', () => ({
-  createD1Client: vi.fn(() => ({
+vi.mock('@/db', () => {
+  const mockGet = vi.fn().mockResolvedValue({
+    id: 'test-id',
+    content: 'test post content',
+    userId: 'user-id',
+  });
+
+  const mockAll = vi.fn().mockResolvedValue([]);
+
+  const dbMock = {
     select: vi.fn(() => ({
       from: vi.fn(() => ({
         where: vi.fn(() => ({
-          get: vi.fn().mockResolvedValue({
-            id: 'test-id',
-            content: 'test post content',
-            userId: 'user-id',
-          }),
-          all: vi.fn().mockResolvedValue([]),
+          get: mockGet,
+          all: mockAll,
         })),
         leftJoin: vi.fn(() => ({
           where: vi.fn(() => ({
-            all: vi.fn().mockResolvedValue([]),
+            all: mockAll,
           })),
         })),
         orderBy: vi.fn(() => ({
           limit: vi.fn(() => ({
-            all: vi.fn().mockResolvedValue([]),
+            all: mockAll,
           })),
         })),
       })),
     })),
-  })),
-}))
+  };
+
+  return {
+    createD1Client: vi.fn(() => dbMock),
+  };
+});
 
 // 👇 Import queues AFTER mocking
 import { handlePostQueue } from '@/routes/queues'
