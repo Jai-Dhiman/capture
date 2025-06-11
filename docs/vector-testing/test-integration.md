@@ -108,7 +108,6 @@ In your server logs or admin panel, verify embeddings exist:
 ```typescript
 // You can add this to a debug route
 const postVector = await env.POST_VECTORS.get('post:YOUR_POST_ID', { type: 'json' });
-console.log('Vector length:', postVector?.vector?.length); // Should be 768
 ```
 
 **Check Qdrant**:

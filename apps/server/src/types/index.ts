@@ -17,6 +17,7 @@ export type Bindings = {
   CLOUDFLARE_IMAGES_KEY: string;
   SEED_SECRET: string;
   JWT_SECRET: string;
+  RESEND_API_KEY: string;
   AI: Ai;
   POST_QUEUE: Queue<{ postId: string }>;
   USER_VECTOR_QUEUE: Queue<{ userId: string }>;
