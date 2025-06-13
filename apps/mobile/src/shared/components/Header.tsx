@@ -62,7 +62,7 @@ const Header: React.FC<HeaderProps> = ({
         from={{ translateY: 0 }}
         animate={{ translateY: hideHeader ? -headerHeight : 0 }}
         transition={{ type: 'timing', duration: 300 }}
-        className="absolute top-0 left-0 w-full z-10 bg-[#DCDCDE]"
+        className="absolute top-0 left-0 w-full z-10 bg-transparent"
         style={{ height: headerHeight, overflow: 'hidden' }}
       >
         {showBackground && (
@@ -85,7 +85,7 @@ const Header: React.FC<HeaderProps> = ({
           ) : (
             <View className="w-10 h-10" />
           )}
-          <Text className="text-5xl font-light text-center flex-1">Capture</Text>
+          <Text className="text-5xl font-thin text-center flex-1 font-roboto">Capture</Text>
           {showMenuButton ? (
             <TouchableOpacity
               className="w-10 h-10 bg-[#DFD2CD] rounded-full flex justify-center items-center"
@@ -144,7 +144,7 @@ const Header: React.FC<HeaderProps> = ({
             </Modal>
           )
         }
-        <View className="absolute bottom-0 self-center w-[85%] h-[0.75px] bg-neutral-700 opacity-50" />
+        {/* <View className="absolute bottom-0 self-center w-[85%] h-[0.75px] bg-neutral-700 opacity-50" /> */}
       </MotiView>
     </>
   );

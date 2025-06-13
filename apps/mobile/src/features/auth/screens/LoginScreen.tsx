@@ -54,11 +54,11 @@ export default function LoginScreen({ navigation }: Props) {
 
   return (
     <View style={{ flex: 1 }}>
-      <Header height={140} showBackground={true} />
       <View className="flex-1 bg-[#DCDCDE] overflow-hidden">
         <Image
           source={require('@assets/DefaultBackground.png')}
           style={{
+            opacity: '60%',
             width: '100%',
             height: '100%',
             position: 'absolute',
@@ -67,8 +67,8 @@ export default function LoginScreen({ navigation }: Props) {
           }}
           resizeMode="cover"
         />
-        <View className="flex-1 px-[26px]">
-          <View className="h-[1px] bg-black/10 mb-[30px]" />
+        <Header height={140} showBackground={false} />
+        <View className="flex-1 px-[26px] pt-[80px]">
 
           <form.Field
             name="email"
@@ -116,7 +116,7 @@ export default function LoginScreen({ navigation }: Props) {
             )}
           </form.Field>
 
-          <form.Field
+          {/* <form.Field
             name="password"
             validators={{
               onChange: ({ value }) => {
@@ -170,7 +170,7 @@ export default function LoginScreen({ navigation }: Props) {
                 </TouchableOpacity>
               </View>
             )}
-          </form.Field>
+          </form.Field> */}
 
           {login.isError && (
             <Text className="text-red-500 text-xs mt-2 mb-4 text-center">
@@ -194,12 +194,17 @@ export default function LoginScreen({ navigation }: Props) {
                   </View>
                 ) : (
                   <Text className="text-base font-bold font-roboto text-center">
-                    Log In
+                    Sign-In
                   </Text>
                 )}
               </TouchableOpacity>
             )}
           </form.Subscribe>
+          <View className='items-center mt-[24px]'>
+            <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
+              <Text className="text-base font-semibold font-roboto text-[#827B85] underline">Account Recovery</Text>
+            </TouchableOpacity>
+          </View>
 
           <View className="w-80 h-0 outline outline-1 outline-neutral-500 mt-[29px] self-center opacity-50" />
 
@@ -239,11 +244,8 @@ export default function LoginScreen({ navigation }: Props) {
           </TouchableOpacity>
 
           <View className="items-center">
-            <Text className="text-base font-roboto mb-[5px]">Don't have an account?</Text>
             <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
-              <Text className="text-base font-semibold font-roboto text-[#827B85] underline">
-                Register
-              </Text>
+              <Text className="text-base font-semibold font-roboto text-[#827B85] underline">Don't Have an Account?</Text>
             </TouchableOpacity>
           </View>
         </View>
