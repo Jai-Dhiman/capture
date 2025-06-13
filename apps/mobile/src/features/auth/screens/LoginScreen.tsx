@@ -54,11 +54,11 @@ export default function LoginScreen({ navigation }: Props) {
 
   return (
     <View style={{ flex: 1 }}>
-      <Header height={140} showBackground={true} />
       <View className="flex-1 bg-[#DCDCDE] overflow-hidden">
         <Image
           source={require('@assets/DefaultBackground.png')}
           style={{
+            opacity: '60%',
             width: '100%',
             height: '100%',
             position: 'absolute',
@@ -67,8 +67,8 @@ export default function LoginScreen({ navigation }: Props) {
           }}
           resizeMode="cover"
         />
-        <View className="flex-1 px-[26px]">
-          <View className="h-[1px] bg-black/10 mb-[30px]" />
+        <Header height={140} showBackground={false} />
+        <View className="flex-1 px-[26px] pt-[80px]">
 
           <form.Field
             name="email"
@@ -116,6 +116,68 @@ export default function LoginScreen({ navigation }: Props) {
             )}
           </form.Field>
 
+          {/* <form.Field
+            name="password"
+            validators={{
+              onChange: ({ value }) => {
+                if (!value) return 'Password is required';
+                return undefined;
+              }
+            }}
+          >
+            {(field) => (
+              <View>
+                <Text className="text-base font-roboto mb-[6px]">Your Password</Text>
+                <TouchableOpacity
+                  activeOpacity={1}
+                  onPress={() => passwordInputRef.current?.focus()}
+                  className={`bg-white h-[60px] rounded-[16px] shadow-md flex-row items-center px-[9px] relative ${isPasswordFocused ? 'border-2 border-[#E4CAC7]' : ''}`}
+                >
+                  <LockIcon width={35} height={35} style={{ marginRight: 14 }} />
+                  <TextInput
+                    ref={passwordInputRef}
+                    onFocus={() => {
+                      setIsPasswordFocused(true);
+                    }}
+                    onBlur={() => {
+                      setIsPasswordFocused(false);
+                      field.handleBlur();
+                    }}
+                    secureTextEntry={!showPassword}
+                    className="flex-1 text-base font-roboto pr-[30px] outline-none"
+                    style={{ paddingVertical: 0, textAlignVertical: 'center', height: '100%' }}
+                    value={field.state.value}
+                    onChangeText={field.handleChange}
+                  />
+                  <TouchableOpacity
+                    className="absolute right-[9px]"
+                    onPress={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <ViewPasswordIcon width={25} height={25} />
+                    ) : (
+                      <HidePasswordIcon width={25} height={25} />
+                    )}
+                  </TouchableOpacity>
+                </TouchableOpacity>
+                {field.state.meta.errors.length > 0 && (
+                  <Text className="text-red-500 text-xs mt-1">
+                    {field.state.meta.errors.join(', ')}
+                  </Text>
+                )}
+                <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+                  <Text className="text-xs font-roboto underline mt-[12px]">Forgot Password?</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </form.Field> */}
+
+          {login.isError && (
+            <Text className="text-red-500 text-xs mt-2 mb-4 text-center">
+              {"Incorrect Username or Password"}
+            </Text>
+          )}
+
           <form.Subscribe
             selector={(state) => [state.canSubmit, state.isSubmitting]}
           >
@@ -132,12 +194,17 @@ export default function LoginScreen({ navigation }: Props) {
                   </View>
                 ) : (
                   <Text className="text-base font-bold font-roboto text-center">
-                    Sign In
+                    Sign-In
                   </Text>
                 )}
               </TouchableOpacity>
             )}
           </form.Subscribe>
+          <View className='items-center mt-[24px]'>
+            <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
+              <Text className="text-base font-semibold font-roboto text-[#827B85] underline">Account Recovery</Text>
+            </TouchableOpacity>
+          </View>
 
           <View className="w-80 h-0 outline outline-1 outline-neutral-500 mt-[29px] self-center opacity-50" />
 
@@ -175,10 +242,10 @@ export default function LoginScreen({ navigation }: Props) {
             )}
           </TouchableOpacity>
 
-          <View className="items-center mt-4">
-            <Text className="text-xs text-center text-gray-500 font-roboto">
-              By continuing, you agree to our Terms of Service and Privacy Policy
-            </Text>
+          <View className="items-center">
+            <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
+              <Text className="text-base font-semibold font-roboto text-[#827B85] underline">Don't Have an Account?</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
