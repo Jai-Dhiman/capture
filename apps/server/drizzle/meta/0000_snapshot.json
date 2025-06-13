@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "05caf260-ebc1-4f2a-a4cf-2a8ec64e63ab",
+  "id": "5c5abc65-a9bb-4992-b50d-39baba0939a8",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "blocked_user": {
@@ -34,7 +34,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-05-25T22:04:17.455Z'"
+          "default": "'2025-06-11T22:45:46.956Z'"
         }
       },
       "indexes": {
@@ -160,7 +160,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-05-25T22:04:17.454Z'"
+          "default": "'2025-06-11T22:45:46.956Z'"
         },
         "_like_count": {
           "name": "_like_count",
@@ -276,7 +276,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-05-25T22:04:17.455Z'"
+          "default": "'2025-06-11T22:45:46.956Z'"
         }
       },
       "indexes": {
@@ -335,6 +335,88 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
+    "email_codes": {
+      "name": "email_codes",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'2025-06-11T22:45:46.955Z'"
+        },
+        "used_at": {
+          "name": "used_at",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "email_codes_email_idx": {
+          "name": "email_codes_email_idx",
+          "columns": [
+            "email"
+          ],
+          "isUnique": false
+        },
+        "email_codes_expires_idx": {
+          "name": "email_codes_expires_idx",
+          "columns": [
+            "expires_at"
+          ],
+          "isUnique": false
+        },
+        "email_codes_code_idx": {
+          "name": "email_codes_code_idx",
+          "columns": [
+            "code"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "hashtag": {
       "name": "hashtag",
       "columns": {
@@ -358,7 +440,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-05-25T22:04:17.455Z'"
+          "default": "'2025-06-11T22:45:46.956Z'"
         }
       },
       "indexes": {
@@ -433,7 +515,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-05-25T22:04:17.454Z'"
+          "default": "'2025-06-11T22:45:46.956Z'"
         }
       },
       "indexes": {
@@ -550,7 +632,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-05-25T22:04:17.455Z'"
+          "default": "'2025-06-11T22:45:46.956Z'"
         }
       },
       "indexes": {
@@ -655,7 +737,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-05-25T22:04:17.455Z'"
+          "default": "'2025-06-11T22:45:46.957Z'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -663,7 +745,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-05-25T22:04:17.455Z'"
+          "default": "'2025-06-11T22:45:46.957Z'"
         }
       },
       "indexes": {
@@ -679,6 +761,110 @@
         "notification_settings_user_id_users_id_fk": {
           "name": "notification_settings_user_id_users_id_fk",
           "tableFrom": "notification_settings",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "passkeys": {
+      "name": "passkeys",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "credential_id": {
+          "name": "credential_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "public_key": {
+          "name": "public_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "counter": {
+          "name": "counter",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "device_name": {
+          "name": "device_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'2025-06-11T22:45:46.955Z'"
+        },
+        "last_used_at": {
+          "name": "last_used_at",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "passkeys_credential_id_unique": {
+          "name": "passkeys_credential_id_unique",
+          "columns": [
+            "credential_id"
+          ],
+          "isUnique": true
+        },
+        "passkeys_user_idx": {
+          "name": "passkeys_user_idx",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": false
+        },
+        "passkeys_credential_idx": {
+          "name": "passkeys_credential_idx",
+          "columns": [
+            "credential_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "passkeys_user_id_users_id_fk": {
+          "name": "passkeys_user_id_users_id_fk",
+          "tableFrom": "passkeys",
           "tableTo": "users",
           "columnsFrom": [
             "user_id"
@@ -732,7 +918,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-05-25T22:04:17.454Z'"
+          "default": "'2025-06-11T22:45:46.955Z'"
         },
         "_save_count": {
           "name": "_save_count",
@@ -809,7 +995,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-05-25T22:04:17.455Z'"
+          "default": "'2025-06-11T22:45:46.956Z'"
         }
       },
       "indexes": {
@@ -856,6 +1042,95 @@
           "tableTo": "hashtag",
           "columnsFrom": [
             "hashtag_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "post_like": {
+      "name": "post_like",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "post_id": {
+          "name": "post_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'2025-06-11T22:45:46.956Z'"
+        }
+      },
+      "indexes": {
+        "user_post_likes_idx": {
+          "name": "user_post_likes_idx",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": false
+        },
+        "post_likes_idx": {
+          "name": "post_likes_idx",
+          "columns": [
+            "post_id"
+          ],
+          "isUnique": false
+        },
+        "post_like_composite_idx": {
+          "name": "post_like_composite_idx",
+          "columns": [
+            "user_id",
+            "post_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "post_like_user_id_users_id_fk": {
+          "name": "post_like_user_id_users_id_fk",
+          "tableFrom": "post_like",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "post_like_post_id_post_id_fk": {
+          "name": "post_like_post_id_post_id_fk",
+          "tableFrom": "post_like",
+          "tableTo": "post",
+          "columnsFrom": [
+            "post_id"
           ],
           "columnsTo": [
             "id"
@@ -928,7 +1203,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-05-25T22:04:17.454Z'"
+          "default": "'2025-06-11T22:45:46.954Z'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -936,7 +1211,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-05-25T22:04:17.454Z'"
+          "default": "'2025-06-11T22:45:46.954Z'"
         }
       },
       "indexes": {
@@ -1004,7 +1279,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-05-25T22:04:17.455Z'"
+          "default": "'2025-06-11T22:45:46.956Z'"
         }
       },
       "indexes": {
@@ -1093,7 +1368,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-05-25T22:04:17.455Z'"
+          "default": "'2025-06-11T22:45:46.956Z'"
         }
       },
       "indexes": {
@@ -1174,7 +1449,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-05-25T22:04:17.455Z'"
+          "default": "'2025-06-11T22:45:46.957Z'"
         }
       },
       "indexes": {
@@ -1229,13 +1504,6 @@
           "notNull": true,
           "autoincrement": false
         },
-        "password_hash": {
-          "name": "password_hash",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
         "email_verified": {
           "name": "email_verified",
           "type": "integer",
@@ -1251,13 +1519,21 @@
           "notNull": false,
           "autoincrement": false
         },
+        "phone_verified": {
+          "name": "phone_verified",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
         "created_at": {
           "name": "created_at",
           "type": "numeric",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-05-25T22:04:17.447Z'"
+          "default": "'2025-06-11T22:45:46.952Z'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -1265,7 +1541,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-05-25T22:04:17.452Z'"
+          "default": "'2025-06-11T22:45:46.953Z'"
         }
       },
       "indexes": {

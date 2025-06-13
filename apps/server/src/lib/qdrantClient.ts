@@ -48,7 +48,6 @@ export class QdrantClient {
           throw new Error(`Failed to create collection: ${createResponse.statusText}`);
         }
 
-        console.log(`Created Qdrant collection: ${this.collectionName}`);
       } else if (!response.ok) {
         throw new Error(`Failed to check collection: ${response.statusText}`);
       }

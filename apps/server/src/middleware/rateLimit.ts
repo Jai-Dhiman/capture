@@ -28,7 +28,7 @@ export function createRateLimiter(options: Partial<RateLimitOptions> = {}) {
     let requests: { count: number; resetTime: number } | null = null;
 
     try {
-      const storedData = await c.env.KV.get(limiterKey);
+      const storedData = await c.env.Capture_Rate_Limits.get(limiterKey);
       if (storedData) {
         requests = JSON.parse(storedData);
       }
@@ -53,7 +53,7 @@ export function createRateLimiter(options: Partial<RateLimitOptions> = {}) {
     }
 
     try {
-      await c.env.KV.put(limiterKey, JSON.stringify(requests), {
+      await c.env.Capture_Rate_Limits.put(limiterKey, JSON.stringify(requests), {
         expirationTtl: Math.ceil(opts.windowMs / 1000),
       });
     } catch (error) {

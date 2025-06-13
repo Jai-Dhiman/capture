@@ -1,13 +1,10 @@
 import React, { useState, useRef } from 'react'
 import {
-  View, Text, TouchableOpacity, TextInput, Image, Button, ActivityIndicator,
+  View, Text, TouchableOpacity, TextInput, Image, ActivityIndicator,
 } from 'react-native'
 import { useForm } from '@tanstack/react-form'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import EmailIcon from '@assets/icons/EmailIcon.svg'
-import LockIcon from '@assets/icons/LockIcon.svg'
-import ViewPasswordIcon from '@assets/icons/ViewPasswordIcon.svg'
-import HidePasswordIcon from '@assets/icons/HidePasswordIcon.svg'
 import GoogleLogo from '@assets/icons/GoogleLogo.svg'
 import AppleIcon from '@assets/icons/AppleLogo.svg'
 import type { AuthStackParamList } from '@/navigation/types'
@@ -20,32 +17,35 @@ type Props = {
 }
 
 export default function LoginScreen({ navigation }: Props) {
-  const [showPassword, setShowPassword] = useState(false)
   const [isEmailFocused, setIsEmailFocused] = useState(false)
-  const [isPasswordFocused, setIsPasswordFocused] = useState(false)
   const emailInputRef = useRef<TextInput>(null)
-  const passwordInputRef = useRef<TextInput>(null)
   const { showAlert } = useAlert()
-  const { login, loginWithGoogle, loginWithApple } = useAuth()
+  const { sendCode, loginWithGoogle, loginWithApple } = useAuth()
 
   const form = useForm({
     defaultValues: {
       email: '',
-      password: ''
+      phone: ''
     },
     onSubmit: async ({ value }) => {
-      if (!value.email || !value.password) {
-        showAlert('Please enter both email and password', { type: 'warning' });
-        return;
+      if (!value.email) {
+        showAlert('Please enter your email address', { type: 'warning' })
+        return
       }
 
-      login.mutate(
-        { email: value.email, password: value.password },
+      sendCode.mutate(
         {
-          onError: () => {
-            // Error is already handled by the useAuth hook's onError, 
-            // but if specific screen handling is needed, it can be done here.
-            // For now, relying on the hook's alert.
+          email: value.email,
+          phone: value.phone || undefined
+        },
+        {
+          onSuccess: (response) => {
+            navigation.navigate('CodeVerification', {
+              email: value.email,
+              phone: value.phone || undefined,
+              isNewUser: response.isNewUser,
+              message: response.message,
+            })
           }
         }
       )
@@ -74,13 +74,14 @@ export default function LoginScreen({ navigation }: Props) {
             name="email"
             validators={{
               onChange: ({ value }) => {
-                if (!value) return 'Email is required';
-                return undefined;
+                if (!value) return 'Email is required'
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Invalid email format'
+                return undefined
               }
             }}
           >
             {(field) => (
-              <View className="mb-[29px]">
+              <View className="mb-[24px]">
                 <Text className="text-base font-roboto mb-[6px]">Email</Text>
                 <TouchableOpacity
                   activeOpacity={1}
@@ -90,12 +91,10 @@ export default function LoginScreen({ navigation }: Props) {
                   <EmailIcon width={35} height={35} style={{ marginRight: 14 }} />
                   <TextInput
                     ref={emailInputRef}
-                    onFocus={() => {
-                      setIsEmailFocused(true);
-                    }}
+                    onFocus={() => setIsEmailFocused(true)}
                     onBlur={() => {
-                      setIsEmailFocused(false);
-                      field.handleBlur();
+                      setIsEmailFocused(false)
+                      field.handleBlur()
                     }}
                     placeholder="johndoe@gmail.com"
                     placeholderTextColor="#C8C8C8"
@@ -105,10 +104,11 @@ export default function LoginScreen({ navigation }: Props) {
                     onChangeText={field.handleChange}
                     autoCapitalize="none"
                     keyboardType="email-address"
+                    autoFocus
                   />
                 </TouchableOpacity>
-                {field.state.meta.errors.length > 0 && (
-                  <Text className="text-red-500 text-xs mt-1">
+                {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
+                  <Text className="text-red-500 text-xs mt-1 ml-2 font-roboto">
                     {field.state.meta.errors.join(', ')}
                   </Text>
                 )}
@@ -183,14 +183,14 @@ export default function LoginScreen({ navigation }: Props) {
           >
             {([canSubmit, isFormSubmitting]) => (
               <TouchableOpacity
-                className="bg-[#E4CAC7] h-[56px] rounded-[30px] shadow-md justify-center mt-[40px]"
+                className={`h-[56px] ${canSubmit ? 'bg-[#E4CAC7]' : 'bg-stone-300'} rounded-[30px] shadow-md justify-center items-center`}
                 onPress={() => form.handleSubmit()}
-                disabled={!canSubmit || isFormSubmitting || login.isPending}
+                disabled={!canSubmit || isFormSubmitting || sendCode.isPending}
               >
-                {isFormSubmitting || login.isPending ? (
+                {isFormSubmitting || sendCode.isPending ? (
                   <View className="flex-row justify-center items-center">
                     <ActivityIndicator size="small" color="#000" />
-                    <Text className="text-base font-bold font-roboto ml-2">Logging in...</Text>
+                    <Text className="text-base font-bold font-roboto ml-2">Sending code...</Text>
                   </View>
                 ) : (
                   <Text className="text-base font-bold font-roboto text-center">
@@ -225,7 +225,6 @@ export default function LoginScreen({ navigation }: Props) {
             )}
           </TouchableOpacity>
 
-          {/* Apple login button */}
           <TouchableOpacity
             onPress={() => loginWithApple.mutate()}
             disabled={loginWithApple.isPending}

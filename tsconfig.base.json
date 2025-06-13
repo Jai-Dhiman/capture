@@ -2,6 +2,10 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "display": "Default",
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["apps/server/src/*"]
+    },
     "composite": false,
     "declaration": true,
     "declarationMap": true,
