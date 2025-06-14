@@ -53,6 +53,19 @@ export interface OAuthAppleRequest {
   identityToken: string;
 }
 
+// PKCE types
+export interface PKCEParams {
+  codeVerifier: string;
+  codeChallenge: string;
+  state: string;
+}
+
+// OAuth configuration
+export interface OAuthConfig {
+  googleClientId?: string;
+  appleClientId?: string;
+}
+
 // Zustand store related types
 export type AuthStage = 'unauthenticated' | 'profileRequired' | 'authenticated';
 export type AuthStatus = 'checking' | 'pending' | 'error' | 'success';

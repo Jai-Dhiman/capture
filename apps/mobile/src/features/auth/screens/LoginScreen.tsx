@@ -5,10 +5,9 @@ import {
 import { useForm } from '@tanstack/react-form'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import EmailIcon from '@assets/icons/EmailIcon.svg'
-import GoogleLogo from '@assets/icons/GoogleLogo.svg'
-import AppleIcon from '@assets/icons/AppleLogo.svg'
 import type { AuthStackParamList } from '@/navigation/types'
 import { useAuth } from '../hooks/useAuth'
+import { GoogleOAuthButton, AppleOAuthButton } from '../components/OAuthButtons'
 import Header from '@/shared/components/Header'
 import { useAlert } from '@/shared/lib/AlertContext'
 
@@ -20,7 +19,7 @@ export default function LoginScreen({ navigation }: Props) {
   const [isEmailFocused, setIsEmailFocused] = useState(false)
   const emailInputRef = useRef<TextInput>(null)
   const { showAlert } = useAlert()
-  const { sendCode, loginWithGoogle, loginWithApple } = useAuth()
+  const { sendCode } = useAuth()
 
   const form = useForm({
     defaultValues: {
@@ -58,7 +57,7 @@ export default function LoginScreen({ navigation }: Props) {
         <Image
           source={require('@assets/DefaultBackground.png')}
           style={{
-            opacity: '60%',
+            opacity: 0.58,
             width: '100%',
             height: '100%',
             position: 'absolute',
@@ -116,65 +115,9 @@ export default function LoginScreen({ navigation }: Props) {
             )}
           </form.Field>
 
-          {/* <form.Field
-            name="password"
-            validators={{
-              onChange: ({ value }) => {
-                if (!value) return 'Password is required';
-                return undefined;
-              }
-            }}
-          >
-            {(field) => (
-              <View>
-                <Text className="text-base font-roboto mb-[6px]">Your Password</Text>
-                <TouchableOpacity
-                  activeOpacity={1}
-                  onPress={() => passwordInputRef.current?.focus()}
-                  className={`bg-white h-[60px] rounded-[16px] shadow-md flex-row items-center px-[9px] relative ${isPasswordFocused ? 'border-2 border-[#E4CAC7]' : ''}`}
-                >
-                  <LockIcon width={35} height={35} style={{ marginRight: 14 }} />
-                  <TextInput
-                    ref={passwordInputRef}
-                    onFocus={() => {
-                      setIsPasswordFocused(true);
-                    }}
-                    onBlur={() => {
-                      setIsPasswordFocused(false);
-                      field.handleBlur();
-                    }}
-                    secureTextEntry={!showPassword}
-                    className="flex-1 text-base font-roboto pr-[30px] outline-none"
-                    style={{ paddingVertical: 0, textAlignVertical: 'center', height: '100%' }}
-                    value={field.state.value}
-                    onChangeText={field.handleChange}
-                  />
-                  <TouchableOpacity
-                    className="absolute right-[9px]"
-                    onPress={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <ViewPasswordIcon width={25} height={25} />
-                    ) : (
-                      <HidePasswordIcon width={25} height={25} />
-                    )}
-                  </TouchableOpacity>
-                </TouchableOpacity>
-                {field.state.meta.errors.length > 0 && (
-                  <Text className="text-red-500 text-xs mt-1">
-                    {field.state.meta.errors.join(', ')}
-                  </Text>
-                )}
-                <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-                  <Text className="text-xs font-roboto underline mt-[12px]">Forgot Password?</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </form.Field> */}
-
-          {login.isError && (
-            <Text className="text-red-500 text-xs mt-2 mb-4 text-center">
-              {"Incorrect Username or Password"}
+          {sendCode.isError && (
+            <Text className="text-red-500 text-xs mt-2 mb-4 text-center font-roboto">
+              {"Failed to send verification code. Please try again."}
             </Text>
           )}
 
@@ -200,47 +143,20 @@ export default function LoginScreen({ navigation }: Props) {
               </TouchableOpacity>
             )}
           </form.Subscribe>
+
           <View className='items-center mt-[24px]'>
             <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
               <Text className="text-base font-semibold font-roboto text-[#827B85] underline">Account Recovery</Text>
             </TouchableOpacity>
           </View>
 
-          <View className="w-80 h-0 outline outline-1 outline-neutral-500 mt-[29px] self-center opacity-50" />
+          <View className="mt-[29px] mb-[23px]">
+            <GoogleOAuthButton />
+          </View>
 
-          <TouchableOpacity
-            onPress={() => loginWithGoogle.mutate()}
-            disabled={loginWithGoogle.isPending}
-            className={`bg-white h-[56px] rounded-[30px] shadow-md flex-row items-center justify-center mb-[23px] mt-[29px] ${loginWithGoogle.isPending ? 'opacity-50' : ''}`}
-          >
-            {loginWithGoogle.isPending ? (
-              <ActivityIndicator size="small" color="#000" />
-            ) : (
-              <>
-                <GoogleLogo width={24} height={24} style={{ marginRight: 16 }} />
-                <Text className="text-base font-bold font-roboto text-[#1C1C1C]">
-                  Sign In with Google
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => loginWithApple.mutate()}
-            disabled={loginWithApple.isPending}
-            className={`bg-white h-[56px] rounded-[30px] shadow-md flex-row items-center justify-center mb-[23px] ${loginWithApple.isPending ? 'opacity-50' : ''}`}
-          >
-            {loginWithApple.isPending ? (
-              <ActivityIndicator size="small" color="#000" />
-            ) : (
-              <>
-                <AppleIcon width={24} height={24} style={{ marginRight: 16 }} />
-                <Text className="text-base font-bold font-roboto text-[#1C1C1C]">
-                  Sign In with Apple
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
+          <View className="mb-[23px]">
+            <AppleOAuthButton />
+          </View>
 
           <View className="items-center">
             <TouchableOpacity onPress={() => navigation.navigate('Signup')}>

@@ -63,11 +63,19 @@ export const useAuthStore = create<AuthStoreState & AuthStoreActions>()(
           get().setAuthData(authResponse);
           return authResponse.session;
         } catch (error: any) {
-          console.error("Failed to refresh session (store):", error);
-          if (error?.response?.data?.code === "auth/invalid-refresh-token" || error?.statusCode === 401) {
+          console.error("Failed to refresh session:", error);
+          
+          // Check for specific auth errors that indicate invalid refresh token
+          const isAuthError = 
+            error?.response?.status === 401 || 
+            error?.statusCode === 401 ||
+            error?.response?.data?.code === "auth/invalid-refresh-token" ||
+            error?.message?.includes("auth/invalid-refresh-token");
+            
+          if (isAuthError) {
             await get().clearAuth();
           } else {
-            set({ status: "error", error: error.message || "Unknown refresh error" });
+            set({ status: "error", error: error.message || "Failed to refresh session" });
           }
           return null;
         }
@@ -77,41 +85,51 @@ export const useAuthStore = create<AuthStoreState & AuthStoreActions>()(
         set({ status: "checking", error: null });
         const currentSession = get().session;
 
-        if (currentSession?.access_token && currentSession?.refresh_token) {
-          const now = Date.now();
-          const fiveMinutes = 5 * 60 * 1000;
-          if (currentSession.expires_at && currentSession.expires_at - now < fiveMinutes) {
-            const refreshed = await get().refreshSession();
-            if (!refreshed) {
-              get().clearAuth();
-            }
-          } else if (currentSession.expires_at && currentSession.expires_at - now >= fiveMinutes) {
-            try {
-              const { workersAuthApi } = await import("../lib/workersAuthApi");
-              const me = await workersAuthApi.getMe();
-              if (me) {
-                set({
-                  user: { id: me.id, email: me.email },
-                  status: "success",
-                  stage: me.profileExists ? 'authenticated' : 'profileRequired',
-                  error: null,
-                });
-              } else {
-                await get().clearAuth();
-              }
-            } catch (e) {
-              console.warn("checkInitialSession: getMe failed, attempting refresh or clearing auth", e);
+        if (!currentSession?.access_token || !currentSession?.refresh_token) {
+          set({ 
+            status: "success", 
+            stage: "unauthenticated",
+            user: null,
+            session: null 
+          });
+          return;
+        }
+
+        const now = Date.now();
+        const fiveMinutes = 5 * 60 * 1000;
+        
+        // Check if token is expired or expiring soon
+        if (currentSession.expires_at && currentSession.expires_at - now < fiveMinutes) {
+          const refreshed = await get().refreshSession();
+          if (!refreshed) {
+            await get().clearAuth();
+          }
+        } else {
+          // Token seems valid, verify with backend
+          try {
+            const { workersAuthApi } = await import("../lib/workersAuthApi");
+            const me = await workersAuthApi.getMe();
+            
+            if (me) {
+              set({
+                user: { id: me.id, email: me.email },
+                status: "success",
+                stage: me.profileExists ? 'authenticated' : 'profileRequired',
+                error: null,
+              });
+            } else {
               const refreshed = await get().refreshSession();
               if (!refreshed) {
                 await get().clearAuth();
               }
             }
-          } else {
+          } catch (e) {
+            console.warn("Session verification failed, attempting refresh:", e);
             const refreshed = await get().refreshSession();
-            if (!refreshed) await get().clearAuth();
+            if (!refreshed) {
+              await get().clearAuth();
+            }
           }
-        } else {
-          await get().clearAuth();
         }
       },
 
@@ -132,7 +150,6 @@ export const useAuthStore = create<AuthStoreState & AuthStoreActions>()(
         return (_hydratedState, error) => {
           if (error) {
             console.error("Failed to rehydrate auth store:", error);
-          } else {
           }
         };
       },

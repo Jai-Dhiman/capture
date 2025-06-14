@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { LinkingOptions } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
-import { useAuthStore } from '@/features/auth/stores/authStore';
+import { useAuthStore, initializeAuth } from '@/features/auth/stores/authStore';
 import type { RootStackParamList } from './types';
 import AppNavigator from './AppNavigator';
 import AuthStack from './AuthNavigator';
@@ -24,9 +24,10 @@ export const linking: LinkingOptions<RootStackParamList> = {
         screens: {
           Login: 'auth/login',
           Signup: 'auth/signup',
+          EmailSignup: 'auth/email-signup',
+          CodeVerification: 'auth/code-verification',
           CreateProfile: 'auth/create-profile',
-          ForgotPassword: 'auth/forgot-password',
-          ResetPassword: 'auth/reset-password',
+          EmailVerificationPending: 'auth/email-verification-pending',
         }
       },
       App: {
@@ -58,7 +59,9 @@ function LoadingScreen() {
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#DCDCDE' }}>
       <ActivityIndicator size="large" color="#000" />
-      <Text style={{ marginTop: 20, color: '#333' }}>Loading...</Text>
+      <Text style={{ marginTop: 20, color: '#333', fontFamily: 'Roboto' }}>
+        Loading...
+      </Text>
     </View>
   );
 }
@@ -66,10 +69,17 @@ function LoadingScreen() {
 export function MainNavigator() {
   const { stage: authStage, session, status } = useAuthStore();
 
+  // Initialize auth system on mount
+  useEffect(() => {
+    initializeAuth();
+  }, []);
+
+  // Show loading screen while checking authentication
   if (status === 'checking' || status === 'pending') {
     return <LoadingScreen />;
   }
 
+  // User is authenticated
   if (status === 'success' && session) {
     if (authStage === 'profileRequired') {
       return (
@@ -78,8 +88,10 @@ export function MainNavigator() {
         </Stack.Navigator>
       );
     }
+    // User is fully authenticated
     return <AppNavigator />;
   }
 
+  // User is not authenticated - show auth stack
   return <AuthStack />;
 }

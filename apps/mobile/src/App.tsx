@@ -1,3 +1,6 @@
+import { Buffer } from 'node:buffer';
+global.Buffer = Buffer;
+
 import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';

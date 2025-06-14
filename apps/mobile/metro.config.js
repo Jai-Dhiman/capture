@@ -18,6 +18,9 @@ config.resolver = {
   ...resolver,
   assetExts: resolver.assetExts.filter((ext) => ext !== "svg"),
   sourceExts: [...resolver.sourceExts, "svg"],
+  alias: {
+    buffer: require.resolve('buffer'),
+  },
 };
 
 const webExtensions = ["web.ts", "web.tsx", "web.js"];

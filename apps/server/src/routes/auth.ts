@@ -9,6 +9,7 @@ import { eq, and, gt, lt, isNull } from "drizzle-orm";
 import { sign } from "hono/jwt";
 import { authMiddleware } from "../middleware/auth";
 import { createEmailService } from "../lib/emailService";
+import { exchangeGoogleCode, verifyAppleToken } from "../lib/oauthUtils";
 
 const router = new Hono<{
   Bindings: Bindings;
@@ -29,6 +30,18 @@ const verifyCodeSchema = z.object({
 
 const refreshTokenSchema = z.object({
   refresh_token: z.string(),
+});
+
+// OAuth validation schemas
+const oauthGoogleSchema = z.object({
+  code: z.string(),
+  codeVerifier: z.string(),
+  redirectUri: z.string(),
+});
+
+const oauthAppleSchema = z.object({
+  code: z.string(),
+  identityToken: z.string(),
 });
 
 // Constants
@@ -75,6 +88,8 @@ async function cleanupExpiredCodes(db: any) {
     .where(lt(schema.emailCodes.expiresAt, now))
     .execute();
 }
+
+// OAuth helper functions are now in /lib/oauthUtils.ts
 
 router.post("/send-code", otpRateLimiter, async (c) => {
   try {
@@ -353,6 +368,233 @@ router.post("/logout", async (c) => {
     }
 
     return c.json({ success: true, message: "Logged out successfully." });
+});
+
+// OAuth endpoints
+router.post("/oauth/google", authRateLimiter, async (c) => {
+  try {
+    const body = await c.req.json();
+    const validation = oauthGoogleSchema.safeParse(body);
+
+    if (!validation.success) {
+      return c.json(
+        {
+          error: "Invalid input",
+          details: validation.error.errors,
+          code: "auth/invalid-input",
+        },
+        400
+      );
+    }
+
+    const { code, codeVerifier, redirectUri } = validation.data;
+
+    if (!c.env.GOOGLE_CLIENT_ID || !c.env.GOOGLE_CLIENT_SECRET) {
+      return c.json({ error: "Google OAuth not configured", code: "auth/oauth-not-configured" }, 500);
+    }
+
+    // Exchange code for user info
+    const googleUser = await exchangeGoogleCode(code, codeVerifier, redirectUri, c.env);
+
+    if (!googleUser.email) {
+      return c.json({ error: "Failed to get user email from Google", code: "auth/oauth-failed" }, 400);
+    }
+
+    const db = createD1Client(c.env);
+
+    // Check if user exists or create new user
+    let user = await db.select().from(schema.users).where(eq(schema.users.email, googleUser.email)).get();
+    let isNewUser = false;
+
+    if (!user) {
+      // Create new user
+      const userId = nanoid();
+      await db.insert(schema.users).values({
+        id: userId,
+        email: googleUser.email,
+        emailVerified: googleUser.verified_email ? 1 : 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+
+      user = await db.select().from(schema.users).where(eq(schema.users.id, userId)).get();
+      isNewUser = true;
+    } else {
+      // Update existing user
+      await db.update(schema.users)
+        .set({
+          emailVerified: googleUser.verified_email ? 1 : 0,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(schema.users.id, user.id));
+
+      // Refresh user data
+      user = await db.select().from(schema.users).where(eq(schema.users.id, user.id)).get();
+    }
+
+    if (!user) {
+      return c.json({ error: "Failed to create or update user", code: "auth/user-creation-failed" }, 500);
+    }
+
+    // Generate tokens
+    const { accessToken, refreshToken, accessTokenExpiresAt } = await generateJwtToken(user.id, user.email, c.env);
+
+    // Check if profile exists
+    let profileExists = false;
+    try {
+      const existingProfile = await db.select({ id: schema.profile.id })
+                                      .from(schema.profile)
+                                      .where(eq(schema.profile.userId, user.id))
+                                      .get();
+      profileExists = Boolean(existingProfile);
+
+      // Log activity
+      if (!isNewUser) {
+        await db.insert(schema.userActivity).values({
+          id: nanoid(),
+          userId: user.id,
+          eventType: "oauth_login",
+          createdAt: new Date().toISOString(),
+        }).execute();
+      }
+    } catch (dbError) {
+      console.error("Error during profile check or activity logging:", dbError);
+    }
+
+    return c.json({
+      session: {
+        access_token: accessToken,
+        refresh_token: refreshToken,
+        expires_at: accessTokenExpiresAt,
+      },
+      user: {
+        id: user.id,
+        email: user.email,
+      },
+      profileExists,
+      isNewUser,
+    });
+  } catch (error) {
+    console.error("Google OAuth error:", error);
+    console.error("Google OAuth error details:", {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      env: {
+        GOOGLE_CLIENT_ID: c.env.GOOGLE_CLIENT_ID ? 'PRESENT' : 'MISSING',
+        GOOGLE_CLIENT_SECRET: c.env.GOOGLE_CLIENT_SECRET ? 'PRESENT' : 'MISSING',
+      }
+    });
+    return c.json({ error: "Google OAuth authentication failed", code: "auth/oauth-failed" }, 500);
+  }
+});
+
+router.post("/oauth/apple", authRateLimiter, async (c) => {
+  try {
+    const body = await c.req.json();
+    const validation = oauthAppleSchema.safeParse(body);
+
+    if (!validation.success) {
+      return c.json(
+        {
+          error: "Invalid input",
+          details: validation.error.errors,
+          code: "auth/invalid-input",
+        },
+        400
+      );
+    }
+
+    const { identityToken } = validation.data;
+
+    if (!c.env.APPLE_CLIENT_ID) {
+      return c.json({ error: "Apple OAuth not configured", code: "auth/oauth-not-configured" }, 500);
+    }
+
+    // Verify Apple identity token
+    const appleUser = await verifyAppleToken(identityToken, c.env);
+
+    if (!appleUser.email) {
+      return c.json({ error: "Failed to get user email from Apple", code: "auth/oauth-failed" }, 400);
+    }
+
+    const db = createD1Client(c.env);
+
+    // Check if user exists or create new user
+    let user = await db.select().from(schema.users).where(eq(schema.users.email, appleUser.email)).get();
+    let isNewUser = false;
+
+    if (!user) {
+      // Create new user
+      const userId = nanoid();
+      await db.insert(schema.users).values({
+        id: userId,
+        email: appleUser.email,
+        emailVerified: appleUser.email_verified ? 1 : 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+
+      user = await db.select().from(schema.users).where(eq(schema.users.id, userId)).get();
+      isNewUser = true;
+    } else {
+      // Update existing user
+      await db.update(schema.users)
+        .set({
+          emailVerified: appleUser.email_verified ? 1 : 0,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(schema.users.id, user.id));
+
+      // Refresh user data
+      user = await db.select().from(schema.users).where(eq(schema.users.id, user.id)).get();
+    }
+
+    if (!user) {
+      return c.json({ error: "Failed to create or update user", code: "auth/user-creation-failed" }, 500);
+    }
+
+    // Generate tokens
+    const { accessToken, refreshToken, accessTokenExpiresAt } = await generateJwtToken(user.id, user.email, c.env);
+
+    // Check if profile exists
+    let profileExists = false;
+    try {
+      const existingProfile = await db.select({ id: schema.profile.id })
+                                      .from(schema.profile)
+                                      .where(eq(schema.profile.userId, user.id))
+                                      .get();
+      profileExists = Boolean(existingProfile);
+
+      // Log activity
+      if (!isNewUser) {
+        await db.insert(schema.userActivity).values({
+          id: nanoid(),
+          userId: user.id,
+          eventType: "oauth_login",
+          createdAt: new Date().toISOString(),
+        }).execute();
+      }
+    } catch (dbError) {
+      console.error("Error during profile check or activity logging:", dbError);
+    }
+
+    return c.json({
+      session: {
+        access_token: accessToken,
+        refresh_token: refreshToken,
+        expires_at: accessTokenExpiresAt,
+      },
+      user: {
+        id: user.id,
+        email: user.email,
+      },
+      profileExists,
+      isNewUser,
+    });
+  } catch (error) {
+    console.error("Apple OAuth error:", error);
+    return c.json({ error: "Apple OAuth authentication failed", code: "auth/oauth-failed" }, 500);
+  }
 });
 
 // Get current user info
