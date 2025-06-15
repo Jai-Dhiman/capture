@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { SignIn } from "@clerk/clerk-react";
+import { SignIn } from '@clerk/clerk-react';
 
 export default function SignInPage() {
   return (
@@ -12,12 +12,12 @@ export default function SignInPage() {
           signUpUrl="/sign-up"
           appearance={{
             elements: {
-              rootBox: "mx-auto w-full",
-              card: "shadow-none p-0 w-full",
-            }
+              rootBox: 'mx-auto w-full',
+              card: 'shadow-none p-0 w-full',
+            },
           }}
         />
       </div>
-    </div >
+    </div>
   );
-} 
+}

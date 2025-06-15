@@ -1,14 +1,21 @@
 import { apiClient } from '@/shared/lib/apiClient';
-import type { 
-  SendCodeRequest, 
-  SendCodeResponse, 
-  VerifyCodeRequest, 
-  AuthResponse, 
+import type {
+  AuthResponse,
   BasicSuccessResponse,
-  OAuthGoogleRequest,
   OAuthAppleRequest,
-  User
-} from '../types/index'; 
+  OAuthGoogleRequest,
+  PasskeyAuthenticationComplete,
+  PasskeyAuthenticationRequest,
+  PasskeyAuthenticationResponse,
+  PasskeyListResponse,
+  PasskeyRegistrationComplete,
+  PasskeyRegistrationRequest,
+  PasskeyRegistrationResponse,
+  SendCodeRequest,
+  SendCodeResponse,
+  User,
+  VerifyCodeRequest,
+} from '../types/index';
 
 // Response shape for GET /auth/me
 export interface MeResponse extends User {
@@ -34,7 +41,7 @@ export const workersAuthApi = {
   async refresh(refreshToken: string): Promise<AuthResponse> {
     return apiClient.post('/auth/refresh', { refresh_token: refreshToken }, false);
   },
-  
+
   // OAuth methods
   async oauthGoogle(data: OAuthGoogleRequest): Promise<AuthResponse> {
     return apiClient.post('/auth/oauth/google', data, false);
@@ -43,7 +50,38 @@ export const workersAuthApi = {
   async oauthApple(data: OAuthAppleRequest): Promise<AuthResponse> {
     return apiClient.post('/auth/oauth/apple', data, false);
   },
-  
+
+  // Passkey methods
+  async passkeyRegistrationBegin(
+    data: PasskeyRegistrationRequest,
+  ): Promise<PasskeyRegistrationResponse> {
+    return apiClient.post('/auth/passkey/register/begin', data, false);
+  },
+
+  async passkeyRegistrationComplete(
+    data: PasskeyRegistrationComplete,
+  ): Promise<BasicSuccessResponse> {
+    return apiClient.post('/auth/passkey/register/complete', data, false);
+  },
+
+  async passkeyAuthenticationBegin(
+    data: PasskeyAuthenticationRequest,
+  ): Promise<PasskeyAuthenticationResponse> {
+    return apiClient.post('/auth/passkey/authenticate/begin', data, false);
+  },
+
+  async passkeyAuthenticationComplete(data: PasskeyAuthenticationComplete): Promise<AuthResponse> {
+    return apiClient.post('/auth/passkey/authenticate/complete', data, false);
+  },
+
+  async getPasskeys(): Promise<PasskeyListResponse> {
+    return apiClient.get('/auth/passkey/list', true);
+  },
+
+  async deletePasskey(passkeyId: string): Promise<BasicSuccessResponse> {
+    return apiClient.delete(`/auth/passkey/${passkeyId}`, true);
+  },
+
   // User info
   async getMe(): Promise<MeResponse | null> {
     try {
@@ -53,5 +91,5 @@ export const workersAuthApi = {
       console.warn('getMe failed, possibly invalid token:', error);
       return null;
     }
-  }
-}; 
+  },
+};

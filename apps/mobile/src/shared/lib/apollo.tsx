@@ -1,6 +1,6 @@
+import { useAuthStore } from '@/features/auth/stores/authStore';
 import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
-import { useAuthStore } from '@/features/auth/stores/authStore';
 import { API_URL } from '@env';
 
 const httpLink = createHttpLink({
@@ -15,11 +15,11 @@ const authLink = setContext(async (_, { headers }) => {
     headers: {
       ...headers,
       authorization: token ? `Bearer ${token}` : '',
-    }
+    },
   };
 });
 
 export const apolloClient = new ApolloClient({
   link: authLink.concat(httpLink),
-  cache: new InMemoryCache()
+  cache: new InMemoryCache(),
 });

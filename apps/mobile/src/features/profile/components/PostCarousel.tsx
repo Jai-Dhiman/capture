@@ -1,18 +1,26 @@
+import { commentDrawerOpenAtom, currentPostIdAtom } from '@/features/comments/atoms/commentAtoms';
+import { PostMediaGallery } from '@/features/post/components/PostMediaGallery';
+import { useAlert } from '@/shared/lib/AlertContext';
+import CommentIcon from '@assets/icons/CommentsIcon.svg';
+import FavoriteIcon from '@assets/icons/FavoriteIcon.svg';
+import FilledFavoriteIcon from '@assets/icons/FilledFavoriteIcon.svg';
+import SettingsIcon from '@assets/icons/MenuDots.svg';
+import ShareIcon from '@assets/icons/PaperPlaneIcon.svg';
+import { SHARE_URL } from '@env';
+import Clipboard from 'expo-clipboard';
+import { useAtom } from 'jotai';
 import type React from 'react';
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, useWindowDimensions, Share, Alert } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Share,
+  Text,
+  TouchableOpacity,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import Carousel from 'react-native-reanimated-carousel';
-import { PostMediaGallery } from '@/features/post/components/PostMediaGallery';
-import SettingsIcon from "@assets/icons/MenuDots.svg";
-import CommentIcon from "@assets/icons/CommentsIcon.svg";
-import ShareIcon from "@assets/icons/PaperPlaneIcon.svg";
-import FavoriteIcon from "@assets/icons/FavoriteIcon.svg";
-import FilledFavoriteIcon from "@assets/icons/FilledFavoriteIcon.svg";
-import { useAtom } from 'jotai';
-import { commentDrawerOpenAtom, currentPostIdAtom } from '@/features/comments/atoms/commentAtoms';
-import Clipboard from 'expo-clipboard';
-import { SHARE_URL } from '@env';
-import { useAlert } from '@/shared/lib/AlertContext';
 
 interface PostReanimatedCarouselProps {
   posts: any[];
@@ -28,7 +36,7 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
   initialIndex,
   onSettingsPress,
   onToggleSave,
-  isSaving
+  isSaving,
 }) => {
   const { width, height } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(initialIndex);
@@ -53,7 +61,7 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
 
     return Math.min(
       availableHeight - headerHeight - footerHeight - paginationHeight - topMargin - bottomSafeArea,
-      height * adaptiveRatio
+      height * adaptiveRatio,
     );
   };
 
@@ -81,17 +89,15 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
     try {
       setSavingPostId(post.id);
       // Immediately update UI
-      const updatedPosts = posts.map(p =>
-        p.id === post.id ? { ...p, isSaved: !p.isSaved } : p
-      );
+      const updatedPosts = posts.map((p) => (p.id === post.id ? { ...p, isSaved: !p.isSaved } : p));
       setPosts(updatedPosts);
 
       // Call the parent handler
       onToggleSave(post);
     } catch (error: any) {
       // Revert UI if there was an error
-      const revertedPosts = posts.map(p =>
-        p.id === post.id ? { ...p, isSaved: !p.isSaved } : p
+      const revertedPosts = posts.map((p) =>
+        p.id === post.id ? { ...p, isSaved: !p.isSaved } : p,
       );
       setPosts(revertedPosts);
       console.error('Save/Unsave error:', error);
@@ -120,10 +126,7 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
 
         <View style={{ width: '100%', height: mediaHeight, marginTop: -12 }}>
           {post.media && post.media.length > 0 ? (
-            <PostMediaGallery
-              mediaItems={post.media}
-              containerStyle={{ height: '100%' }}
-            />
+            <PostMediaGallery mediaItems={post.media} containerStyle={{ height: '100%' }} />
           ) : (
             <View className="w-full h-full bg-gray-200 justify-center items-center">
               <Text className="text-gray-500">Image Not Found</Text>
@@ -208,17 +211,16 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
           right: 0,
           paddingBottom: 16,
           paddingTop: 12,
-          height: 40
+          height: 40,
         }}
       >
         <View className="flex-row justify-center">
           {posts.map((_, index) => (
             <View
               key={index}
-              className={`mx-1 rounded-full ${index === activeIndex
-                ? 'w-4 h-2 bg-[#E4CAC7]'
-                : 'w-2 h-2 bg-gray-400'
-                }`}
+              className={`mx-1 rounded-full ${
+                index === activeIndex ? 'w-4 h-2 bg-[#E4CAC7]' : 'w-2 h-2 bg-gray-400'
+              }`}
             />
           ))}
         </View>

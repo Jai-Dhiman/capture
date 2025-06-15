@@ -129,7 +129,9 @@ export async function storePostEmbedding(
     console.error('Failed to store vector in Qdrant:', error);
     // Log more details about the error
     if (error && typeof error === 'object' && 'response' in error) {
-      const errorWithResponse = error as { response: { status: number; statusText: string; data: any } };
+      const errorWithResponse = error as {
+        response: { status: number; statusText: string; data: any };
+      };
       console.error('Qdrant API response:', {
         status: errorWithResponse.response.status,
         statusText: errorWithResponse.response.statusText,

@@ -1,27 +1,27 @@
-import { Buffer } from 'node:buffer';
+import { Buffer } from 'buffer';
 global.Buffer = Buffer;
 
-import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import React, { useEffect } from 'react';
 import { View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import 'react-native-reanimated';
-import "../global.css";
-import { ApolloProvider } from '@/shared/providers/ApolloProvider';
-import { MainNavigator, linking } from '@/navigation/index';
-import { AlertProvider } from '@/shared/lib/AlertContext';
-import { Provider as JotaiProvider } from 'jotai'
-import { JotaiInitializer } from '@/shared/providers/JotaiProvider';
+import '../global.css';
 import { initializeAuth } from '@/features/auth/stores/authStore';
 import { CommentDrawer } from '@/features/comments//components/CommentDrawer';
+import { MainNavigator, linking } from '@/navigation/index';
+import { AlertProvider } from '@/shared/lib/AlertContext';
+import { ApolloProvider } from '@/shared/providers/ApolloProvider';
+import { JotaiInitializer } from '@/shared/providers/JotaiProvider';
 import * as Sentry from '@sentry/react-native';
+import { Provider as JotaiProvider } from 'jotai';
 
 Sentry.init({
   dsn: 'https://74904d3bf1ebb2b0747f5356b0a83624@o4509049381519360.ingest.us.sentry.io/4509049386434560',
-  tracePropagationTargets: ["localhost", /^\//, "https://o4509049381519360.ingest.us.sentry.io"],
+  tracePropagationTargets: ['localhost', /^\//, 'https://o4509049381519360.ingest.us.sentry.io'],
   tracesSampleRate: 1.0,
 });
 

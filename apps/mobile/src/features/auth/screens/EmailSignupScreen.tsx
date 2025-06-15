@@ -1,22 +1,20 @@
-import React, { useState, useRef } from 'react';
-import {
-  View, Text, TouchableOpacity, ScrollView, TextInput, Image
-} from 'react-native';
-import { useForm } from '@tanstack/react-form';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '@/navigation/types';
-import { useAuth } from '../hooks/useAuth';
-import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 import Header from '@/shared/components/Header';
+import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 import { useAlert } from '@/shared/lib/AlertContext';
-import EmailIcon from '@assets/icons/EmailIcon.svg'
-import LockIcon from '@assets/icons/LockIcon.svg'
-import ViewPasswordIcon from '@assets/icons/ViewPasswordIcon.svg'
-import HidePasswordIcon from '@assets/icons/HidePasswordIcon.svg'
+import EmailIcon from '@assets/icons/EmailIcon.svg';
+import HidePasswordIcon from '@assets/icons/HidePasswordIcon.svg';
+import LockIcon from '@assets/icons/LockIcon.svg';
+import ViewPasswordIcon from '@assets/icons/ViewPasswordIcon.svg';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useForm } from '@tanstack/react-form';
+import React, { useState, useRef } from 'react';
+import { Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useAuth } from '../hooks/useAuth';
 
 type Props = {
-  navigation: NativeStackNavigationProp<AuthStackParamList, 'Signup'>
-}
+  navigation: NativeStackNavigationProp<AuthStackParamList, 'Signup'>;
+};
 
 export default function EmailSignupScreen({ navigation }: Props) {
   const [showPassword, setShowPassword] = useState(false);
@@ -41,7 +39,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
     defaultValues: {
       email: '',
       password: '',
-      confirmPassword: ''
+      confirmPassword: '',
     },
     onSubmit: async ({ value }) => {
       const errors = validatePasswordRequirements(value.password);
@@ -57,10 +55,10 @@ export default function EmailSignupScreen({ navigation }: Props) {
         {
           onSuccess: () => {
             navigation.navigate('EmailVerificationPending');
-          }
-        }
+          },
+        },
       );
-    }
+    },
   });
 
   const validatePasswordRequirements = (password: string) => {
@@ -97,15 +95,12 @@ export default function EmailSignupScreen({ navigation }: Props) {
               height: '100%',
               position: 'absolute',
               top: 0,
-              left: 0
+              left: 0,
             }}
             resizeMode="cover"
           />
 
-          <Header
-            showBackButton={true}
-            onBackPress={() => navigation.goBack()}
-          />
+          <Header showBackButton={true} onBackPress={() => navigation.goBack()} />
 
           <View className="h-[40px]" />
 
@@ -117,7 +112,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
                   if (!value) return 'Email is required';
                   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Invalid email format';
                   return undefined;
-                }
+                },
               }}
             >
               {(field) => (
@@ -154,11 +149,11 @@ export default function EmailSignupScreen({ navigation }: Props) {
               )}
             </form.Field>
 
-            <form.Field
-              name="password"
-            >
+            <form.Field name="password">
               {(field) => {
-                const passwordErrors = showValidationErrors ? validatePasswordRequirements(field.state.value) : [];
+                const passwordErrors = showValidationErrors
+                  ? validatePasswordRequirements(field.state.value)
+                  : [];
 
                 return (
                   <View className="mb-[24px]">
@@ -204,16 +199,15 @@ export default function EmailSignupScreen({ navigation }: Props) {
               }}
             </form.Field>
 
-            <form.Field
-              name="confirmPassword"
-            >
+            <form.Field name="confirmPassword">
               {(field) => {
                 const passwordValue = form.getFieldValue('password');
-                const confirmError = showValidationErrors &&
+                const confirmError =
+                  showValidationErrors &&
                   field.state.value !== '' &&
                   passwordValue !== field.state.value
-                  ? 'Passwords do not match'
-                  : undefined;
+                    ? 'Passwords do not match'
+                    : undefined;
 
                 return (
                   <View className="mb-2">
@@ -261,10 +255,8 @@ export default function EmailSignupScreen({ navigation }: Props) {
 
             <View className="ml-2 mt-[8px] mb-[30px]">
               <Text className="text-xs font-normal font-roboto leading-[18px] text-black">
-                Password must contain: {"\n"}
-                - At least 1 Capital Letter{"\n"}
-                - At least 1 Number{"\n"}
-                - At least 1 Special Character (@$&!)
+                Password must contain: {'\n'}- At least 1 Capital Letter{'\n'}- At least 1 Number
+                {'\n'}- At least 1 Special Character (@$&!)
               </Text>
             </View>
 
@@ -273,7 +265,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
                 state.canSubmit,
                 state.isSubmitting,
                 state.values.password,
-                state.values.confirmPassword
+                state.values.confirmPassword,
               ]}
             >
               {([canSubmit, isFormSubmitting, password, confirmPassword]) => {

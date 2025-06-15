@@ -1,14 +1,14 @@
 import React from 'react';
-import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 type LoadingSpinnerProps = {
   message?: string;
   fullScreen?: boolean;
 };
 
-export const LoadingSpinner = ({ 
-  message = 'Loading...', 
-  fullScreen = false 
+export const LoadingSpinner = ({
+  message = 'Loading...',
+  fullScreen = false,
 }: LoadingSpinnerProps) => {
   if (fullScreen) {
     return (
@@ -51,5 +51,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Roboto',
     color: '#333',
-  }
+  },
 });

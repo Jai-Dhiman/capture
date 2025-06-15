@@ -1,17 +1,17 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuthStore } from "@/features/auth/stores/authStore";
-import { API_URL } from "@env";
-import { useEffect } from "react";
-import { AppState, type AppStateStatus } from "react-native";
+import { useAuthStore } from '@/features/auth/stores/authStore';
+import { API_URL } from '@env';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { AppState, type AppStateStatus } from 'react-native';
 
 export const useNotifications = (limit = 20, offset = 0, includeRead = false) => {
   const queryClient = useQueryClient();
 
   // Set up AppState listener to refresh when app becomes active
   useEffect(() => {
-    const subscription = AppState.addEventListener("change", (nextAppState: AppStateStatus) => {
-      if (nextAppState === "active") {
-        queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        queryClient.invalidateQueries({ queryKey: ['notifications'] });
       }
     });
 
@@ -21,7 +21,7 @@ export const useNotifications = (limit = 20, offset = 0, includeRead = false) =>
   }, [queryClient]);
 
   return useQuery({
-    queryKey: ["notifications", limit, offset, includeRead],
+    queryKey: ['notifications', limit, offset, includeRead],
     queryFn: async () => {
       const { session } = useAuthStore.getState();
       if (!session?.access_token) {
@@ -29,9 +29,9 @@ export const useNotifications = (limit = 20, offset = 0, includeRead = false) =>
       }
 
       const response = await fetch(`${API_URL}/graphql`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
@@ -72,9 +72,9 @@ export const useUnreadNotificationCount = () => {
 
   // Set up AppState listener to refresh when app becomes active
   useEffect(() => {
-    const subscription = AppState.addEventListener("change", (nextAppState: AppStateStatus) => {
-      if (nextAppState === "active") {
-        queryClient.invalidateQueries({ queryKey: ["unreadNotificationCount"] });
+    const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        queryClient.invalidateQueries({ queryKey: ['unreadNotificationCount'] });
       }
     });
 
@@ -84,7 +84,7 @@ export const useUnreadNotificationCount = () => {
   }, [queryClient]);
 
   return useQuery({
-    queryKey: ["unreadNotificationCount"],
+    queryKey: ['unreadNotificationCount'],
     queryFn: async () => {
       const { session } = useAuthStore.getState();
       if (!session?.access_token) {
@@ -92,9 +92,9 @@ export const useUnreadNotificationCount = () => {
       }
 
       const response = await fetch(`${API_URL}/graphql`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
@@ -122,13 +122,13 @@ export const useMarkNotificationRead = () => {
     mutationFn: async (id: string) => {
       const { session } = useAuthStore.getState();
       if (!session?.access_token) {
-        throw new Error("No auth token available");
+        throw new Error('No auth token available');
       }
 
       const response = await fetch(`${API_URL}/graphql`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
@@ -145,13 +145,13 @@ export const useMarkNotificationRead = () => {
 
       const data = await response.json();
       if (data.errors) {
-        throw new Error(data.errors[0]?.message || "Failed to mark notification as read");
+        throw new Error(data.errors[0]?.message || 'Failed to mark notification as read');
       }
       return data.data.markNotificationRead;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      queryClient.invalidateQueries({ queryKey: ["unreadNotificationCount"] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['unreadNotificationCount'] });
     },
   });
 };
@@ -163,13 +163,13 @@ export const useMarkAllNotificationsRead = () => {
     mutationFn: async () => {
       const { session } = useAuthStore.getState();
       if (!session?.access_token) {
-        throw new Error("No auth token available");
+        throw new Error('No auth token available');
       }
 
       const response = await fetch(`${API_URL}/graphql`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
@@ -186,13 +186,13 @@ export const useMarkAllNotificationsRead = () => {
 
       const data = await response.json();
       if (data.errors) {
-        throw new Error(data.errors[0]?.message || "Failed to mark all notifications as read");
+        throw new Error(data.errors[0]?.message || 'Failed to mark all notifications as read');
       }
       return data.data.markAllNotificationsRead;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      queryClient.invalidateQueries({ queryKey: ["unreadNotificationCount"] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['unreadNotificationCount'] });
     },
   });
 };

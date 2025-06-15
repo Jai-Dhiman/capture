@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, useWindowDimensions } from 'react-native';
+import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { MediaImage } from './MediaImage';
 
 interface PostMediaGalleryProps {
@@ -25,8 +25,8 @@ export const PostMediaGallery = ({ mediaItems, containerStyle = {} }: PostMediaG
       shadowOffset: { width: 0, height: 3 },
       shadowOpacity: 0.15,
       shadowRadius: 5,
-      elevation: 4
-    }
+      elevation: 4,
+    },
   });
 
   if (!mediaItems || mediaItems.length === 0) {

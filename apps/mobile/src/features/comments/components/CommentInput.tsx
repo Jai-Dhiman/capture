@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, TextInput, TouchableOpacity, Keyboard, Text, StyleSheet } from 'react-native';
+import SendCommentIcon from '@assets/icons/SendCommentIcon.svg';
 import { useAtom } from 'jotai';
+import React, { useState, useEffect, useRef } from 'react';
+import { Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { replyingToCommentAtom } from '../atoms/commentAtoms';
 import { useCommentActions } from '../hooks/useCommentActions';
-import SendCommentIcon from "@assets/icons/SendCommentIcon.svg";
 
 export const CommentInput = () => {
   const [content, setContent] = useState('');
@@ -51,7 +51,7 @@ export const CommentInput = () => {
         <TextInput
           ref={inputRef}
           style={styles.textInput}
-          placeholder={replyingTo ? "Add your reply..." : "Add a comment..."}
+          placeholder={replyingTo ? 'Add your reply...' : 'Add a comment...'}
           value={content}
           onChangeText={setContent}
           onFocus={() => setIsFocused(true)}
@@ -113,5 +113,5 @@ const styles = StyleSheet.create({
   },
   sendButton: {
     marginBottom: 4,
-  }
+  },
 });

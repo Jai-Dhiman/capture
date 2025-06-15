@@ -1,18 +1,18 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity, TextInput, Image, ScrollView } from 'react-native';
-import { useForm } from '@tanstack/react-form';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RouteProp } from '@react-navigation/native';
 import type { AuthStackParamList } from '@/navigation/types';
 import Header from '@/shared/components/Header';
 import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 import { useAlert } from '@/shared/lib/AlertContext';
+import type { RouteProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useForm } from '@tanstack/react-form';
+import React, { useState, useRef, useEffect } from 'react';
+import { Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'CodeVerification'>;
   route: RouteProp<AuthStackParamList, 'CodeVerification'>;
-}
+};
 
 export default function CodeVerificationScreen({ navigation, route }: Props) {
   const { email, phone, isNewUser, message } = route.params;
@@ -33,16 +33,19 @@ export default function CodeVerificationScreen({ navigation, route }: Props) {
         return;
       }
 
-      verifyCode.mutate({
-        email,
-        code: value.code,
-        phone,
-      }, {
-        onError: () => {
-          form.setFieldValue('code', ''); // Clear the code input on error
-        }
-      });
-    }
+      verifyCode.mutate(
+        {
+          email,
+          code: value.code,
+          phone,
+        },
+        {
+          onError: () => {
+            form.setFieldValue('code', ''); // Clear the code input on error
+          },
+        },
+      );
+    },
   });
 
   // Countdown timer for resend
@@ -60,17 +63,20 @@ export default function CodeVerificationScreen({ navigation, route }: Props) {
     if (!canResend) return;
 
     setIsLoading(true);
-    sendCode.mutate({ email, phone }, {
-      onSuccess: () => {
-        showAlert('Verification code sent!', { type: 'success' });
-        setCanResend(false);
-        setResendCountdown(60);
-        setIsLoading(false);
+    sendCode.mutate(
+      { email, phone },
+      {
+        onSuccess: () => {
+          showAlert('Verification code sent!', { type: 'success' });
+          setCanResend(false);
+          setResendCountdown(60);
+          setIsLoading(false);
+        },
+        onError: () => {
+          setIsLoading(false);
+        },
       },
-      onError: () => {
-        setIsLoading(false);
-      }
-    });
+    );
   };
 
   const formatCode = (text: string) => {
@@ -90,15 +96,12 @@ export default function CodeVerificationScreen({ navigation, route }: Props) {
               height: '100%',
               position: 'absolute',
               top: 0,
-              left: 0
+              left: 0,
             }}
             resizeMode="cover"
           />
 
-          <Header
-            showBackButton={true}
-            onBackPress={() => navigation.goBack()}
-          />
+          <Header showBackButton={true} onBackPress={() => navigation.goBack()} />
 
           <View className="h-[40px]" />
 
@@ -106,9 +109,7 @@ export default function CodeVerificationScreen({ navigation, route }: Props) {
             <Text className="text-3xl font-bold font-roboto text-center mb-2">
               Check Your Email
             </Text>
-            <Text className="text-base font-roboto text-center mb-2 text-gray-600">
-              {message}
-            </Text>
+            <Text className="text-base font-roboto text-center mb-2 text-gray-600">{message}</Text>
             <Text className="text-sm font-roboto text-center mb-8 text-gray-500">
               Sent to {email}
             </Text>
@@ -121,7 +122,7 @@ export default function CodeVerificationScreen({ navigation, route }: Props) {
                   if (value.length !== 6) return 'Code must be 6 digits';
                   if (!/^\d{6}$/.test(value)) return 'Code must contain only numbers';
                   return undefined;
-                }
+                },
               }}
             >
               {(field) => (
@@ -134,7 +135,12 @@ export default function CodeVerificationScreen({ navigation, route }: Props) {
                     <TextInput
                       ref={codeInputRef}
                       className="text-[24px] font-bold font-roboto text-black text-center tracking-[8px]"
-                      style={{ paddingVertical: 0, textAlignVertical: 'center', height: '100%', letterSpacing: 8 }}
+                      style={{
+                        paddingVertical: 0,
+                        textAlignVertical: 'center',
+                        height: '100%',
+                        letterSpacing: 8,
+                      }}
                       value={field.state.value}
                       onChangeText={(text) => field.handleChange(formatCode(text))}
                       keyboardType="number-pad"
@@ -154,13 +160,21 @@ export default function CodeVerificationScreen({ navigation, route }: Props) {
             </form.Field>
 
             <form.Subscribe
-              selector={(state) => [state.canSubmit, state.isSubmitting, state.values.code] as const}
+              selector={(state) =>
+                [state.canSubmit, state.isSubmitting, state.values.code] as const
+              }
             >
               {([canSubmit, isFormSubmitting, code]) => (
                 <TouchableOpacity
                   className={`h-[56px] ${canSubmit && typeof code === 'string' && code.length === 6 ? 'bg-[#e7cac4]' : 'bg-stone-300'} rounded-[30px] shadow-md justify-center items-center w-full mb-6`}
                   onPress={() => form.handleSubmit()}
-                  disabled={!canSubmit || isFormSubmitting || verifyCode.isPending || typeof code !== 'string' || code.length !== 6}
+                  disabled={
+                    !canSubmit ||
+                    isFormSubmitting ||
+                    verifyCode.isPending ||
+                    typeof code !== 'string' ||
+                    code.length !== 6
+                  }
                 >
                   {isFormSubmitting || verifyCode.isPending ? (
                     <LoadingSpinner message="Verifying..." />
@@ -181,8 +195,12 @@ export default function CodeVerificationScreen({ navigation, route }: Props) {
                 onPress={handleResendCode}
                 disabled={!canResend || isLoading || sendCode.isPending}
               >
-                <Text className={`text-sm font-semibold font-roboto ${canResend && !isLoading && !sendCode.isPending ? 'text-[#e7cac4]' : 'text-gray-400'}`}>
-                  {canResend && !isLoading && !sendCode.isPending ? 'Resend Code' : `Resend in ${resendCountdown}s`}
+                <Text
+                  className={`text-sm font-semibold font-roboto ${canResend && !isLoading && !sendCode.isPending ? 'text-[#e7cac4]' : 'text-gray-400'}`}
+                >
+                  {canResend && !isLoading && !sendCode.isPending
+                    ? 'Resend Code'
+                    : `Resend in ${resendCountdown}s`}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -197,4 +215,4 @@ export default function CodeVerificationScreen({ navigation, route }: Props) {
       </ScrollView>
     </View>
   );
-} 
+}

@@ -1,16 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image, TextInput, ScrollView, useWindowDimensions, GestureResponderEvent, Pressable } from 'react-native';
+import { HashtagInput } from '@/features/hashtags/components/HashtagInput';
+import { useUploadMedia } from '@/features/post/hooks/useMedia';
+import { useCreatePost } from '@/features/post/hooks/usePosts';
+import type { RootStackParamList } from '@/navigation/types';
+import Header from '@/shared/components/Header';
+import { useAlert } from '@/shared/lib/AlertContext';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as ImagePicker from 'expo-image-picker';
+import React, { useState, useEffect } from 'react';
+import {
+  GestureResponderEvent,
+  Image,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { Platform } from 'react-native';
 import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
-import type { RootStackParamList } from '@/navigation/types';
-import { useUploadMedia } from '@/features/post/hooks/useMedia';
-import { useCreatePost } from '@/features/post/hooks/usePosts';
-import { HashtagInput } from '@/features/hashtags/components/HashtagInput';
-import { useAlert } from '@/shared/lib/AlertContext';
-import Header from '@/shared/components/Header';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type PostType = 'post' | 'thread';
@@ -65,7 +75,7 @@ export default function NewPost() {
           name: `upload-${Date.now()}-${index}.jpg`,
           order: selectedImages.length + index,
         }));
-        setSelectedImages(prevImages => [...prevImages, ...formattedImages]);
+        setSelectedImages((prevImages) => [...prevImages, ...formattedImages]);
       }
     } catch (error) {
       console.error('Selection error:', error);
@@ -75,7 +85,7 @@ export default function NewPost() {
 
   // Remove image
   const handleRemoveImage = (index: number) => {
-    setSelectedImages(images => images.filter((_, i) => i !== index));
+    setSelectedImages((images) => images.filter((_, i) => i !== index));
   };
 
   // Navigate to image edit screen
@@ -98,9 +108,9 @@ export default function NewPost() {
       let mediaIds: string[] = [];
       if (postType === 'post' && selectedImages.length > 0) {
         const uploadedMedia = await uploadMediaMutation.mutateAsync(selectedImages);
-        mediaIds = uploadedMedia.map(media => media.id);
+        mediaIds = uploadedMedia.map((media) => media.id);
       }
-      const hashtagIds = selectedHashtags.map(hashtag => hashtag.id);
+      const hashtagIds = selectedHashtags.map((hashtag) => hashtag.id);
 
       await createPostMutation.mutateAsync({
         content,
@@ -109,12 +119,14 @@ export default function NewPost() {
         hashtagIds,
       });
 
-      showAlert(`${postType === 'post' ? 'Post' : 'Thread'} created successfully!`, { type: 'success' });
+      showAlert(`${postType === 'post' ? 'Post' : 'Thread'} created successfully!`, {
+        type: 'success',
+      });
       navigation.goBack();
     } catch (error: any) {
       console.error('Post creation error:', {
         message: error.message,
-        details: error.response?.errors || error
+        details: error.response?.errors || error,
       });
       showAlert(`Failed to create post: ${error.message}`, { type: 'error' });
     }
@@ -127,10 +139,22 @@ export default function NewPost() {
       onLongPress={drag}
       style={{ flex: 1, aspectRatio: 1, margin: spacing / 2, opacity: isActive ? 0.8 : 1 }}
     >
-      <Image source={{ uri: item.uri }} className="w-full h-full rounded-lg border border-black" resizeMode="cover" />
+      <Image
+        source={{ uri: item.uri }}
+        className="w-full h-full rounded-lg border border-black"
+        resizeMode="cover"
+      />
       <Pressable
         onPress={() => handleRemoveImage(index)}
-        style={{ position: 'absolute', top: spacing / 4, right: spacing / 4, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 12, padding: 4, zIndex: 2 }}
+        style={{
+          position: 'absolute',
+          top: spacing / 4,
+          right: spacing / 4,
+          backgroundColor: 'rgba(0,0,0,0.6)',
+          borderRadius: 12,
+          padding: 4,
+          zIndex: 2,
+        }}
       >
         <Text className="text-white text-xs font-bold">×</Text>
       </Pressable>
@@ -149,7 +173,9 @@ export default function NewPost() {
               className={`flex-1 mx-1 h-8 rounded-md flex justify-center items-center ${postType === 'post' ? 'bg-[#a99ca3]' : 'bg-[#dcdcde]'}`}
               onPress={() => setPostType('post')}
             >
-              <Text className={`text-center text-xs ${postType === 'post' ? 'text-white font-semibold' : 'text-black font-normal'}`}>
+              <Text
+                className={`text-center text-xs ${postType === 'post' ? 'text-white font-semibold' : 'text-black font-normal'}`}
+              >
                 Photo/Video
               </Text>
             </TouchableOpacity>
@@ -157,7 +183,9 @@ export default function NewPost() {
               className={`flex-1 mx-1 h-8 rounded-md flex justify-center items-center ${postType === 'thread' ? 'bg-[#a99ca3]' : 'bg-[#dcdcde]'}`}
               onPress={() => setPostType('thread')}
             >
-              <Text className={`text-center text-xs ${postType === 'thread' ? 'text-white font-semibold' : 'text-black font-normal'}`}>
+              <Text
+                className={`text-center text-xs ${postType === 'thread' ? 'text-white font-semibold' : 'text-black font-normal'}`}
+              >
                 Thread
               </Text>
             </TouchableOpacity>
@@ -186,7 +214,7 @@ export default function NewPost() {
           <View className="mt-2 bg-[#dcdcde] p-4 rounded-lg shadow">
             <TextInput
               className="border border-gray-300 rounded-lg p-3 mb-3 bg-[#dcdcde]"
-              placeholder={postType === 'post' ? "Write a caption..." : "What's on your mind?"}
+              placeholder={postType === 'post' ? 'Write a caption...' : "What's on your mind?"}
               value={content}
               onChangeText={setContent}
               multiline

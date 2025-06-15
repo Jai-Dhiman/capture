@@ -1,14 +1,21 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, ActivityIndicator, TouchableOpacity, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native';
-import { useDiscoverFeed } from '../hooks/useDiscoverFeed';
 import { PostItem } from '@/features/post/components/PostItem';
 import { ThreadItem } from '@/features/post/components/ThreadItem';
-import Header from '@/shared/components/Header';
-import { EmptyState } from '../components/EmptyState';
 import type { Post, Thread } from '@/features/post/types/postTypes';
-import { FlashList } from '@shopify/flash-list';
+import Header from '@/shared/components/Header';
 import { SkeletonElement } from '@/shared/components/SkeletonLoader';
+import { FlashList } from '@shopify/flash-list';
 import { MotiView } from 'moti';
+import React, { useState, useRef } from 'react';
+import {
+  ActivityIndicator,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { EmptyState } from '../components/EmptyState';
+import { useDiscoverFeed } from '../hooks/useDiscoverFeed';
 
 const HEADER_HEIGHT = 150;
 
@@ -24,7 +31,7 @@ export default function Feed() {
     refetch,
     fetchNextPage,
     hasNextPage,
-    isFetchingNextPage
+    isFetchingNextPage,
   } = useDiscoverFeed();
 
   const handleRefresh = async () => {
@@ -33,7 +40,7 @@ export default function Feed() {
     setRefreshing(false);
   };
 
-  const posts = data?.pages.flatMap(page => page.posts) || [];
+  const posts = data?.pages.flatMap((page) => page.posts) || [];
 
   const renderItem = ({ item }: { item: Post | Thread }) => {
     if (item.type === 'thread') {
@@ -98,12 +105,9 @@ export default function Feed() {
         />
         <View className="flex-1 justify-center items-center p-4">
           <Text className="text-red-500 text-center mb-4">
-            {error instanceof Error ? error.message : "An error occurred loading your feed"}
+            {error instanceof Error ? error.message : 'An error occurred loading your feed'}
           </Text>
-          <TouchableOpacity
-            className="bg-black py-3 px-6 rounded-full"
-            onPress={() => refetch()}
-          >
+          <TouchableOpacity className="bg-black py-3 px-6 rounded-full" onPress={() => refetch()}>
             <Text className="text-white font-medium">Try Again</Text>
           </TouchableOpacity>
         </View>
@@ -162,24 +166,30 @@ const PostSkeleton = () => (
 
     <View className="w-full h-[300px] p-2">
       <View className="w-full h-full flex-row" style={{ gap: 8 }}>
-        <View className="flex-1 rounded-2xl overflow-hidden" style={{
-          backgroundColor: '#f0f0f0',
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 3 },
-          shadowOpacity: 0.15,
-          shadowRadius: 5,
-          elevation: 4
-        }}>
+        <View
+          className="flex-1 rounded-2xl overflow-hidden"
+          style={{
+            backgroundColor: '#f0f0f0',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 3 },
+            shadowOpacity: 0.15,
+            shadowRadius: 5,
+            elevation: 4,
+          }}
+        >
           <SkeletonElement width="100%" height="100%" />
         </View>
-        <View className="flex-1 rounded-2xl overflow-hidden" style={{
-          backgroundColor: '#f0f0f0',
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 3 },
-          shadowOpacity: 0.15,
-          shadowRadius: 5,
-          elevation: 4
-        }}>
+        <View
+          className="flex-1 rounded-2xl overflow-hidden"
+          style={{
+            backgroundColor: '#f0f0f0',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 3 },
+            shadowOpacity: 0.15,
+            shadowRadius: 5,
+            elevation: 4,
+          }}
+        >
           <SkeletonElement width="100%" height="100%" />
         </View>
       </View>

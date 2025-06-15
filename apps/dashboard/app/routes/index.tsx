@@ -1,11 +1,11 @@
-import type { Route } from "./+types/home";
-import { DashboardLayout } from "../components/layout/DashboardLayout";
-import ActiveUsersReport, { loader as activeLoader } from "./dashboard/active-users";
+import { DashboardLayout } from '../components/layout/DashboardLayout';
+import type { Route } from './+types/home';
+import ActiveUsersReport, { loader as activeLoader } from './dashboard/active-users';
 
 export function meta() {
   return [
-    { title: "Dashboard - Capture" },
-    { name: "description", content: "Live Active Users Dashboard" },
+    { title: 'Dashboard - Capture' },
+    { name: 'description', content: 'Live Active Users Dashboard' },
   ];
 }
 

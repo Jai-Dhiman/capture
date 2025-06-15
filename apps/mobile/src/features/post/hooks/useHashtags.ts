@@ -1,15 +1,15 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useAuthStore } from '@/features/auth/stores/authStore'
-import { API_URL } from '@env'
+import { useAuthStore } from '@/features/auth/stores/authStore';
+import { API_URL } from '@env';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export const useSearchHashtags = (query: string, enabled = false) => {
   return useQuery({
     queryKey: ['hashtags', 'search', query],
     queryFn: async () => {
-      const { session } = useAuthStore.getState()
+      const { session } = useAuthStore.getState();
 
       if (!session?.access_token) {
-        throw new Error('No auth token available')
+        throw new Error('No auth token available');
       }
 
       const response = await fetch(`${API_URL}/graphql`, {
@@ -32,31 +32,31 @@ export const useSearchHashtags = (query: string, enabled = false) => {
             limit: 10,
           },
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (data.errors) {
-        console.error('GraphQL Errors:', data.errors)
-        throw new Error(data.errors[0].message)
+        console.error('GraphQL Errors:', data.errors);
+        throw new Error(data.errors[0].message);
       }
 
-      return data.data.searchHashtags || []
+      return data.data.searchHashtags || [];
     },
     enabled: enabled && query.length > 0,
     staleTime: 1000 * 60 * 5, // Cache results for 5 minutes
-  })
-}
+  });
+};
 
 export const useCreateHashtag = () => {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (name: string) => {
-      const { session } = useAuthStore.getState()
+      const { session } = useAuthStore.getState();
 
       if (!session?.access_token) {
-        throw new Error('No auth token available')
+        throw new Error('No auth token available');
       }
 
       const response = await fetch(`${API_URL}/graphql`, {
@@ -78,19 +78,19 @@ export const useCreateHashtag = () => {
             name,
           },
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (data.errors) {
-        console.error('GraphQL Errors:', data.errors)
-        throw new Error(data.errors[0].message || 'Unknown GraphQL error')
+        console.error('GraphQL Errors:', data.errors);
+        throw new Error(data.errors[0].message || 'Unknown GraphQL error');
       }
 
-      return data.data.createHashtag
+      return data.data.createHashtag;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['hashtags'] })
+      queryClient.invalidateQueries({ queryKey: ['hashtags'] });
     },
-  })
-}
+  });
+};

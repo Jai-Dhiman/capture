@@ -1,4 +1,4 @@
-import type { Bindings } from "../types";
+import type { Bindings } from '../types';
 
 // OAuth response types
 export interface GoogleTokenResponse {
@@ -66,7 +66,7 @@ export async function generateCodeChallenge(codeVerifier: string): Promise<strin
   const data = encoder.encode(codeVerifier);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   const hashArray = new Uint8Array(hashBuffer);
-  
+
   // Convert to base64url
   const base64 = btoa(String.fromCharCode.apply(null, Array.from(hashArray)));
   return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
@@ -79,12 +79,11 @@ export async function verifyPKCE(codeVerifier: string, codeChallenge: string): P
 
 // Google OAuth functions
 export async function exchangeGoogleCode(
-  code: string, 
-  codeVerifier: string, 
-  redirectUri: string, 
-  env: Bindings
+  code: string,
+  codeVerifier: string,
+  redirectUri: string,
+  env: Bindings,
 ): Promise<GoogleUserInfo> {
-
   const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: {
@@ -114,13 +113,13 @@ export async function exchangeGoogleCode(
         redirect_uri: redirectUri,
       },
       fullCodeVerifier: codeVerifier,
-      codeVerifierLength: codeVerifier?.length || 0
+      codeVerifierLength: codeVerifier?.length || 0,
     });
     throw new Error(`Failed to exchange Google authorization code: ${errorText}`);
   }
 
-  const tokenData = await tokenResponse.json() as GoogleTokenResponse;
-  
+  const tokenData = (await tokenResponse.json()) as GoogleTokenResponse;
+
   // Get user info from Google
   const userResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
     headers: {
@@ -137,11 +136,14 @@ export async function exchangeGoogleCode(
 }
 
 // Apple OAuth functions
-export async function verifyAppleToken(identityToken: string, env: Bindings): Promise<AppleUserInfo> {
+export async function verifyAppleToken(
+  identityToken: string,
+  env: Bindings,
+): Promise<AppleUserInfo> {
   try {
     // Split the JWT into its parts
     const [headerB64, payloadB64, signatureB64] = identityToken.split('.');
-    
+
     if (!headerB64 || !payloadB64 || !signatureB64) {
       throw new Error('Invalid JWT format');
     }
@@ -164,7 +166,8 @@ export async function verifyAppleToken(identityToken: string, env: Bindings): Pr
       throw new Error('Token has expired');
     }
 
-    if (payload.iat > now + 60) { // Allow 60 seconds clock skew
+    if (payload.iat > now + 60) {
+      // Allow 60 seconds clock skew
       throw new Error('Token issued in the future');
     }
 
@@ -174,7 +177,9 @@ export async function verifyAppleToken(identityToken: string, env: Bindings): Pr
     // if (env.ENVIRONMENT === 'production') {
     //   await verifyAppleJWTSignature(identityToken, header, env);
     // } else {
-    console.warn('⚠️ Apple JWT signature verification not implemented - should be added for production');
+    console.warn(
+      '⚠️ Apple JWT signature verification not implemented - should be added for production',
+    );
     // }
 
     return {
@@ -184,7 +189,9 @@ export async function verifyAppleToken(identityToken: string, env: Bindings): Pr
     };
   } catch (error) {
     console.error('Apple token verification failed:', error);
-    throw new Error(`Invalid Apple identity token: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Invalid Apple identity token: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    );
   }
 }
 
@@ -204,4 +211,4 @@ export function generateCodeVerifier(): string {
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=/g, '');
-} 
+}

@@ -1,25 +1,25 @@
-import React, { useState, useCallback } from 'react';
-import { View, Modal, StatusBar, useWindowDimensions, Text } from 'react-native';
 import { useAuthStore } from '@/features/auth/stores/authStore';
-import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { AppStackParamList } from '@/navigation/types';
-import { useUserPosts, useDeletePost } from '@/features/post/hooks/usePosts';
-import { useProfile } from '../hooks/useProfile';
-import { useFollowers, useSyncFollowingState } from '../hooks/useRelationships';
-import { useSavedPosts, useSavePost, useUnsavePost } from '@/features/post/hooks/useSavesPosts';
-import { FollowList } from '../components/FollowList';
-import { PostMenu } from '@/features/post/components/PostMenu';
-import { useBlockUser } from '@/features/profile/hooks/useBlocking';
-import { useAlert } from '@/shared/lib/AlertContext';
-import { useAtom } from 'jotai';
 import { commentDrawerOpenAtom, currentPostIdAtom } from '@/features/comments/atoms/commentAtoms';
+import { PostMenu } from '@/features/post/components/PostMenu';
+import { useDeletePost, useUserPosts } from '@/features/post/hooks/usePosts';
+import { useSavePost, useSavedPosts, useUnsavePost } from '@/features/post/hooks/useSavesPosts';
+import { useBlockUser } from '@/features/profile/hooks/useBlocking';
+import type { AppStackParamList } from '@/navigation/types';
+import { SkeletonElement } from '@/shared/components/SkeletonLoader';
+import { useAlert } from '@/shared/lib/AlertContext';
+import LockIcon2 from '@assets/icons/LockIcon2.svg';
+import { type RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useAtom } from 'jotai';
+import React, { useState, useCallback } from 'react';
+import { Modal, StatusBar, Text, View, useWindowDimensions } from 'react-native';
+import { FollowList } from '../components/FollowList';
+import { NewPostButton } from '../components/NewPostButton';
+import { PostCarousel } from '../components/PostCarousel';
 import { ProfileHeader } from '../components/ProfileHeader';
 import { ProfileTabView } from '../components/ProfileTabView';
-import { PostCarousel } from '../components/PostCarousel';
-import { NewPostButton } from '../components/NewPostButton';
-import LockIcon2 from '@assets/icons/LockIcon2.svg';
-import { SkeletonElement } from '@/shared/components/SkeletonLoader';
+import { useProfile } from '../hooks/useProfile';
+import { useFollowers, useSyncFollowingState } from '../hooks/useRelationships';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 type ProfileRouteProp = RouteProp<AppStackParamList, 'Profile'>;
@@ -57,23 +57,29 @@ export default function Profile() {
   const savePostMutation = useSavePost();
   const unsavePostMutation = useUnsavePost();
 
-  useSyncFollowingState(profileData ? [{
-    userId: profileData.userId,
-    isFollowing: profileData.isFollowing
-  }] : []);
+  useSyncFollowingState(
+    profileData
+      ? [
+          {
+            userId: profileData.userId,
+            isFollowing: profileData.isFollowing,
+          },
+        ]
+      : [],
+  );
 
   const getGridItemSize = useCallback(() => {
     const gridMargin = 16;
     const gridSpacing = 8;
     const numColumns = 3;
 
-    const availableWidth = width - (gridMargin * 2);
-    const itemSize = (availableWidth - (gridSpacing * (numColumns - 1))) / numColumns;
+    const availableWidth = width - gridMargin * 2;
+    const itemSize = (availableWidth - gridSpacing * (numColumns - 1)) / numColumns;
 
     return {
       itemSize,
       spacing: gridSpacing,
-      containerPadding: gridMargin
+      containerPadding: gridMargin,
     };
   }, [width]);
 
@@ -150,7 +156,7 @@ export default function Profile() {
           showBackButton
           onBackPress={() => navigation.goBack()}
           showMenuButton
-          onMenuPress={() => { }}
+          onMenuPress={() => {}}
         />
         <StatusBar barStyle="dark-content" />
         <View style={{ flex: 1, backgroundColor: '#DCDCDE' }}>
@@ -223,7 +229,9 @@ export default function Profile() {
                 showBackButton={true}
                 onBackPress={() => navigation.goBack()}
                 showMenuButton={true}
-                onMenuPress={() => {/* menu logic here */ }}
+                onMenuPress={() => {
+                  /* menu logic here */
+                }}
               />
               <View className="mt-8 items-center">
                 <View className="bg-stone-200 rounded-lg p-6 w-full items-center">
@@ -279,7 +287,7 @@ export default function Profile() {
           style={{
             top: tabBarBottomPosition - 20,
             height: height - tabBarBottomPosition - (isOwnProfile ? 70 : 50),
-            zIndex: 1
+            zIndex: 1,
           }}
         >
           <View className="flex-1 px-4">
@@ -295,9 +303,7 @@ export default function Profile() {
         </View>
       )}
 
-      {isOwnProfile && (
-        <NewPostButton onPress={() => navigation.navigate('NewPost')} />
-      )}
+      {isOwnProfile && <NewPostButton onPress={() => navigation.navigate('NewPost')} />}
 
       <Modal
         visible={showFollowers}
@@ -336,6 +342,6 @@ export default function Profile() {
             : blockUserMutation.isPending
         }
       />
-    </View >
+    </View>
   );
 }

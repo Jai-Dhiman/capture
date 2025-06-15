@@ -1,9 +1,9 @@
+import { EmptyState } from '@/features/feed/components/EmptyState';
 import type React from 'react';
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, FlatList } from 'react-native';
+import { ActivityIndicator, FlatList, Text, TouchableOpacity, View } from 'react-native';
+import { useMarkAllNotificationsRead, useNotifications } from '../hooks/useNotifications';
 import { NotificationItem } from './NotificationItem';
-import { useNotifications, useMarkAllNotificationsRead } from '../hooks/useNotifications';
-import { EmptyState } from '@/features/feed/components/EmptyState';
 
 interface NotificationListProps {
   onClose: () => void;
@@ -27,18 +27,10 @@ export const NotificationList: React.FC<NotificationListProps> = () => {
       <View className="flex-row justify-between items-center p-4 border-b border-gray-200">
         <Text className="text-xl font-semibold">Notifications</Text>
         <View className="flex-row">
-          <TouchableOpacity
-            onPress={handleToggleRead}
-            className="mr-4"
-          >
-            <Text className="text-blue-500">
-              {includeRead ? 'Hide Read' : 'Show All'}
-            </Text>
+          <TouchableOpacity onPress={handleToggleRead} className="mr-4">
+            <Text className="text-blue-500">{includeRead ? 'Hide Read' : 'Show All'}</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={handleMarkAllAsRead}
-            disabled={isPending}
-          >
+          <TouchableOpacity onPress={handleMarkAllAsRead} disabled={isPending}>
             {isPending ? (
               <ActivityIndicator size="small" color="#000" />
             ) : (
@@ -70,4 +62,4 @@ export const NotificationList: React.FC<NotificationListProps> = () => {
       )}
     </View>
   );
-}; 
+};

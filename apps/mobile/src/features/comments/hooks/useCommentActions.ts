@@ -1,17 +1,17 @@
-import { useAtom } from "jotai";
-import * as Crypto from "expo-crypto";
+import { useProfileStore } from '@/features/profile/stores/profileStore';
+import { useAlert } from '@/shared/lib/AlertContext';
+import { errorService } from '@/shared/services/errorService';
+import * as Crypto from 'expo-crypto';
+import { useAtom } from 'jotai';
 import {
   createCommentMutationAtom,
-  optimisticCommentsAtom,
-  replyingToCommentAtom,
   currentPostIdAtom,
   deleteCommentMutationAtom,
+  optimisticCommentsAtom,
   refetchTriggerAtom,
-} from "../atoms/commentAtoms";
-import { useProfileStore } from "@/features/profile/stores/profileStore";
-import type { Comment } from "../types/commentTypes";
-import { errorService } from "@/shared/services/errorService";
-import { useAlert } from "@/shared/lib/AlertContext";
+  replyingToCommentAtom,
+} from '../atoms/commentAtoms';
+import type { Comment } from '../types/commentTypes';
 
 export const useCommentActions = () => {
   const [, setOptimisticComments] = useAtom(optimisticCommentsAtom);
@@ -37,19 +37,19 @@ export const useCommentActions = () => {
     const parentId = replyingTo?.id;
 
     // Generate optimistic comment with appropriate depth
-    const parentDepth = replyingTo?.path ? replyingTo.path.split(".").length : 0;
+    const parentDepth = replyingTo?.path ? replyingTo.path.split('.').length : 0;
     const depth = parentId ? parentDepth + 1 : 0;
 
     const optimisticComment: Comment = {
       id: tempId,
       content: content.trim(),
-      path: replyingTo?.path ? `${replyingTo.path}.01` : "01", // Simple path just for UI rendering
+      path: replyingTo?.path ? `${replyingTo.path}.01` : '01', // Simple path just for UI rendering
       depth,
       parentId,
       createdAt: now,
       user: {
-        id: profile?.id || "",
-        username: profile?.username || "",
+        id: profile?.id || '',
+        username: profile?.username || '',
         profileImage: profile?.profileImage,
       },
       optimistic: true,
@@ -71,23 +71,23 @@ export const useCommentActions = () => {
       // Trigger a refetch by incrementing the counter
       triggerRefetch();
     } catch (error) {
-      console.error("Full error details:", error);
+      console.error('Full error details:', error);
 
       const appError = errorService.createError(
-        "Failed to post comment",
-        "network/comment-create-failed",
-        error instanceof Error ? error : undefined
+        'Failed to post comment',
+        'network/comment-create-failed',
+        error instanceof Error ? error : undefined,
       );
 
       showAlert(appError.message, {
         type: errorService.getAlertType(appError.category),
         action: {
-          label: "Retry",
+          label: 'Retry',
           onPress: () => createComment(content),
         },
       });
 
-      console.error("Failed to create comment:", error);
+      console.error('Failed to create comment:', error);
       setOptimisticComments((prev) => prev.filter((c) => c.id !== tempId));
     }
   };
@@ -105,24 +105,24 @@ export const useCommentActions = () => {
       triggerRefetch();
     } catch (error) {
       const appError = errorService.createError(
-        "Failed to delete comment",
-        "network/comment-delete-failed",
-        error instanceof Error ? error : undefined
+        'Failed to delete comment',
+        'network/comment-delete-failed',
+        error instanceof Error ? error : undefined,
       );
 
       showAlert(appError.message, {
         type: errorService.getAlertType(appError.category),
       });
 
-      console.error("Failed to delete comment:", error);
+      console.error('Failed to delete comment:', error);
     }
   };
 
   const startReply = (comment: { id: string; path: string; username?: string }) => {
     if (!comment.path) {
-      console.error("Cannot reply to a comment without a path", comment);
-      showAlert("Cannot reply to this comment", {
-        type: "error",
+      console.error('Cannot reply to a comment without a path', comment);
+      showAlert('Cannot reply to this comment', {
+        type: 'error',
       });
       return;
     }

@@ -1,23 +1,23 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
+import { useAuth } from '@/features/auth/hooks/useAuth';
+import { ProfileImage } from '@/features/post/components/ProfileImage';
+import { useProfileStore } from '@/features/profile/stores/profileStore';
+import type { SettingsStackParamList } from '@/navigation/types';
+import AccountIcon from '@assets/icons/AccountIcon.svg';
+import AlgorithmIcon from '@assets/icons/AlgorithmIcon.svg';
+import BlockIcon from '@assets/icons/BlockIcon.svg';
+import CustomBackIcon from '@assets/icons/CustomBackIcon.svg';
+import CustomizeIcon from '@assets/icons/CustomizeIcon.svg';
+import EmailIcon from '@assets/icons/EmailIcon.svg';
+import EmptyIcon from '@assets/icons/EmptyIcon.svg';
+import FontBookIcon from '@assets/icons/FontBookIcon.svg';
+import LockIcon2 from '@assets/icons/LockIcon2.svg';
+import NotificationIcon from '@assets/icons/NotificationIcon.svg';
+import ShieldIcon from '@assets/icons/ShieldIcon.svg';
+import UserVerifiedIcon from '@assets/icons/UserVerifiedIcon.svg';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { SettingsStackParamList } from '@/navigation/types';
-import { useProfileStore } from '@/features/profile/stores/profileStore'
-import { ProfileImage } from '@/features/post/components/ProfileImage';
-import { useAuth } from '@/features/auth/hooks/useAuth';
-import EmptyIcon from '@assets/icons/EmptyIcon.svg';
-import BlockIcon from '@assets/icons/BlockIcon.svg';
-import AlgorithmIcon from '@assets/icons/AlgorithmIcon.svg';
-import LockIcon2 from '@assets/icons/LockIcon2.svg';
-import EmailIcon from '@assets/icons/EmailIcon.svg';
-import CustomBackIcon from '@assets/icons/CustomBackIcon.svg';
-import NotificationIcon from '@assets/icons/NotificationIcon.svg';
-import CustomizeIcon from '@assets/icons/CustomizeIcon.svg';
-import FontBookIcon from '@assets/icons/FontBookIcon.svg';
-import ShieldIcon from '@assets/icons/ShieldIcon.svg';
-import AccountIcon from '@assets/icons/AccountIcon.svg';
-import UserVerifiedIcon from '@assets/icons/UserVerifiedIcon.svg';
+import React from 'react';
+import { ScrollView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
 
 type NavigationProp = NativeStackNavigationProp<SettingsStackParamList, 'MainSettings'>;
 
@@ -119,7 +119,10 @@ export default function MainSettingsScreen() {
             <EmptyIcon height={20} width={20} />
           </TouchableOpacity>
 
-          <TouchableOpacity className="flex-row items-center p-3 border-b border-black border-opacity-20" disabled={true}>
+          <TouchableOpacity
+            className="flex-row items-center p-3 border-b border-black border-opacity-20"
+            disabled={true}
+          >
             <FontBookIcon height={25} width={25} />
             <View className="ml-4">
               <Text className="text-xs font-bold">Font Customization</Text>
@@ -133,8 +136,8 @@ export default function MainSettingsScreen() {
         </View>
 
         <Text className="text-center text-[10px] opacity-70 mb-4">
-          More customization features will be available as the application gets updated.
-          Stay tuned to @Capture for more information on what you can expect and when
+          More customization features will be available as the application gets updated. Stay tuned
+          to @Capture for more information on what you can expect and when
         </Text>
 
         {/* Support Section */}
@@ -162,10 +165,7 @@ export default function MainSettingsScreen() {
         </View>
 
         <View className="bg-white bg-opacity-0 rounded-[10px] shadow border border-black mb-8 mt-2">
-          <TouchableOpacity
-            className="flex-row items-center p-3"
-            onPress={handleLogout}
-          >
+          <TouchableOpacity className="flex-row items-center p-3" onPress={handleLogout}>
             <UserVerifiedIcon height={25} width={25} />
             <Text className="ml-4 text-xs font-bold text-red-600">Logout</Text>
             <View className="flex-1" />
@@ -175,4 +175,4 @@ export default function MainSettingsScreen() {
       </ScrollView>
     </View>
   );
-};
+}

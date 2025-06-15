@@ -1,28 +1,28 @@
-"use client"
+'use client';
 
-import type React from "react";
-import { useState } from "react";
-import { Link, useLocation } from "react-router";
+import { useClerk, useUser } from '@clerk/clerk-react';
 import {
-  LayoutDashboard,
-  Users,
   BarChart2,
   Calendar,
-  ShieldAlert,
-  MessageSquare,
-  Ticket,
-  FileText,
   ChevronLeft,
   ChevronRight,
+  FileText,
+  LayoutDashboard,
+  LogOut,
   Search as LucideSearch,
-  LogOut
-} from "lucide-react";
-import { useUser, useClerk } from "@clerk/clerk-react";
+  MessageSquare,
+  ShieldAlert,
+  Ticket,
+  Users,
+} from 'lucide-react';
+import type React from 'react';
+import { useState } from 'react';
+import { Link, useLocation } from 'react-router';
 
-import { cn } from "../../lib/utils";
-import { ScrollArea } from "../ui/scroll-area";
-import { Separator } from "../ui/separator";
-import { AuthMiddleware } from "../auth/RequireAuth";
+import { cn } from '../../lib/utils';
+import { AuthMiddleware } from '../auth/RequireAuth';
+import { ScrollArea } from '../ui/scroll-area';
+import { Separator } from '../ui/separator';
 
 interface SidebarNavProps extends React.HTMLAttributes<HTMLElement> {
   items: {
@@ -33,19 +33,24 @@ interface SidebarNavProps extends React.HTMLAttributes<HTMLElement> {
   className?: string;
 }
 
-export function SidebarNav({ className, items, collapsed, ...props }: SidebarNavProps & { collapsed?: boolean }) {
+export function SidebarNav({
+  className,
+  items,
+  collapsed,
+  ...props
+}: SidebarNavProps & { collapsed?: boolean }) {
   const location = useLocation();
   return (
-    <nav className={cn("flex flex-col gap-1", className)} {...props}>
+    <nav className={cn('flex flex-col gap-1', className)} {...props}>
       {items.map((item) => (
         <Link
           key={item.href}
           to={item.href}
           aria-label={item.title}
           className={cn(
-            "flex items-center gap-3 rounded-lg transition-colors px-3 py-2 text-sm font-medium font-poppins hover:bg-indigo-50 hover:text-indigo-600",
-            location.pathname === item.href ? "bg-indigo-100 text-indigo-700" : "text-slate-800",
-            collapsed ? "justify-center px-2" : "justify-start px-3"
+            'flex items-center gap-3 rounded-lg transition-colors px-3 py-2 text-sm font-medium font-poppins hover:bg-indigo-50 hover:text-indigo-600',
+            location.pathname === item.href ? 'bg-indigo-100 text-indigo-700' : 'text-slate-800',
+            collapsed ? 'justify-center px-2' : 'justify-start px-3',
           )}
         >
           {item.icon}
@@ -63,51 +68,51 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   const sidebarNavItems = [
     {
-      title: "Dashboard",
-      href: "/",
+      title: 'Dashboard',
+      href: '/',
       icon: <LayoutDashboard className="h-4 w-4" />,
     },
     {
-      title: "Active Users Report",
-      href: "/dashboard/active-users",
+      title: 'Active Users Report',
+      href: '/dashboard/active-users',
       icon: <Users className="h-4 w-4" />,
     },
     {
-      title: "Interaction Breakdown",
-      href: "/dashboard/interaction-breakdown",
+      title: 'Interaction Breakdown',
+      href: '/dashboard/interaction-breakdown',
       icon: <BarChart2 className="h-4 w-4" />,
     },
     {
-      title: "Activity Report",
-      href: "/dashboard/activity-report",
+      title: 'Activity Report',
+      href: '/dashboard/activity-report',
       icon: <Calendar className="h-4 w-4" />,
     },
     {
-      title: "Monday Integration",
-      href: "/dashboard/monday-integration",
+      title: 'Monday Integration',
+      href: '/dashboard/monday-integration',
       icon: <Calendar className="h-4 w-4" />,
     },
   ];
 
   const adminNavItems = [
     {
-      title: "Moderation",
-      href: "/dashboard/moderation",
+      title: 'Moderation',
+      href: '/dashboard/moderation',
       icon: <ShieldAlert className="h-4 w-4" />,
     },
     {
-      title: "Support Tickets",
-      href: "/dashboard/support-tickets",
+      title: 'Support Tickets',
+      href: '/dashboard/support-tickets',
       icon: <MessageSquare className="h-4 w-4" />,
     },
     {
-      title: "Feedback Tickets",
-      href: "/dashboard/feedback-tickets",
+      title: 'Feedback Tickets',
+      href: '/dashboard/feedback-tickets',
       icon: <Ticket className="h-4 w-4" />,
     },
     {
-      title: "Important Resources",
-      href: "/dashboard/resources",
+      title: 'Important Resources',
+      href: '/dashboard/resources',
       icon: <FileText className="h-4 w-4" />,
     },
   ];
@@ -118,26 +123,37 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthMiddleware>
-      <div className={cn("grid min-h-screen w-full transition-all duration-300", sidebarCollapsed ? "grid-cols-[72px_1fr]" : "grid-cols-[260px_1fr]")}>
+      <div
+        className={cn(
+          'grid min-h-screen w-full transition-all duration-300',
+          sidebarCollapsed ? 'grid-cols-[72px_1fr]' : 'grid-cols-[260px_1fr]',
+        )}
+      >
         {/* Sidebar */}
-        <aside className={cn(
-          "flex flex-col border-r bg-gray-100 transition-all duration-300 shadow-md dark:bg-gray-900 dark:border-gray-800",
-          sidebarCollapsed ? "w-[72px]" : "w-[260px]"
-        )}>
+        <aside
+          className={cn(
+            'flex flex-col border-r bg-gray-100 transition-all duration-300 shadow-md dark:bg-gray-900 dark:border-gray-800',
+            sidebarCollapsed ? 'w-[72px]' : 'w-[260px]',
+          )}
+        >
           {/* Logo and Collapse Button */}
           <div className="flex h-16 items-center justify-between px-4 border-b dark:border-gray-800">
             <button
               type="button"
-              aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               className="ml-2 p-1 rounded hover:bg-indigo-100 transition-colors dark:hover:bg-indigo-900"
               onClick={() => setSidebarCollapsed((v) => !v)}
             >
-              {sidebarCollapsed ? <ChevronRight className="w-5 h-5 text-indigo-500" /> : <ChevronLeft className="w-5 h-5 text-indigo-500" />}
+              {sidebarCollapsed ? (
+                <ChevronRight className="w-5 h-5 text-indigo-500" />
+              ) : (
+                <ChevronLeft className="w-5 h-5 text-indigo-500" />
+              )}
             </button>
           </div>
           <ScrollArea className="flex-1">
             <div className="py-4">
-              <div className={cn("px-3 py-2", sidebarCollapsed && "px-1")}>
+              <div className={cn('px-3 py-2', sidebarCollapsed && 'px-1')}>
                 {!sidebarCollapsed && (
                   <h2 className="mb-2 text-xs font-semibold tracking-wide text-slate-500 uppercase font-poppins transition-all duration-200 dark:text-slate-400">
                     ANALYTICS
@@ -146,7 +162,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <SidebarNav items={sidebarNavItems} collapsed={sidebarCollapsed} />
               </div>
               <Separator className="my-2" />
-              <div className={cn("px-3 py-2", sidebarCollapsed && "px-1")}>
+              <div className={cn('px-3 py-2', sidebarCollapsed && 'px-1')}>
                 {!sidebarCollapsed && (
                   <h2 className="mb-2 text-xs font-semibold tracking-wide text-slate-500 uppercase font-poppins transition-all duration-200 dark:text-slate-400">
                     ADMIN
@@ -163,8 +179,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               type="button"
               onClick={handleSignOut}
               className={cn(
-                "flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20",
-                sidebarCollapsed ? "justify-center" : "justify-start gap-3"
+                'flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20',
+                sidebarCollapsed ? 'justify-center' : 'justify-start gap-3',
               )}
             >
               <LogOut className="h-4 w-4" />
@@ -195,10 +211,18 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                   </div>
                   <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center overflow-hidden">
                     {user.imageUrl ? (
-                      <img src={user.imageUrl} alt={user.firstName || "User"} className="h-full w-full object-cover" />
+                      <img
+                        src={user.imageUrl}
+                        alt={user.firstName || 'User'}
+                        className="h-full w-full object-cover"
+                      />
                     ) : (
                       <span className="text-xs font-medium text-indigo-600">
-                        {(user.firstName?.[0] || user.emailAddresses[0]?.emailAddress?.[0] || "U").toUpperCase()}
+                        {(
+                          user.firstName?.[0] ||
+                          user.emailAddresses[0]?.emailAddress?.[0] ||
+                          'U'
+                        ).toUpperCase()}
                       </span>
                     )}
                   </div>

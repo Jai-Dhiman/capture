@@ -1,15 +1,15 @@
 import { createD1Client } from '@/db';
 import * as schema from '@/db/schema';
 import type { Bindings } from '@/types';
+import type { MessageBatch } from '@cloudflare/workers-types';
+import { desc, eq, inArray } from 'drizzle-orm';
 import {
+  type VectorData,
+  generateEmbedding,
   generatePostEmbedding,
   storePostEmbedding,
-  generateEmbedding,
-  type VectorData,
 } from '../lib/embeddings';
 import { QdrantClient } from '../lib/qdrantClient';
-import { inArray, eq, desc } from 'drizzle-orm';
-import type { MessageBatch } from '@cloudflare/workers-types';
 
 function calculateAverageVector(
   savedVectors: number[][],

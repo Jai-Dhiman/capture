@@ -1,14 +1,14 @@
-import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StatusBar } from 'react-native';
+import { EmptyState } from '@/features/feed/components/EmptyState';
+import { ProfileImage } from '@/features/post/components/ProfileImage';
+import { useBlockedUsers, useUnblockUser } from '@/features/profile/hooks/useBlocking';
+import type { SettingsStackParamList } from '@/navigation/types';
+import { SkeletonElement, SkeletonLoader } from '@/shared/components/SkeletonLoader';
+import CustomBackIcon from '@assets/icons/CustomBackIcon.svg';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { SettingsStackParamList } from '@/navigation/types';
-import { useBlockedUsers, useUnblockUser } from '@/features/profile/hooks/useBlocking';
-import { ProfileImage } from '@/features/post/components/ProfileImage';
-import { SkeletonLoader, SkeletonElement } from '@/shared/components/SkeletonLoader';
-import { EmptyState } from '@/features/feed/components/EmptyState';
-import CustomBackIcon from '@assets/icons/CustomBackIcon.svg';
 import { format } from 'date-fns';
+import React from 'react';
+import { ActivityIndicator, FlatList, StatusBar, Text, TouchableOpacity, View } from 'react-native';
 
 type NavigationProp = NativeStackNavigationProp<SettingsStackParamList, 'BlockedUsers'>;
 
@@ -45,12 +45,8 @@ export default function BlockedUsersScreen() {
         </View>
 
         <View className="ml-4 flex-1">
-          <Text className="text-black text-xs font-semibold">
-            {item.username}
-          </Text>
-          <Text className="text-black text-[10px] opacity-80">
-            {`Blocked on ${formattedDate}`}
-          </Text>
+          <Text className="text-black text-xs font-semibold">{item.username}</Text>
+          <Text className="text-black text-[10px] opacity-80">{`Blocked on ${formattedDate}`}</Text>
         </View>
 
         <TouchableOpacity
@@ -80,11 +76,13 @@ export default function BlockedUsersScreen() {
       {isLoading ? (
         <View className="p-4">
           <SkeletonLoader isLoading={true}>
-            {Array(5).fill(0).map((_, index) => (
-              <View key={index} className="w-full h-16 mb-2">
-                <SkeletonElement width="100%" height={64} radius={8} />
-              </View>
-            ))}
+            {Array(5)
+              .fill(0)
+              .map((_, index) => (
+                <View key={index} className="w-full h-16 mb-2">
+                  <SkeletonElement width="100%" height={64} radius={8} />
+                </View>
+              ))}
           </SkeletonLoader>
         </View>
       ) : blockedUsers && blockedUsers.length > 0 ? (

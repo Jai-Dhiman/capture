@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import { useAtom } from 'jotai';
-import { ProfileImage } from '@/features/post/components/ProfileImage';
-import { useCommentActions } from '../hooks/useCommentActions';
-import { replyingToCommentAtom, currentPostIdAtom } from '../atoms/commentAtoms';
-import type { Comment } from '../types/commentTypes';
-import XIcon from '@assets/icons/XIcon.svg';
-import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/stores/authStore';
-import { API_URL } from '@env';
+import { ProfileImage } from '@/features/post/components/ProfileImage';
 import { errorService } from '@/shared/services/errorService';
+import XIcon from '@assets/icons/XIcon.svg';
+import { API_URL } from '@env';
+import { useQuery } from '@tanstack/react-query';
+import { useAtom } from 'jotai';
+import React, { useState, useEffect } from 'react';
+import { ActivityIndicator, Alert, Text, TouchableOpacity, View } from 'react-native';
+import { currentPostIdAtom, replyingToCommentAtom } from '../atoms/commentAtoms';
+import { useCommentActions } from '../hooks/useCommentActions';
+import type { Comment } from '../types/commentTypes';
 
 export const CommentItem = ({ comment }: { comment: Comment }) => {
   const { startReply, cancelReply } = useCommentActions();
@@ -31,9 +31,9 @@ export const CommentItem = ({ comment }: { comment: Comment }) => {
 
       try {
         const response = await fetch(`${API_URL}/graphql`, {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
             Authorization: `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({
@@ -54,12 +54,15 @@ export const CommentItem = ({ comment }: { comment: Comment }) => {
         const data = await response.json();
 
         if (data.errors) {
-          throw errorService.createError(data.errors[0].message || "Failed to check replies", "server/graphql-error");
+          throw errorService.createError(
+            data.errors[0].message || 'Failed to check replies',
+            'server/graphql-error',
+          );
         }
 
         return data.data?.commentConnection;
       } catch (error) {
-        console.error("Error checking for replies:", error);
+        console.error('Error checking for replies:', error);
         return { totalCount: 0 };
       }
     },
@@ -73,7 +76,11 @@ export const CommentItem = ({ comment }: { comment: Comment }) => {
   }, [repliesCheck]);
 
   // Fetch replies for this comment
-  const { data: replies, isLoading: loadingReplies, refetch } = useQuery({
+  const {
+    data: replies,
+    isLoading: loadingReplies,
+    refetch,
+  } = useQuery({
     queryKey: ['comment-replies', comment.id],
     queryFn: async () => {
       if (!session?.access_token || !postId) {
@@ -82,9 +89,9 @@ export const CommentItem = ({ comment }: { comment: Comment }) => {
 
       try {
         const response = await fetch(`${API_URL}/graphql`, {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
             Authorization: `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({
@@ -117,15 +124,18 @@ export const CommentItem = ({ comment }: { comment: Comment }) => {
         const data = await response.json();
 
         if (data.errors) {
-          throw errorService.createError(data.errors[0].message || "Failed to fetch replies", "server/graphql-error");
+          throw errorService.createError(
+            data.errors[0].message || 'Failed to fetch replies',
+            'server/graphql-error',
+          );
         }
 
         return data.data?.commentConnection;
       } catch (error) {
         throw errorService.createError(
-          "Unable to load replies",
-          "network/fetch-failed",
-          error instanceof Error ? error : undefined
+          'Unable to load replies',
+          'network/fetch-failed',
+          error instanceof Error ? error : undefined,
         );
       }
     },
@@ -135,14 +145,14 @@ export const CommentItem = ({ comment }: { comment: Comment }) => {
   const handleCommentPress = () => {
     if (!comment.isDeleted) {
       if (!comment.path) {
-        console.error("Comment is missing path property", comment);
+        console.error('Comment is missing path property', comment);
         return;
       }
 
       startReply({
         id: comment.id,
         path: comment.path,
-        username: comment.user?.username
+        username: comment.user?.username,
       });
     }
   };
@@ -182,17 +192,17 @@ export const CommentItem = ({ comment }: { comment: Comment }) => {
         <View className={`border-t border-[#e5e5e5] ${isSelected ? 'bg-[#e4cac7]' : ''}`}>
           <View className="w-full p-4 flex flex-row items-start gap-2.5 relative">
             {isSelected && (
-              <TouchableOpacity
-                onPress={cancelReply}
-                className="absolute top-2 right-2 z-10"
-              >
+              <TouchableOpacity onPress={cancelReply} className="absolute top-2 right-2 z-10">
                 <XIcon width={16} height={16} />
               </TouchableOpacity>
             )}
 
             <View className="w-11 h-11">
               {comment.user?.profileImage ? (
-                <ProfileImage cloudflareId={comment.user.profileImage} style={{ width: 44, height: 44, borderRadius: 99 }} />
+                <ProfileImage
+                  cloudflareId={comment.user.profileImage}
+                  style={{ width: 44, height: 44, borderRadius: 99 }}
+                />
               ) : (
                 <View className="w-11 h-11 bg-gray-200 rounded-full" />
               )}
@@ -203,14 +213,12 @@ export const CommentItem = ({ comment }: { comment: Comment }) => {
                 <Text className="text-[#6B7280] text-sm font-normal">
                   @{comment.user?.username || 'User'}
                 </Text>
-                <Text className="text-xs text-[#6B7280] text-right">
-                  {timeAgo()}
-                </Text>
+                <Text className="text-xs text-[#6B7280] text-right">{timeAgo()}</Text>
               </View>
 
               <View className="flex flex-row items-start gap-1.5">
                 <Text className="text-[10px] font-normal text-black flex-1">
-                  {comment.isDeleted ? "[Comment deleted]" : comment.content}
+                  {comment.isDeleted ? '[Comment deleted]' : comment.content}
                 </Text>
               </View>
             </View>
@@ -226,12 +234,9 @@ export const CommentItem = ({ comment }: { comment: Comment }) => {
 
       {/* Reply toggle button when there are replies */}
       {hasReplies && (
-        <TouchableOpacity
-          onPress={handleToggleReplies}
-          className="pl-16 py-2"
-        >
+        <TouchableOpacity onPress={handleToggleReplies} className="pl-16 py-2">
           <Text className="text-[#6B7280] text-xs">
-            {showReplies ? "Hide replies" : "View replies"}
+            {showReplies ? 'Hide replies' : 'View replies'}
           </Text>
         </TouchableOpacity>
       )}
@@ -244,9 +249,7 @@ export const CommentItem = ({ comment }: { comment: Comment }) => {
               <ActivityIndicator size="small" color="#e4cac7" />
             </View>
           ) : replies?.comments?.length > 0 ? (
-            replies.comments.map((reply: Comment) => (
-              <CommentItem key={reply.id} comment={reply} />
-            ))
+            replies.comments.map((reply: Comment) => <CommentItem key={reply.id} comment={reply} />)
           ) : (
             <Text className="text-[#6B7280] text-xs pl-8 py-2">No replies yet</Text>
           )}

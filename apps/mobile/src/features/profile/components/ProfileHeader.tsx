@@ -1,18 +1,18 @@
-import type React from 'react';
-import { useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, Pressable } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { NotificationButton } from '@/features/notification/components/NotificationButton';
+import { ProfileImage } from '@/features/post/components/ProfileImage';
+import { SkeletonElement } from '@/shared/components/SkeletonLoader';
 import BackIcon from '@assets/icons/CustomBackIcon.svg';
 import MenuDots from '@assets/icons/CustomMenuIcon.svg';
-import { ProfileImage } from '@/features/post/components/ProfileImage';
-import { FollowButton } from './FollowButton';
-import { SkeletonElement } from '@/shared/components/SkeletonLoader';
-import { MotiView } from 'moti';
 import EmptyIcon from '@assets/icons/EmptyIcon.svg';
-import SearchIcon from '@assets/icons/SearchIcon.svg';
-import ProfileIcon from '@assets/icons/ProfileIcon.svg';
 import PlusIcon from '@assets/icons/PlusIcon.svg';
-import { NotificationButton } from '@/features/notification/components/NotificationButton';
+import ProfileIcon from '@assets/icons/ProfileIcon.svg';
+import SearchIcon from '@assets/icons/SearchIcon.svg';
+import { useNavigation } from '@react-navigation/native';
+import { MotiView } from 'moti';
+import type React from 'react';
+import { useState } from 'react';
+import { Modal, Pressable, Text, TouchableOpacity, View } from 'react-native';
+import { FollowButton } from './FollowButton';
 
 interface ProfileHeaderProps {
   profileData?: any;
@@ -66,7 +66,8 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       <View className="w-full z-10 bg-[#DCDCDE] flex justify-end" style={{ height: 110 }}>
         <View className="flex-row items-center justify-between px-8 mb-4">
           {showBackButton ? (
-            <TouchableOpacity className="w-10 h-10 bg-[#DFD2CD] rounded-full flex justify-center items-center"
+            <TouchableOpacity
+              className="w-10 h-10 bg-[#DFD2CD] rounded-full flex justify-center items-center"
               onPress={onBackPress}
             >
               <BackIcon width={30} height={30} />
@@ -74,9 +75,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           ) : (
             <View className="w-10 h-10" />
           )}
-          <Text className="text-5xl font-light text-center flex-1">
-            Capture
-          </Text>
+          <Text className="text-5xl font-light text-center flex-1">Capture</Text>
 
           {showMenuButton ? (
             isOwnProfile ? (
@@ -218,9 +217,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                     isFollowing={profileData?.isFollowing ?? false}
                     className="rounded-[30px] h-6 mr-2 flex items-center justify-center"
                   />
-                  <TouchableOpacity
-                    className="bg-stone-300 rounded-[30px] border border-stone-300 h-6 w-16 flex items-center justify-center"
-                  >
+                  <TouchableOpacity className="bg-stone-300 rounded-[30px] border border-stone-300 h-6 w-16 flex items-center justify-center">
                     <Text className="text-black text-xs font-normal font-['Roboto'] leading-3 text-center">
                       Message
                     </Text>

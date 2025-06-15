@@ -1,16 +1,16 @@
-import type { Bindings } from '../../types';
-import { nanoid } from 'nanoid';
-import { vi } from 'vitest';
 import type {
-  R2Bucket,
-  KVNamespace,
-  VectorizeIndex,
   Ai,
-  Queue,
+  D1Database,
   DurableObjectNamespace,
   DurableObjectStub,
-  D1Database,
+  KVNamespace,
+  Queue,
+  R2Bucket,
+  VectorizeIndex,
 } from '@cloudflare/workers-types';
+import { nanoid } from 'nanoid';
+import { vi } from 'vitest';
+import type { Bindings } from '../../types';
 
 export function createMockBindings(): Bindings {
   const bindings = {
