@@ -38,7 +38,7 @@ app.use(
       "https://o4509049381519360.ingest.us.sentry.io/api/4509049386434560/envelope/?sentry_key=74904d3bf1ebb2b0747f5356b0a83624&sentry_version=7&sentry_client=sentry.javascript.react-native%2F6.3.0.",
       "exp://*",
       "https://*.exp.direct",
-      "https://capture-api.jai-d.workers.dev",
+      "https://capture-api.jai-d.workers.dev"
     ],
     allowHeaders: ["Content-Type", "Authorization", "sentry-trace", "baggage"],
     allowMethods: ["POST", "GET", "OPTIONS", "DELETE", "PUT"],

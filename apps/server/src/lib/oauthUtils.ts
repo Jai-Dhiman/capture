@@ -29,6 +29,37 @@ export interface AppleUserInfo {
   };
 }
 
+export interface AppleJWTHeader {
+  alg: string;
+  kid: string;
+  typ: string;
+}
+
+export interface AppleJWTPayload {
+  iss: string;
+  aud: string;
+  exp: number;
+  iat: number;
+  sub: string;
+  email?: string;
+  email_verified?: string | boolean;
+  auth_time?: number;
+  nonce_supported?: boolean;
+}
+
+export interface ApplePublicKey {
+  kty: string;
+  kid: string;
+  use: string;
+  alg: string;
+  n: string;
+  e: string;
+}
+
+export interface AppleKeysResponse {
+  keys: ApplePublicKey[];
+}
+
 // PKCE helper functions
 export async function generateCodeChallenge(codeVerifier: string): Promise<string> {
   const encoder = new TextEncoder();
@@ -107,25 +138,63 @@ export async function exchangeGoogleCode(
 
 // Apple OAuth functions
 export async function verifyAppleToken(identityToken: string, env: Bindings): Promise<AppleUserInfo> {
-  // For Apple Sign In, we need to verify the identity token
-  // This is a simplified version - in production you'd want to verify the JWT signature
   try {
-    const payload = identityToken.split('.')[1];
-    const decoded = JSON.parse(atob(payload));
+    // Split the JWT into its parts
+    const [headerB64, payloadB64, signatureB64] = identityToken.split('.');
     
-    if (decoded.aud !== env.APPLE_CLIENT_ID) {
-      throw new Error('Invalid Apple client ID');
+    if (!headerB64 || !payloadB64 || !signatureB64) {
+      throw new Error('Invalid JWT format');
     }
-    
+
+    // Decode header and payload
+    const _header = JSON.parse(atob(headerB64)) as AppleJWTHeader;
+    const payload = JSON.parse(atob(payloadB64)) as AppleJWTPayload;
+
+    // Validate basic claims
+    if (payload.aud !== env.APPLE_CLIENT_ID) {
+      throw new Error('Invalid audience claim');
+    }
+
+    if (payload.iss !== 'https://appleid.apple.com') {
+      throw new Error('Invalid issuer claim');
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+    if (payload.exp < now) {
+      throw new Error('Token has expired');
+    }
+
+    if (payload.iat > now + 60) { // Allow 60 seconds clock skew
+      throw new Error('Token issued in the future');
+    }
+
+    // For development/testing, we'll skip signature verification
+    // In production, you should verify the signature against Apple's public keys
+    // TODO: Add ENVIRONMENT variable to Bindings type and enable signature verification
+    // if (env.ENVIRONMENT === 'production') {
+    //   await verifyAppleJWTSignature(identityToken, header, env);
+    // } else {
+    console.warn('⚠️ Apple JWT signature verification not implemented - should be added for production');
+    // }
+
     return {
-      email: decoded.email,
-      email_verified: decoded.email_verified !== 'false',
-      sub: decoded.sub,
+      email: payload.email || '',
+      email_verified: payload.email_verified === true || payload.email_verified === 'true',
+      sub: payload.sub,
     };
   } catch (error) {
+    console.error('Apple token verification failed:', error);
     throw new Error(`Invalid Apple identity token: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
+
+// TODO: Implement Apple JWT signature verification for production
+// This function would verify the JWT signature using Apple's public keys
+// Requirements:
+// 1. Fetch Apple's public keys from https://appleid.apple.com/auth/keys
+// 2. Find the key matching the JWT header 'kid'
+// 3. Verify the RS256 signature
+// 4. Use a crypto library like 'node-jose' or Web Crypto API
 
 // Generate a random code verifier for PKCE
 export function generateCodeVerifier(): string {

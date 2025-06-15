@@ -1,5 +1,4 @@
 import { useMutation } from "@tanstack/react-query";
-import { Linking } from 'react-native';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import { useAlert } from "@/shared/lib/AlertContext";
@@ -108,41 +107,53 @@ export function useOAuth() {
         throw new Error('Apple OAuth not configured');
       }
 
-      // Apple Sign In doesn't use PKCE, but uses identity tokens
-      const request = new AuthSession.AuthRequest({
-        clientId: APPLE_CLIENT_ID,
-        scopes: ['name', 'email'],
-        redirectUri: AuthSession.makeRedirectUri({ useProxy: true }),
-        responseType: AuthSession.ResponseType.Code,
-        additionalParameters: {
-          response_mode: 'form_post',
-        },
-      });
+      // Generate state parameter for security
+      const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      const redirectUri = AuthSession.makeRedirectUri();
 
-      // Perform Apple OAuth flow
-      const result = await request.promptAsync({
-        authorizationEndpoint: 'https://appleid.apple.com/auth/authorize',
-        useProxy: true,
-      });
+      // Apple OAuth URL construction
+      const appleOAuthUrl = new URL('https://appleid.apple.com/auth/authorize');
+      appleOAuthUrl.searchParams.set('client_id', APPLE_CLIENT_ID);
+      appleOAuthUrl.searchParams.set('redirect_uri', redirectUri);
+      appleOAuthUrl.searchParams.set('response_type', 'code id_token');
+      appleOAuthUrl.searchParams.set('scope', 'openid');
+      appleOAuthUrl.searchParams.set('response_mode', 'fragment');
+      appleOAuthUrl.searchParams.set('state', state);
+      
+      // Use WebBrowser for Apple OAuth
+      const browserResult = await WebBrowser.openAuthSessionAsync(
+        appleOAuthUrl.toString(),
+        redirectUri
+      );
+      
+      if (browserResult.type === 'success' && browserResult.url) {
+        const resultUrl = new URL(browserResult.url);
+        
+        const fragment = resultUrl.hash.substring(1);
+        const params = new URLSearchParams(fragment);
+        
+        const code = params.get('code');
+        const identityToken = params.get('id_token');
+        const returnedState = params.get('state');
+        
+        if (!identityToken) {
+          throw new Error('No identity token received from Apple');
+        }
+        
+        if (returnedState !== state) {
+          throw new Error('State parameter mismatch - potential security issue');
+        }
+        
+        // Exchange identity token using our backend
+        const authResponse = await workersAuthApi.oauthApple({
+          code: code || '',
+          identityToken,
+        });
 
-      if (result.type !== 'success') {
-        throw new Error('Apple OAuth was cancelled or failed');
+        return authResponse;
       }
 
-      // For Apple, we need to handle the identity token
-      // This is a simplified implementation - in production you'd use Apple's SDK
-      const identityToken = result.params.id_token;
-      if (!identityToken) {
-        throw new Error('No identity token received from Apple');
-      }
-
-      // Exchange identity token using our backend
-      const authResponse = await workersAuthApi.oauthApple({
-        code: result.params.code,
-        identityToken,
-      });
-
-      return authResponse;
+      throw new Error(`Apple OAuth authentication ${browserResult.type === 'cancel' ? 'was cancelled' : 'failed'}`);
     },
     onSuccess: (data) => {
       setAuthData(data);
