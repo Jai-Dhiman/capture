@@ -1,25 +1,18 @@
-import React, { useState, useRef } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  TextInput,
-  Image,
-  ActivityIndicator
-} from 'react-native';
-import { useForm } from '@tanstack/react-form';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '@/navigation/types';
-import AppleIcon from '@assets/icons/AppleLogo.svg';
-import GoogleLogo from '@assets/icons/GoogleLogo.svg';
-import EmailIcon from '@assets/icons/EmailIcon.svg';
 import Header from '@/shared/components/Header';
-import { useAuth } from '../hooks/useAuth';
 import { useAlert } from '@/shared/lib/AlertContext';
+import AppleIcon from '@assets/icons/AppleLogo.svg';
+import EmailIcon from '@assets/icons/EmailIcon.svg';
+import GoogleLogo from '@assets/icons/GoogleLogo.svg';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useForm } from '@tanstack/react-form';
+import React, { useState, useRef } from 'react';
+import { ActivityIndicator, Image, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useAuth } from '../hooks/useAuth';
 
 type Props = {
-  navigation: NativeStackNavigationProp<AuthStackParamList, 'Signup'>
-}
+  navigation: NativeStackNavigationProp<AuthStackParamList, 'Signup'>;
+};
 
 export default function SignupScreen({ navigation }: Props) {
   const [isEmailFocused, setIsEmailFocused] = useState(false);
@@ -32,7 +25,7 @@ export default function SignupScreen({ navigation }: Props) {
   const form = useForm({
     defaultValues: {
       email: '',
-      phone: ''
+      phone: '',
     },
     onSubmit: async ({ value }) => {
       if (!value.email) {
@@ -43,7 +36,7 @@ export default function SignupScreen({ navigation }: Props) {
       sendCode.mutate(
         {
           email: value.email,
-          phone: value.phone || undefined
+          phone: value.phone || undefined,
         },
         {
           onSuccess: (response) => {
@@ -53,10 +46,10 @@ export default function SignupScreen({ navigation }: Props) {
               isNewUser: response.isNewUser,
               message: response.message,
             });
-          }
-        }
+          },
+        },
       );
-    }
+    },
   });
 
   return (
@@ -83,39 +76,12 @@ export default function SignupScreen({ navigation }: Props) {
         />
 
         <View className="flex-1 px-[26px]">
+          <View className="h-[1px] bg-black/10 mb-[30px]" />
 
-          <form.Field name="phone">
-            {(field) => (
-              <View className="mb-[30px]">
-                <Text className="text-base font-roboto mb-[6px]"></Text>
-                <TouchableOpacity
-                  activeOpacity={1}
-                  onPress={() => phoneInputRef.current?.focus()}
-                  className={`bg-white h-[60px] rounded-[16px] shadow-md flex-row items-center px-[9px] ${isPhoneFocused ? 'border-2 border-[#E4CAC7]' : ''}`}
-                >
-                  <Text className="mr-3 text-[20px]">📱</Text>
-                  <TextInput
-                    ref={phoneInputRef}
-                    onFocus={() => setIsPhoneFocused(true)}
-                    onBlur={() => {
-                      setIsPhoneFocused(false);
-                      field.handleBlur();
-                    }}
-                    className="flex-1 text-base font-roboto text-black outline-none"
-                    style={{ paddingVertical: 0, textAlignVertical: 'center', height: '100%' }}
-                    value={field.state.value}
-                    onChangeText={field.handleChange}
-                    keyboardType="phone-pad"
-                    placeholder="Phone number"
-                    placeholderTextColor="#C8C8C8"
-                  />
-                </TouchableOpacity>
-                {/* <Text className="text-xs text-gray-500 mt-1 ml-2 font-roboto">
-                  Helps with account recovery and security
-                </Text> */}
-              </View>
-            )}
-          </form.Field>
+          <Text className="text-2xl font-bold font-roboto text-center mb-6">Join Capture</Text>
+          <Text className="text-base font-roboto text-center mb-8 text-gray-600">
+            Enter your details to get started
+          </Text>
 
           <form.Field
             name="email"
@@ -124,7 +90,7 @@ export default function SignupScreen({ navigation }: Props) {
                 if (!value) return 'Email is required';
                 if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Invalid email format';
                 return undefined;
-              }
+              },
             }}
           >
             {(field) => (
@@ -163,9 +129,40 @@ export default function SignupScreen({ navigation }: Props) {
             )}
           </form.Field>
 
-          <form.Subscribe
-            selector={(state) => [state.canSubmit, state.isSubmitting]}
-          >
+          <form.Field name="phone">
+            {(field) => (
+              <View className="mb-[30px]">
+                <Text className="text-base font-roboto mb-[6px]">Phone</Text>
+                <TouchableOpacity
+                  activeOpacity={1}
+                  onPress={() => phoneInputRef.current?.focus()}
+                  className={`bg-white h-[60px] rounded-[16px] shadow-md flex-row items-center px-[9px] ${isPhoneFocused ? 'border-2 border-[#E4CAC7]' : ''}`}
+                >
+                  <Text className="mr-3 text-[20px]">📱</Text>
+                  <TextInput
+                    ref={phoneInputRef}
+                    onFocus={() => setIsPhoneFocused(true)}
+                    onBlur={() => {
+                      setIsPhoneFocused(false);
+                      field.handleBlur();
+                    }}
+                    className="flex-1 text-base font-roboto text-black outline-none"
+                    style={{ paddingVertical: 0, textAlignVertical: 'center', height: '100%' }}
+                    value={field.state.value}
+                    onChangeText={field.handleChange}
+                    keyboardType="phone-pad"
+                    placeholder="Phone number"
+                    placeholderTextColor="#C8C8C8"
+                  />
+                </TouchableOpacity>
+                <Text className="text-xs text-gray-500 mt-1 ml-2 font-roboto">
+                  Helps with account recovery and security
+                </Text>
+              </View>
+            )}
+          </form.Field>
+
+          <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
             {([canSubmit, isFormSubmitting]) => (
               <TouchableOpacity
                 className={`h-[56px] ${canSubmit ? 'bg-[#E4CAC7]' : 'bg-stone-300'} rounded-[30px] shadow-md justify-center items-center mb-[23px]`}
@@ -178,9 +175,7 @@ export default function SignupScreen({ navigation }: Props) {
                     <Text className="text-base font-bold font-roboto ml-2">Sending code...</Text>
                   </View>
                 ) : (
-                  <Text className="text-base font-bold font-roboto text-center">
-                    Continue
-                  </Text>
+                  <Text className="text-base font-bold font-roboto text-center">Continue</Text>
                 )}
               </TouchableOpacity>
             )}

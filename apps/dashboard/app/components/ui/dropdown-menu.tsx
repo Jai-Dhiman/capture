@@ -1,46 +1,44 @@
-import * as React from "react"
+import * as React from 'react';
 
 const DropdownMenuContext = React.createContext({
   open: false,
-  setOpen: (open: boolean) => { },
-})
+  setOpen: (open: boolean) => {},
+});
 
 const DropdownMenu = ({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) => {
-  const [open, setOpen] = React.useState(false)
+  const [open, setOpen] = React.useState(false);
   return (
     <DropdownMenuContext.Provider value={{ open, setOpen }}>
-      <div className="relative inline-block text-left">
-        {children}
-      </div>
+      <div className="relative inline-block text-left">{children}</div>
     </DropdownMenuContext.Provider>
-  )
-}
+  );
+};
 
 const DropdownMenuTrigger = ({
   children,
   asChild = false,
 }: {
-  children: React.ReactNode
-  asChild?: boolean
+  children: React.ReactNode;
+  asChild?: boolean;
 }) => {
-  const { open, setOpen } = React.useContext(DropdownMenuContext)
+  const { open, setOpen } = React.useContext(DropdownMenuContext);
 
   const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault()
-    setOpen(!open)
-  }
+    e.preventDefault();
+    setOpen(!open);
+  };
 
   // If asChild is true, we clone the child and add the necessary props
   if (asChild && React.isValidElement(children)) {
     return React.cloneElement(children, {
       onClick: handleClick,
-      "aria-expanded": open,
-      "aria-haspopup": true,
-    })
+      'aria-expanded': open,
+      'aria-haspopup': true,
+    });
   }
 
   return (
@@ -52,23 +50,21 @@ const DropdownMenuTrigger = ({
     >
       {children}
     </button>
-  )
-}
+  );
+};
 
 const DropdownMenuContent = ({
   children,
-  align = "left",
+  align = 'left',
 }: {
-  children: React.ReactNode
-  align?: "left" | "right" | "end"
+  children: React.ReactNode;
+  align?: 'left' | 'right' | 'end';
 }) => {
-  const { open } = React.useContext(DropdownMenuContext)
+  const { open } = React.useContext(DropdownMenuContext);
 
-  if (!open) return null
+  if (!open) return null;
 
-  const alignmentClass = align === "left"
-    ? "left-0 origin-top-left"
-    : "right-0 origin-top-right"
+  const alignmentClass = align === 'left' ? 'left-0 origin-top-left' : 'right-0 origin-top-right';
 
   return (
     <div
@@ -81,22 +77,22 @@ const DropdownMenuContent = ({
         {children}
       </div>
     </div>
-  )
-}
+  );
+};
 
 const DropdownMenuItem = ({
   children,
   onClick,
 }: {
-  children: React.ReactNode
-  onClick?: () => void
+  children: React.ReactNode;
+  onClick?: () => void;
 }) => {
-  const { setOpen } = React.useContext(DropdownMenuContext)
+  const { setOpen } = React.useContext(DropdownMenuContext);
 
   const handleClick = () => {
-    if (onClick) onClick()
-    setOpen(false)
-  }
+    if (onClick) onClick();
+    setOpen(false);
+  };
 
   return (
     <button
@@ -107,12 +103,7 @@ const DropdownMenuItem = ({
     >
       {children}
     </button>
-  )
-}
+  );
+};
 
-export {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem
-} 
+export { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem };

@@ -1,9 +1,8 @@
-import { vi } from "vitest";
-import { ApolloServer } from "@apollo/server";
-import { typeDefs } from "@/graphql/schema";
-import { resolvers as allResolvers } from "@/graphql/resolvers";
-import { mockQueryBuilder, initializeMockData, testData } from "@/test/mocks/db-mock";
-import type { ContextType } from "@/types";
+import { resolvers as allResolvers } from '@/graphql/resolvers';
+import { typeDefs } from '@/graphql/schema';
+import { initializeMockData, mockQueryBuilder, testData } from '@/test/mocks/db-mock';
+import type { ContextType } from '@/types';
+import { ApolloServer } from '@apollo/server';
 
 interface TestClientOptions {
   mockData?: Record<string, any[]>;
@@ -40,25 +39,31 @@ export function createGraphQLTestClient(options: TestClientOptions = {}): {
     env: {
       DB: mockQueryBuilder as any, // Using mockQueryBuilder, cast to any to satisfy D1Database/Bindings temporarily
       BUCKET: {} as R2Bucket,
-      CLOUDFLARE_ACCOUNT_ID: "test-account-id",
-      CLOUDFLARE_ACCOUNT_HASH: "test-account-hash",
-      CLOUDFLARE_IMAGES_TOKEN: "test-images-token",
-      CLOUDFLARE_IMAGES_KEY: "test-images-key",
+      CLOUDFLARE_ACCOUNT_ID: 'test-account-id',
+      CLOUDFLARE_ACCOUNT_HASH: 'test-account-hash',
+      CLOUDFLARE_IMAGES_TOKEN: 'test-images-token',
+      CLOUDFLARE_IMAGES_KEY: 'test-images-key',
       // Required by Bindings type - add actual mocks or leave as dummy values if not used by these tests
-      KV: {} as any, 
+      KV: {} as any,
       REFRESH_TOKEN_KV: {} as any,
       Capture_Rate_Limits: {} as any,
-      POST_VECTORS: {} as any, 
+      POST_VECTORS: {} as any,
       USER_VECTORS: {} as any,
-      VECTORIZE: {} as any,
-      SEED_SECRET: "mock-seed-secret",
-      JWT_SECRET: "mock-jwt-secret",
+      SEED_SECRET: 'mock-seed-secret',
+      JWT_SECRET: 'mock-jwt-secret',
       AI: {} as any,
       POST_QUEUE: {} as any,
       USER_VECTOR_QUEUE: {} as any,
-
+      RESEND_API_KEY: '',
+      GOOGLE_CLIENT_ID: '',
+      GOOGLE_CLIENT_SECRET: '',
+      APPLE_CLIENT_ID: '',
+      APPLE_CLIENT_SECRET: '',
+      QDRANT_URL: '',
+      QDRANT_API_KEY: '',
+      QDRANT_COLLECTION_NAME: ''
     },
-    user: { id: "test-user-id" },
+    user: { id: 'test-user-id' },
   };
 
   // Create a test client that executes operations against the server
@@ -77,12 +82,12 @@ export function createGraphQLTestClient(options: TestClientOptions = {}): {
           },
           {
             contextValue: { ...defaultContext, ...contextOverrides },
-          }
+          },
         );
 
         return response.body;
       } catch (error) {
-        console.error("GraphQL query error:", error);
+        console.error('GraphQL query error:', error);
         throw error;
       }
     },
@@ -101,12 +106,12 @@ export function createGraphQLTestClient(options: TestClientOptions = {}): {
           },
           {
             contextValue: { ...defaultContext, ...contextOverrides },
-          }
+          },
         );
 
         return response.body;
       } catch (error) {
-        console.error("GraphQL mutation error:", error);
+        console.error('GraphQL mutation error:', error);
         throw error;
       }
     },

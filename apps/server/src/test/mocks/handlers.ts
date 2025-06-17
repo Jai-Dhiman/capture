@@ -1,4 +1,4 @@
-import { http, HttpResponse } from 'msw'
+import { http, HttpResponse } from 'msw';
 
 export const handlers = [
   http.get('*/auth/v1/user', () => {
@@ -9,6 +9,6 @@ export const handlers = [
           email: 'test@example.com',
         },
       },
-    })
+    });
   }),
-]
+];

@@ -1,12 +1,12 @@
-import React from 'react';
-import { View, Text, Modal, TouchableOpacity, Pressable, Dimensions } from 'react-native';
-import { MotiView } from 'moti';
-import EmptyIcon from '@assets/icons/EmptyIcon.svg';
-import TrashIcon from '@assets/icons/TrashIcon.svg';
 import BlockIcon from '@assets/icons/BlockIcon.svg';
-import ReportIcon from '@assets/icons/ReportIcon.svg';
-import QuestionIcon from '@assets/icons/QuestionIcon.svg';
+import EmptyIcon from '@assets/icons/EmptyIcon.svg';
 import NotificationIcon from '@assets/icons/NotificationIcon.svg';
+import QuestionIcon from '@assets/icons/QuestionIcon.svg';
+import ReportIcon from '@assets/icons/ReportIcon.svg';
+import TrashIcon from '@assets/icons/TrashIcon.svg';
+import { MotiView } from 'moti';
+import React from 'react';
+import { Dimensions, Modal, Pressable, Text, TouchableOpacity, View } from 'react-native';
 
 interface PostMenuProps {
   isVisible: boolean;
@@ -41,31 +41,31 @@ export const PostMenu = ({
         text: isLoading ? 'Deleting...' : 'Delete Post',
         onPress: onDeletePost,
         disabled: isLoading,
-        icon: TrashIcon
-      }
+        icon: TrashIcon,
+      },
     ]
     : [
       {
         text: isLoading ? 'Blocking...' : 'Block User',
         onPress: onBlockUser,
         disabled: isLoading,
-        icon: BlockIcon
+        icon: BlockIcon,
       },
       {
         text: 'Report Post',
         onPress: onReportPost,
-        icon: ReportIcon
+        icon: ReportIcon,
       },
       {
         text: 'Why Am I Seeing This?',
         onPress: onWhySeeing,
-        icon: QuestionIcon
+        icon: QuestionIcon,
       },
       {
         text: 'Enable Notifications',
         onPress: onEnableNotifications,
-        icon: NotificationIcon
-      }
+        icon: NotificationIcon,
+      },
     ];
 
   const screenWidth = Dimensions.get('window').width;
@@ -78,17 +78,10 @@ export const PostMenu = ({
     }
     : position;
 
-  const from = buttonPosition
-    ? { translateY: -10, opacity: 0 }
-    : { translateY: 20, opacity: 0 };
+  const from = buttonPosition ? { translateY: -10, opacity: 0 } : { translateY: 20, opacity: 0 };
 
   return (
-    <Modal
-      transparent={true}
-      visible={isVisible}
-      animationType="none"
-      onRequestClose={onClose}
-    >
+    <Modal transparent={true} visible={isVisible} animationType="none" onRequestClose={onClose}>
       <Pressable
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
         onPress={onClose}
@@ -105,11 +98,11 @@ export const PostMenu = ({
       >
         <Pressable onPress={(e) => e.stopPropagation()}>
           <View className="w-56 pb-2 flex flex-col justify-start items-start gap-0.5">
-            {menuItems.map((item, index) => {
+            {menuItems.map((item) => {
               const Icon = item.icon || EmptyIcon;
               return (
                 <TouchableOpacity
-                  key={index}
+                  key={item.text}
                   className="self-stretch h-14 relative bg-[#e4cac7] rounded-2xl shadow-sm"
                   onPress={item.onPress}
                   disabled={item.disabled}

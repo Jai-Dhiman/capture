@@ -47,7 +47,6 @@ export class QdrantClient {
         if (!createResponse.ok) {
           throw new Error(`Failed to create collection: ${createResponse.statusText}`);
         }
-
       } else if (!response.ok) {
         throw new Error(`Failed to check collection: ${response.statusText}`);
       }
@@ -74,14 +73,16 @@ export class QdrantClient {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        points: [{
-          id: pointId,
-          vector: data.vector,
-          payload: {
-            ...data.payload,
-            original_id: data.id, // Store original ID in payload
+        points: [
+          {
+            id: pointId,
+            vector: data.vector,
+            payload: {
+              ...data.payload,
+              original_id: data.id, // Store original ID in payload
+            },
           },
-        }],
+        ],
       }),
     });
 
@@ -99,27 +100,32 @@ export class QdrantClient {
   }): Promise<QdrantSearchResult[]> {
     await this.ensureCollection();
 
-    const response = await fetch(`${this.baseUrl}/collections/${this.collectionName}/points/search`, {
-      method: 'POST',
-      headers: {
-        'Api-Key': this.apiKey,
-        'Content-Type': 'application/json',
+    const response = await fetch(
+      `${this.baseUrl}/collections/${this.collectionName}/points/search`,
+      {
+        method: 'POST',
+        headers: {
+          'Api-Key': this.apiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          vector: params.vector,
+          limit: params.limit,
+          filter: params.filter,
+          with_payload: params.with_payload !== false,
+        }),
       },
-      body: JSON.stringify({
-        vector: params.vector,
-        limit: params.limit,
-        filter: params.filter,
-        with_payload: params.with_payload !== false,
-      }),
-    });
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`Qdrant search failed: ${response.statusText} - ${errorText}`);
     }
 
-    const result = await response.json() as { result: Array<{ id: number; score: number; payload?: Record<string, any> }> };
-    
+    const result = (await response.json()) as {
+      result: Array<{ id: number; score: number; payload?: Record<string, any> }>;
+    };
+
     // Convert back to original format with original IDs
     return result.result.map((point) => ({
       id: point.payload?.original_id || point.id.toString(),
@@ -133,16 +139,19 @@ export class QdrantClient {
 
     const pointId = this.convertToValidId(id);
 
-    const response = await fetch(`${this.baseUrl}/collections/${this.collectionName}/points/delete`, {
-      method: 'POST',
-      headers: {
-        'Api-Key': this.apiKey,
-        'Content-Type': 'application/json',
+    const response = await fetch(
+      `${this.baseUrl}/collections/${this.collectionName}/points/delete`,
+      {
+        method: 'POST',
+        headers: {
+          'Api-Key': this.apiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          points: [pointId],
+        }),
       },
-      body: JSON.stringify({
-        points: [pointId],
-      }),
-    });
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -155,9 +164,9 @@ export class QdrantClient {
     let hash = 0;
     for (let i = 0; i < id.length; i++) {
       const char = id.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return Math.abs(hash);
   }
-} 
+}

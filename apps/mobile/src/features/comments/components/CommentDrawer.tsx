@@ -1,18 +1,18 @@
-import React, { useRef, useMemo, useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Keyboard, Platform } from 'react-native';
-import { useAtom } from 'jotai';
 import BottomSheet, {
   BottomSheetView,
   BottomSheetBackdrop,
   BottomSheetFooter,
 } from '@gorhom/bottom-sheet';
+import { useAtom } from 'jotai';
+import React, { useRef, useMemo, useCallback, useEffect, useState } from 'react';
+import { Keyboard, Platform, StyleSheet, Text, View } from 'react-native';
 import { KeyboardAccessoryView } from 'react-native-keyboard-accessory';
 import {
-  commentDrawerOpenAtom,
-  currentPostIdAtom,
   combinedCommentsAtom,
+  commentDrawerOpenAtom,
   commentsQueryAtom,
-  loadMoreCommentsAtom
+  currentPostIdAtom,
+  loadMoreCommentsAtom,
 } from '../atoms/commentAtoms';
 import { CommentList } from '../components/CommentList';
 import { CommentInput } from './CommentInput';
@@ -45,12 +45,15 @@ export const CommentDrawer = () => {
     }
   }, [queryResult, loadMoreComments]);
 
-  const handleSheetChange = useCallback((index: number) => {
-    const newIsOpen = index > -1;
-    setIsOpen(newIsOpen);
-    setCurrentIndex(newIsOpen ? index : 0);
-    if (!newIsOpen) Keyboard.dismiss();
-  }, [setIsOpen]);
+  const handleSheetChange = useCallback(
+    (index: number) => {
+      const newIsOpen = index > -1;
+      setIsOpen(newIsOpen);
+      setCurrentIndex(newIsOpen ? index : 0);
+      if (!newIsOpen) Keyboard.dismiss();
+    },
+    [setIsOpen],
+  );
 
   return (
     <>
@@ -65,18 +68,12 @@ export const CommentDrawer = () => {
         keyboardBehavior="interactive"
         android_keyboardInputMode="adjustResize"
         backdropComponent={(props) => (
-          <BottomSheetBackdrop
-            {...props}
-            disappearsOnIndex={-1}
-            appearsOnIndex={0}
-          />
+          <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} />
         )}
       >
         <BottomSheetView style={styles.container}>
           <View className="px-4 py-3 border-b border-[#e5e5e5]">
-            <Text className="text-xs text-neutral-800 text-center">
-              {comments.length} COMMENTS
-            </Text>
+            <Text className="text-xs text-neutral-800 text-center">{comments.length} COMMENTS</Text>
           </View>
 
           <View style={styles.commentListContainer}>
@@ -122,5 +119,5 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     backgroundColor: 'white',
-  }
+  },
 });

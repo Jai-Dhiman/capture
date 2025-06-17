@@ -5,9 +5,12 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "lint": "biome check .",
-    "lint:fix": "biome check --apply .",
+    "lint:fix": "biome check --write .",
+    "lint:files": "biome check",
     "format": "biome format .",
-    "format:fix": "biome format --write ."
+    "format:fix": "biome format --write .",
+    "biome:staged": "biome check --staged",
+    "biome:ci": "biome ci ."
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
@@ -15,13 +18,9 @@
     "typescript": "5.5.4"
   },
   "packageManager": "pnpm@9.0.0",
-  "workspaces": [
-    "apps/*"
-  ],
+  "workspaces": ["apps/*"],
   "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild"
-    ],
+    "onlyBuiltDependencies": ["esbuild"],
     "overrides": {
       "esbuild": "^0.25.3"
     }

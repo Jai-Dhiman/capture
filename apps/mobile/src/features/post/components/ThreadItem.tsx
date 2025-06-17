@@ -1,25 +1,33 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, Share, Alert, type GestureResponderEvent } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { AppStackParamList } from '@/navigation/types';
-import { ProfileImage } from './ProfileImage';
-import { useAtom } from 'jotai';
-import { commentDrawerOpenAtom, currentPostIdAtom } from '@/features/comments/atoms/commentAtoms';
-import { useSavePost, useUnsavePost } from '../hooks/useSavesPosts';
-import { useAlert } from '@/shared/lib/AlertContext';
-import { useDeletePost } from '../hooks/usePosts';
-import { SkeletonLoader } from '@/shared/components/SkeletonLoader';
 import { useAuthStore } from '@/features/auth/stores/authStore';
+import { commentDrawerOpenAtom, currentPostIdAtom } from '@/features/comments/atoms/commentAtoms';
 import { useBlockUser } from '@/features/profile/hooks/useBlocking';
-import { PostMenu } from './PostMenu';
+import type { AppStackParamList } from '@/navigation/types';
+import { SkeletonLoader } from '@/shared/components/SkeletonLoader';
+import { useAlert } from '@/shared/lib/AlertContext';
+import CommentIcon from '@assets/icons/CommentsIcon.svg';
 import FavoriteIcon from '@assets/icons/FavoriteIcon.svg';
 import FilledFavoriteIcon from '@assets/icons/FilledFavoriteIcon.svg';
-import CommentIcon from '@assets/icons/CommentsIcon.svg';
-import ShareIcon from '@assets/icons/PaperPlaneIcon.svg';
 import SettingsIcon from '@assets/icons/MenuDots.svg';
-import Clipboard from 'expo-clipboard';
+import ShareIcon from '@assets/icons/PaperPlaneIcon.svg';
 import { SHARE_URL } from '@env';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Clipboard from 'expo-clipboard';
+import { useAtom } from 'jotai';
+import React, { useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  type GestureResponderEvent,
+  Share,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useDeletePost } from '../hooks/usePosts';
+import { useSavePost, useUnsavePost } from '../hooks/useSavesPosts';
+import { PostMenu } from './PostMenu';
+import { ProfileImage } from './ProfileImage';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 
@@ -28,10 +36,12 @@ interface ThreadItemProps {
   isLoading?: boolean;
 }
 
-type MenuPosition = {
-  x: number;
-  y: number;
-} | undefined;
+type MenuPosition =
+  | {
+      x: number;
+      y: number;
+    }
+  | undefined;
 
 export const ThreadItem = ({ thread: initialThread, isLoading = false }: ThreadItemProps) => {
   const navigation = useNavigation<NavigationProp>();
@@ -93,7 +103,9 @@ export const ThreadItem = ({ thread: initialThread, isLoading = false }: ThreadI
   const handleShare = async () => {
     const link = `${SHARE_URL}/post/${thread.id}`;
     try {
-      const result = await Share.share({ message: `${thread.content ?? ''}\n\nView more: ${link}` });
+      const result = await Share.share({
+        message: `${thread.content ?? ''}\n\nView more: ${link}`,
+      });
       if (result.action === Share.sharedAction) {
         // TODO: track share analytics
       }
@@ -107,7 +119,7 @@ export const ThreadItem = ({ thread: initialThread, isLoading = false }: ThreadI
     const { nativeEvent } = event;
     setMenuPosition({
       x: nativeEvent.pageX,
-      y: nativeEvent.pageY - 10 // Positioning slightly above the touch point
+      y: nativeEvent.pageY - 10, // Positioning slightly above the touch point
     });
     setMenuVisible(true);
   };
@@ -118,14 +130,17 @@ export const ThreadItem = ({ thread: initialThread, isLoading = false }: ThreadI
         <View className="flex-row items-center p-3">
           <TouchableOpacity
             onPress={() => navigation.navigate('Profile', { userId: thread.userId })}
-            className="w-12 h-12 mr-3 drop-shadow-md">
+            className="w-12 h-12 mr-3 drop-shadow-md"
+          >
             {thread.user?.profileImage ? (
               <ProfileImage cloudflareId={thread.user.profileImage} style={{ borderRadius: 24 }} />
             ) : (
               <View className="w-10 h-10 bg-stone-300 rounded-full" />
             )}
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('Profile', { userId: thread.userId })}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Profile', { userId: thread.userId })}
+          >
             <Text className="text-black font-light text-xl">{thread.user?.username || 'User'}</Text>
           </TouchableOpacity>
 
@@ -140,9 +155,7 @@ export const ThreadItem = ({ thread: initialThread, isLoading = false }: ThreadI
         </View>
 
         <View className="p-3">
-          <Text className="text-black text-base font-light leading-snug">
-            {thread.content}
-          </Text>
+          <Text className="text-black text-base font-light leading-snug">{thread.content}</Text>
         </View>
 
         <View className="p-4">
@@ -183,9 +196,15 @@ export const ThreadItem = ({ thread: initialThread, isLoading = false }: ThreadI
           onClose={() => setMenuVisible(false)}
           onDeletePost={isOwnPost ? handleDeletePost : undefined}
           onBlockUser={!isOwnPost ? handleBlockUser : undefined}
-          onReportPost={() => {/* Handle report */ }}
-          onWhySeeing={() => {/* Handle why */ }}
-          onEnableNotifications={() => {/* Handle notifications */ }}
+          onReportPost={() => {
+            /* Handle report */
+          }}
+          onWhySeeing={() => {
+            /* Handle why */
+          }}
+          onEnableNotifications={() => {
+            /* Handle notifications */
+          }}
           isOwnPost={isOwnPost}
           isLoading={isOwnPost ? deletePostMutation?.isPending : blockUserMutation.isPending}
           buttonPosition={menuPosition}

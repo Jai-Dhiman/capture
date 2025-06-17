@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, Animated, Dimensions } from 'react-native';
+import { Animated, Dimensions, Text, TouchableOpacity, View } from 'react-native';
 
 export type AlertType = 'error' | 'success' | 'info' | 'warning';
 
@@ -29,10 +29,14 @@ export const ThemedAlert: React.FC<ThemedAlertProps> = ({
 
   const getBgColor = () => {
     switch (type) {
-      case 'error': return '#EB8B8B';
-      case 'success': return '#A8D7A8';
-      case 'warning': return '#F6D289';
-      default: return '#DEBEBE';
+      case 'error':
+        return '#EB8B8B';
+      case 'success':
+        return '#A8D7A8';
+      case 'warning':
+        return '#F6D289';
+      default:
+        return '#DEBEBE';
     }
   };
 
@@ -61,7 +65,7 @@ export const ThemedAlert: React.FC<ThemedAlertProps> = ({
       fadeAnim.setValue(0);
       slideAnim.setValue(-100);
     }
-  }, [visible, duration]);
+  }, [visible, duration, fadeAnim, slideAnim]);
 
   const handleDismiss = () => {
     Animated.parallel([
@@ -94,15 +98,10 @@ export const ThemedAlert: React.FC<ThemedAlertProps> = ({
         className="w-full rounded-[10px] p-3 shadow-md"
         style={{ backgroundColor: getBgColor() }}
       >
-        <Text className="font-roboto font-normal text-black text-xs leading-[22px]">
-          {message}
-        </Text>
+        <Text className="font-roboto font-normal text-black text-xs leading-[22px]">{message}</Text>
 
         {action && (
-          <TouchableOpacity
-            onPress={action.onPress}
-            className="self-end mt-1"
-          >
+          <TouchableOpacity onPress={action.onPress} className="self-end mt-1">
             <Text className="font-roboto font-normal text-[#005DFFED] text-xs underline">
               {action.label}
             </Text>

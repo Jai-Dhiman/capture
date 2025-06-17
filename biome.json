@@ -18,23 +18,14 @@
         "useConst": "error"
       }
     },
-    "ignore": [
-      "node_modules",
-      "dist",
-      ".next",
-      "build",
-      "out",
-      ".turbo",
-      "drizzle",
-      "coverage"
-    ]
+    "ignore": ["node_modules", "dist", ".next", "build", "out", ".turbo", "drizzle", "coverage"]
   },
   "formatter": {
     "enabled": true,
     "indentWidth": 2,
     "indentStyle": "space",
     "lineWidth": 100,
-    
+
     "ignore": [
       "node_modules",
       "dist",

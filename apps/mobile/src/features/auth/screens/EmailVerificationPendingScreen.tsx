@@ -1,12 +1,12 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Image } from 'react-native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '@/navigation/types';
 import Header from '@/shared/components/Header';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import React from 'react';
+import { Image, Text, TouchableOpacity, View } from 'react-native';
 
 type Props = {
-  navigation: NativeStackNavigationProp<AuthStackParamList, 'EmailVerificationPending'>
-}
+  navigation: NativeStackNavigationProp<AuthStackParamList, 'EmailVerificationPending'>;
+};
 
 export default function EmailVerificationPendingScreen({ navigation }: Props) {
   return (
@@ -18,10 +18,7 @@ export default function EmailVerificationPendingScreen({ navigation }: Props) {
           resizeMode="cover"
         />
 
-        <Header
-          showBackButton={true}
-          onBackPress={() => navigation.navigate('Login')}
-        />
+        <Header showBackButton={true} onBackPress={() => navigation.navigate('Login')} />
 
         <View className="flex-1 px-6 items-center justify-center">
           <View className="bg-white p-6 rounded-[20px] shadow-md items-center w-full">

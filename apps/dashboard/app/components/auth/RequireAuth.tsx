@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useEffect } from "react";
-import { useNavigate } from "react-router";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from '@clerk/clerk-react';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router';
 
 export function AuthMiddleware({ children }: { children: React.ReactNode }) {
   const { isLoaded, userId } = useAuth();
@@ -10,7 +10,7 @@ export function AuthMiddleware({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (isLoaded && !userId) {
-      navigate("/sign-in");
+      navigate('/sign-in');
     }
   }, [isLoaded, userId, navigate]);
 
@@ -25,4 +25,4 @@ export function AuthMiddleware({ children }: { children: React.ReactNode }) {
 
   // If authenticated, render children
   return userId ? <>{children}</> : null;
-} 
+}

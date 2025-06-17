@@ -6,26 +6,26 @@ class APIError extends Error {
 
   constructor(message: string, statusCode = 500) {
     super(message);
-    this.name = "APIError";
+    this.name = 'APIError';
     this.statusCode = statusCode;
   }
 }
 
 export const apiClient = {
   async get(endpoint: string, requiresAuth = true) {
-    return this.request("GET", endpoint, null, requiresAuth);
+    return this.request('GET', endpoint, null, requiresAuth);
   },
 
   async post(endpoint: string, data: any, requiresAuth = true) {
-    return this.request("POST", endpoint, data, requiresAuth);
+    return this.request('POST', endpoint, data, requiresAuth);
   },
 
   async put(endpoint: string, data: any, requiresAuth = true) {
-    return this.request("PUT", endpoint, data, requiresAuth);
+    return this.request('PUT', endpoint, data, requiresAuth);
   },
 
   async delete(endpoint: string, requiresAuth = true) {
-    return this.request("DELETE", endpoint, null, requiresAuth);
+    return this.request('DELETE', endpoint, null, requiresAuth);
   },
 
   async request<T = any>(
@@ -33,7 +33,7 @@ export const apiClient = {
     endpoint: string,
     data: any = null,
     requiresAuth = true,
-    retryCount = 0
+    retryCount = 0,
   ): Promise<T> {
     try {
       const { session, refreshSession } = useAuthStore.getState();
@@ -47,9 +47,10 @@ export const apiClient = {
           await new Promise((resolve) => setTimeout(resolve, 500 * 2 ** retryCount));
           return this.request(method, endpoint, data, requiresAuth, retryCount + 1);
         }
-        throw new APIError("No auth token available", 401);
+        throw new APIError('No authentication token available', 401);
       }
 
+      // Check if token needs refresh (expires within 5 minutes)
       if (requiresAuth && token && session?.expires_at) {
         const isExpiringSoon = session.expires_at - Date.now() < 5 * 60 * 1000;
         if (isExpiringSoon) {
@@ -63,7 +64,7 @@ export const apiClient = {
       }
 
       const headers: Record<string, string> = {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       };
 
       if (requiresAuth && token) {
@@ -82,18 +83,34 @@ export const apiClient = {
       const response = await fetch(`${API_URL}${endpoint}`, options);
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new APIError(errorData.message || `Request failed with status ${response.status}`, response.status);
+        let errorData: any = {};
+        try {
+          errorData = await response.json();
+        } catch (parseError) {
+          console.warn('Failed to parse error response:', parseError);
+        }
+
+        const errorMessage =
+          errorData.error || errorData.message || `Request failed with status ${response.status}`;
+        console.error(`API Error (${response.status}):`, errorMessage);
+
+        throw new APIError(errorMessage, response.status);
       }
 
       if (response.status === 204) {
         return null as T;
       }
 
-      return await response.json();
+      const result = await response.json();
+      return result;
     } catch (error) {
-      if (error instanceof APIError) throw error;
-      throw new APIError(error instanceof Error ? error.message : "Request failed");
+      if (error instanceof APIError) {
+        console.error(`API Error: ${error.message} (${error.statusCode})`);
+        throw error;
+      }
+      const message = error instanceof Error ? error.message : 'Network request failed';
+      console.error(`Network Error: ${message}`);
+      throw new APIError(message);
     }
   },
 };

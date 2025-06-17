@@ -1,11 +1,11 @@
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import type { AppStackParamList } from './types';
 import Feed from '@/features/feed/screens/Feed';
+import ImageEditScreen from '@/features/post/screens/ImageEditScreen';
 import NewPost from '@/features/post/screens/NewPost';
 import Profile from '@/features/profile/screens/Profile';
 import Search from '@/features/search/screens/Search';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import SettingsNavigator from './SettingsNavigator';
-import ImageEditScreen from '@/features/post/screens/ImageEditScreen';
+import type { AppStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
 
@@ -14,7 +14,7 @@ export default function AppNavigator() {
     <Stack.Navigator
       initialRouteName="Feed"
       screenOptions={{
-        headerShown: false
+        headerShown: false,
       }}
     >
       <Stack.Screen name="Feed" component={Feed} />
@@ -27,10 +27,9 @@ export default function AppNavigator() {
         component={ImageEditScreen}
         options={{
           headerShown: false,
-          presentation: 'modal'
+          presentation: 'modal',
         }}
       />
     </Stack.Navigator>
   );
 }
-

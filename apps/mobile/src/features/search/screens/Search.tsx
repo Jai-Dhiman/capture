@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, SectionList, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { AppStackParamList } from '@/navigation/types';
-import { Ionicons } from '@expo/vector-icons';
-import { API_URL } from '@env';
+import { useAuthStore } from '@/features/auth/stores/authStore';
 import { ProfileImage } from '@/features/post/components/ProfileImage';
 import { useSearchHashtags } from '@/features/post/hooks/useHashtags';
-import { useAuthStore } from '@/features/auth/stores/authStore';
-import { SkeletonLoader, SkeletonElement } from '@/shared/components/SkeletonLoader';
-import CustomBackIcon from '@assets/icons/CustomBackIcon.svg';
+import type { AppStackParamList } from '@/navigation/types';
+import { SkeletonElement, SkeletonLoader } from '@/shared/components/SkeletonLoader';
 import Background1 from '@assets/Background1.svg';
+import CustomBackIcon from '@assets/icons/CustomBackIcon.svg';
+import { API_URL } from '@env';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import React, { useState, useEffect } from 'react';
+import { SectionList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 
@@ -39,8 +39,10 @@ export default function UserSearch() {
 
   const isHashtagSearch = searchQuery.startsWith('#');
   const hashtagQuery = isHashtagSearch ? searchQuery.substring(1) : '';
-  const { data: hashtagResults = [], isLoading: hashtagsLoading } =
-    useSearchHashtags(hashtagQuery, isHashtagSearch && hashtagQuery.length > 0);
+  const { data: hashtagResults = [], isLoading: hashtagsLoading } = useSearchHashtags(
+    hashtagQuery,
+    isHashtagSearch && hashtagQuery.length > 0,
+  );
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -67,7 +69,6 @@ export default function UserSearch() {
 
     setIsLoading(true);
     try {
-
       if (!session?.access_token) {
         throw new Error('Authentication required. Please log in again.');
       }
@@ -110,8 +111,6 @@ export default function UserSearch() {
 
       const users = data.data?.searchUsers || [];
       setUserResults(users);
-
-
     } catch (error: any) {
       console.error('Search error:', error);
       setErrorMessage(error.message || 'Failed to search for users. Please try again.');
@@ -134,10 +133,7 @@ export default function UserSearch() {
       return (
         <View className="flex-1 justify-center items-center p-6">
           <Text className="text-red-500 text-center mb-4">{errorMessage}</Text>
-          <TouchableOpacity
-            className="bg-[#E4CAC7] px-4 py-2 rounded-full"
-            onPress={handleSearch}
-          >
+          <TouchableOpacity className="bg-[#E4CAC7] px-4 py-2 rounded-full" onPress={handleSearch}>
             <Text className="font-medium">Try Again</Text>
           </TouchableOpacity>
         </View>
@@ -175,7 +171,7 @@ export default function UserSearch() {
       renderItem: ({ item }: { item: HashtagSearchResult }) => (
         <TouchableOpacity
           className="flex-row items-center p-4 border-b border-gray-100"
-        // onPress={() => handleHashtagPress(item)}
+          // onPress={() => handleHashtagPress(item)}
         >
           <View className="w-12 h-12 rounded-full bg-[#E4CAC7] justify-center items-center mr-4">
             <Text className="text-black font-bold">#</Text>
@@ -184,7 +180,7 @@ export default function UserSearch() {
             <Text className="font-medium">{item.name}</Text>
           </View>
         </TouchableOpacity>
-      )
+      ),
     });
   } else if (userResults.length > 0) {
     sections.push({
@@ -220,7 +216,7 @@ export default function UserSearch() {
             </Text>
           )}
         </TouchableOpacity>
-      )
+      ),
     });
   }
 
@@ -228,15 +224,11 @@ export default function UserSearch() {
 
   return (
     <View className="flex-1">
-      <Background1
-        width="100%"
-        height="100%"
-        style={StyleSheet.absoluteFill}
-      />
+      <Background1 width="100%" height="100%" style={StyleSheet.absoluteFill} />
       <View className="flex-row items-center p-4 pt-20 shadow-md bg-transparent">
         <TouchableOpacity
           className="w-8 h-8 bg-[#DFD2CD] rounded-full drop-shadow-md flex justify-center items-center mr-2"
-          style={{ boxShadow: "0 4px 6px rgba(0,0,0,0.2)" }}
+          style={{ boxShadow: '0 4px 6px rgba(0,0,0,0.2)' }}
           onPress={() => navigation.goBack()}
         >
           <CustomBackIcon width={20} height={20} />
@@ -258,32 +250,34 @@ export default function UserSearch() {
         <View className="flex-1 p-4">
           <SkeletonLoader isLoading={true}>
             <SkeletonElement width="100%" height={20} />
-            {Array(4).fill(0).map((_, index) => (
-              <View key={index} className="flex-row items-center mb-4">
-                <SkeletonElement width={48} height={48} radius="round" />
-                {isHashtagSearch ? (
-                  <SkeletonElement width={144} height={20} />
-                ) : (
-                  <View className="ml-4">
-                    <SkeletonElement width={128} height={20} />
-                    <SkeletonElement width={192} height={12} />
-                  </View>
-                )}
-              </View>
-            ))}
+            {Array(4)
+              .fill(0)
+              .map((_, index) => (
+                <View key={index} className="flex-row items-center mb-4">
+                  <SkeletonElement width={48} height={48} radius="round" />
+                  {isHashtagSearch ? (
+                    <SkeletonElement width={144} height={20} />
+                  ) : (
+                    <View className="ml-4">
+                      <SkeletonElement width={128} height={20} />
+                      <SkeletonElement width={192} height={12} />
+                    </View>
+                  )}
+                </View>
+              ))}
           </SkeletonLoader>
         </View>
       ) : (
         <SectionList
           sections={sections as any}
           keyExtractor={(item) => item.id}
-          renderSectionHeader={({ section: { title } }) => (
+          renderSectionHeader={({ section: { title } }) =>
             sections.length > 0 ? (
               <View className="bg-gray-50 px-4 py-2">
                 <Text className="font-semibold text-gray-600">{title}</Text>
               </View>
             ) : null
-          )}
+          }
           stickySectionHeadersEnabled={false}
           ListEmptyComponent={renderEmptyState}
           contentContainerStyle={{ flexGrow: 1, backgroundColor: 'rgba(229, 231, 235, 0.8)' }}

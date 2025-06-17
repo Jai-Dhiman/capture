@@ -1,9 +1,9 @@
-import { eq, desc, and, inArray, notInArray, sql } from 'drizzle-orm';
-import * as schema from '../../db/schema';
-import type { ContextType } from '../../types';
+import { and, desc, eq, inArray, notInArray, sql } from 'drizzle-orm';
 import { createD1Client } from '../../db';
-import { computeScore } from '../../lib/recommendation';
+import * as schema from '../../db/schema';
 import { QdrantClient, type QdrantSearchResult } from '../../lib/qdrantClient';
+import { computeScore } from '../../lib/recommendation';
+import type { ContextType } from '../../types';
 
 type GraphQLPostType = 'post' | 'thread';
 

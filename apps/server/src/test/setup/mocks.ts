@@ -5,4 +5,4 @@ vi.mock('@/db', () => {
   return {
     createD1Client: mockCreateD1Client,
   };
-}); 
+});

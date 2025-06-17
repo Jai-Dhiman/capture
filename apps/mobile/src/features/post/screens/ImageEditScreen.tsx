@@ -1,10 +1,10 @@
+import type { RootStackParamList } from '@/navigation/types';
+import { Ionicons } from '@expo/vector-icons';
+import { type RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { Canvas, ColorMatrix, Image as SkiaImage, useImage } from '@shopify/react-native-skia';
 import type React from 'react';
 import { useState } from 'react';
-import { View, TouchableOpacity, Text, FlatList, Image as RNImage, StyleSheet } from 'react-native';
-import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
-import type { RootStackParamList } from '@/navigation/types';
-import { Canvas, Image as SkiaImage, useImage, ColorMatrix } from '@shopify/react-native-skia';
-import { Ionicons } from '@expo/vector-icons';
+import { FlatList, Image as RNImage, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type ImageEditScreenRouteProp = RouteProp<RootStackParamList, 'ImageEditScreen'>;
 
@@ -15,12 +15,26 @@ export default function ImageEditScreen() {
 
   if (!imageUri) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#DCDCDE' }}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: '#DCDCDE',
+        }}
+      >
         <Text style={{ fontSize: 16, color: '#333', textAlign: 'center', padding: 20 }}>
           No image provided. Please select an image first.
         </Text>
         <TouchableOpacity
-          style={{ marginTop: 20, padding: 12, backgroundColor: '#E4CAC7', borderRadius: 30, borderWidth: 1, borderColor: '#D8C0BD' }}
+          style={{
+            marginTop: 20,
+            padding: 12,
+            backgroundColor: '#E4CAC7',
+            borderRadius: 30,
+            borderWidth: 1,
+            borderColor: '#D8C0BD',
+          }}
           onPress={() => navigation.goBack()}
         >
           <Text style={{ color: 'black' }}>Go Back</Text>
@@ -30,7 +44,21 @@ export default function ImageEditScreen() {
   }
 
   const skiaImage = useImage(imageUri);
-  const filterOptions = ['Exposure', 'Brilliance', 'Highlights', 'Shadows', 'Contrast', 'Brightness', 'Saturation', 'Vibrance', 'Warmth', 'Tint', 'Sharpness', 'Definition', 'Vignette'];
+  const filterOptions = [
+    'Exposure',
+    'Brilliance',
+    'Highlights',
+    'Shadows',
+    'Contrast',
+    'Brightness',
+    'Saturation',
+    'Vibrance',
+    'Warmth',
+    'Tint',
+    'Sharpness',
+    'Definition',
+    'Vignette',
+  ];
   const filterIcons: Record<string, React.ComponentProps<typeof Ionicons>['name']> = {
     Exposure: 'sunny-outline',
     Brilliance: 'sparkles-outline',
@@ -48,9 +76,10 @@ export default function ImageEditScreen() {
   };
   const [activeFilter, setActiveFilter] = useState(filterOptions[0]);
   const [filterValues, setFilterValues] = useState<Record<string, number>>(() =>
-    filterOptions.reduce((acc, opt) => ({ ...acc, [opt]: 0 }), {} as Record<string, number>)
+    filterOptions.reduce((acc, opt) => ({ ...acc, [opt]: 0 }), {} as Record<string, number>),
   );
-  const handleValueChange = (value: number) => setFilterValues(prev => ({ ...prev, [activeFilter]: value }));
+  const handleValueChange = (value: number) =>
+    setFilterValues((prev) => ({ ...prev, [activeFilter]: value }));
   const getFilterMatrix = (filter: string, value: number) => {
     switch (filter) {
       case 'Brightness':
@@ -59,8 +88,11 @@ export default function ImageEditScreen() {
         const t = (1 - value) * 0.5;
         return [value, 0, 0, 0, t, 0, value, 0, 0, t, 0, 0, value, 0, t, 0, 0, 0, 1, 0];
       case 'Saturation':
-        const s = value; const inv = 1 - s;
-        const R = 0.2126 * inv; const G = 0.7152 * inv; const B = 0.0722 * inv;
+        const s = value;
+        const inv = 1 - s;
+        const R = 0.2126 * inv;
+        const G = 0.7152 * inv;
+        const B = 0.0722 * inv;
         return [R + s, G, B, 0, 0, R, G + s, B, 0, 0, R, G, B + s, 0, 0, 0, 0, 0, 1, 0];
       default:
         return [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0];
@@ -92,7 +124,7 @@ export default function ImageEditScreen() {
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: 16 }}
-          keyExtractor={item => item}
+          keyExtractor={(item) => item}
           renderItem={({ item }) => (
             <TouchableOpacity
               onPress={() => setActiveFilter(item)}
@@ -106,15 +138,25 @@ export default function ImageEditScreen() {
       {/* Slider */}
       <View className="mt-4 items-center px-4">
         <Text className="text-center text-black text-base font-semibold">{activeFilter}</Text>
-        <Text className="text-center text-black text-sm mb-2">{filterValues[activeFilter].toFixed(1)}</Text>
+        <Text className="text-center text-black text-sm mb-2">
+          {filterValues[activeFilter].toFixed(1)}
+        </Text>
         {/* Placholder for Slider */}
       </View>
       {/* Actions */}
       <View className="flex-row justify-between px-8 py-4 mt-auto">
-        <TouchableOpacity onPress={() => navigation.goBack()} className="bg-[#E4CAC7] rounded-[30px] border border-[#D8C0BD] px-8 py-2">
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          className="bg-[#E4CAC7] rounded-[30px] border border-[#D8C0BD] px-8 py-2"
+        >
           <Text className="text-black text-xs">Cancel</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => {/* TODO: save logic */ }} className="bg-[#E4CAC7] rounded-[30px] border border-[#D8C0BD] px-8 py-2">
+        <TouchableOpacity
+          onPress={() => {
+            /* TODO: save logic */
+          }}
+          className="bg-[#E4CAC7] rounded-[30px] border border-[#D8C0BD] px-8 py-2"
+        >
           <Text className="text-black text-xs">Save</Text>
         </TouchableOpacity>
       </View>

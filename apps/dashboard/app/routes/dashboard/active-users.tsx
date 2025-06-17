@@ -1,17 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-import {
-  type LoaderFunctionArgs,
-  useLoaderData,
-} from "react-router";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
+import { type LoaderFunctionArgs, useLoaderData } from 'react-router';
+import { Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 
 type Metrics = Array<{
   date: string;
@@ -34,7 +23,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
        FROM user_activity
        WHERE created_at >= ?
        GROUP BY date
-       ORDER BY date`
+       ORDER BY date`,
     )
     .bind(isoStart)
     .all();
@@ -46,7 +35,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
               COUNT(*) AS signups
        FROM profile
        WHERE created_at >= ?
-       GROUP BY date`
+       GROUP BY date`,
     )
     .bind(isoStart)
     .all();
@@ -56,7 +45,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
   for (let i = 0; i < days; i++) {
     const d = new Date(start);
     d.setDate(start.getDate() + i);
-    dates.push(d.toISOString().split("T")[0]);
+    dates.push(d.toISOString().split('T')[0]);
   }
 
   // 4) count profiles that existed before our window
@@ -95,14 +84,14 @@ export async function loader({ context }: LoaderFunctionArgs) {
 
   // 4) return a standard Response
   return new Response(JSON.stringify({ metrics }), {
-    headers: { "Content-Type": "application/json" },
+    headers: { 'Content-Type': 'application/json' },
   });
 }
 
 export function meta() {
   return [
-    { title: "Active Users Report - Capture" },
-    { name: "description", content: "Active Users Analytics for Capture Platform" },
+    { title: 'Active Users Report - Capture' },
+    { name: 'description', content: 'Active Users Analytics for Capture Platform' },
   ];
 }
 
@@ -121,9 +110,7 @@ export default function ActiveUsersReport() {
           <CardTitle>Monthly Active Users</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold">
-            {metrics[metrics.length - 1].activeUsers}
-          </div>
+          <div className="text-3xl font-bold">{metrics[metrics.length - 1].activeUsers}</div>
           <div className="h-96 mt-4">
             <ResponsiveContainer width="100%" height={384}>
               <LineChart data={metrics}>

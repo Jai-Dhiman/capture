@@ -1,4 +1,4 @@
-import { vi } from "vitest";
+import { vi } from 'vitest';
 
 // Define an interface for the mock D1 client and query builder
 interface MockStatement {
@@ -15,7 +15,7 @@ interface MockD1ClientAndQueryBuilder {
   where: (condition: any) => MockD1ClientAndQueryBuilder;
   limit: (limit: number) => MockD1ClientAndQueryBuilder;
   offset: (offset: number) => MockD1ClientAndQueryBuilder;
-  orderBy: (column: string | any, direction?: "asc" | "desc") => MockD1ClientAndQueryBuilder;
+  orderBy: (column: string | any, direction?: 'asc' | 'desc') => MockD1ClientAndQueryBuilder;
   get: <T = any>() => Promise<T | null>;
   all: <T = any>() => Promise<T[]>;
   insert: (table: any) => {
@@ -83,9 +83,9 @@ function createD1ClientMock(): MockD1ClientAndQueryBuilder {
   let limitValue: number | null = null;
   let offsetValue: number | null = null;
   let orderByColumn: string | null = null;
-  let orderDirection: "asc" | "desc" = "asc";
+  let orderDirection: 'asc' | 'desc' = 'asc';
   let selectedFields: any | null = null;
-  let operationType: "select" | "insert" | "update" | "delete" | null = null;
+  let operationType: 'select' | 'insert' | 'update' | 'delete' | null = null;
   let insertValues: any | null = null;
   let updateValues: any | null = null;
 
@@ -95,7 +95,7 @@ function createD1ClientMock(): MockD1ClientAndQueryBuilder {
     limitValue = null;
     offsetValue = null;
     orderByColumn = null;
-    orderDirection = "asc";
+    orderDirection = 'asc';
     selectedFields = null;
     operationType = null;
     insertValues = null;
@@ -114,32 +114,50 @@ function createD1ClientMock(): MockD1ClientAndQueryBuilder {
   // helper to evaluate a single where condition on an item
   function evaluateCondition(item: any, condition: any): boolean {
     // Handle Drizzle ORM condition objects
-    
+
     // Handle 'and' conditions (typically from and() function)
-    if (condition && condition.operator === 'and' && Array.isArray(condition.left) && Array.isArray(condition.right)) {
+    if (
+      condition &&
+      condition.operator === 'and' &&
+      Array.isArray(condition.left) &&
+      Array.isArray(condition.right)
+    ) {
       // Drizzle 'and' has left and right arrays of conditions
       const leftResults = condition.left.every((cond: any) => evaluateCondition(item, cond));
       const rightResults = condition.right.every((cond: any) => evaluateCondition(item, cond));
       return leftResults && rightResults;
     }
-    
+
     // Handle 'and' conditions with different structure
     if (condition && (condition.operator === 'and' || condition.kind === 'and')) {
       const conditions = condition.conditions || condition.expressions || condition.values || [];
-      return Array.isArray(conditions) && conditions.every((cond: any) => evaluateCondition(item, cond));
+      return (
+        Array.isArray(conditions) && conditions.every((cond: any) => evaluateCondition(item, cond))
+      );
     }
 
     // Handle equality conditions (typically from eq() function)
-    if (condition && condition.operator === '=' && condition.left && condition.right !== undefined) {
+    if (
+      condition &&
+      condition.operator === '=' &&
+      condition.left &&
+      condition.right !== undefined
+    ) {
       // Extract column name from Drizzle column object
-      const columnName = condition.left.name || condition.left.column?.name || condition.left._?.name;
+      const columnName =
+        condition.left.name || condition.left.column?.name || condition.left._?.name;
       return columnName && item[columnName] === condition.right;
     }
 
     // Handle legacy condition formats for backward compatibility
     if (condition && Array.isArray(condition.queryChunks)) {
       // extract only real sub-conditions (objects with operator or op)
-      const subConds = condition.queryChunks.filter((c: any) => c && typeof c === 'object' && (c.operator === '=' || c.operator === 'LIKE' || c.op === 'and' || c.op === 'or'));
+      const subConds = condition.queryChunks.filter(
+        (c: any) =>
+          c &&
+          typeof c === 'object' &&
+          (c.operator === '=' || c.operator === 'LIKE' || c.op === 'and' || c.op === 'or'),
+      );
       if (subConds.length > 0) {
         // treat composite SQL fragments as AND of sub-conditions
         return subConds.every((c: any) => evaluateCondition(item, c));
@@ -168,17 +186,17 @@ function createD1ClientMock(): MockD1ClientAndQueryBuilder {
       const key = condition.leftOperand?._?.name || condition.leftOperand?.name;
       return key != null && (item[key] === null || item[key] === undefined);
     }
-    
+
     // For unhandled conditions, return false (this was the main fix)
     return false;
-  };
+  }
 
   const applyQueryLogic = (items: any[]) => {
     let results = [...items];
 
     if (whereConditions.length > 0) {
-      results = results.filter(item =>
-        whereConditions.every(cond => evaluateCondition(item, cond))
+      results = results.filter((item) =>
+        whereConditions.every((cond) => evaluateCondition(item, cond)),
       );
     }
 
@@ -186,11 +204,14 @@ function createD1ClientMock(): MockD1ClientAndQueryBuilder {
     if (orderByColumn) {
       const column = orderByColumn as string;
       results.sort((a, b) => {
-        if (!Object.prototype.hasOwnProperty.call(a, column) || !Object.prototype.hasOwnProperty.call(b, column)) {
-            throw new Error(`OrderBy column '${column}' not found on one or both items during sort.`);
+        if (
+          !Object.prototype.hasOwnProperty.call(a, column) ||
+          !Object.prototype.hasOwnProperty.call(b, column)
+        ) {
+          throw new Error(`OrderBy column '${column}' not found on one or both items during sort.`);
         }
         if (a[column] === b[column]) return 0;
-        if (orderDirection === "asc") {
+        if (orderDirection === 'asc') {
           return a[column] > b[column] ? 1 : -1;
         }
         return a[column] < b[column] ? 1 : -1;
@@ -218,15 +239,15 @@ function createD1ClientMock(): MockD1ClientAndQueryBuilder {
       }
       const store = mockDataStores[currentTable];
       const allItems = Array.from(store.values());
-      
+
       const processedResults = applyQueryLogic(allItems);
 
       // Handle count queries specifically
       if (selectedFields && typeof selectedFields === 'object' && selectedFields.count) {
-         resetState();
-         return { count: processedResults.length } as any;
+        resetState();
+        return { count: processedResults.length } as any;
       }
-      
+
       const result = processedResults.length > 0 ? processedResults[0] : null;
       resetState();
       return result;
@@ -252,10 +273,10 @@ function createD1ClientMock(): MockD1ClientAndQueryBuilder {
       const allItems = Array.from(store.values());
       const processedResults = applyQueryLogic(allItems);
 
-      const rawResults = processedResults.map(row => {
+      const rawResults = processedResults.map((row) => {
         if (selectedFields && Array.isArray(selectedFields) && selectedFields.length > 0) {
           // If specific columns were selected, return values in that order
-          return selectedFields.map(field => row[field]);
+          return selectedFields.map((field) => row[field]);
         }
         // Otherwise, return all values of the row object
         return Object.values(row);
@@ -265,23 +286,25 @@ function createD1ClientMock(): MockD1ClientAndQueryBuilder {
       return rawResults as T[][];
     }),
     run: vi.fn(async () => {
-
       if (!currentTable || !mockDataStores[currentTable] || !operationType) {
-        console.error(`DEBUG: statementMock.run - BAILING. Table: ${currentTable}, Op: ${operationType}`);
+        console.error(
+          `DEBUG: statementMock.run - BAILING. Table: ${currentTable}, Op: ${operationType}`,
+        );
         resetState();
         return { success: false, meta: { duration: 0 } };
       }
       const store = mockDataStores[currentTable];
       let affectedRows = 0;
 
-      if (operationType === "insert" && insertValues) {
+      if (operationType === 'insert' && insertValues) {
         // Handle single or multiple inserts
         const itemsToInsert = Array.isArray(insertValues) ? insertValues : [insertValues];
         for (const item of itemsToInsert) {
           if (item.id && !store.has(item.id)) {
             store.set(item.id, { ...item });
             affectedRows++;
-          } else if (!item.id) { // auto-generate ID if not provided (basic)
+          } else if (!item.id) {
+            // auto-generate ID if not provided (basic)
             const tempId = `temp_id_${Date.now()}_${Math.random()}`;
             store.set(tempId, { ...item, id: tempId });
             affectedRows++;
@@ -291,7 +314,7 @@ function createD1ClientMock(): MockD1ClientAndQueryBuilder {
         return { success: true, meta: { duration: 0, rows_written: affectedRows } };
       }
 
-      if (operationType === "update" && updateValues) {
+      if (operationType === 'update' && updateValues) {
         const itemsToUpdate = applyQueryLogic(Array.from(store.values()));
         for (const item of itemsToUpdate) {
           if (store.has(item.id)) {
@@ -303,7 +326,7 @@ function createD1ClientMock(): MockD1ClientAndQueryBuilder {
         return { rowsAffected: affectedRows, success: true, meta: { duration: 0 } };
       }
 
-      if (operationType === "delete") {
+      if (operationType === 'delete') {
         const itemsToDelete = applyQueryLogic(Array.from(store.values()));
         for (const item of itemsToDelete) {
           if (store.has(item.id)) {
@@ -321,7 +344,7 @@ function createD1ClientMock(): MockD1ClientAndQueryBuilder {
 
   const queryBuilder: MockD1ClientAndQueryBuilder = {
     select: (fieldsToSelect?: any) => {
-      operationType = "select";
+      operationType = 'select';
       selectedFields = fieldsToSelect || { count: false };
       return queryBuilder;
     },
@@ -329,12 +352,15 @@ function createD1ClientMock(): MockD1ClientAndQueryBuilder {
       const tableName = extractTableName(table.toString());
 
       if (!tableName) {
-        console.error("Mock DB (from): Could not determine table name from Drizzle object provided:", table);
-        currentTable = "unknown_table_error_from"; 
+        console.error(
+          'Mock DB (from): Could not determine table name from Drizzle object provided:',
+          table,
+        );
+        currentTable = 'unknown_table_error_from';
       } else {
         currentTable = tableName;
       }
-      
+
       if (currentTable && !mockDataStores[currentTable]) {
         // console.warn(`Mock DB: Table '${currentTable}' was not pre-defined in mockDataStores (from).`);
       }
@@ -352,44 +378,50 @@ function createD1ClientMock(): MockD1ClientAndQueryBuilder {
       offsetValue = offset;
       return queryBuilder;
     }),
-    orderBy: vi.fn((column: string | any, direction?: "asc" | "desc") => {
+    orderBy: vi.fn((column: string | any, direction?: 'asc' | 'desc') => {
       if (typeof column === 'object' && column.column) {
         orderByColumn = column.column.name;
       } else if (typeof column === 'string') {
         orderByColumn = column;
       }
       if (typeof column === 'object' && column.order) {
-         orderDirection = column.order;
+        orderDirection = column.order;
       } else if (direction) {
         orderDirection = direction;
       }
       return queryBuilder;
     }),
     get: vi.fn(async <T = any>(): Promise<T | null> => {
-
       try {
         if (typeof statementMock.first !== 'function') {
-          console.error("CRITICAL_DEBUG: statementMock.first is NOT a function!");
+          console.error('CRITICAL_DEBUG: statementMock.first is NOT a function!');
           // resetState(); // Avoid side-effects during this debug
-          return null; 
+          return null;
         }
         const result = await statementMock.first<T>();
         return result;
       } catch (e: any) {
-        console.error("CRITICAL_DEBUG: Error calling statementMock.first() from queryBuilder.get():", e.message, e.stack);
+        console.error(
+          'CRITICAL_DEBUG: Error calling statementMock.first() from queryBuilder.get():',
+          e.message,
+          e.stack,
+        );
         // resetState(); // Avoid side-effects
-        throw e; 
+        throw e;
       }
     }),
     all: vi.fn(async <T = any>(): Promise<T[]> => {
       return statementMock.all<T>();
     }),
     insert: vi.fn((table: any) => {
-      operationType = "insert";
+      operationType = 'insert';
       const tableName = extractTableName(table.toString());
       if (!tableName) {
-        console.error("Mock DB (insert): Could not determine table name from Drizzle object provided:", table);
-        currentTable = "unknown_table_error_insert";
+        console.error(
+          'Mock DB (insert): Could not determine table name from Drizzle object provided:',
+          table,
+        );
+        currentTable = 'unknown_table_error_insert';
       } else {
         currentTable = tableName;
       }
@@ -403,7 +435,7 @@ function createD1ClientMock(): MockD1ClientAndQueryBuilder {
           return {
             returning: vi.fn(async () => {
               // Ensure run uses the currentTable set by insert
-              await statementMock.run(); 
+              await statementMock.run();
               return Array.isArray(insertValues) ? insertValues : [insertValues];
             }),
             execute: vi.fn(async () => statementMock.run()),
@@ -412,15 +444,18 @@ function createD1ClientMock(): MockD1ClientAndQueryBuilder {
       };
     }),
     update: vi.fn((table: any) => {
-      operationType = "update";
+      operationType = 'update';
       const tableName = extractTableName(table.toString());
       if (!tableName) {
-        console.error("Mock DB (update): Could not determine table name from Drizzle object provided:", table);
-        currentTable = "unknown_table_error_update";
+        console.error(
+          'Mock DB (update): Could not determine table name from Drizzle object provided:',
+          table,
+        );
+        currentTable = 'unknown_table_error_update';
       } else {
         currentTable = tableName;
       }
-       if (currentTable && !mockDataStores[currentTable]) {
+      if (currentTable && !mockDataStores[currentTable]) {
         // console.warn(`Mock DB: Table '${currentTable}' was not pre-defined in mockDataStores (update).`);
       }
       return {
@@ -439,11 +474,14 @@ function createD1ClientMock(): MockD1ClientAndQueryBuilder {
       };
     }),
     delete: vi.fn((table: any) => {
-      operationType = "delete";
+      operationType = 'delete';
       const tableName = extractTableName(table.toString());
       if (!tableName) {
-        console.error("Mock DB (delete): Could not determine table name from Drizzle object provided:", table);
-        currentTable = "unknown_table_error_delete";
+        console.error(
+          'Mock DB (delete): Could not determine table name from Drizzle object provided:',
+          table,
+        );
+        currentTable = 'unknown_table_error_delete';
       } else {
         currentTable = tableName;
       }
@@ -474,49 +512,48 @@ export const mockQueryBuilder = createD1ClientMock();
 
 export const mockCreateD1Client = vi.fn().mockImplementation(() => mockQueryBuilder);
 
-
 export const testData = {
   profiles: [
     {
-      id: "1",
-      userId: "test-user-id",
-      username: "testuser",
-      bio: "Test bio",
-      profileImage: "test-image.jpg",
+      id: '1',
+      userId: 'test-user-id',
+      username: 'testuser',
+      bio: 'Test bio',
+      profileImage: 'test-image.jpg',
       isPrivate: 0,
-      verifiedType: "none",
+      verifiedType: 'none',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     },
     {
-      id: "2",
-      userId: "other-user-id",
-      username: "otheruser",
-      bio: "Other bio",
-      profileImage: "other-image.jpg",
+      id: '2',
+      userId: 'other-user-id',
+      username: 'otheruser',
+      bio: 'Other bio',
+      profileImage: 'other-image.jpg',
       isPrivate: 0,
-      verifiedType: "none",
+      verifiedType: 'none',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     },
   ],
   posts: [
     {
-      id: "1",
-      userId: "test-user-id",
-      content: "Test post content",
-      type: "post",
+      id: '1',
+      userId: 'test-user-id',
+      content: 'Test post content',
+      type: 'post',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     },
   ],
   comments: [
     {
-      id: "1",
-      postId: "1",
-      userId: "test-user-id",
-      content: "Test comment",
-      path: "0001",
+      id: '1',
+      postId: '1',
+      userId: 'test-user-id',
+      content: 'Test comment',
+      path: '0001',
       depth: 1,
       isDeleted: 0,
       createdAt: new Date().toISOString(),
@@ -525,9 +562,9 @@ export const testData = {
   ],
   relationships: [
     {
-      id: "1",
-      followerId: "test-user-id",
-      followedId: "other-user-id",
+      id: '1',
+      followerId: 'test-user-id',
+      followedId: 'other-user-id',
       createdAt: new Date().toISOString(),
     },
   ],

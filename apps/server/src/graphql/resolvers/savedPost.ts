@@ -1,7 +1,7 @@
-import { createD1Client } from '../../db';
-import { eq, and, desc, sql } from 'drizzle-orm';
-import * as schema from '../../db/schema';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
+import { createD1Client } from '../../db';
+import * as schema from '../../db/schema';
 import type { ContextType } from '../../types';
 
 export const savedPostResolvers = {
@@ -117,7 +117,7 @@ export const savedPostResolvers = {
         await db.insert(schema.userActivity).values({
           id: nanoid(),
           userId: context.user.id,
-          eventType: "save",
+          eventType: 'save',
           createdAt: new Date().toISOString(),
         });
 

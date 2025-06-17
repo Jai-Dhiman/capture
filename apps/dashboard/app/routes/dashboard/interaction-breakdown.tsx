@@ -1,10 +1,16 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
-import { Progress } from "../../components/ui/progress";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../../components/ui/card';
+import { Progress } from '../../components/ui/progress';
 
 export function meta() {
   return [
-    { title: "Interaction Breakdown - Capture" },
-    { name: "description", content: "Interaction Breakdown for Capture Platform" },
+    { title: 'Interaction Breakdown - Capture' },
+    { name: 'description', content: 'Interaction Breakdown for Capture Platform' },
   ];
 }
 
@@ -62,7 +68,10 @@ export default function InteractionBreakdown() {
           </CardHeader>
           <CardContent>
             <div className="h-[200px] flex items-end gap-2 pt-6">
-              {[15, 25, 40, 30, 55, 85, 65, 70, 60, 75, 45, 30, 45, 60, 75, 80, 70, 60, 90, 80, 65, 40, 30, 20].map((height, i) => (
+              {[
+                15, 25, 40, 30, 55, 85, 65, 70, 60, 75, 45, 30, 45, 60, 75, 80, 70, 60, 90, 80, 65,
+                40, 30, 20,
+              ].map((height, i) => (
                 <div
                   key={`${(i % 12) + 1}${i < 12 ? 'am' : 'pm'}`}
                   className="flex-1 bg-blue-500 rounded-sm"
@@ -135,21 +144,27 @@ export default function InteractionBreakdown() {
             <div className="grid grid-cols-3 gap-6">
               <div className="flex flex-col items-center border rounded-lg p-4">
                 <div className="text-3xl font-bold mb-2">4.7s</div>
-                <div className="text-sm text-center text-muted-foreground">Avg. View Time for Photos</div>
+                <div className="text-sm text-center text-muted-foreground">
+                  Avg. View Time for Photos
+                </div>
                 <div className="mt-auto pt-4">
                   <div className="text-xs text-center text-green-500">+12% vs last month</div>
                 </div>
               </div>
               <div className="flex flex-col items-center border rounded-lg p-4">
                 <div className="text-3xl font-bold mb-2">23.2s</div>
-                <div className="text-sm text-center text-muted-foreground">Avg. View Time for Videos</div>
+                <div className="text-sm text-center text-muted-foreground">
+                  Avg. View Time for Videos
+                </div>
                 <div className="mt-auto pt-4">
                   <div className="text-xs text-center text-green-500">+28% vs last month</div>
                 </div>
               </div>
               <div className="flex flex-col items-center border rounded-lg p-4">
                 <div className="text-3xl font-bold mb-2">2.3</div>
-                <div className="text-sm text-center text-muted-foreground">Avg. Interactions per Thread</div>
+                <div className="text-sm text-center text-muted-foreground">
+                  Avg. Interactions per Thread
+                </div>
                 <div className="mt-auto pt-4">
                   <div className="text-xs text-center text-red-500">-4% vs last month</div>
                 </div>

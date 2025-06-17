@@ -1,4 +1,4 @@
-import { atom } from "jotai";
+import { atom } from 'jotai';
 
 export const followingMapAtom = atom<Record<string, boolean | null>>({});
 
@@ -11,5 +11,5 @@ export const isFollowingAtom = (userId: string) =>
         ...map,
         [userId]: newValue,
       });
-    }
+    },
   );

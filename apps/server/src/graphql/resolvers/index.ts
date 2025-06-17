@@ -1,12 +1,12 @@
-import { hashtagResolvers } from "./hashtag";
-import { postResolvers } from "./post";
-import { profileResolvers } from "./profile";
-import { commentResolvers } from "./comment";
-import { relationshipResolvers } from "./relationship";
-import { savedPostResolvers } from "./savedPost";
-import { blockingResolvers } from "./blocking";
-import { discoveryResolvers } from "./discovery";
-import { notificationResolvers } from "./notification";
+import { blockingResolvers } from './blocking';
+import { commentResolvers } from './comment';
+import { discoveryResolvers } from './discovery';
+import { hashtagResolvers } from './hashtag';
+import { notificationResolvers } from './notification';
+import { postResolvers } from './post';
+import { profileResolvers } from './profile';
+import { relationshipResolvers } from './relationship';
+import { savedPostResolvers } from './savedPost';
 
 type ResolverMap = {
   Query: Record<string, any>;

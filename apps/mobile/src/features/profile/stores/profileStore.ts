@@ -1,6 +1,6 @@
-import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
 export interface UserProfile {
   id: string;
@@ -34,8 +34,8 @@ export const useProfileStore = create<ProfileState>()(
       clearProfile: () => set({ profile: null }),
     }),
     {
-      name: "profile-storage",
+      name: 'profile-storage',
       storage: createJSONStorage(() => AsyncStorage),
-    }
-  )
+    },
+  ),
 );

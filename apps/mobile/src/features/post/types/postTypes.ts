@@ -2,7 +2,7 @@ export type Post = {
   id: string;
   userId: string;
   content: string;
-  type: "post" | "thread";
+  type: 'post' | 'thread';
   user: {
     id: string;
     username: string;
@@ -29,7 +29,7 @@ export type Post = {
     depth: number;
     parentId?: string;
     isDeleted: boolean;
-    user: Post["user"];
+    user: Post['user'];
     createdAt: string;
   }>;
   hashtags?: Array<{
@@ -37,7 +37,7 @@ export type Post = {
     name: string;
     createdAt: string;
   }>;
-  savedBy: Array<Post["user"]>;
+  savedBy: Array<Post['user']>;
   isSaved: boolean;
   createdAt: string;
   updatedAt: string;
@@ -45,5 +45,5 @@ export type Post = {
 };
 
 export type Thread = Post & {
-  type: "thread";
+  type: 'thread';
 };

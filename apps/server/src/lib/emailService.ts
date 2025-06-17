@@ -1,4 +1,4 @@
-import type { Bindings } from "../types";
+import type { Bindings } from '../types';
 
 export interface SendEmailOptions {
   to: string;
@@ -11,21 +11,21 @@ export class EmailService {
   private resendApiKey: string;
 
   constructor(resendApiKey: string) {
-    if (!resendApiKey || resendApiKey.trim() === "") {
-      throw new Error("RESEND_API_KEY is not configured or is invalid.");
+    if (!resendApiKey || resendApiKey.trim() === '') {
+      throw new Error('RESEND_API_KEY is not configured or is invalid.');
     }
     this.resendApiKey = resendApiKey;
   }
 
   async sendEmail(options: SendEmailOptions): Promise<void> {
     // Use onboarding@resend.dev for development - this is Resend's testing domain
-    const fromEmail = "onboarding@resend.dev";
+    const fromEmail = 'onboarding@resend.dev';
 
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
       headers: {
-        "Authorization": `Bearer ${this.resendApiKey}`,
-        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.resendApiKey}`,
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         from: fromEmail,
@@ -38,23 +38,28 @@ export class EmailService {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Failed to send email:", errorText);
-      throw new Error("Failed to send email");
+      console.error('Failed to send email:', errorText);
+      throw new Error('Failed to send email');
     }
   }
 
-  async sendVerificationCode(email: string, code: string, type: 'login_register' | 'verification'): Promise<void> {
-    const subject = type === 'login_register' 
-      ? "Your Capture login code" 
-      : "Verify your email address";
-    
-    const html = type === 'login_register' 
-      ? this.getLoginCodeTemplate(code)
-      : this.getVerificationTemplate(code);
+  async sendVerificationCode(
+    email: string,
+    code: string,
+    type: 'login_register' | 'verification',
+  ): Promise<void> {
+    const subject =
+      type === 'login_register' ? 'Your Capture login code' : 'Verify your email address';
 
-    const text = type === 'login_register'
-      ? `Your Capture login code is: ${code}. This code expires in 10 minutes.`
-      : `Your verification code is: ${code}. This code expires in 10 minutes.`;
+    const html =
+      type === 'login_register'
+        ? this.getLoginCodeTemplate(code)
+        : this.getVerificationTemplate(code);
+
+    const text =
+      type === 'login_register'
+        ? `Your Capture login code is: ${code}. This code expires in 10 minutes.`
+        : `Your verification code is: ${code}. This code expires in 10 minutes.`;
 
     await this.sendEmail({
       to: email,
@@ -119,4 +124,4 @@ export class EmailService {
 
 export function createEmailService(env: Bindings): EmailService {
   return new EmailService(env.RESEND_API_KEY);
-} 
+}

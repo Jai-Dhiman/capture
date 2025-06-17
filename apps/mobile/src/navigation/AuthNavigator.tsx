@@ -1,12 +1,12 @@
-import React from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import type { AuthStackParamList } from './types';
+import CodeVerificationScreen from '@/features/auth/screens/CodeVerificationScreen';
+import CreateProfile from '@/features/auth/screens/CreateProfile';
+import EmailSignupScreen from '@/features/auth/screens/EmailSignupScreen';
+import EmailVerificationPendingScreen from '@/features/auth/screens/EmailVerificationPendingScreen';
 import LoginScreen from '@/features/auth/screens/LoginScreen';
 import SignupScreen from '@/features/auth/screens/SignupScreen';
-import CodeVerificationScreen from '@/features/auth/screens/CodeVerificationScreen';
-import EmailSignupScreen from '@/features/auth/screens/EmailSignupScreen';
-import CreateProfile from '@/features/auth/screens/CreateProfile';
-import EmailVerificationPendingScreen from '@/features/auth/screens/EmailVerificationPendingScreen';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import React from 'react';
+import type { AuthStackParamList } from './types';
 import RegisterScreen from '@/features/auth/screens/RegisterScreen';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();

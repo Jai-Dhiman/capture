@@ -1,10 +1,10 @@
+import { useQueryClient } from '@tanstack/react-query';
+import { MotiView } from 'moti';
 import type React from 'react';
 import { useState } from 'react';
-import { View, TouchableOpacity, Text, Modal, Pressable } from 'react-native';
-import { MotiView } from 'moti';
+import { Modal, Pressable, Text, TouchableOpacity, View } from 'react-native';
 import { useUnreadNotificationCount } from '../hooks/useNotifications';
 import { NotificationList } from './NotificationList';
-import { useQueryClient } from '@tanstack/react-query';
 
 interface NotificationButtonProps {
   size?: number;
@@ -16,8 +16,8 @@ export const NotificationButton: React.FC<NotificationButtonProps> = ({ size = 3
   const queryClient = useQueryClient();
 
   const toggleNotifications = () => {
-    queryClient.invalidateQueries({ queryKey: ["notifications"] });
-    queryClient.invalidateQueries({ queryKey: ["unreadNotificationCount"] });
+    queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    queryClient.invalidateQueries({ queryKey: ['unreadNotificationCount'] });
 
     setIsOpen(!isOpen);
   };
@@ -28,8 +28,26 @@ export const NotificationButton: React.FC<NotificationButtonProps> = ({ size = 3
         className="w-10 h-10 bg-[#DFD2CD] rounded-full flex justify-center items-center relative"
         onPress={toggleNotifications}
       >
-        <View style={{ width: size * 0.6, height: size * 0.7, borderRadius: size * 0.3, borderWidth: 2, borderColor: 'black' }}>
-          <View style={{ width: size * 0.2, height: size * 0.1, backgroundColor: 'black', position: 'absolute', top: -5, alignSelf: 'center', borderRadius: 2 }} />
+        <View
+          style={{
+            width: size * 0.6,
+            height: size * 0.7,
+            borderRadius: size * 0.3,
+            borderWidth: 2,
+            borderColor: 'black',
+          }}
+        >
+          <View
+            style={{
+              width: size * 0.2,
+              height: size * 0.1,
+              backgroundColor: 'black',
+              position: 'absolute',
+              top: -5,
+              alignSelf: 'center',
+              borderRadius: 2,
+            }}
+          />
         </View>
 
         {unreadCount > 0 && (
@@ -48,7 +66,14 @@ export const NotificationButton: React.FC<NotificationButtonProps> = ({ size = 3
         onRequestClose={() => setIsOpen(false)}
       >
         <Pressable
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)' }}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.4)',
+          }}
           onPress={() => setIsOpen(false)}
         />
 
@@ -64,4 +89,4 @@ export const NotificationButton: React.FC<NotificationButtonProps> = ({ size = 3
       </Modal>
     </>
   );
-}; 
+};

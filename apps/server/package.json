@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "wrangler dev src/index.ts --experimental-vectorize-bind-to-prod",
+    "dev": "wrangler dev src/index.ts",
     "deploy": "wrangler deploy src/index.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "wrangler d1 migrations apply capture-db",
@@ -23,6 +23,8 @@
     "@hono/sentry": "^1.2.1",
     "@hono/zod-validator": "^0.4.2",
     "@sentry/browser": "^9.12.0",
+    "@simplewebauthn/server": "^13.1.1",
+    "@simplewebauthn/types": "^12.0.0",
     "drizzle-orm": "^0.39.1",
     "hono": "^4.7.2",
     "jose": "^5.9.6",

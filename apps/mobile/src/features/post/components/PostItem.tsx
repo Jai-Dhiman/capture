@@ -1,26 +1,34 @@
-import React, { useState } from 'react';
-import { Text, TouchableOpacity, View, ActivityIndicator, Share, Alert, type GestureResponderEvent } from 'react-native';
-import { PostMediaGallery } from './PostMediaGallery';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { AppStackParamList } from '@/navigation/types';
-import { ProfileImage } from './ProfileImage';
-import { useAtom } from 'jotai';
-import { commentDrawerOpenAtom, currentPostIdAtom } from '@/features/comments/atoms/commentAtoms';
-import { useSavePost, useUnsavePost } from '../hooks/useSavesPosts';
-import { useAlert } from '@/shared/lib/AlertContext';
-import { useDeletePost } from '../hooks/usePosts';
-import { SkeletonLoader } from '@/shared/components/SkeletonLoader';
 import { useAuthStore } from '@/features/auth/stores/authStore';
+import { commentDrawerOpenAtom, currentPostIdAtom } from '@/features/comments/atoms/commentAtoms';
 import { useBlockUser } from '@/features/profile/hooks/useBlocking';
-import { PostMenu } from './PostMenu';
+import type { AppStackParamList } from '@/navigation/types';
+import { SkeletonLoader } from '@/shared/components/SkeletonLoader';
+import { useAlert } from '@/shared/lib/AlertContext';
+import CommentIcon from '@assets/icons/CommentsIcon.svg';
 import FavoriteIcon from '@assets/icons/FavoriteIcon.svg';
 import FilledFavoriteIcon from '@assets/icons/FilledFavoriteIcon.svg';
-import CommentIcon from '@assets/icons/CommentsIcon.svg';
-import ShareIcon from '@assets/icons/PaperPlaneIcon.svg';
 import SettingsIcon from '@assets/icons/MenuDots.svg';
-import Clipboard from 'expo-clipboard';
+import ShareIcon from '@assets/icons/PaperPlaneIcon.svg';
 import { SHARE_URL } from '@env';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Clipboard from 'expo-clipboard';
+import { useAtom } from 'jotai';
+import React, { useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  type GestureResponderEvent,
+  Share,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useDeletePost } from '../hooks/usePosts';
+import { useSavePost, useUnsavePost } from '../hooks/useSavesPosts';
+import { PostMediaGallery } from './PostMediaGallery';
+import { PostMenu } from './PostMenu';
+import { ProfileImage } from './ProfileImage';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 
@@ -29,10 +37,12 @@ interface PostItemProps {
   isLoading?: boolean;
 }
 
-type MenuPosition = {
-  x: number;
-  y: number;
-} | undefined;
+type MenuPosition =
+  | {
+      x: number;
+      y: number;
+    }
+  | undefined;
 
 export const PostItem = ({ post: initialPost, isLoading = false }: PostItemProps) => {
   const navigation = useNavigation<NavigationProp>();
@@ -107,7 +117,7 @@ export const PostItem = ({ post: initialPost, isLoading = false }: PostItemProps
     const { nativeEvent } = event;
     setMenuPosition({
       x: nativeEvent.pageX,
-      y: nativeEvent.pageY - 10
+      y: nativeEvent.pageY - 10,
     });
     setMenuVisible(true);
   };
@@ -118,7 +128,8 @@ export const PostItem = ({ post: initialPost, isLoading = false }: PostItemProps
         <View className="flex-row items-center p-3">
           <TouchableOpacity
             onPress={() => navigation.navigate('Profile', { userId: post.userId })}
-            className="w-12 h-12 mr-3 drop-shadow-md">
+            className="w-12 h-12 mr-3 drop-shadow-md"
+          >
             {post.user?.profileImage ? (
               <ProfileImage cloudflareId={post.user.profileImage} style={{ borderRadius: 24 }} />
             ) : (
@@ -141,10 +152,7 @@ export const PostItem = ({ post: initialPost, isLoading = false }: PostItemProps
 
         <View className="w-full h-[300px]">
           {post.media && post.media.length > 0 ? (
-            <PostMediaGallery
-              mediaItems={post.media}
-              containerStyle={{ height: '100%' }}
-            />
+            <PostMediaGallery mediaItems={post.media} containerStyle={{ height: '100%' }} />
           ) : (
             <View className="w-full h-full bg-gray-200 justify-center items-center">
               <Text className="text-gray-500">No image</Text>
@@ -189,9 +197,15 @@ export const PostItem = ({ post: initialPost, isLoading = false }: PostItemProps
           onClose={() => setMenuVisible(false)}
           onDeletePost={isOwnPost ? handleDeletePost : undefined}
           onBlockUser={!isOwnPost ? handleBlockUser : undefined}
-          onReportPost={() => {/* Handle report */ }}
-          onWhySeeing={() => {/* Handle why */ }}
-          onEnableNotifications={() => {/* Handle notifications */ }}
+          onReportPost={() => {
+            /* Handle report */
+          }}
+          onWhySeeing={() => {
+            /* Handle why */
+          }}
+          onEnableNotifications={() => {
+            /* Handle notifications */
+          }}
           isOwnPost={isOwnPost}
           isLoading={isOwnPost ? deletePostMutation?.isPending : blockUserMutation.isPending}
           buttonPosition={menuPosition}
