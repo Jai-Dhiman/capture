@@ -83,14 +83,18 @@ export async function exchangeGoogleCode(
   codeVerifier: string,
   redirectUri: string,
   env: Bindings,
+  clientId?: string, // Optional client ID from frontend
 ): Promise<GoogleUserInfo> {
+  // Use provided clientId or fallback to environment variable
+  const googleClientId = clientId || env.GOOGLE_CLIENT_ID || '';
+  
   const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: new URLSearchParams({
-      client_id: env.GOOGLE_CLIENT_ID || '',
+      client_id: googleClientId,
       client_secret: env.GOOGLE_CLIENT_SECRET || '',
       code,
       code_verifier: codeVerifier,
@@ -106,7 +110,7 @@ export async function exchangeGoogleCode(
       statusText: tokenResponse.statusText,
       error: errorText,
       requestBody: {
-        client_id: env.GOOGLE_CLIENT_ID || 'MISSING',
+        client_id: googleClientId,
         client_secret: env.GOOGLE_CLIENT_SECRET ? 'PRESENT' : 'MISSING',
         code: code ? `${code.substring(0, 10)}...` : 'MISSING',
         code_verifier: codeVerifier ? `${codeVerifier.substring(0, 10)}...` : 'MISSING',

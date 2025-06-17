@@ -49,9 +49,8 @@ export function OAuthButtons({
           loginWithGoogle.mutate();
         }}
         disabled={loginWithGoogle.isPending}
-        className={`bg-white ${buttonHeight} rounded-[30px] shadow-md flex-row items-center justify-center ${spacing} ${
-          loginWithGoogle.isPending ? 'opacity-50' : ''
-        }`}
+        className={`bg-white ${buttonHeight} rounded-[30px] shadow-md flex-row items-center justify-center ${spacing} ${loginWithGoogle.isPending ? 'opacity-50' : ''
+          }`}
         style={showDivider ? { marginTop: dividerSpacing === 'mt-[29px]' ? 29 : 20 } : {}}
       >
         {loginWithGoogle.isPending ? (
@@ -82,9 +81,8 @@ export function OAuthButtons({
           loginWithApple.mutate();
         }}
         disabled={loginWithApple.isPending}
-        className={`bg-white ${buttonHeight} rounded-[30px] shadow-md flex-row items-center justify-center ${spacing} ${
-          loginWithApple.isPending ? 'opacity-50' : ''
-        }`}
+        className={`bg-white ${buttonHeight} rounded-[30px] shadow-md flex-row items-center justify-center ${spacing} ${loginWithApple.isPending ? 'opacity-50' : ''
+          }`}
       >
         {loginWithApple.isPending ? (
           <View className="flex-row items-center">
@@ -136,9 +134,8 @@ export function GoogleOAuthButton({
     <TouchableOpacity
       onPress={handlePress}
       disabled={disabled || loginWithGoogle.isPending}
-      className={`bg-white ${buttonHeight} rounded-[30px] shadow-md flex-row items-center justify-center ${
-        disabled || loginWithGoogle.isPending ? 'opacity-50' : ''
-      }`}
+      className={`bg-white ${buttonHeight} rounded-[30px] shadow-md flex-row items-center justify-center ${disabled || loginWithGoogle.isPending ? 'opacity-50' : ''
+        }`}
     >
       {loginWithGoogle.isPending ? (
         <View className="flex-row items-center">
@@ -186,9 +183,8 @@ export function AppleOAuthButton({
     <TouchableOpacity
       onPress={handlePress}
       disabled={disabled || loginWithApple.isPending}
-      className={`bg-white ${buttonHeight} rounded-[30px] shadow-md flex-row items-center justify-center ${
-        disabled || loginWithApple.isPending ? 'opacity-50' : ''
-      }`}
+      className={`bg-white ${buttonHeight} rounded-[30px] shadow-md flex-row items-center justify-center ${disabled || loginWithApple.isPending ? 'opacity-50' : ''
+        }`}
     >
       {loginWithApple.isPending ? (
         <View className="flex-row items-center">

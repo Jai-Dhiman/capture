@@ -46,6 +46,7 @@ export interface OAuthGoogleRequest {
   code: string;
   codeVerifier: string;
   redirectUri: string;
+  clientId?: string; // Optional platform-specific client ID
 }
 
 export interface OAuthAppleRequest {

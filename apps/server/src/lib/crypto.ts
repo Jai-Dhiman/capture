@@ -77,16 +77,15 @@ export async function verifyImageSignature(
   const nonce = signatureBytes.slice(0, nacl.secretbox.nonceLength);
   const box = signatureBytes.slice(nacl.secretbox.nonceLength);
 
-  const encoder = new TextEncoder();
-  const messageBytes = encoder.encode(message);
-
   try {
     const decrypted = nacl.secretbox.open(box, nonce, keyBytes);
     if (!decrypted) return false;
 
     const decoder = new TextDecoder();
-    return decoder.decode(decrypted) === message;
+    const decryptedMessage = decoder.decode(decrypted);
+    return decryptedMessage === message;
   } catch (error) {
+    console.error('Error verifying image signature:', error);
     return false;
   }
 }

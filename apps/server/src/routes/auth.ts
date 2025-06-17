@@ -39,6 +39,7 @@ const oauthGoogleSchema = z.object({
   code: z.string(),
   codeVerifier: z.string(),
   redirectUri: z.string(),
+  clientId: z.string().optional(), // Accept client ID from frontend
 });
 
 const oauthAppleSchema = z.object({
@@ -467,17 +468,30 @@ router.post('/oauth/google', authRateLimiter, async (c) => {
       );
     }
 
-    const { code, codeVerifier, redirectUri } = validation.data;
+    const { code, codeVerifier, redirectUri, clientId } = validation.data;
 
-    if (!c.env.GOOGLE_CLIENT_ID || !c.env.GOOGLE_CLIENT_SECRET) {
+    if (!clientId && (!c.env.GOOGLE_CLIENT_ID || !c.env.GOOGLE_CLIENT_SECRET)) {
       return c.json(
         { error: 'Google OAuth not configured', code: 'auth/oauth-not-configured' },
         500,
       );
     }
 
+    if (!c.env.GOOGLE_CLIENT_SECRET) {
+      return c.json(
+        { error: 'Google OAuth client secret not configured', code: 'auth/oauth-not-configured' },
+        500,
+      );
+    }
+
     // Exchange code for user info
-    const googleUser = await exchangeGoogleCode(code, codeVerifier, redirectUri, c.env);
+    const googleUser = await exchangeGoogleCode(
+      code, 
+      codeVerifier, 
+      redirectUri, 
+      c.env,
+      clientId // Pass the received client ID
+    );
 
     if (!googleUser.email) {
       return c.json(
