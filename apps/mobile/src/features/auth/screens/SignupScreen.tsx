@@ -61,29 +61,61 @@ export default function SignupScreen({ navigation }: Props) {
 
   return (
     <View style={{ flex: 1 }}>
-      <View className="flex-1 bg-[#DCDCDE] rounded-[30px] overflow-hidden">
+      <View className="flex-1 bg-[#DCDCDE]  overflow-hidden">
         <Image
           source={require('@assets/DefaultBackground.png')}
-          style={{ width: '100%', height: '100%', position: 'absolute' }}
+          style={{
+            opacity: '60%',
+            width: '100%',
+            height: '100%',
+            position: 'absolute',
+            top: 0,
+            left: 0
+          }}
           resizeMode="cover"
         />
 
         <Header
           showBackButton={true}
           onBackPress={() => navigation.goBack()}
-          showBackground={true}
+          showBackground={false}
           height={140}
         />
 
         <View className="flex-1 px-[26px]">
-          <View className="h-[1px] bg-black/10 mb-[30px]" />
 
-          <Text className="text-2xl font-bold font-roboto text-center mb-6">
-            Join Capture
-          </Text>
-          <Text className="text-base font-roboto text-center mb-8 text-gray-600">
-            Enter your details to get started
-          </Text>
+          <form.Field name="phone">
+            {(field) => (
+              <View className="mb-[30px]">
+                <Text className="text-base font-roboto mb-[6px]"></Text>
+                <TouchableOpacity
+                  activeOpacity={1}
+                  onPress={() => phoneInputRef.current?.focus()}
+                  className={`bg-white h-[60px] rounded-[16px] shadow-md flex-row items-center px-[9px] ${isPhoneFocused ? 'border-2 border-[#E4CAC7]' : ''}`}
+                >
+                  <Text className="mr-3 text-[20px]">📱</Text>
+                  <TextInput
+                    ref={phoneInputRef}
+                    onFocus={() => setIsPhoneFocused(true)}
+                    onBlur={() => {
+                      setIsPhoneFocused(false);
+                      field.handleBlur();
+                    }}
+                    className="flex-1 text-base font-roboto text-black outline-none"
+                    style={{ paddingVertical: 0, textAlignVertical: 'center', height: '100%' }}
+                    value={field.state.value}
+                    onChangeText={field.handleChange}
+                    keyboardType="phone-pad"
+                    placeholder="Phone number"
+                    placeholderTextColor="#C8C8C8"
+                  />
+                </TouchableOpacity>
+                {/* <Text className="text-xs text-gray-500 mt-1 ml-2 font-roboto">
+                  Helps with account recovery and security
+                </Text> */}
+              </View>
+            )}
+          </form.Field>
 
           <form.Field
             name="email"
@@ -97,7 +129,7 @@ export default function SignupScreen({ navigation }: Props) {
           >
             {(field) => (
               <View className="mb-[24px]">
-                <Text className="text-base font-roboto mb-[6px]">Email</Text>
+                <Text className="text-base font-roboto mb-[6px]"></Text>
                 <TouchableOpacity
                   activeOpacity={1}
                   onPress={() => emailInputRef.current?.focus()}
@@ -127,39 +159,6 @@ export default function SignupScreen({ navigation }: Props) {
                     {field.state.meta.errors.join(', ')}
                   </Text>
                 )}
-              </View>
-            )}
-          </form.Field>
-
-          <form.Field name="phone">
-            {(field) => (
-              <View className="mb-[30px]">
-                <Text className="text-base font-roboto mb-[6px]">Phone</Text>
-                <TouchableOpacity
-                  activeOpacity={1}
-                  onPress={() => phoneInputRef.current?.focus()}
-                  className={`bg-white h-[60px] rounded-[16px] shadow-md flex-row items-center px-[9px] ${isPhoneFocused ? 'border-2 border-[#E4CAC7]' : ''}`}
-                >
-                  <Text className="mr-3 text-[20px]">📱</Text>
-                  <TextInput
-                    ref={phoneInputRef}
-                    onFocus={() => setIsPhoneFocused(true)}
-                    onBlur={() => {
-                      setIsPhoneFocused(false);
-                      field.handleBlur();
-                    }}
-                    className="flex-1 text-base font-roboto text-black outline-none"
-                    style={{ paddingVertical: 0, textAlignVertical: 'center', height: '100%' }}
-                    value={field.state.value}
-                    onChangeText={field.handleChange}
-                    keyboardType="phone-pad"
-                    placeholder="Phone number"
-                    placeholderTextColor="#C8C8C8"
-                  />
-                </TouchableOpacity>
-                <Text className="text-xs text-gray-500 mt-1 ml-2 font-roboto">
-                  Helps with account recovery and security
-                </Text>
               </View>
             )}
           </form.Field>

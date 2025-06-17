@@ -7,6 +7,7 @@ import CodeVerificationScreen from '@/features/auth/screens/CodeVerificationScre
 import EmailSignupScreen from '@/features/auth/screens/EmailSignupScreen';
 import CreateProfile from '@/features/auth/screens/CreateProfile';
 import EmailVerificationPendingScreen from '@/features/auth/screens/EmailVerificationPendingScreen';
+import RegisterScreen from '@/features/auth/screens/RegisterScreen';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
@@ -25,6 +26,7 @@ export default function AuthStack() {
       <Stack.Screen name="EmailSignup" component={EmailSignupScreen} />
       <Stack.Screen name="EmailVerificationPending" component={EmailVerificationPendingScreen} />
       <Stack.Screen name="CreateProfile" component={CreateProfile} />
+      <Stack.Screen name='RegisterScreen' component={RegisterScreen} />
     </Stack.Navigator>
   );
 }

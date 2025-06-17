@@ -11,6 +11,7 @@ import type { AuthStackParamList } from '@/navigation/types'
 import { useAuth } from '../hooks/useAuth'
 import Header from '@/shared/components/Header'
 import { useAlert } from '@/shared/lib/AlertContext'
+import { Platform } from 'react-native'
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'Login'>
@@ -21,6 +22,20 @@ export default function LoginScreen({ navigation }: Props) {
   const emailInputRef = useRef<TextInput>(null)
   const { showAlert } = useAlert()
   const { sendCode, loginWithGoogle, loginWithApple } = useAuth()
+
+  const shadowStyle = {
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  }
 
   const form = useForm({
     defaultValues: {
@@ -87,6 +102,7 @@ export default function LoginScreen({ navigation }: Props) {
                   activeOpacity={1}
                   onPress={() => emailInputRef.current?.focus()}
                   className={`bg-white h-[60px] rounded-[16px] shadow-md flex-row items-center px-[9px] ${isEmailFocused ? 'border-2 border-[#E4CAC7]' : ''}`}
+                  style={shadowStyle}
                 >
                   <EmailIcon width={35} height={35} style={{ marginRight: 14 }} />
                   <TextInput
@@ -171,12 +187,12 @@ export default function LoginScreen({ navigation }: Props) {
               </View>
             )}
           </form.Field> */}
-
+          {/* 
           {login.isError && (
             <Text className="text-red-500 text-xs mt-2 mb-4 text-center">
               {"Incorrect Username or Password"}
             </Text>
-          )}
+          )} */}
 
           <form.Subscribe
             selector={(state) => [state.canSubmit, state.isSubmitting]}
@@ -186,6 +202,7 @@ export default function LoginScreen({ navigation }: Props) {
                 className={`h-[56px] ${canSubmit ? 'bg-[#E4CAC7]' : 'bg-stone-300'} rounded-[30px] shadow-md justify-center items-center`}
                 onPress={() => form.handleSubmit()}
                 disabled={!canSubmit || isFormSubmitting || sendCode.isPending}
+                style={shadowStyle}
               >
                 {isFormSubmitting || sendCode.isPending ? (
                   <View className="flex-row justify-center items-center">
@@ -212,6 +229,7 @@ export default function LoginScreen({ navigation }: Props) {
             onPress={() => loginWithGoogle.mutate()}
             disabled={loginWithGoogle.isPending}
             className={`bg-white h-[56px] rounded-[30px] shadow-md flex-row items-center justify-center mb-[23px] mt-[29px] ${loginWithGoogle.isPending ? 'opacity-50' : ''}`}
+            style={shadowStyle}
           >
             {loginWithGoogle.isPending ? (
               <ActivityIndicator size="small" color="#000" />
@@ -243,7 +261,7 @@ export default function LoginScreen({ navigation }: Props) {
           </TouchableOpacity>
 
           <View className="items-center">
-            <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
+            <TouchableOpacity onPress={() => navigation.navigate('RegisterScreen')}>
               <Text className="text-base font-semibold font-roboto text-[#827B85] underline">Don't Have an Account?</Text>
             </TouchableOpacity>
           </View>

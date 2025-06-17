@@ -15,7 +15,7 @@ import ViewPasswordIcon from '@assets/icons/ViewPasswordIcon.svg'
 import HidePasswordIcon from '@assets/icons/HidePasswordIcon.svg'
 
 type Props = {
-  navigation: NativeStackNavigationProp<AuthStackParamList, 'Signup'>
+  navigation: NativeStackNavigationProp<AuthStackParamList, 'EmailSignup'>
 }
 
 export default function EmailSignupScreen({ navigation }: Props) {
@@ -26,7 +26,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [isConfirmPasswordFocused, setIsConfirmPasswordFocused] = useState(false);
   const { showAlert } = useAlert();
-  const { signup } = useAuth();
+  // const { signup } = useAuth();
 
   const emailInputRef = useRef<TextInput>(null);
   const passwordInputRef = useRef<TextInput>(null);

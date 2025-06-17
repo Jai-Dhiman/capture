@@ -12,14 +12,15 @@ export type AuthStackParamList = {
   Login: undefined;
   Signup: undefined;
   EmailSignup: undefined;
-  CodeVerification: { 
-    email: string; 
-    phone?: string; 
-    isNewUser: boolean; 
-    message: string; 
+  CodeVerification: {
+    email: string;
+    phone?: string;
+    isNewUser: boolean;
+    message: string;
   };
   CreateProfile: undefined;
   EmailVerificationPending: undefined;
+  RegisterScreen: undefined;
 };
 
 export type AppStackParamList = {

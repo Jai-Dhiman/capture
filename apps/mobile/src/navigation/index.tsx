@@ -25,8 +25,7 @@ export const linking: LinkingOptions<RootStackParamList> = {
           Login: 'auth/login',
           Signup: 'auth/signup',
           CreateProfile: 'auth/create-profile',
-          ForgotPassword: 'auth/forgot-password',
-          ResetPassword: 'auth/reset-password',
+          RegisterScreen: 'auth/register-screen'
         }
       },
       App: {
