@@ -24,7 +24,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [isConfirmPasswordFocused, setIsConfirmPasswordFocused] = useState(false);
   const { showAlert } = useAlert();
-  const { signup } = useAuth();
+  // const { signup } = useAuth();
 
   const emailInputRef = useRef<TextInput>(null);
   const passwordInputRef = useRef<TextInput>(null);
@@ -204,8 +204,8 @@ export default function EmailSignupScreen({ navigation }: Props) {
                 const passwordValue = form.getFieldValue('password');
                 const confirmError =
                   showValidationErrors &&
-                  field.state.value !== '' &&
-                  passwordValue !== field.state.value
+                    field.state.value !== '' &&
+                    passwordValue !== field.state.value
                     ? 'Passwords do not match'
                     : undefined;
 

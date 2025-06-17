@@ -20,6 +20,7 @@ export type AuthStackParamList = {
   };
   CreateProfile: undefined;
   EmailVerificationPending: undefined;
+  RegisterScreen: undefined;
 };
 
 export type AppStackParamList = {

@@ -54,17 +54,24 @@ export default function SignupScreen({ navigation }: Props) {
 
   return (
     <View style={{ flex: 1 }}>
-      <View className="flex-1 bg-[#DCDCDE] rounded-[30px] overflow-hidden">
+      <View className="flex-1 bg-[#DCDCDE]  overflow-hidden">
         <Image
           source={require('@assets/DefaultBackground.png')}
-          style={{ width: '100%', height: '100%', position: 'absolute' }}
+          style={{
+            opacity: '60%',
+            width: '100%',
+            height: '100%',
+            position: 'absolute',
+            top: 0,
+            left: 0
+          }}
           resizeMode="cover"
         />
 
         <Header
           showBackButton={true}
           onBackPress={() => navigation.goBack()}
-          showBackground={true}
+          showBackground={false}
           height={140}
         />
 
@@ -88,7 +95,7 @@ export default function SignupScreen({ navigation }: Props) {
           >
             {(field) => (
               <View className="mb-[24px]">
-                <Text className="text-base font-roboto mb-[6px]">Email</Text>
+                <Text className="text-base font-roboto mb-[6px]"></Text>
                 <TouchableOpacity
                   activeOpacity={1}
                   onPress={() => emailInputRef.current?.focus()}

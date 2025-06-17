@@ -34,6 +34,20 @@ export default function LoginScreen({ navigation }: Props) {
     loadBiometricName();
   }, [getBiometricName, isPasskeySupported, hasBiometrics]);
 
+  const shadowStyle = {
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  }
+
   const form = useForm({
     defaultValues: {
       email: '',
@@ -141,6 +155,7 @@ export default function LoginScreen({ navigation }: Props) {
                   activeOpacity={1}
                   onPress={() => emailInputRef.current?.focus()}
                   className={`bg-white h-[60px] rounded-[16px] shadow-md flex-row items-center px-[9px] ${isEmailFocused ? 'border-2 border-[#E4CAC7]' : ''}`}
+                  style={shadowStyle}
                 >
                   <EmailIcon width={35} height={35} style={{ marginRight: 14 }} />
                   <TextInput
@@ -176,7 +191,7 @@ export default function LoginScreen({ navigation }: Props) {
                 ? 'Passkey authentication failed. Please try again.'
                 : 'Failed to send verification code. Please try again.'}
             </Text>
-          )}
+          )} */}
 
           <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
             {([canSubmit, isFormSubmitting]) => (

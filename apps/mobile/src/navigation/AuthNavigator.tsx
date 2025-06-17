@@ -7,6 +7,7 @@ import SignupScreen from '@/features/auth/screens/SignupScreen';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
 import type { AuthStackParamList } from './types';
+import RegisterScreen from '@/features/auth/screens/RegisterScreen';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
@@ -25,6 +26,7 @@ export default function AuthStack() {
       <Stack.Screen name="EmailSignup" component={EmailSignupScreen} />
       <Stack.Screen name="EmailVerificationPending" component={EmailVerificationPendingScreen} />
       <Stack.Screen name="CreateProfile" component={CreateProfile} />
+      <Stack.Screen name='RegisterScreen' component={RegisterScreen} />
     </Stack.Navigator>
   );
 }

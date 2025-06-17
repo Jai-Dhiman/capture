@@ -176,7 +176,7 @@ importers:
         version: 1.7.3(@babel/runtime@7.27.6)(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1))(react@18.3.1)
       '@shopify/react-native-skia':
         specifier: ^1.5.0
-        version: 1.12.4(react-native-reanimated@3.16.7(@babel/core@7.27.4)(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1))(react@18.3.1))(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1))(react@18.3.1)
+        version: 1.5.0(react-native-reanimated@3.16.7(@babel/core@7.27.4)(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1))(react@18.3.1))(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1))(react@18.3.1)
       '@tanstack/react-form':
         specifier: ^1.1.2
         version: 1.12.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -318,6 +318,9 @@ importers:
       react-native-url-polyfill:
         specifier: ^2.0.0
         version: 2.0.0(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1))
+      react-native-video:
+        specifier: ^6.15.0
+        version: 6.15.0(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1))(react@18.3.1)
       react-native-web:
         specifier: ^0.19.13
         version: 0.19.13(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -409,6 +412,9 @@ importers:
       nanoid:
         specifier: ^5.0.9
         version: 5.1.5
+      react-native-video:
+        specifier: ^6.15.0
+        version: 6.15.0(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1))(react@18.3.1)
       tweetnacl:
         specifier: ^1.0.3
         version: 1.0.3
@@ -2999,12 +3005,12 @@ packages:
       react: '*'
       react-native: '*'
 
-  '@shopify/react-native-skia@1.12.4':
-    resolution: {integrity: sha512-8QDIBKSU7XB3Lc1kAv4jSFddTQK8AE+1AEoJnQLNllsiex1gufLQ8kN7rs9zii+iboSY8tYKT7ocV+5cE2Exdw==}
+  '@shopify/react-native-skia@1.5.0':
+    resolution: {integrity: sha512-YNcw7cbksiMJ3d8uxh14LFRztUhjQFphFV/GCm8cSO4SxFc4niqnvsGklXNv68DLESMdn5hQnfYpa0oJqaW20w==}
     hasBin: true
     peerDependencies:
-      react: '>=18.0 <19.0.0'
-      react-native: '>=0.64 <0.78.0'
+      react: '>=18.0'
+      react-native: '>=0.64'
       react-native-reanimated: '>=2.0.0'
     peerDependenciesMeta:
       react-native:
@@ -3796,8 +3802,8 @@ packages:
   caniuse-lite@1.0.30001721:
     resolution: {integrity: sha512-cOuvmUVtKrtEaoKiO0rSc29jcjwMwX5tOHDy4MgVFEWiUXj4uBMJkwI8MDySkgXidpMiHUcviogAvFi4pA2hDQ==}
 
-  canvaskit-wasm@0.40.0:
-    resolution: {integrity: sha512-Od2o+ZmoEw9PBdN/yCGvzfu0WVqlufBPEWNG452wY7E9aT8RBE+ChpZF526doOlg7zumO4iCS+RAeht4P0Gbpw==}
+  canvaskit-wasm@0.39.1:
+    resolution: {integrity: sha512-Gy3lCmhUdKq+8bvDrs9t8+qf7RvcjuQn+we7vTVVyqgOVO1UVfHpsnBxkTZw+R4ApEJ3D5fKySl9TU11hmjl/A==}
 
   chai@5.2.0:
     resolution: {integrity: sha512-mCuXncKXk5iCLhfhwTc0izo0gtEmpz5CtG2y8GiOINBlMVS6v8TMRc5TaLWKS6692m9+dVVfzgeVxR5UxWHTYw==}
@@ -6533,6 +6539,12 @@ packages:
   react-native-url-polyfill@2.0.0:
     resolution: {integrity: sha512-My330Do7/DvKnEvwQc0WdcBnFPploYKp9CYlefDXzIdEaA+PAhDYllkvGeEroEzvc4Kzzj2O4yVdz8v6fjRvhA==}
     peerDependencies:
+      react-native: '*'
+
+  react-native-video@6.15.0:
+    resolution: {integrity: sha512-zgaNCMA50uS5hvgySmX1GhB0gJUke1iYhBGcXtIYhvYVtUb9Wp7enrazABb3D5xZOer5kpRraS9V79UpedxBGg==}
+    peerDependencies:
+      react: '*'
       react-native: '*'
 
   react-native-web@0.19.13:
@@ -10851,9 +10863,9 @@ snapshots:
       recyclerlistview: 4.2.1(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1))(react@18.3.1)
       tslib: 2.8.1
 
-  '@shopify/react-native-skia@1.12.4(react-native-reanimated@3.16.7(@babel/core@7.27.4)(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1))(react@18.3.1))(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1))(react@18.3.1)':
+  '@shopify/react-native-skia@1.5.0(react-native-reanimated@3.16.7(@babel/core@7.27.4)(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1))(react@18.3.1))(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1))(react@18.3.1)':
     dependencies:
-      canvaskit-wasm: 0.40.0
+      canvaskit-wasm: 0.39.1
       react: 18.3.1
       react-reconciler: 0.27.0(react@18.3.1)
     optionalDependencies:
@@ -11720,7 +11732,7 @@ snapshots:
 
   caniuse-lite@1.0.30001721: {}
 
-  canvaskit-wasm@0.40.0:
+  canvaskit-wasm@0.39.1:
     dependencies:
       '@webgpu/types': 0.1.21
 
@@ -14628,6 +14640,11 @@ snapshots:
     dependencies:
       react-native: 0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1)
       whatwg-url-without-unicode: 8.0.0-3
+
+  react-native-video@6.15.0(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1))(react@18.3.1):
+    dependencies:
+      react: 18.3.1
+      react-native: 0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1)
 
   react-native-web@0.19.13(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
