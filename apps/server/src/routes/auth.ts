@@ -41,10 +41,6 @@ const oauthGoogleSchema = z.object({
   redirectUri: z.string(),
 });
 
-const oauthGoogleTokenSchema = z.object({
-  accessToken: z.string(),
-});
-
 const oauthAppleSchema = z.object({
   code: z.string(),
   identityToken: z.string(),
@@ -633,13 +629,6 @@ router.post('/oauth/google/token', authRateLimiter, async (c) => {
 
     const { idToken } = validation.data;
 
-    console.log('🔄 Verifying Google ID token:', {
-      hasIdToken: !!idToken,
-      tokenStart: idToken ? `${idToken.substring(0, 20)}...` : 'MISSING',
-    });
-
-    // Verify the ID token with Google's tokeninfo endpoint
-    // In production, you should use Google's client libraries for better performance
     const tokenInfoResponse = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
 
     if (!tokenInfoResponse.ok) {
@@ -661,12 +650,15 @@ router.post('/oauth/google/token', authRateLimiter, async (c) => {
       aud: tokenInfo.aud ? `${tokenInfo.aud.substring(0, 20)}...` : 'MISSING',
     });
 
-    // Verify the audience (client ID) matches our iOS client ID
-    const expectedClientId = c.env.GOOGLE_CLIENT_ID_IOS || c.env.GOOGLE_CLIENT_ID;
+    // Verify the audience (client ID) matches our expected client ID
+    // The Google Sign-In SDK uses the web client ID for ID token audience
+    const expectedClientId = c.env.GOOGLE_CLIENT_ID || c.env.GOOGLE_CLIENT_ID_IOS;
     if (tokenInfo.aud !== expectedClientId) {
       console.error('❌ ID token audience mismatch:', {
         expected: expectedClientId ? `${expectedClientId.substring(0, 20)}...` : 'MISSING',
         received: tokenInfo.aud ? `${tokenInfo.aud.substring(0, 20)}...` : 'MISSING',
+        expectedSource: c.env.GOOGLE_CLIENT_ID ? 'GOOGLE_CLIENT_ID (web)' : 'GOOGLE_CLIENT_ID_IOS',
+        sdkNote: 'Google Sign-In SDK uses webClientId for ID token audience',
       });
       return c.json(
         { error: 'ID token audience mismatch', code: 'auth/invalid-audience' },

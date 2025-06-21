@@ -14,115 +14,37 @@ const APPLE_CLIENT_ID = process.env.EXPO_PUBLIC_APPLE_CLIENT_ID || '';
 
 // Configure Google Sign-In SDK
 GoogleSignin.configure({
-  webClientId: GOOGLE_CLIENT_ID_WEB, // Required for backend authentication
-  iosClientId: GOOGLE_CLIENT_ID_IOS, // Optional, for iOS-specific configuration
-  offlineAccess: false, // We don't need offline access for this flow
-  hostedDomain: '', // Optional, specify a domain for G Suite users
-  forceCodeForRefreshToken: false, // We're using ID tokens, not refresh tokens
-});
-
-// Debug API configuration
-const API_URL = Constants.expoConfig?.extra?.API_URL || process.env.API_URL || 'https://capture-api.jai-d.workers.dev';
-
-console.log('🌐 API Configuration:', {
-  API_URL,
-  expoConfig: Constants.expoConfig?.extra,
-  processEnv: process.env.API_URL,
+  webClientId: GOOGLE_CLIENT_ID_WEB,
+  iosClientId: GOOGLE_CLIENT_ID_IOS, 
+  offlineAccess: false, 
+  hostedDomain: '', 
+  forceCodeForRefreshToken: false,
 });
 
 export function useOAuth() {
   const { showAlert } = useAlert();
   const setAuthData = useAuthStore((state) => state.setAuthData);
 
-  // Debug function to check current configuration
-  const debugOAuthConfig = () => {
-    console.log('🔍 Google Sign-In SDK Configuration:', {
-      hasGoogleClientIdIOS: Boolean(GOOGLE_CLIENT_ID_IOS),
-      hasGoogleClientIdWeb: Boolean(GOOGLE_CLIENT_ID_WEB),
-      hasAppleClientId: Boolean(APPLE_CLIENT_ID),
-      platform: Platform.OS,
-      buildType: Constants.appOwnership === 'expo' ? 'Expo Go' : 'Development Build',
-      environment: {
-        GOOGLE_CLIENT_ID_IOS: GOOGLE_CLIENT_ID_IOS ? `${GOOGLE_CLIENT_ID_IOS.substring(0, 20)}...` : 'MISSING',
-        GOOGLE_CLIENT_ID_WEB: GOOGLE_CLIENT_ID_WEB ? `${GOOGLE_CLIENT_ID_WEB.substring(0, 20)}...` : 'MISSING',
-        APPLE_CLIENT_ID: APPLE_CLIENT_ID ? `${APPLE_CLIENT_ID.substring(0, 20)}...` : 'MISSING',
-      },
-    });
-  };
-
-  // Test backend connectivity
-  const testBackendConnectivity = async () => {
-    try {
-      console.log('🔍 Testing backend connectivity...');
-      const response = await fetch(`${API_URL}/`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      console.log('🔍 Backend health check response:', {
-        status: response.status,
-        ok: response.ok,
-        url: response.url,
-        headers: Object.fromEntries(response.headers.entries()),
-      });
-      
-      if (response.ok) {
-        const data = await response.text();
-        console.log('✅ Backend is accessible:', data);
-        return true;
-      }
-      
-      console.log('❌ Backend health check failed:', response.status);
-      return false;
-    } catch (error) {
-      console.error('❌ Backend connectivity test failed:', error);
-      return false;
-    }
-  };
 
   // Google OAuth with official SDK
   const googleOAuthMutation = useMutation<AuthResponse, Error, void>({
     mutationFn: async () => {
-      // Debug configuration before starting OAuth
-      debugOAuthConfig();
-
-      // Test backend connectivity
-      await testBackendConnectivity();
-
-      if (!GOOGLE_CLIENT_ID_WEB) {
-        throw new Error('Google OAuth not configured - missing web client ID');
+      if (!GOOGLE_CLIENT_ID_WEB || !GOOGLE_CLIENT_ID_IOS) {
+        throw new Error(`Google OAuth not configured - missing client IDs. Web: ${!!GOOGLE_CLIENT_ID_WEB}, iOS: ${!!GOOGLE_CLIENT_ID_IOS}`);
       }
 
       try {
-        console.log('🔄 Starting Google Sign-In with official SDK...');
-
-        // Check if Google Play services are available (Android only)
         await GoogleSignin.hasPlayServices();
 
-        // Sign in with Google
         const result = await GoogleSignin.signIn();
         
-        console.log('✅ Google Sign-In successful:', {
-          hasUser: !!result.data?.user,
-          hasIdToken: !!result.data?.idToken,
-          userEmail: result.data?.user?.email,
-        });
-
         if (!result.data?.idToken) {
           throw new Error('No ID token received from Google Sign-In SDK');
         }
 
         // Send ID token to backend for verification
-        console.log('🔄 Sending ID token to backend for verification...');
         const authResponse = await workersAuthApi.oauthGoogleToken(result.data.idToken);
-
-        console.log('✅ Backend ID token verification successful:', {
-          hasUser: !!authResponse.user,
-          hasSession: !!authResponse.session,
-        });
-
+        
         return authResponse;
 
       } catch (error: any) {

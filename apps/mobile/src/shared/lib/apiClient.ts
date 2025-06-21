@@ -6,12 +6,6 @@ const API_URL = Constants.expoConfig?.extra?.API_URL ||
                 process.env.API_URL || 
                 'https://capture-api.jai-d.workers.dev';
 
-console.log('🌐 API Client Configuration:', {
-  API_URL,
-  source: Constants.expoConfig?.extra?.API_URL ? 'EAS Config' : 
-          process.env.API_URL ? 'Process Env' : 'Fallback'
-});
-
 class APIError extends Error {
   statusCode: number;
 
@@ -92,23 +86,8 @@ export const apiClient = {
       }
 
       const fullUrl = `${API_URL}${endpoint}`;
-      console.log('🌐 Making API request:', {
-        method,
-        url: fullUrl,
-        headers,
-        bodySize: data ? JSON.stringify(data).length : 0,
-        hasAuth: requiresAuth,
-        hasToken: !!token,
-      });
 
       const response = await fetch(fullUrl, options);
-
-      console.log('🌐 API response received:', {
-        status: response.status,
-        ok: response.ok,
-        url: response.url,
-        headers: Object.fromEntries(response.headers.entries()),
-      });
 
       if (!response.ok) {
         let errorData: any = {};

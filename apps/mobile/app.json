@@ -35,7 +35,6 @@
     "linking": {
       "prefixes": [
         "com.captureapp.mobile://",
-        "com.googleusercontent.apps.562912588429-kjsb2br221rgfnlv11nimbsom1n69ju0://",
         "capture://",
         "http://localhost:8081",
         "exp://192.168.1.64:8081",

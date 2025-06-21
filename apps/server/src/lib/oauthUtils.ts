@@ -79,19 +79,12 @@ export async function verifyPKCE(codeVerifier: string, codeChallenge: string): P
 
 // Google OAuth functions
 export async function validateGoogleAccessToken(accessToken: string): Promise<GoogleUserInfo> {
-  console.log('🔄 Validating Google access token with Google API');
 
   // Get user info from Google using the access token
   const userResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
-  });
-
-  console.log('🔄 Google userinfo response status:', {
-    status: userResponse.status,
-    statusText: userResponse.statusText,
-    ok: userResponse.ok,
   });
 
   if (!userResponse.ok) {
@@ -103,11 +96,6 @@ export async function validateGoogleAccessToken(accessToken: string): Promise<Go
   }
 
   const userInfo = (await userResponse.json()) as GoogleUserInfo;
-  console.log('✅ Google access token validated, user info retrieved:', {
-    hasEmail: !!userInfo.email,
-    hasId: !!userInfo.id,
-    emailVerified: userInfo.verified_email,
-  });
   
   return userInfo;
 }
@@ -119,20 +107,7 @@ export async function exchangeGoogleCode(
   env: Bindings,
 ): Promise<GoogleUserInfo> {
   // Use the iOS client ID from environment variables 
-  // This must match the client ID used on mobile for authorization
   const clientId = env.GOOGLE_CLIENT_ID_IOS || env.GOOGLE_CLIENT_ID;
-  
-  console.log('🔄 Starting Google token exchange with params:', {
-    hasCode: !!code,
-    codeLength: code?.length || 0,
-    hasCodeVerifier: !!codeVerifier,
-    codeVerifierLength: codeVerifier?.length || 0,
-    codeVerifierStart: codeVerifier ? `${codeVerifier.substring(0, 10)}...` : 'MISSING',
-    redirectUri,
-    hasClientId: !!clientId,
-    clientIdStart: clientId ? `${clientId.substring(0, 20)}...` : 'MISSING',
-    clientIdSource: env.GOOGLE_CLIENT_ID_IOS ? 'GOOGLE_CLIENT_ID_IOS' : 'GOOGLE_CLIENT_ID',
-  });
 
   if (!clientId) {
     throw new Error('Google Client ID not configured. Set GOOGLE_CLIENT_ID_IOS in environment.');
@@ -147,22 +122,12 @@ export async function exchangeGoogleCode(
     code_verifier: codeVerifier, // PKCE parameter
   };
 
-  // Note: iOS client IDs don't use client_secret for PKCE flow
-  console.log('🔐 Using PKCE flow (no client secret) with iOS client ID');
-
   const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: new URLSearchParams(tokenParams),
-  });
-
-  console.log('🔄 Google token response status:', {
-    status: tokenResponse.status,
-    statusText: tokenResponse.statusText,
-    ok: tokenResponse.ok,
-    headers: Object.fromEntries(tokenResponse.headers.entries()),
   });
 
   if (!tokenResponse.ok) {
@@ -182,12 +147,6 @@ export async function exchangeGoogleCode(
   }
 
   const tokenData = (await tokenResponse.json()) as GoogleTokenResponse;
-  console.log('✅ Google token exchange successful:', {
-    hasAccessToken: !!tokenData.access_token,
-    hasRefreshToken: !!tokenData.refresh_token,
-    tokenType: tokenData.token_type,
-    expiresIn: tokenData.expires_in,
-  });
 
   // Get user info from Google
   const userResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
@@ -205,11 +164,6 @@ export async function exchangeGoogleCode(
   }
 
   const userInfo = (await userResponse.json()) as GoogleUserInfo;
-  console.log('✅ Google user info retrieved:', {
-    hasEmail: !!userInfo.email,
-    hasId: !!userInfo.id,
-    emailVerified: userInfo.verified_email,
-  });
   
   return userInfo;
 }
