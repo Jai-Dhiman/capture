@@ -4,8 +4,8 @@
   "main": "./src/index.ts",
   "scripts": {
     "dev": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
     "web:dev": "expo start --web --https --dev"
   },
@@ -37,6 +37,7 @@
     "expo-clipboard": "~7.0.1",
     "expo-constants": "~17.0.8",
     "expo-crypto": "~14.0.2",
+    "expo-dev-client": "~5.0.20",
     "expo-doctor": "^1.13.3",
     "expo-image-picker": "~16.0.6",
     "expo-linear-gradient": "~14.0.2",

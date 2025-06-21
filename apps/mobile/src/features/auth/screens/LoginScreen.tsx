@@ -9,20 +9,28 @@ import { ActivityIndicator, Image, Text, TextInput, TouchableOpacity, View } fro
 import { AppleOAuthButton, GoogleOAuthButton } from '../components/OAuthButtons';
 import { useAuth } from '../hooks/useAuth';
 import { usePasskey } from '../hooks/usePasskey';
+import { Platform } from 'react-native';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 };
 
+type LoginState = 'email' | 'passkey' | 'email-verification';
+
 export default function LoginScreen({ navigation }: Props) {
   const [isEmailFocused, setIsEmailFocused] = useState(false);
-  const [showPasskeyLogin, setShowPasskeyLogin] = useState(false);
+  const [loginState, setLoginState] = useState<LoginState>('email');
   const [biometricName, setBiometricName] = useState<string>('Biometric');
   const emailInputRef = useRef<TextInput>(null);
   const { showAlert } = useAlert();
   const { sendCode } = useAuth();
-  const { authenticateWithPasskey, getBiometricName, isPasskeySupported, hasBiometrics } =
-    usePasskey();
+  const {
+    authenticateWithPasskey,
+    checkUserHasPasskeys,
+    getBiometricName,
+    isPasskeySupported,
+    hasBiometrics
+  } = usePasskey();
 
   useEffect(() => {
     const loadBiometricName = async () => {
@@ -46,7 +54,7 @@ export default function LoginScreen({ navigation }: Props) {
         elevation: 4,
       },
     }),
-  }
+  };
 
   const form = useForm({
     defaultValues: {
@@ -59,17 +67,23 @@ export default function LoginScreen({ navigation }: Props) {
         return;
       }
 
-      if (showPasskeyLogin) {
-        // Handle passkey authentication
-        try {
-          await authenticateWithPasskey.mutateAsync({
-            email: value.email,
-          });
-        } catch (error) {
-          console.error('Passkey login failed:', error);
+      if (loginState === 'email') {
+        // First, check if user has passkeys
+
+        if (isPasskeySupported && hasBiometrics) {
+          try {
+            const result = await checkUserHasPasskeys.mutateAsync(value.email);
+            if (result.hasPasskeys) {
+              setLoginState('passkey');
+              return;
+            }
+          } catch (error) {
+            console.log('Error checking passkeys, falling back to email:', error);
+          }
         }
-      } else {
-        // Handle email code authentication
+
+        // No passkeys or not supported, proceed with email verification
+        setLoginState('email-verification');
         sendCode.mutate(
           {
             email: value.email,
@@ -84,14 +98,65 @@ export default function LoginScreen({ navigation }: Props) {
                 message: response.message,
               });
             },
+            onError: () => {
+              setLoginState('email');
+            },
           },
         );
+      } else if (loginState === 'passkey') {
+        // Handle passkey authentication
+        try {
+          await authenticateWithPasskey.mutateAsync({
+            email: value.email,
+          });
+        } catch (error) {
+          console.error('Passkey login failed:', error);
+          // Fall back to email verification
+          setLoginState('email-verification');
+          sendCode.mutate(
+            {
+              email: value.email,
+              phone: value.phone || undefined,
+            },
+            {
+              onSuccess: (response) => {
+                navigation.navigate('CodeVerification', {
+                  email: value.email,
+                  phone: value.phone || undefined,
+                  isNewUser: response.isNewUser,
+                  message: response.message,
+                });
+              },
+              onError: () => {
+                setLoginState('email');
+              },
+            },
+          );
+        }
       }
     },
   });
 
-  const canShowPasskey = isPasskeySupported && hasBiometrics;
-  const isLoading = sendCode.isPending || authenticateWithPasskey.isPending;
+  const isLoading = sendCode.isPending || authenticateWithPasskey.isPending || checkUserHasPasskeys.isPending;
+
+  const getButtonText = () => {
+    if (isLoading) {
+      if (checkUserHasPasskeys.isPending) return 'Checking...';
+      if (authenticateWithPasskey.isPending) return 'Authenticating...';
+      if (sendCode.isPending) return 'Sending code...';
+    }
+
+    switch (loginState) {
+      case 'email':
+        return 'Continue';
+      case 'passkey':
+        return `Sign in with ${biometricName}`;
+      case 'email-verification':
+        return 'Send Code';
+      default:
+        return 'Continue';
+    }
+  };
 
   return (
     <View style={{ flex: 1 }}>
@@ -110,33 +175,6 @@ export default function LoginScreen({ navigation }: Props) {
         />
         <Header height={140} showBackground={false} />
         <View className="flex-1 px-[26px] pt-[80px]">
-          {/* Auth Method Toggle */}
-          {canShowPasskey && (
-            <View className="mb-6">
-              <View className="bg-white rounded-2xl p-1 flex-row shadow-md">
-                <TouchableOpacity
-                  onPress={() => setShowPasskeyLogin(false)}
-                  className={`flex-1 py-3 px-4 rounded-xl ${!showPasskeyLogin ? 'bg-[#E4CAC7]' : 'bg-transparent'}`}
-                >
-                  <Text
-                    className={`text-center font-semibold ${!showPasskeyLogin ? 'text-black' : 'text-gray-600'}`}
-                  >
-                    Email
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => setShowPasskeyLogin(true)}
-                  className={`flex-1 py-3 px-4 rounded-xl ${showPasskeyLogin ? 'bg-[#E4CAC7]' : 'bg-transparent'}`}
-                >
-                  <Text
-                    className={`text-center font-semibold ${showPasskeyLogin ? 'text-black' : 'text-gray-600'}`}
-                  >
-                    {biometricName}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
 
           <form.Field
             name="email"
@@ -170,10 +208,17 @@ export default function LoginScreen({ navigation }: Props) {
                     className="flex-1 text-base font-roboto text-black outline-none"
                     style={{ paddingVertical: 0, textAlignVertical: 'center', height: '100%' }}
                     value={field.state.value}
-                    onChangeText={field.handleChange}
+                    onChangeText={(text) => {
+                      field.handleChange(text);
+                      // Reset state when email changes
+                      if (loginState !== 'email') {
+                        setLoginState('email');
+                      }
+                    }}
                     autoCapitalize="none"
                     keyboardType="email-address"
                     autoFocus
+                    editable={!isLoading}
                   />
                 </TouchableOpacity>
                 {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
@@ -185,18 +230,19 @@ export default function LoginScreen({ navigation }: Props) {
             )}
           </form.Field>
 
-          {(sendCode.isError || authenticateWithPasskey.isError) && (
+          {/* Error Messages */}
+          {(sendCode.isError || authenticateWithPasskey.isError || checkUserHasPasskeys.isError) && (
             <Text className="text-red-500 text-xs mt-2 mb-4 text-center font-roboto">
-              {showPasskeyLogin
-                ? 'Passkey authentication failed. Please try again.'
+              {loginState === 'passkey'
+                ? 'Authentication failed. Please try again.'
                 : 'Failed to send verification code. Please try again.'}
             </Text>
-          )} */}
+          )}
 
           <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
             {([canSubmit, isFormSubmitting]) => (
               <TouchableOpacity
-                className={`h-[56px] ${canSubmit ? 'bg-[#E4CAC7]' : 'bg-stone-300'} rounded-[30px] shadow-md justify-center items-center`}
+                className={`h-[56px] ${canSubmit && !isLoading ? 'bg-[#E4CAC7]' : 'bg-stone-300'} rounded-[30px] shadow-md justify-center items-center`}
                 onPress={() => form.handleSubmit()}
                 disabled={!canSubmit || isFormSubmitting || isLoading}
               >
@@ -204,22 +250,28 @@ export default function LoginScreen({ navigation }: Props) {
                   <View className="flex-row justify-center items-center">
                     <ActivityIndicator size="small" color="#000" />
                     <Text className="text-base font-bold font-roboto ml-2">
-                      {showPasskeyLogin ? 'Authenticating...' : 'Sending code...'}
+                      {getButtonText()}
                     </Text>
                   </View>
                 ) : (
                   <Text className="text-base font-bold font-roboto text-center">
-                    {showPasskeyLogin ? `Sign in with ${biometricName}` : 'Sign-In'}
+                    {getButtonText()}
                   </Text>
                 )}
               </TouchableOpacity>
             )}
           </form.Subscribe>
 
-          {/* Toggle back to email if passkey fails */}
-          {showPasskeyLogin && (
+          {/* Fallback option for passkey */}
+          {loginState === 'passkey' && (
             <View className="items-center mt-[16px]">
-              <TouchableOpacity onPress={() => setShowPasskeyLogin(false)}>
+              <TouchableOpacity
+                onPress={() => {
+                  setLoginState('email-verification');
+                  form.handleSubmit();
+                }}
+                disabled={isLoading}
+              >
                 <Text className="text-base font-semibold font-roboto text-[#827B85] underline">
                   Use Email Verification Instead
                 </Text>
@@ -250,15 +302,6 @@ export default function LoginScreen({ navigation }: Props) {
               </Text>
             </TouchableOpacity>
           </View>
-
-          {/* Passkey info for new users */}
-          {!showPasskeyLogin && canShowPasskey && (
-            <View className="items-center mt-4">
-              <Text className="text-sm text-center text-gray-500 font-roboto">
-                Don't have a passkey? Sign in with email to set one up.
-              </Text>
-            </View>
-          )}
         </View>
       </View>
     </View>

@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { createD1Client } from '../db';
 import * as schema from '../db/schema';
 import { createEmailService } from '../lib/emailService';
-import { exchangeGoogleCode, verifyAppleToken } from '../lib/oauthUtils';
+import { exchangeGoogleCode, verifyAppleToken, validateGoogleAccessToken } from '../lib/oauthUtils';
 import { PasskeyService as PS, PasskeyService } from '../lib/passkeyService';
 import { authMiddleware } from '../middleware/auth';
 import { authRateLimiter, otpRateLimiter } from '../middleware/rateLimit';
@@ -39,7 +39,10 @@ const oauthGoogleSchema = z.object({
   code: z.string(),
   codeVerifier: z.string(),
   redirectUri: z.string(),
-  clientId: z.string().optional(), // Accept client ID from frontend
+});
+
+const oauthGoogleTokenSchema = z.object({
+  accessToken: z.string(),
 });
 
 const oauthAppleSchema = z.object({
@@ -130,6 +133,24 @@ async function cleanupExpiredCodes(db: any) {
   const now = Date.now().toString();
   await db.delete(schema.emailCodes).where(lt(schema.emailCodes.expiresAt, now)).execute();
 }
+
+// Get current user info
+router.get('/me', authMiddleware, async (c) => {
+  const user = c.get('user');
+  const db = createD1Client(c.env);
+  let profileExists = false;
+  try {
+    const existingProfile = await db
+      .select()
+      .from(schema.profile)
+      .where(eq(schema.profile.userId, user.id))
+      .get();
+    profileExists = Boolean(existingProfile);
+  } catch (e) {
+    console.error('Error checking profile existence in /auth/me:', e);
+  }
+  return c.json({ id: user.id, email: user.email, profileExists });
+});
 
 router.post('/send-code', otpRateLimiter, async (c) => {
   try {
@@ -468,30 +489,17 @@ router.post('/oauth/google', authRateLimiter, async (c) => {
       );
     }
 
-    const { code, codeVerifier, redirectUri, clientId } = validation.data;
+    const { code, codeVerifier, redirectUri } = validation.data;
 
-    if (!clientId && (!c.env.GOOGLE_CLIENT_ID || !c.env.GOOGLE_CLIENT_SECRET)) {
+    if (!c.env.GOOGLE_CLIENT_ID_IOS && !c.env.GOOGLE_CLIENT_ID) {
       return c.json(
-        { error: 'Google OAuth not configured', code: 'auth/oauth-not-configured' },
+        { error: 'Google OAuth not configured. Set GOOGLE_CLIENT_ID_IOS environment variable.', code: 'auth/oauth-not-configured' },
         500,
       );
     }
 
-    if (!c.env.GOOGLE_CLIENT_SECRET) {
-      return c.json(
-        { error: 'Google OAuth client secret not configured', code: 'auth/oauth-not-configured' },
-        500,
-      );
-    }
-
-    // Exchange code for user info
-    const googleUser = await exchangeGoogleCode(
-      code, 
-      codeVerifier, 
-      redirectUri, 
-      c.env,
-      clientId // Pass the received client ID
-    );
+    // Exchange code for user info using the same iOS client ID
+    const googleUser = await exchangeGoogleCode(code, codeVerifier, redirectUri, c.env);
 
     if (!googleUser.email) {
       return c.json(
@@ -601,6 +609,171 @@ router.post('/oauth/google', authRateLimiter, async (c) => {
       },
     });
     return c.json({ error: 'Google OAuth authentication failed', code: 'auth/oauth-failed' }, 500);
+  }
+});
+
+// New endpoint for Google OAuth with client-side token exchange
+router.post('/oauth/google/token', authRateLimiter, async (c) => {
+  try {
+    const body = await c.req.json();
+    const validation = z.object({
+      idToken: z.string(), // Changed from accessToken to idToken
+    }).safeParse(body);
+
+    if (!validation.success) {
+      return c.json(
+        {
+          error: 'Invalid input',
+          details: validation.error.errors,
+          code: 'auth/invalid-input',
+        },
+        400,
+      );
+    }
+
+    const { idToken } = validation.data;
+
+    console.log('🔄 Verifying Google ID token:', {
+      hasIdToken: !!idToken,
+      tokenStart: idToken ? `${idToken.substring(0, 20)}...` : 'MISSING',
+    });
+
+    // Verify the ID token with Google's tokeninfo endpoint
+    // In production, you should use Google's client libraries for better performance
+    const tokenInfoResponse = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
+
+    if (!tokenInfoResponse.ok) {
+      console.error('❌ Failed to verify Google ID token:', {
+        status: tokenInfoResponse.status,
+        statusText: tokenInfoResponse.statusText,
+      });
+      return c.json(
+        { error: 'Invalid Google ID token', code: 'auth/invalid-token' },
+        401,
+      );
+    }
+
+    const tokenInfo = await tokenInfoResponse.json() as any;
+    console.log('✅ Google ID token verified, token info retrieved:', {
+      hasEmail: !!tokenInfo.email,
+      hasSub: !!tokenInfo.sub,
+      emailVerified: tokenInfo.email_verified,
+      aud: tokenInfo.aud ? `${tokenInfo.aud.substring(0, 20)}...` : 'MISSING',
+    });
+
+    // Verify the audience (client ID) matches our iOS client ID
+    const expectedClientId = c.env.GOOGLE_CLIENT_ID_IOS || c.env.GOOGLE_CLIENT_ID;
+    if (tokenInfo.aud !== expectedClientId) {
+      console.error('❌ ID token audience mismatch:', {
+        expected: expectedClientId ? `${expectedClientId.substring(0, 20)}...` : 'MISSING',
+        received: tokenInfo.aud ? `${tokenInfo.aud.substring(0, 20)}...` : 'MISSING',
+      });
+      return c.json(
+        { error: 'ID token audience mismatch', code: 'auth/invalid-audience' },
+        401,
+      );
+    }
+
+    if (!tokenInfo.email) {
+      return c.json(
+        { error: 'Failed to get user email from Google ID token', code: 'auth/oauth-failed' },
+        400,
+      );
+    }
+
+    const db = createD1Client(c.env);
+
+    // Check if user exists or create new user
+    let user = await db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.email, tokenInfo.email))
+      .get();
+    let isNewUser = false;
+
+    if (!user) {
+      // Create new user
+      const userId = nanoid();
+      await db.insert(schema.users).values({
+        id: userId,
+        email: tokenInfo.email,
+        emailVerified: tokenInfo.email_verified === 'true' || tokenInfo.email_verified === true ? 1 : 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+
+      user = await db.select().from(schema.users).where(eq(schema.users.id, userId)).get();
+      isNewUser = true;
+    } else {
+      // Update existing user
+      await db
+        .update(schema.users)
+        .set({
+          emailVerified: tokenInfo.email_verified === 'true' || tokenInfo.email_verified === true ? 1 : 0,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(schema.users.id, user.id));
+
+      // Refresh user data
+      user = await db.select().from(schema.users).where(eq(schema.users.id, user.id)).get();
+    }
+
+    if (!user) {
+      return c.json(
+        { error: 'Failed to create or update user', code: 'auth/user-creation-failed' },
+        500,
+      );
+    }
+
+    // Generate tokens
+    const { accessToken, refreshToken, accessTokenExpiresAt } = await generateJwtToken(
+      user.id,
+      user.email,
+      c.env,
+    );
+
+    // Check if profile exists
+    let profileExists = false;
+    try {
+      const existingProfile = await db
+        .select({ id: schema.profile.id })
+        .from(schema.profile)
+        .where(eq(schema.profile.userId, user.id))
+        .get();
+      profileExists = Boolean(existingProfile);
+
+      // Log activity
+      if (!isNewUser) {
+        await db
+          .insert(schema.userActivity)
+          .values({
+            id: nanoid(),
+            userId: user.id,
+            eventType: 'oauth_login',
+            createdAt: new Date().toISOString(),
+          })
+          .execute();
+      }
+    } catch (dbError) {
+      console.error('Error during profile check or activity logging:', dbError);
+    }
+
+    return c.json({
+      session: {
+        access_token: accessToken,
+        refresh_token: refreshToken,
+        expires_at: accessTokenExpiresAt,
+      },
+      user: {
+        id: user.id,
+        email: user.email,
+      },
+      profileExists,
+      isNewUser,
+    });
+  } catch (error) {
+    console.error('Google OAuth token validation error:', error);
+    return c.json({ error: 'Google OAuth token validation failed', code: 'auth/oauth-failed' }, 500);
   }
 });
 
@@ -752,7 +925,7 @@ router.post('/passkey/register/begin', authRateLimiter, async (c) => {
       );
     }
 
-    const { email, deviceName } = validation.data;
+    const { email } = validation.data;
     const db = createD1Client(c.env);
     const passkeyService = new PasskeyService(c.env);
 
@@ -807,7 +980,8 @@ router.post('/passkey/register/complete', authRateLimiter, async (c) => {
     const passkeyService = new PasskeyService(c.env);
 
     // Get user from credential userHandle or require authentication
-    const userHandle = credential.response.userHandle;
+    // Note: userHandle is not available in registration response, we need to get it differently
+    const userHandle = credential.id; // Use credential ID to find associated user
     if (!userHandle) {
       return c.json({ error: 'User handle required', code: 'auth/user-handle-required' }, 400);
     }
@@ -1120,22 +1294,58 @@ router.delete('/passkey/:passkeyId', authMiddleware, async (c) => {
   }
 });
 
-// Get current user info
-router.get('/me', authMiddleware, async (c) => {
-  const user = c.get('user');
-  const db = createD1Client(c.env);
-  let profileExists = false;
+// Check if user has passkeys
+router.post('/passkey/check', authRateLimiter, async (c) => {
   try {
-    const existingProfile = await db
-      .select()
-      .from(schema.profile)
-      .where(eq(schema.profile.userId, user.id))
-      .get();
-    profileExists = Boolean(existingProfile);
-  } catch (e) {
-    console.error('Error checking profile existence in /auth/me:', e);
+    const body = await c.req.json();
+    const validation = z.object({ email: z.string().email() }).safeParse(body);
+
+    if (!validation.success) {
+      return c.json(
+        {
+          error: 'Invalid input',
+          details: validation.error.errors,
+          code: 'auth/invalid-input',
+        },
+        400,
+      );
+    }
+
+    const { email } = validation.data;
+    const db = createD1Client(c.env);
+
+    // Check if user exists
+    const user = await db.select().from(schema.users).where(eq(schema.users.email, email)).get();
+    if (!user) {
+      return c.json({ hasPasskeys: false });
+    }
+
+    // Check if user has any passkeys
+    const passkeys = await db
+      .select({ id: schema.passkeys.id })
+      .from(schema.passkeys)
+      .where(eq(schema.passkeys.userId, user.id))
+      .limit(1);
+
+    return c.json({ hasPasskeys: Boolean(passkeys.length) });
+  } catch (error) {
+    console.error('Check passkeys error:', error);
+    return c.json(
+      { error: 'Failed to check passkeys', code: 'auth/check-passkeys-failed' },
+      500,
+    );
   }
-  return c.json({ id: user.id, email: user.email, profileExists });
+});
+
+// Debug endpoint to check OAuth configuration
+router.get('/debug/oauth-config', async (c) => {
+  return c.json({
+    googleClientIdPresent: !!c.env.GOOGLE_CLIENT_ID,
+    googleClientSecretPresent: !!c.env.GOOGLE_CLIENT_SECRET,
+    appleClientIdPresent: !!c.env.APPLE_CLIENT_ID,
+    googleClientIdStart: c.env.GOOGLE_CLIENT_ID ? `${c.env.GOOGLE_CLIENT_ID.substring(0, 20)}...` : 'MISSING',
+    environment: 'production', // This will help you verify which environment is running
+  });
 });
 
 export default router;

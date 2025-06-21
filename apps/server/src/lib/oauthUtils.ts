@@ -78,51 +78,116 @@ export async function verifyPKCE(codeVerifier: string, codeChallenge: string): P
 }
 
 // Google OAuth functions
+export async function validateGoogleAccessToken(accessToken: string): Promise<GoogleUserInfo> {
+  console.log('🔄 Validating Google access token with Google API');
+
+  // Get user info from Google using the access token
+  const userResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  console.log('🔄 Google userinfo response status:', {
+    status: userResponse.status,
+    statusText: userResponse.statusText,
+    ok: userResponse.ok,
+  });
+
+  if (!userResponse.ok) {
+    console.error('❌ Failed to validate Google access token:', {
+      status: userResponse.status,
+      statusText: userResponse.statusText,
+    });
+    throw new Error('Invalid Google access token');
+  }
+
+  const userInfo = (await userResponse.json()) as GoogleUserInfo;
+  console.log('✅ Google access token validated, user info retrieved:', {
+    hasEmail: !!userInfo.email,
+    hasId: !!userInfo.id,
+    emailVerified: userInfo.verified_email,
+  });
+  
+  return userInfo;
+}
+
 export async function exchangeGoogleCode(
   code: string,
   codeVerifier: string,
   redirectUri: string,
   env: Bindings,
-  clientId?: string, // Optional client ID from frontend
 ): Promise<GoogleUserInfo> {
-  // Use provided clientId or fallback to environment variable
-  const googleClientId = clientId || env.GOOGLE_CLIENT_ID || '';
+  // Use the iOS client ID from environment variables 
+  // This must match the client ID used on mobile for authorization
+  const clientId = env.GOOGLE_CLIENT_ID_IOS || env.GOOGLE_CLIENT_ID;
   
+  console.log('🔄 Starting Google token exchange with params:', {
+    hasCode: !!code,
+    codeLength: code?.length || 0,
+    hasCodeVerifier: !!codeVerifier,
+    codeVerifierLength: codeVerifier?.length || 0,
+    codeVerifierStart: codeVerifier ? `${codeVerifier.substring(0, 10)}...` : 'MISSING',
+    redirectUri,
+    hasClientId: !!clientId,
+    clientIdStart: clientId ? `${clientId.substring(0, 20)}...` : 'MISSING',
+    clientIdSource: env.GOOGLE_CLIENT_ID_IOS ? 'GOOGLE_CLIENT_ID_IOS' : 'GOOGLE_CLIENT_ID',
+  });
+
+  if (!clientId) {
+    throw new Error('Google Client ID not configured. Set GOOGLE_CLIENT_ID_IOS in environment.');
+  }
+
+  // Build token exchange parameters
+  const tokenParams: Record<string, string> = {
+    client_id: clientId,
+    code,
+    grant_type: 'authorization_code',
+    redirect_uri: redirectUri,
+    code_verifier: codeVerifier, // PKCE parameter
+  };
+
+  // Note: iOS client IDs don't use client_secret for PKCE flow
+  console.log('🔐 Using PKCE flow (no client secret) with iOS client ID');
+
   const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
-    body: new URLSearchParams({
-      client_id: googleClientId,
-      client_secret: env.GOOGLE_CLIENT_SECRET || '',
-      code,
-      code_verifier: codeVerifier,
-      grant_type: 'authorization_code',
-      redirect_uri: redirectUri,
-    }),
+    body: new URLSearchParams(tokenParams),
+  });
+
+  console.log('🔄 Google token response status:', {
+    status: tokenResponse.status,
+    statusText: tokenResponse.statusText,
+    ok: tokenResponse.ok,
+    headers: Object.fromEntries(tokenResponse.headers.entries()),
   });
 
   if (!tokenResponse.ok) {
     const errorText = await tokenResponse.text();
-    console.error('Google token exchange failed:', {
+    console.error('❌ Google token exchange failed:', {
       status: tokenResponse.status,
       statusText: tokenResponse.statusText,
       error: errorText,
       requestBody: {
-        client_id: googleClientId,
-        client_secret: env.GOOGLE_CLIENT_SECRET ? 'PRESENT' : 'MISSING',
+        client_id: clientId ? `${clientId.substring(0, 20)}...` : 'MISSING',
         code: code ? `${code.substring(0, 10)}...` : 'MISSING',
         code_verifier: codeVerifier ? `${codeVerifier.substring(0, 10)}...` : 'MISSING',
         redirect_uri: redirectUri,
       },
-      fullCodeVerifier: codeVerifier,
-      codeVerifierLength: codeVerifier?.length || 0,
     });
     throw new Error(`Failed to exchange Google authorization code: ${errorText}`);
   }
 
   const tokenData = (await tokenResponse.json()) as GoogleTokenResponse;
+  console.log('✅ Google token exchange successful:', {
+    hasAccessToken: !!tokenData.access_token,
+    hasRefreshToken: !!tokenData.refresh_token,
+    tokenType: tokenData.token_type,
+    expiresIn: tokenData.expires_in,
+  });
 
   // Get user info from Google
   const userResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
@@ -132,11 +197,21 @@ export async function exchangeGoogleCode(
   });
 
   if (!userResponse.ok) {
+    console.error('❌ Failed to get Google user info:', {
+      status: userResponse.status,
+      statusText: userResponse.statusText,
+    });
     throw new Error('Failed to get Google user info');
   }
 
-  const userInfo = await userResponse.json();
-  return userInfo as GoogleUserInfo;
+  const userInfo = (await userResponse.json()) as GoogleUserInfo;
+  console.log('✅ Google user info retrieved:', {
+    hasEmail: !!userInfo.email,
+    hasId: !!userInfo.id,
+    emailVerified: userInfo.verified_email,
+  });
+  
+  return userInfo;
 }
 
 // Apple OAuth functions
@@ -207,7 +282,7 @@ export async function verifyAppleToken(
 // 3. Verify the RS256 signature
 // 4. Use a crypto library like 'node-jose' or Web Crypto API
 
-// Generate a random code verifier for PKCE
+// Generate a random code verifier for PKCE (matches client implementation)
 export function generateCodeVerifier(): string {
   const array = new Uint8Array(32);
   crypto.getRandomValues(array);

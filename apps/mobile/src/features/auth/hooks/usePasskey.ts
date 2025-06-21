@@ -3,6 +3,7 @@ import { errorService } from '@/shared/services/errorService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { Platform } from 'react-native';
+import { PasskeyService } from '../lib/passkeyService';
 import { workersAuthApi } from '../lib/workersAuthApi';
 import { useAuthStore } from '../stores/authStore';
 import type {
@@ -21,46 +22,7 @@ export function usePasskey() {
   const deviceCapabilitiesQuery = useQuery({
     queryKey: ['passkey', 'capabilities'],
     queryFn: async (): Promise<PasskeyCapabilities> => {
-      try {
-        // Check if device has biometric hardware
-        const biometricsAvailable = await LocalAuthentication.hasHardwareAsync();
-        const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-        const supportedTypes = await LocalAuthentication.supportedAuthenticationTypesAsync();
-
-        // For now, we'll consider passkeys supported if biometrics are available
-        // In a real implementation, you'd check actual passkey support
-        const passkeySupported = biometricsAvailable && isEnrolled;
-
-        // Map authentication types to friendly names
-        const biometricTypes: string[] = [];
-        if (supportedTypes.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
-          biometricTypes.push(Platform.OS === 'ios' ? 'FaceID' : 'FaceUnlock');
-        }
-        if (supportedTypes.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
-          biometricTypes.push(Platform.OS === 'ios' ? 'TouchID' : 'Fingerprint');
-        }
-        if (supportedTypes.includes(LocalAuthentication.AuthenticationType.IRIS)) {
-          biometricTypes.push('Iris');
-        }
-
-        const deviceType =
-          Platform.OS === 'ios' ? 'iOS' : Platform.OS === 'android' ? 'Android' : 'unsupported';
-
-        return {
-          supported: passkeySupported,
-          biometricsAvailable: biometricsAvailable && isEnrolled,
-          deviceType,
-          biometricTypes,
-        };
-      } catch (error) {
-        console.error('Error checking passkey capabilities:', error);
-        return {
-          supported: false,
-          biometricsAvailable: false,
-          deviceType: 'unsupported',
-          biometricTypes: [],
-        };
-      }
+      return PasskeyService.getDeviceCapabilities();
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -75,37 +37,22 @@ export function usePasskey() {
   // Register passkey mutation
   const registerPasskeyMutation = useMutation({
     mutationFn: async (data: PasskeyRegistrationRequest) => {
-      // First, check if biometrics are available
-      const biometricsResult = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Authenticate to set up passkey',
-        fallbackLabel: 'Use passcode',
-        disableDeviceFallback: false,
-      });
-
-      if (!biometricsResult.success) {
-        throw new Error('Biometric authentication failed');
+      try {
+        // Begin registration with server
+        const registrationOptions = await workersAuthApi.passkeyRegistrationBegin(data);
+        
+        // Use actual WebAuthn registration
+        const credential = await PasskeyService.registerPasskey(registrationOptions);
+        
+        // Complete registration with server
+        return await workersAuthApi.passkeyRegistrationComplete({
+          credential,
+          deviceName: data.deviceName,
+        });
+      } catch (error) {
+        console.error('Passkey registration error:', error);
+        throw error;
       }
-
-      // Begin registration
-      await workersAuthApi.passkeyRegistrationBegin(data);
-
-      // For demonstration, we'll complete the registration
-      // In a real implementation, you'd use actual WebAuthn/Passkey APIs
-      const mockCredential = {
-        id: 'mock-credential-id',
-        rawId: 'mock-raw-id',
-        response: {
-          attestationObject: 'mock-attestation',
-          clientDataJSON: 'mock-client-data',
-        },
-        type: 'public-key',
-      };
-
-      // Complete registration
-      return workersAuthApi.passkeyRegistrationComplete({
-        credential: mockCredential,
-        deviceName: data.deviceName,
-      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['passkeys'] });
@@ -127,38 +74,21 @@ export function usePasskey() {
     PasskeyAuthenticationRequest
   >({
     mutationFn: async (data: PasskeyAuthenticationRequest) => {
-      // Check if biometrics are available
-      const biometricsResult = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Sign in with your biometric',
-        fallbackLabel: 'Use passcode',
-        disableDeviceFallback: false,
-      });
-
-      if (!biometricsResult.success) {
-        throw new Error('Biometric authentication failed');
+      try {
+        // Begin authentication with server
+        const authenticationOptions = await workersAuthApi.passkeyAuthenticationBegin(data);
+        
+        // Use actual WebAuthn authentication
+        const credential = await PasskeyService.authenticateWithPasskey(authenticationOptions);
+        
+        // Complete authentication with server
+        return await workersAuthApi.passkeyAuthenticationComplete({
+          credential,
+        });
+      } catch (error) {
+        console.error('Passkey authentication error:', error);
+        throw error;
       }
-
-      // Begin authentication
-      await workersAuthApi.passkeyAuthenticationBegin(data);
-
-      // For demonstration, we'll complete the authentication
-      // In a real implementation, you'd use actual WebAuthn/Passkey APIs
-      const mockCredential = {
-        id: 'mock-credential-id',
-        rawId: 'mock-raw-id',
-        response: {
-          authenticatorData: 'mock-auth-data',
-          clientDataJSON: 'mock-client-data',
-          signature: 'mock-signature',
-          userHandle: 'mock-user-handle',
-        },
-        type: 'public-key',
-      };
-
-      // Complete authentication
-      return workersAuthApi.passkeyAuthenticationComplete({
-        credential: mockCredential,
-      });
     },
     onSuccess: (data) => {
       setAuthData(data);
@@ -192,22 +122,15 @@ export function usePasskey() {
 
   // Utility function to get biometric friendly name
   const getBiometricName = async (): Promise<string> => {
-    try {
-      const supportedTypes = await LocalAuthentication.supportedAuthenticationTypesAsync();
-
-      if (supportedTypes.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
-        return Platform.OS === 'ios' ? 'Face ID' : 'Face Unlock';
-      }
-
-      if (supportedTypes.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
-        return Platform.OS === 'ios' ? 'Touch ID' : 'Fingerprint';
-      }
-
-      return 'Biometric';
-    } catch {
-      return 'Biometric';
-    }
+    return PasskeyService.getBiometricFriendlyName();
   };
+
+  // Check if user has passkeys for email
+  const checkUserHasPasskeys = useMutation({
+    mutationFn: async (email: string): Promise<{ hasPasskeys: boolean }> => {
+      return workersAuthApi.checkUserHasPasskeys(email);
+    },
+  });
 
   return {
     // Queries
@@ -220,6 +143,7 @@ export function usePasskey() {
     registerPasskey: registerPasskeyMutation,
     authenticateWithPasskey: authenticateWithPasskeyMutation,
     deletePasskey: deletePasskeyMutation,
+    checkUserHasPasskeys,
 
     // Utils
     getBiometricName,

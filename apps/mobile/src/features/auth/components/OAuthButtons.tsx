@@ -42,9 +42,8 @@ export function OAuthButtons({
       <TouchableOpacity
         onPress={() => {
           if (!isGoogleConfigured) {
-            throw new Error(
-              'Google OAuth not configured. Please set EXPO_PUBLIC_GOOGLE_CLIENT_ID environment variable.',
-            );
+            console.error('Google OAuth not configured. Please set EXPO_PUBLIC_GOOGLE_CLIENT_ID environment variable.');
+            return;
           }
           loginWithGoogle.mutate();
         }}
@@ -122,9 +121,8 @@ export function GoogleOAuthButton({
       onPress();
     } else {
       if (!isGoogleConfigured) {
-        throw new Error(
-          'Google OAuth not configured. Please set EXPO_PUBLIC_GOOGLE_CLIENT_ID environment variable.',
-        );
+        console.error('Google OAuth not configured. Please set EXPO_PUBLIC_GOOGLE_CLIENT_ID environment variable.');
+        return;
       }
       loginWithGoogle.mutate();
     }
@@ -171,9 +169,8 @@ export function AppleOAuthButton({
       onPress();
     } else {
       if (!isAppleConfigured) {
-        throw new Error(
-          'Apple OAuth not configured. Please set EXPO_PUBLIC_APPLE_CLIENT_ID environment variable.',
-        );
+        console.error('Apple OAuth not configured. Please set EXPO_PUBLIC_APPLE_CLIENT_ID environment variable.');
+        return;
       }
       loginWithApple.mutate();
     }

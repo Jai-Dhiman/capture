@@ -44,7 +44,14 @@ export const workersAuthApi = {
 
   // OAuth methods
   async oauthGoogle(data: OAuthGoogleRequest): Promise<AuthResponse> {
+    // Send authorization code to backend for token exchange using the same iOS client ID
+    // This avoids cross-client issues that occur with mismatched client IDs
     return apiClient.post('/auth/oauth/google', data, false);
+  },
+
+  async oauthGoogleToken(idToken: string): Promise<AuthResponse> {
+    // Send Google ID token to backend for verification and user creation
+    return apiClient.post('/auth/oauth/google/token', { idToken }, false);
   },
 
   async oauthApple(data: OAuthAppleRequest): Promise<AuthResponse> {
@@ -72,6 +79,10 @@ export const workersAuthApi = {
 
   async passkeyAuthenticationComplete(data: PasskeyAuthenticationComplete): Promise<AuthResponse> {
     return apiClient.post('/auth/passkey/authenticate/complete', data, false);
+  },
+
+  async checkUserHasPasskeys(email: string): Promise<{ hasPasskeys: boolean }> {
+    return apiClient.post('/auth/passkey/check', { email }, false);
   },
 
   async getPasskeys(): Promise<PasskeyListResponse> {

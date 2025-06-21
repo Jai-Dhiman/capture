@@ -28,11 +28,15 @@
         "backgroundColor": "#ffffff"
       }
     },
-    "scheme": "capture",
+    "scheme": [
+      "com.captureapp.mobile",
+      "com.googleusercontent.apps.562912588429-kjsb2br221rgfnlv11nimbsom1n69ju0"
+    ],
     "linking": {
       "prefixes": [
-        "capture://",
+        "com.captureapp.mobile://",
         "com.googleusercontent.apps.562912588429-kjsb2br221rgfnlv11nimbsom1n69ju0://",
+        "capture://",
         "http://localhost:8081",
         "exp://192.168.1.64:8081",
         "exp://7kyeaek-anonymous-8081.exp.direct",
@@ -91,14 +95,16 @@
       [
         "@react-native-google-signin/google-signin",
         {
-          "iosUrlScheme": "com.googleusercontent.apps.562912588429-ia1001urt4gds03e1b47qpefsum2efns"
+          "iosUrlScheme": "com.googleusercontent.apps.562912588429-kjsb2br221rgfnlv11nimbsom1n69ju0"
         }
       ]
     ],
     "extra": {
       "eas": {
         "projectId": "cad78a77-57e1-4d5e-b730-c779cdd2b6cb"
-      }
+      },
+      "API_URL": "https://capture-api.jai-d.workers.dev",
+      "SHARE_URL": "https://www.captureapp.org"
     }
   }
 }
