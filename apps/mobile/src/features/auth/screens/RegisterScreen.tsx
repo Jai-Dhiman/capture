@@ -48,7 +48,7 @@ export default function RegisterScreen({ navigation }: Props) {
         },
         {
           onSuccess: (response) => {
-            navigation.navigate('CodeVerification', {
+            navigation.navigate('EmailCodeVerification', {
               email: value.email,
               phone: value.phone || undefined,
               isNewUser: response.isNewUser,

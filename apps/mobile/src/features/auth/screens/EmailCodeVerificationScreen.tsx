@@ -10,8 +10,8 @@ import { Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'reac
 import { useAuth } from '../hooks/useAuth';
 
 type Props = {
-  navigation: NativeStackNavigationProp<AuthStackParamList, 'CodeVerification'>;
-  route: RouteProp<AuthStackParamList, 'CodeVerification'>;
+  navigation: NativeStackNavigationProp<AuthStackParamList, 'EmailCodeVerification'>;
+  route: RouteProp<AuthStackParamList, 'EmailCodeVerification'>;
 };
 
 export default function CodeVerificationScreen({ navigation, route }: Props) {

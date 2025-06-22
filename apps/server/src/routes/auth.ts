@@ -1372,15 +1372,5 @@ router.post('/passkey/check', authRateLimiter, async (c) => {
   }
 });
 
-// Debug endpoint to check OAuth configuration
-router.get('/debug/oauth-config', async (c) => {
-  return c.json({
-    googleClientIdPresent: !!c.env.GOOGLE_CLIENT_ID,
-    googleClientSecretPresent: !!c.env.GOOGLE_CLIENT_SECRET,
-    appleClientIdPresent: !!c.env.APPLE_CLIENT_ID,
-    googleClientIdStart: c.env.GOOGLE_CLIENT_ID ? `${c.env.GOOGLE_CLIENT_ID.substring(0, 20)}...` : 'MISSING',
-    environment: 'production', // This will help you verify which environment is running
-  });
-});
 
 export default router;

@@ -23,11 +23,12 @@ export const linking: LinkingOptions<RootStackParamList> = {
       Auth: {
         screens: {
           Login: 'auth/login',
-          Signup: 'auth/signup',
+          RegisterScreen: 'auth/register',
           EmailSignup: 'auth/email-signup',
-          CodeVerification: 'auth/code-verification',
+          EmailCodeVerification: 'auth/email-verification',
+          PhoneCodeVerification: 'auth/phone-verification',
+          PasskeySetup: 'auth/passkey-setup',
           CreateProfile: 'auth/create-profile',
-          RegisterScreen: 'auth/register-screen'
         }
       },
       App: {

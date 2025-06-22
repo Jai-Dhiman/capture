@@ -10,17 +10,22 @@ export type RootStackParamList = {
 
 export type AuthStackParamList = {
   Login: undefined;
-  Signup: undefined;
+  RegisterScreen: undefined;
   EmailSignup: undefined;
-  CodeVerification: {
+  EmailCodeVerification: {
     email: string;
     phone?: string;
     isNewUser: boolean;
     message: string;
   };
+  PhoneCodeVerification: {
+    email: string;
+    phone: string;
+    isNewUser: boolean;
+    message: string;
+  };
+  PasskeySetup: undefined;
   CreateProfile: undefined;
-  EmailVerificationPending: undefined;
-  RegisterScreen: undefined;
 };
 
 export type AppStackParamList = {
@@ -37,5 +42,4 @@ export type SettingsStackParamList = {
   MainSettings: undefined;
   BlockedUsers: undefined;
   AccountSettings: undefined;
-  VerifyPhone: undefined;
 };

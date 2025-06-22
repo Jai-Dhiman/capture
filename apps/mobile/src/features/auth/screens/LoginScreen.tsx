@@ -91,7 +91,7 @@ export default function LoginScreen({ navigation }: Props) {
           },
           {
             onSuccess: (response) => {
-              navigation.navigate('CodeVerification', {
+              navigation.navigate('EmailCodeVerification', {
                 email: value.email,
                 phone: value.phone || undefined,
                 isNewUser: response.isNewUser,
@@ -120,7 +120,7 @@ export default function LoginScreen({ navigation }: Props) {
             },
             {
               onSuccess: (response) => {
-                navigation.navigate('CodeVerification', {
+                navigation.navigate('EmailCodeVerification', {
                   email: value.email,
                   phone: value.phone || undefined,
                   isNewUser: response.isNewUser,
@@ -279,7 +279,7 @@ export default function LoginScreen({ navigation }: Props) {
           )}
 
           <View className="items-center mt-[24px]">
-            <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
+            <TouchableOpacity onPress={() => navigation.navigate('RegisterScreen')}>
               <Text className="text-base font-semibold font-roboto text-[#827B85] underline">
                 Account Recovery
               </Text>
@@ -295,7 +295,7 @@ export default function LoginScreen({ navigation }: Props) {
           </View>
 
           <View className="items-center">
-            <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
+            <TouchableOpacity onPress={() => navigation.navigate('RegisterScreen')}>
               <Text className="text-base font-semibold font-roboto text-[#827B85] underline">
                 Don't Have an Account?
               </Text>
