@@ -1,4 +1,4 @@
-package com.captureapp.mobile
+package com.obscuratechnologies.capture
 
 import android.os.Build
 import android.os.Bundle

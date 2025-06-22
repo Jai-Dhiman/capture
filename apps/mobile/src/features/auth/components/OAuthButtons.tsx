@@ -1,7 +1,7 @@
 import AppleIcon from '@assets/icons/AppleLogo.svg';
 import GoogleLogo from '@assets/icons/GoogleLogo.svg';
 import React from 'react';
-import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Platform, Text, TouchableOpacity, View } from 'react-native';
 import { useOAuth } from '../hooks/useOAuth';
 
 interface OAuthButtonsProps {
@@ -39,66 +39,57 @@ export function OAuthButtons({
       )}
 
       {/* Google OAuth Button */}
-      <TouchableOpacity
-        onPress={() => {
-          if (!isGoogleConfigured) {
-            console.error('Google OAuth not configured. Please set EXPO_PUBLIC_GOOGLE_CLIENT_ID environment variable.');
-            return;
-          }
-          loginWithGoogle.mutate();
-        }}
-        disabled={loginWithGoogle.isPending}
-        className={`bg-white ${buttonHeight} rounded-[30px] shadow-md flex-row items-center justify-center ${spacing} ${loginWithGoogle.isPending ? 'opacity-50' : ''
-          }`}
-        style={showDivider ? { marginTop: dividerSpacing === 'mt-[29px]' ? 29 : 20 } : {}}
-      >
-        {loginWithGoogle.isPending ? (
-          <View className="flex-row items-center">
-            <ActivityIndicator size="small" color="#000" />
-            <Text className="text-base font-bold font-roboto text-[#1C1C1C] ml-2">
-              Signing in...
-            </Text>
-          </View>
-        ) : (
-          <>
-            <GoogleLogo width={24} height={24} style={{ marginRight: 16 }} />
-            <Text className="text-base font-bold font-roboto text-[#1C1C1C]">
-              Sign In with Google
-            </Text>
-          </>
-        )}
-      </TouchableOpacity>
+      {isGoogleConfigured && (
+        <TouchableOpacity
+          onPress={() => loginWithGoogle.mutate()}
+          disabled={loginWithGoogle.isPending}
+          className={`bg-white ${buttonHeight} rounded-[30px] shadow-md flex-row items-center justify-center ${spacing} ${loginWithGoogle.isPending ? 'opacity-50' : ''
+            }`}
+          style={showDivider ? { marginTop: dividerSpacing === 'mt-[29px]' ? 29 : 20 } : {}}
+        >
+          {loginWithGoogle.isPending ? (
+            <View className="flex-row items-center">
+              <ActivityIndicator size="small" color="#000" />
+              <Text className="text-base font-bold font-roboto text-[#1C1C1C] ml-2">
+                Signing in...
+              </Text>
+            </View>
+          ) : (
+            <>
+              <GoogleLogo width={24} height={24} style={{ marginRight: 16 }} />
+              <Text className="text-base font-bold font-roboto text-[#1C1C1C]">
+                Sign In with Google
+              </Text>
+            </>
+          )}
+        </TouchableOpacity>
+      )}
 
-      {/* Apple OAuth Button */}
-      <TouchableOpacity
-        onPress={() => {
-          if (!isAppleConfigured) {
-            throw new Error(
-              'Apple OAuth not configured. Please set EXPO_PUBLIC_APPLE_CLIENT_ID environment variable.',
-            );
-          }
-          loginWithApple.mutate();
-        }}
-        disabled={loginWithApple.isPending}
-        className={`bg-white ${buttonHeight} rounded-[30px] shadow-md flex-row items-center justify-center ${spacing} ${loginWithApple.isPending ? 'opacity-50' : ''
-          }`}
-      >
-        {loginWithApple.isPending ? (
-          <View className="flex-row items-center">
-            <ActivityIndicator size="small" color="#000" />
-            <Text className="text-base font-bold font-roboto text-[#1C1C1C] ml-2">
-              Signing in...
-            </Text>
-          </View>
-        ) : (
-          <>
-            <AppleIcon width={24} height={24} style={{ marginRight: 16 }} />
-            <Text className="text-base font-bold font-roboto text-[#1C1C1C]">
-              Sign In with Apple
-            </Text>
-          </>
-        )}
-      </TouchableOpacity>
+      {/* Apple OAuth Button - Only show on iOS when configured */}
+      {isAppleConfigured && (
+        <TouchableOpacity
+          onPress={() => loginWithApple.mutate()}
+          disabled={loginWithApple.isPending}
+          className={`bg-white ${buttonHeight} rounded-[30px] shadow-md flex-row items-center justify-center ${spacing} ${loginWithApple.isPending ? 'opacity-50' : ''
+            }`}
+        >
+          {loginWithApple.isPending ? (
+            <View className="flex-row items-center">
+              <ActivityIndicator size="small" color="#000" />
+              <Text className="text-base font-bold font-roboto text-[#1C1C1C] ml-2">
+                Signing in...
+              </Text>
+            </View>
+          ) : (
+            <>
+              <AppleIcon width={24} height={24} style={{ marginRight: 16 }} />
+              <Text className="text-base font-bold font-roboto text-[#1C1C1C]">
+                Sign In with Apple
+              </Text>
+            </>
+          )}
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -169,12 +160,17 @@ export function AppleOAuthButton({
       onPress();
     } else {
       if (!isAppleConfigured) {
-        console.error('Apple OAuth not configured. Please set EXPO_PUBLIC_APPLE_CLIENT_ID environment variable.');
+        console.error('Apple OAuth not configured or not available on this platform.');
         return;
       }
       loginWithApple.mutate();
     }
   };
+
+  // // Don't render the button at all if not on iOS or not configured
+  // if (!isAppleConfigured) {
+  //   return null;
+  // }
 
   return (
     <TouchableOpacity

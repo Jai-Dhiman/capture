@@ -83,7 +83,10 @@ export default function CreateProfile() {
   });
 
   const handleLogout = () => {
-    logout.mutate();
+    logout.mutate(undefined, {
+      onSuccess: () => {
+      },
+    });
   };
 
   return (

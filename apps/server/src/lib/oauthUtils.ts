@@ -169,6 +169,101 @@ export async function exchangeGoogleCode(
 }
 
 // Apple OAuth functions
+
+// Base64url decode helper
+function base64UrlDecode(input: string): string {
+  // Add padding if necessary
+  const str = input + '===='.substring(0, (4 - (input.length % 4)) % 4);
+  // Replace url-safe characters
+  const base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+  return atob(base64);
+}
+
+// Fetch Apple's public keys
+async function fetchApplePublicKeys(): Promise<ApplePublicKey[]> {
+  try {
+    const response = await fetch('https://appleid.apple.com/auth/keys');
+    if (!response.ok) {
+      throw new Error(`Failed to fetch Apple public keys: ${response.status}`);
+    }
+    const data = (await response.json()) as AppleKeysResponse;
+    return data.keys;
+  } catch (error) {
+    console.error('❌ Failed to fetch Apple public keys:', error);
+    throw new Error('Failed to fetch Apple public keys for JWT verification');
+  }
+}
+
+// Convert Apple's public key to CryptoKey for Web Crypto API
+async function importApplePublicKey(key: ApplePublicKey): Promise<CryptoKey> {
+  // Create RSA public key in JWK format
+  const jwk = {
+    kty: 'RSA',
+    n: key.n,
+    e: key.e,
+    alg: 'RS256',
+    use: 'sig',
+  };
+
+  try {
+    return await crypto.subtle.importKey(
+      'jwk',
+      jwk,
+      {
+        name: 'RSASSA-PKCS1-v1_5',
+        hash: 'SHA-256',
+      },
+      false,
+      ['verify']
+    );
+  } catch (error) {
+    console.error('❌ Failed to import Apple public key:', error);
+    throw new Error('Failed to import Apple public key for signature verification');
+  }
+}
+
+// Verify JWT signature using Apple's public key
+async function verifyAppleJWTSignature(
+  token: string,
+  header: AppleJWTHeader,
+): Promise<boolean> {
+  try {
+    // Fetch Apple's public keys
+    const publicKeys = await fetchApplePublicKeys();
+    
+    // Find the key matching the JWT header kid
+    const publicKey = publicKeys.find(key => key.kid === header.kid);
+    if (!publicKey) {
+      console.error('❌ No matching public key found for kid:', header.kid);
+      throw new Error(`No matching Apple public key found for kid: ${header.kid}`);
+    }
+
+    // Import the public key
+    const cryptoKey = await importApplePublicKey(publicKey);
+
+    // Split the token to get signature and payload
+    const [headerB64, payloadB64, signatureB64] = token.split('.');
+    const signedData = `${headerB64}.${payloadB64}`;
+    
+    // Decode the signature
+    const signature = Uint8Array.from(base64UrlDecode(signatureB64), c => c.charCodeAt(0));
+    
+    // Verify the signature
+    const isValid = await crypto.subtle.verify(
+      'RSASSA-PKCS1-v1_5',
+      cryptoKey,
+      signature,
+      new TextEncoder().encode(signedData)
+    );
+
+    console.log('✅ Apple JWT signature verification result:', isValid);
+    return isValid;
+  } catch (error) {
+    console.error('❌ Apple JWT signature verification failed:', error);
+    throw new Error(`Apple JWT signature verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
 export async function verifyAppleToken(
   identityToken: string,
   env: Bindings,
@@ -182,16 +277,29 @@ export async function verifyAppleToken(
     }
 
     // Decode header and payload
-    const _header = JSON.parse(atob(headerB64)) as AppleJWTHeader;
-    const payload = JSON.parse(atob(payloadB64)) as AppleJWTPayload;
+    const header = JSON.parse(base64UrlDecode(headerB64)) as AppleJWTHeader;
+    const payload = JSON.parse(base64UrlDecode(payloadB64)) as AppleJWTPayload;
+
+    console.log('🔍 Apple JWT verification - header & payload decoded:', {
+      alg: header.alg,
+      kid: header.kid,
+      aud: payload.aud,
+      iss: payload.iss,
+      exp: payload.exp,
+      email: payload.email ? 'PRESENT' : 'MISSING',
+    });
 
     // Validate basic claims
     if (payload.aud !== env.APPLE_CLIENT_ID) {
-      throw new Error('Invalid audience claim');
+      console.error('❌ Invalid audience claim:', {
+        expected: env.APPLE_CLIENT_ID,
+        received: payload.aud,
+      });
+      throw new Error('Invalid audience claim - token not issued for this app');
     }
 
     if (payload.iss !== 'https://appleid.apple.com') {
-      throw new Error('Invalid issuer claim');
+      throw new Error('Invalid issuer claim - token not from Apple');
     }
 
     const now = Math.floor(Date.now() / 1000);
@@ -204,16 +312,15 @@ export async function verifyAppleToken(
       throw new Error('Token issued in the future');
     }
 
-    // For development/testing, we'll skip signature verification
-    // In production, you should verify the signature against Apple's public keys
-    // TODO: Add ENVIRONMENT variable to Bindings type and enable signature verification
-    // if (env.ENVIRONMENT === 'production') {
-    //   await verifyAppleJWTSignature(identityToken, header, env);
-    // } else {
-    console.warn(
-      '⚠️ Apple JWT signature verification not implemented - should be added for production',
-    );
-    // }
+    // Verify JWT signature using Apple's public keys
+    console.log('🔐 Verifying Apple JWT signature...');
+    const signatureValid = await verifyAppleJWTSignature(identityToken, header);
+    
+    if (!signatureValid) {
+      throw new Error('Invalid JWT signature - token may have been tampered with');
+    }
+
+    console.log('✅ Apple JWT verification successful');
 
     return {
       email: payload.email || '',
@@ -221,20 +328,12 @@ export async function verifyAppleToken(
       sub: payload.sub,
     };
   } catch (error) {
-    console.error('Apple token verification failed:', error);
+    console.error('❌ Apple token verification failed:', error);
     throw new Error(
       `Invalid Apple identity token: ${error instanceof Error ? error.message : 'Unknown error'}`,
     );
   }
 }
-
-// TODO: Implement Apple JWT signature verification for production
-// This function would verify the JWT signature using Apple's public keys
-// Requirements:
-// 1. Fetch Apple's public keys from https://appleid.apple.com/auth/keys
-// 2. Find the key matching the JWT header 'kid'
-// 3. Verify the RS256 signature
-// 4. Use a crypto library like 'node-jose' or Web Crypto API
 
 // Generate a random code verifier for PKCE (matches client implementation)
 export function generateCodeVerifier(): string {

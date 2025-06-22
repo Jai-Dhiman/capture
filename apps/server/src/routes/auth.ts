@@ -794,51 +794,94 @@ router.post('/oauth/apple', authRateLimiter, async (c) => {
       );
     }
 
+    const db = createD1Client(c.env);
+
     // Verify Apple identity token
     const appleUser = await verifyAppleToken(identityToken, c.env);
 
-    if (!appleUser.email) {
-      return c.json(
-        { error: 'Failed to get user email from Apple', code: 'auth/oauth-failed' },
-        400,
-      );
-    }
+    console.log('🍎 Apple user info extracted:', {
+      hasEmail: !!appleUser.email,
+      emailVerified: appleUser.email_verified,
+      sub: appleUser.sub ? `${appleUser.sub.substring(0, 10)}...` : 'MISSING',
+    });
 
-    const db = createD1Client(c.env);
-
-    // Check if user exists or create new user
-    let user = await db
-      .select()
-      .from(schema.users)
-      .where(eq(schema.users.email, appleUser.email))
-      .get();
+    // For Apple Sign-In, email might not be provided on subsequent logins
+    // We'll need to handle this by either:
+    // 1. Looking up existing user by Apple sub (subject ID)
+    // 2. Requiring email for new users only
+    let user = null;
     let isNewUser = false;
 
-    if (!user) {
-      // Create new user
-      const userId = nanoid();
-      await db.insert(schema.users).values({
-        id: userId,
-        email: appleUser.email,
-        emailVerified: appleUser.email_verified ? 1 : 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
+    if (!appleUser.email) {
+      // Check if we have an existing user with this Apple ID (sub)
+      const existingUserBySub = await db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.appleId, appleUser.sub))
+        .get();
 
-      user = await db.select().from(schema.users).where(eq(schema.users.id, userId)).get();
-      isNewUser = true;
+      if (existingUserBySub) {
+        console.log('🍎 Found existing user by Apple ID, proceeding without email');
+        user = existingUserBySub;
+      } else {
+        return c.json(
+          { 
+            error: 'Email required for new Apple Sign-In users. Please sign out of Apple ID and try again to share email.', 
+            code: 'auth/email-required' 
+          },
+          400,
+        );
+      }
     } else {
-      // Update existing user
-      await db
-        .update(schema.users)
-        .set({
+      // Check if user exists by email or Apple ID
+      const existingUserByEmail = await db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.email, appleUser.email))
+        .get();
+
+      const existingUserByAppleId = await db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.appleId, appleUser.sub))
+        .get();
+
+      user = existingUserByEmail || existingUserByAppleId;
+
+      if (!user) {
+        // Create new user
+        const userId = nanoid();
+        await db.insert(schema.users).values({
+          id: userId,
+          email: appleUser.email,
+          emailVerified: appleUser.email_verified ? 1 : 0,
+          appleId: appleUser.sub,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        user = await db.select().from(schema.users).where(eq(schema.users.id, userId)).get();
+        isNewUser = true;
+      } else {
+        // Update existing user with Apple ID if not set, and update email verification
+        const updateData: any = {
           emailVerified: appleUser.email_verified ? 1 : 0,
           updatedAt: new Date().toISOString(),
-        })
-        .where(eq(schema.users.id, user.id));
+        };
 
-      // Refresh user data
-      user = await db.select().from(schema.users).where(eq(schema.users.id, user.id)).get();
+        // Link Apple ID to existing user if not already linked
+        if (!user.appleId) {
+          updateData.appleId = appleUser.sub;
+        }
+
+        await db
+          .update(schema.users)
+          .set(updateData)
+          .where(eq(schema.users.id, user.id));
+
+        // Refresh user data
+        user = await db.select().from(schema.users).where(eq(schema.users.id, user.id)).get();
+      }
     }
 
     if (!user) {

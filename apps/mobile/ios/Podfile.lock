@@ -228,6 +228,8 @@ PODS:
     - ExpoModulesCore
     - GoogleSignIn (~> 7.1)
     - React-Core
+  - ExpoAppleAuthentication (7.1.3):
+    - ExpoModulesCore
   - ExpoAsset (11.0.5):
     - ExpoModulesCore
   - ExpoClipboard (7.0.1):
@@ -2372,6 +2374,7 @@ DEPENDENCIES:
   - "expo-dev-menu (from `../../../node_modules/.pnpm/expo-dev-menu@6.0.25_expo@52.0.46_@babel+core@7.27.4_@babel+preset-env@7.22.20_@babel+core@7._wvzdiicwyilssnund5kzqo4s3y/node_modules/expo-dev-menu`)"
   - "expo-dev-menu-interface (from `../../../node_modules/.pnpm/expo-dev-menu-interface@1.9.3_expo@52.0.46_@babel+core@7.27.4_@babel+preset-env@7.22.20_@babe_ugwfja7x5wh6hasfnvbwph4dle/node_modules/expo-dev-menu-interface/ios`)"
   - "ExpoAdapterGoogleSignIn (from `../../../node_modules/.pnpm/@react-native-google-signin+google-signin@14.0.1_expo@52.0.46_@babel+core@7.27.4_@babel+prese_ubkplv2l57to5aov2uln3wrvb4/node_modules/@react-native-google-signin/google-signin/expo/ios`)"
+  - "ExpoAppleAuthentication (from `../../../node_modules/.pnpm/expo-apple-authentication@7.1.3_expo@52.0.46_@babel+core@7.27.4_@babel+preset-env@7.22.20_@ba_yqmj7z2ay7o4xczkw7dssj6cqe/node_modules/expo-apple-authentication/ios`)"
   - "ExpoAsset (from `../../../node_modules/.pnpm/expo-asset@11.0.5_expo@52.0.46_@babel+core@7.27.4_@babel+preset-env@7.22.20_@babel+core@7.27._5c5ebarzc3acsoziopl5jfmphm/node_modules/expo-asset/ios`)"
   - "ExpoClipboard (from `../../../node_modules/.pnpm/expo-clipboard@7.0.1_expo@52.0.46_@babel+core@7.27.4_@babel+preset-env@7.22.20_@babel+core@7._no5kduxawxxayhku4tapxytqfm/node_modules/expo-clipboard/ios`)"
   - "ExpoCrypto (from `../../../node_modules/.pnpm/expo-crypto@14.0.2_expo@52.0.46_@babel+core@7.27.4_@babel+preset-env@7.22.20_@babel+core@7.27_n5jrr4bwhgkky7qdscdfuxvyty/node_modules/expo-crypto/ios`)"
@@ -2502,6 +2505,8 @@ EXTERNAL SOURCES:
     :path: "../../../node_modules/.pnpm/expo-dev-menu-interface@1.9.3_expo@52.0.46_@babel+core@7.27.4_@babel+preset-env@7.22.20_@babe_ugwfja7x5wh6hasfnvbwph4dle/node_modules/expo-dev-menu-interface/ios"
   ExpoAdapterGoogleSignIn:
     :path: "../../../node_modules/.pnpm/@react-native-google-signin+google-signin@14.0.1_expo@52.0.46_@babel+core@7.27.4_@babel+prese_ubkplv2l57to5aov2uln3wrvb4/node_modules/@react-native-google-signin/google-signin/expo/ios"
+  ExpoAppleAuthentication:
+    :path: "../../../node_modules/.pnpm/expo-apple-authentication@7.1.3_expo@52.0.46_@babel+core@7.27.4_@babel+preset-env@7.22.20_@ba_yqmj7z2ay7o4xczkw7dssj6cqe/node_modules/expo-apple-authentication/ios"
   ExpoAsset:
     :path: "../../../node_modules/.pnpm/expo-asset@11.0.5_expo@52.0.46_@babel+core@7.27.4_@babel+preset-env@7.22.20_@babel+core@7.27._5c5ebarzc3acsoziopl5jfmphm/node_modules/expo-asset/ios"
   ExpoClipboard:
@@ -2700,6 +2705,7 @@ SPEC CHECKSUMS:
   expo-dev-menu: dd3197d2b0107ee036ffd85f95e75a950ab52ada
   expo-dev-menu-interface: 00dc42302a72722fdecec3fa048de84a9133bcc4
   ExpoAdapterGoogleSignIn: b48e2797d1b090bd284b32ecb0de8f4a7bc45b13
+  ExpoAppleAuthentication: 52631ed9dcb71c65712a447bbb9a5667bb8fcf0c
   ExpoAsset: 48386d40d53a8c1738929b3ed509bcad595b5516
   ExpoClipboard: 44fd1c8959ee8f6175d059dc011b154c9709a969
   ExpoCrypto: e97e864c8d7b9ce4a000bca45dddb93544a1b2b4

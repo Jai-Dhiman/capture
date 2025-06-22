@@ -15,26 +15,23 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.captureapp.mobile",
+      "bundleIdentifier": "com.obscuratechnologies.capture",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "com.captureapp.mobile",
+      "package": "com.obscuratechnologies.capture",
       "softwareKeyboardLayoutMode": "pan",
       "adaptiveIcon": {
         "foregroundImage": "./assets/CaptureLogo.png",
         "backgroundColor": "#ffffff"
       }
     },
-    "scheme": [
-      "com.captureapp.mobile",
-      "com.googleusercontent.apps.562912588429-kjsb2br221rgfnlv11nimbsom1n69ju0"
-    ],
+    "scheme": "com.obscuratechnologies.capture",
     "linking": {
       "prefixes": [
-        "com.captureapp.mobile://",
+        "com.obscuratechnologies.capture://",
         "capture://",
         "http://localhost:8081",
         "exp://192.168.1.64:8081",
@@ -96,7 +93,8 @@
         {
           "iosUrlScheme": "com.googleusercontent.apps.562912588429-kjsb2br221rgfnlv11nimbsom1n69ju0"
         }
-      ]
+      ],
+      "expo-apple-authentication"
     ],
     "extra": {
       "eas": {

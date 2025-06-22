@@ -217,7 +217,6 @@ export default function LoginScreen({ navigation }: Props) {
                     }}
                     autoCapitalize="none"
                     keyboardType="email-address"
-                    autoFocus
                     editable={!isLoading}
                   />
                 </TouchableOpacity>

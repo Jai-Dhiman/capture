@@ -20,7 +20,7 @@ CREATE TABLE `blocked_user` (
 	`id` text PRIMARY KEY NOT NULL,
 	`blocker_id` text NOT NULL,
 	`blocked_id` text NOT NULL,
-	`created_at` numeric DEFAULT '2025-06-11T22:45:46.956Z' NOT NULL,
+	`created_at` numeric DEFAULT '2025-06-22T04:36:10.759Z' NOT NULL,
 	FOREIGN KEY (`blocker_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`blocked_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
 );
@@ -37,7 +37,7 @@ CREATE TABLE `comment` (
 	`path` text NOT NULL,
 	`depth` integer DEFAULT 0 NOT NULL,
 	`is_deleted` integer DEFAULT 0 NOT NULL,
-	`created_at` numeric DEFAULT '2025-06-11T22:45:46.956Z' NOT NULL,
+	`created_at` numeric DEFAULT '2025-06-22T04:36:10.758Z' NOT NULL,
 	`_like_count` integer DEFAULT 0 NOT NULL,
 	FOREIGN KEY (`post_id`) REFERENCES `post`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action,
@@ -52,7 +52,7 @@ CREATE TABLE `comment_like` (
 	`id` text PRIMARY KEY NOT NULL,
 	`user_id` text NOT NULL,
 	`comment_id` text NOT NULL,
-	`created_at` numeric DEFAULT '2025-06-11T22:45:46.956Z' NOT NULL,
+	`created_at` numeric DEFAULT '2025-06-22T04:36:10.759Z' NOT NULL,
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`comment_id`) REFERENCES `comment`(`id`) ON UPDATE no action ON DELETE no action
 );
@@ -66,7 +66,7 @@ CREATE TABLE `email_codes` (
 	`code` text NOT NULL,
 	`type` text NOT NULL,
 	`expires_at` numeric NOT NULL,
-	`created_at` numeric DEFAULT '2025-06-11T22:45:46.955Z' NOT NULL,
+	`created_at` numeric DEFAULT '2025-06-22T04:36:10.758Z' NOT NULL,
 	`used_at` numeric
 );
 --> statement-breakpoint
@@ -76,7 +76,7 @@ CREATE INDEX `email_codes_code_idx` ON `email_codes` (`code`);--> statement-brea
 CREATE TABLE `hashtag` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
-	`created_at` numeric DEFAULT '2025-06-11T22:45:46.956Z' NOT NULL
+	`created_at` numeric DEFAULT '2025-06-22T04:36:10.758Z' NOT NULL
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `hashtag_name_unique` ON `hashtag` (`name`);--> statement-breakpoint
@@ -88,7 +88,7 @@ CREATE TABLE `media` (
 	`type` text NOT NULL,
 	`storage_key` text NOT NULL,
 	`order` integer NOT NULL,
-	`created_at` numeric DEFAULT '2025-06-11T22:45:46.956Z' NOT NULL,
+	`created_at` numeric DEFAULT '2025-06-22T04:36:10.758Z' NOT NULL,
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`post_id`) REFERENCES `post`(`id`) ON UPDATE no action ON DELETE no action
 );
@@ -104,7 +104,7 @@ CREATE TABLE `notification` (
 	`resource_type` text,
 	`message` text NOT NULL,
 	`is_read` integer DEFAULT 0 NOT NULL,
-	`created_at` numeric DEFAULT '2025-06-11T22:45:46.956Z' NOT NULL,
+	`created_at` numeric DEFAULT '2025-06-22T04:36:10.759Z' NOT NULL,
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`action_user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
 );
@@ -118,8 +118,8 @@ CREATE TABLE `notification_settings` (
 	`enable_in_app` integer DEFAULT 1 NOT NULL,
 	`enable_push` integer DEFAULT 1 NOT NULL,
 	`frequency` text DEFAULT 'IMMEDIATE' NOT NULL,
-	`created_at` numeric DEFAULT '2025-06-11T22:45:46.957Z' NOT NULL,
-	`updated_at` numeric DEFAULT '2025-06-11T22:45:46.957Z' NOT NULL,
+	`created_at` numeric DEFAULT '2025-06-22T04:36:10.759Z' NOT NULL,
+	`updated_at` numeric DEFAULT '2025-06-22T04:36:10.759Z' NOT NULL,
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
@@ -131,7 +131,7 @@ CREATE TABLE `passkeys` (
 	`public_key` text NOT NULL,
 	`counter` integer DEFAULT 0 NOT NULL,
 	`device_name` text,
-	`created_at` numeric DEFAULT '2025-06-11T22:45:46.955Z' NOT NULL,
+	`created_at` numeric DEFAULT '2025-06-22T04:36:10.758Z' NOT NULL,
 	`last_used_at` numeric,
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
 );
@@ -144,7 +144,7 @@ CREATE TABLE `post` (
 	`user_id` text NOT NULL,
 	`content` text NOT NULL,
 	`type` text DEFAULT 'post' NOT NULL,
-	`created_at` numeric DEFAULT '2025-06-11T22:45:46.955Z' NOT NULL,
+	`created_at` numeric DEFAULT '2025-06-22T04:36:10.758Z' NOT NULL,
 	`_save_count` integer DEFAULT 0 NOT NULL,
 	`_comment_count` integer DEFAULT 0 NOT NULL,
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
@@ -155,7 +155,7 @@ CREATE INDEX `post_time_idx` ON `post` (`created_at`);--> statement-breakpoint
 CREATE TABLE `post_hashtag` (
 	`post_id` text NOT NULL,
 	`hashtag_id` text NOT NULL,
-	`created_at` numeric DEFAULT '2025-06-11T22:45:46.956Z' NOT NULL,
+	`created_at` numeric DEFAULT '2025-06-22T04:36:10.758Z' NOT NULL,
 	FOREIGN KEY (`post_id`) REFERENCES `post`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`hashtag_id`) REFERENCES `hashtag`(`id`) ON UPDATE no action ON DELETE no action
 );
@@ -167,7 +167,7 @@ CREATE TABLE `post_like` (
 	`id` text PRIMARY KEY NOT NULL,
 	`user_id` text NOT NULL,
 	`post_id` text NOT NULL,
-	`created_at` numeric DEFAULT '2025-06-11T22:45:46.956Z' NOT NULL,
+	`created_at` numeric DEFAULT '2025-06-22T04:36:10.759Z' NOT NULL,
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`post_id`) REFERENCES `post`(`id`) ON UPDATE no action ON DELETE no action
 );
@@ -183,8 +183,8 @@ CREATE TABLE `profile` (
 	`bio` text,
 	`verified_type` text DEFAULT 'none',
 	`is_private` integer DEFAULT 0 NOT NULL,
-	`created_at` numeric DEFAULT '2025-06-11T22:45:46.954Z' NOT NULL,
-	`updated_at` numeric DEFAULT '2025-06-11T22:45:46.954Z' NOT NULL,
+	`created_at` numeric DEFAULT '2025-06-22T04:36:10.757Z' NOT NULL,
+	`updated_at` numeric DEFAULT '2025-06-22T04:36:10.757Z' NOT NULL,
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
@@ -194,7 +194,7 @@ CREATE TABLE `relationship` (
 	`id` text PRIMARY KEY NOT NULL,
 	`follower_id` text NOT NULL,
 	`followed_id` text NOT NULL,
-	`created_at` numeric DEFAULT '2025-06-11T22:45:46.956Z' NOT NULL,
+	`created_at` numeric DEFAULT '2025-06-22T04:36:10.759Z' NOT NULL,
 	FOREIGN KEY (`follower_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`followed_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
 );
@@ -206,7 +206,7 @@ CREATE TABLE `saved_posts` (
 	`id` text PRIMARY KEY NOT NULL,
 	`user_id` text NOT NULL,
 	`post_id` text NOT NULL,
-	`created_at` numeric DEFAULT '2025-06-11T22:45:46.956Z' NOT NULL,
+	`created_at` numeric DEFAULT '2025-06-22T04:36:10.758Z' NOT NULL,
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`post_id`) REFERENCES `post`(`id`) ON UPDATE no action ON DELETE no action
 );
@@ -217,7 +217,7 @@ CREATE TABLE `user_activity` (
 	`id` text PRIMARY KEY NOT NULL,
 	`user_id` text NOT NULL,
 	`event_type` text NOT NULL,
-	`created_at` numeric DEFAULT '2025-06-11T22:45:46.957Z' NOT NULL,
+	`created_at` numeric DEFAULT '2025-06-22T04:36:10.759Z' NOT NULL,
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
@@ -229,8 +229,10 @@ CREATE TABLE `users` (
 	`email_verified` integer DEFAULT 0 NOT NULL,
 	`phone` text,
 	`phone_verified` integer DEFAULT 0 NOT NULL,
-	`created_at` numeric DEFAULT '2025-06-11T22:45:46.952Z' NOT NULL,
-	`updated_at` numeric DEFAULT '2025-06-11T22:45:46.953Z' NOT NULL
+	`apple_id` text,
+	`created_at` numeric DEFAULT '2025-06-22T04:36:10.753Z' NOT NULL,
+	`updated_at` numeric DEFAULT '2025-06-22T04:36:10.756Z' NOT NULL
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `users_email_unique` ON `users` (`email`);
+CREATE UNIQUE INDEX `users_email_unique` ON `users` (`email`);--> statement-breakpoint
+CREATE UNIQUE INDEX `users_apple_id_unique` ON `users` (`apple_id`);

@@ -4,6 +4,8 @@
   <dict>
     <key>CADisableMinimumFrameDurationOnPhone</key>
     <true/>
+    <key>CFBundleAllowMixedLocalizations</key>
+    <true/>
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
     <key>CFBundleDisplayName</key>
@@ -27,8 +29,8 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>com.captureapp.mobile</string>
-          <string>com.captureapp.mobile</string>
+          <string>com.obscuratechnologies.capture</string>
+          <string>com.obscuratechnologies.capture</string>
         </array>
       </dict>
       <dict>
