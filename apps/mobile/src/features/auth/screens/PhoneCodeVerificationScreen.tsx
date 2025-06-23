@@ -10,18 +10,31 @@ import { Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'reac
 import { useAuth } from '../hooks/useAuth';
 
 type Props = {
-  navigation: NativeStackNavigationProp<AuthStackParamList, 'EmailCodeVerification'>;
-  route: RouteProp<AuthStackParamList, 'EmailCodeVerification'>;
+  navigation: NativeStackNavigationProp<AuthStackParamList, 'PhoneCodeVerification'>;
+  route: RouteProp<AuthStackParamList, 'PhoneCodeVerification'>;
 };
 
-export default function CodeVerificationScreen({ navigation, route }: Props) {
-  const { email, phone, isNewUser, message } = route.params;
+export default function PhoneCodeVerificationScreen({ navigation, route }: Props) {
+  const { email, phone, message } = route.params;
   const [isLoading, setIsLoading] = useState(false);
   const [canResend, setCanResend] = useState(false);
   const [resendCountdown, setResendCountdown] = useState(60);
   const codeInputRef = useRef<TextInput>(null);
   const { showAlert } = useAlert();
   const { verifyCode, sendCode } = useAuth();
+
+  // Format phone number for display (remove +1 and format)
+  const formatPhoneForDisplay = (phoneNumber: string) => {
+    const cleaned = phoneNumber.replace(/[^\d]/g, '');
+    if (cleaned.startsWith('1') && cleaned.length === 11) {
+      const digits = cleaned.substring(1);
+      const match = digits.match(/^(\d{3})(\d{3})(\d{4})$/);
+      if (match) {
+        return `(${match[1]}) ${match[2]}-${match[3]}`;
+      }
+    }
+    return phoneNumber;
+  };
 
   const form = useForm({
     defaultValues: {
@@ -33,6 +46,8 @@ export default function CodeVerificationScreen({ navigation, route }: Props) {
         return;
       }
 
+      // TODO: Replace with actual SMS verification API when implemented
+      // For now, using email verification API as placeholder
       verifyCode.mutate(
         {
           email,
@@ -41,14 +56,8 @@ export default function CodeVerificationScreen({ navigation, route }: Props) {
         },
         {
           onSuccess: () => {
-            if (isNewUser && phone) {
-              navigation.navigate('PhoneCodeVerification', {
-                email,
-                phone,
-                isNewUser,
-                message: 'We\'ve sent a verification code to your phone number.',
-              });
-            }
+            // After phone verification is successful, navigate to CreateProfile
+            // The auth store should handle setting the user as authenticated
           },
           onError: () => {
             form.setFieldValue('code', ''); // Clear the code input on error
@@ -73,11 +82,12 @@ export default function CodeVerificationScreen({ navigation, route }: Props) {
     if (!canResend) return;
 
     setIsLoading(true);
+    // TODO: Replace with actual SMS resend API when implemented
     sendCode.mutate(
       { email, phone },
       {
         onSuccess: () => {
-          showAlert('Verification code sent!', { type: 'success' });
+          showAlert('SMS verification code sent!', { type: 'success' });
           setCanResend(false);
           setResendCountdown(60);
           setIsLoading(false);
@@ -117,11 +127,11 @@ export default function CodeVerificationScreen({ navigation, route }: Props) {
 
           <View className="px-[26px] w-full">
             <Text className="text-3xl font-bold font-roboto text-center mb-2">
-              Check Your Email
+              Check Your Phone
             </Text>
             <Text className="text-base font-roboto text-center mb-2 text-gray-600">{message}</Text>
             <Text className="text-sm font-roboto text-center mb-8 text-gray-500">
-              Sent to {email}
+              Sent to {formatPhoneForDisplay(phone)}
             </Text>
 
             <form.Field
@@ -190,7 +200,7 @@ export default function CodeVerificationScreen({ navigation, route }: Props) {
                     <LoadingSpinner message="Verifying..." />
                   ) : (
                     <Text className="text-center text-black text-[16px] font-bold font-roboto">
-                      {isNewUser ? 'Create Account' : 'Sign In'}
+                      Complete Registration
                     </Text>
                   )}
                 </TouchableOpacity>
@@ -217,7 +227,7 @@ export default function CodeVerificationScreen({ navigation, route }: Props) {
 
             <View className="mt-8">
               <Text className="text-xs text-center text-gray-500 font-roboto">
-                The verification code expires in 10 minutes
+                The SMS verification code expires in 10 minutes
               </Text>
             </View>
           </View>
