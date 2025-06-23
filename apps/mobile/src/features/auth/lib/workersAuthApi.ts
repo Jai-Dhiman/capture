@@ -2,6 +2,7 @@ import { apiClient } from '@/shared/lib/apiClient';
 import type {
   AuthResponse,
   BasicSuccessResponse,
+  CheckUserResponse,
   OAuthAppleRequest,
   OAuthGoogleRequest,
   PasskeyAuthenticationComplete,
@@ -81,7 +82,7 @@ export const workersAuthApi = {
     return apiClient.post('/auth/passkey/authenticate/complete', data, false);
   },
 
-  async checkUserHasPasskeys(email: string): Promise<{ hasPasskeys: boolean }> {
+  async checkUserHasPasskeys(email: string): Promise<CheckUserResponse> {
     return apiClient.post('/auth/passkey/check', { email }, false);
   },
 
@@ -103,4 +104,6 @@ export const workersAuthApi = {
       return null;
     }
   },
+
+
 };

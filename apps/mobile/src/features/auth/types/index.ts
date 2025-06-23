@@ -162,6 +162,15 @@ export interface PasskeyListResponse {
   passkeys: PasskeyInfo[];
 }
 
+export interface CheckUserResponse {
+  userExists: boolean;
+  hasPasskeys: boolean;
+}
+
+export interface CheckUserRequest {
+  email: string;
+}
+
 // Zustand store related types
 export type AuthStage = 'unauthenticated' | 'profileRequired' | 'authenticated';
 export type AuthStatus = 'checking' | 'pending' | 'error' | 'success';

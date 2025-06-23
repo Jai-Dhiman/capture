@@ -127,7 +127,7 @@ export function usePasskey() {
 
   // Check if user has passkeys for email
   const checkUserHasPasskeys = useMutation({
-    mutationFn: async (email: string): Promise<{ hasPasskeys: boolean }> => {
+    mutationFn: async (email: string) => {
       return workersAuthApi.checkUserHasPasskeys(email);
     },
   });

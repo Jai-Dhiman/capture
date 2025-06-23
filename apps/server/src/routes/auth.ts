@@ -196,8 +196,24 @@ router.post('/send-code', otpRateLimiter, async (c) => {
       await emailService.sendVerificationCode(email, code, 'login_register');
     } catch (emailError) {
       console.error('Failed to send email:', emailError);
+      
+      // Check if it's a configuration issue
+      if (emailError instanceof Error && emailError.message.includes('RESEND_API_KEY')) {
+        return c.json(
+          { 
+            error: 'Email service is not configured. Please contact support.', 
+            code: 'auth/email-service-unavailable' 
+          },
+          503,
+        );
+      }
+      
+      // Generic email send failure
       return c.json(
-        { error: 'Failed to send verification code', code: 'auth/email-send-failed' },
+        { 
+          error: 'Unable to send verification code. Please check your email address and try again.', 
+          code: 'auth/email-send-failed' 
+        },
         500,
       );
     }
@@ -1352,7 +1368,7 @@ router.post('/passkey/check', authRateLimiter, async (c) => {
     // Check if user exists
     const user = await db.select().from(schema.users).where(eq(schema.users.email, email)).get();
     if (!user) {
-      return c.json({ hasPasskeys: false });
+      return c.json({ userExists: false, hasPasskeys: false });
     }
 
     // Check if user has any passkeys
@@ -1362,7 +1378,7 @@ router.post('/passkey/check', authRateLimiter, async (c) => {
       .where(eq(schema.passkeys.userId, user.id))
       .limit(1);
 
-    return c.json({ hasPasskeys: Boolean(passkeys.length) });
+    return c.json({ userExists: true, hasPasskeys: Boolean(passkeys.length) });
   } catch (error) {
     console.error('Check passkeys error:', error);
     return c.json(

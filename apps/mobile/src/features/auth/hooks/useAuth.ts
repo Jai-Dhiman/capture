@@ -52,11 +52,8 @@ export function useAuth() {
 
   const logoutMutation = useMutation<void, Error, void>({
     mutationFn: async () => {
-      await clearAuth();
-    },
-    onSuccess: () => {
       queryClient.clear();
-      showAlert('You have been logged out.', { type: 'info' });
+      await clearAuth();
     },
     onError: (error) => {
       console.error('Logout error:', error);

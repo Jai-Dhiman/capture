@@ -15,7 +15,7 @@ type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 };
 
-type LoginState = 'email' | 'passkey' | 'email-verification';
+type LoginState = 'email' | 'checking-user' | 'user-not-found' | 'checking-passkeys' | 'passkey' | 'email-verification';
 
 export default function LoginScreen({ navigation }: Props) {
   const [isEmailFocused, setIsEmailFocused] = useState(false);
@@ -68,41 +68,49 @@ export default function LoginScreen({ navigation }: Props) {
       }
 
       if (loginState === 'email') {
-        // First, check if user has passkeys
+        // First, check if user exists and has passkeys
+        setLoginState('checking-user');
 
-        if (isPasskeySupported && hasBiometrics) {
-          try {
-            const result = await checkUserHasPasskeys.mutateAsync(value.email);
-            if (result.hasPasskeys) {
-              setLoginState('passkey');
-              return;
-            }
-          } catch (error) {
-            console.log('Error checking passkeys, falling back to email:', error);
+        try {
+          const result = await checkUserHasPasskeys.mutateAsync(value.email);
+
+          if (!result.userExists) {
+            setLoginState('user-not-found');
+            return;
           }
-        }
 
-        // No passkeys or not supported, proceed with email verification
-        setLoginState('email-verification');
-        sendCode.mutate(
-          {
-            email: value.email,
-            phone: value.phone || undefined,
-          },
-          {
-            onSuccess: (response) => {
-              navigation.navigate('EmailCodeVerification', {
-                email: value.email,
-                phone: value.phone || undefined,
-                isNewUser: response.isNewUser,
-                message: response.message,
-              });
+          // User exists, check if they have passkeys
+          if (result.hasPasskeys && isPasskeySupported && hasBiometrics) {
+            setLoginState('passkey');
+            return;
+          }
+
+          // User exists but no passkeys, proceed with email verification
+          setLoginState('email-verification');
+          sendCode.mutate(
+            {
+              email: value.email,
+              phone: value.phone || undefined,
             },
-            onError: () => {
-              setLoginState('email');
+            {
+              onSuccess: (response) => {
+                navigation.navigate('EmailCodeVerification', {
+                  email: value.email,
+                  phone: value.phone || undefined,
+                  isNewUser: response.isNewUser,
+                  message: response.message,
+                });
+              },
+              onError: () => {
+                setLoginState('email');
+              },
             },
-          },
-        );
+          );
+        } catch (error) {
+          console.error('Error checking user:', error);
+          setLoginState('email');
+          showAlert('Unable to verify account. Please try again.', { type: 'error' });
+        }
       } else if (loginState === 'passkey') {
         // Handle passkey authentication
         try {
@@ -133,6 +141,9 @@ export default function LoginScreen({ navigation }: Props) {
             },
           );
         }
+      } else if (loginState === 'user-not-found') {
+        // Navigate to registration
+        navigation.navigate('RegisterScreen');
       }
     },
   });
@@ -141,7 +152,7 @@ export default function LoginScreen({ navigation }: Props) {
 
   const getButtonText = () => {
     if (isLoading) {
-      if (checkUserHasPasskeys.isPending) return 'Checking...';
+      if (checkUserHasPasskeys.isPending) return 'Checking account...';
       if (authenticateWithPasskey.isPending) return 'Authenticating...';
       if (sendCode.isPending) return 'Sending code...';
     }
@@ -149,6 +160,10 @@ export default function LoginScreen({ navigation }: Props) {
     switch (loginState) {
       case 'email':
         return 'Continue';
+      case 'checking-user':
+        return 'Checking account...';
+      case 'user-not-found':
+        return 'Create Account';
       case 'passkey':
         return `Sign in with ${biometricName}`;
       case 'email-verification':
@@ -156,6 +171,29 @@ export default function LoginScreen({ navigation }: Props) {
       default:
         return 'Continue';
     }
+  };
+
+  const getErrorMessage = () => {
+    const error = sendCode.error;
+    if (!error) return 'Failed to send verification code. Please try again.';
+
+    const errorMessage = error.message || 'Failed to send verification code';
+
+    // Check for specific error messages
+    if (errorMessage.includes('check your email address')) {
+      return 'Unable to send verification code. Please double-check your email address and try again.';
+    }
+
+    if (errorMessage.includes('Email service') || errorMessage.includes('temporarily unavailable')) {
+      return 'Email service is temporarily unavailable. Please try again in a few minutes.';
+    }
+
+    if (errorMessage.includes('Account not found') || errorMessage.includes('user not found')) {
+      return 'No account found with this email address. Please check your email or create a new account.';
+    }
+
+    // Default message
+    return 'Unable to send verification code. Please try again or contact support if the problem persists.';
   };
 
   return (
@@ -231,11 +269,22 @@ export default function LoginScreen({ navigation }: Props) {
 
           {/* Error Messages */}
           {(sendCode.isError || authenticateWithPasskey.isError || checkUserHasPasskeys.isError) && (
-            <Text className="text-red-500 text-xs mt-2 mb-4 text-center font-roboto">
-              {loginState === 'passkey'
-                ? 'Authentication failed. Please try again.'
-                : 'Failed to send verification code. Please try again.'}
-            </Text>
+            <View className="mt-2 mb-4 px-3 py-2 bg-red-50 rounded-lg border border-red-200">
+              <Text className="text-red-600 text-sm text-center font-roboto font-medium">
+                {loginState === 'passkey'
+                  ? 'Authentication failed. Please try again.'
+                  : getErrorMessage()}
+              </Text>
+            </View>
+          )}
+
+          {/* User Not Found Message */}
+          {loginState === 'user-not-found' && (
+            <View className="mt-2 mb-4 px-3 py-2 bg-blue-50 rounded-lg border border-blue-200">
+              <Text className="text-blue-600 text-sm text-center font-roboto font-medium">
+                No account found with this email address. Please create an account to continue.
+              </Text>
+            </View>
           )}
 
           <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>

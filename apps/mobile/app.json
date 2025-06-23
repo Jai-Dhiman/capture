@@ -96,6 +96,9 @@
       ],
       "expo-apple-authentication"
     ],
+    "updates": {
+      "url": "https://u.expo.dev/cad78a77-57e1-4d5e-b730-c779cdd2b6cb"
+    },
     "extra": {
       "eas": {
         "projectId": "cad78a77-57e1-4d5e-b730-c779cdd2b6cb"
