@@ -43,8 +43,9 @@ export function OAuthButtons({
         <TouchableOpacity
           onPress={() => loginWithGoogle.mutate()}
           disabled={loginWithGoogle.isPending}
-          className={`bg-white ${buttonHeight} rounded-[30px] shadow-md flex-row items-center justify-center ${spacing} ${loginWithGoogle.isPending ? 'opacity-50' : ''
-            }`}
+          className={`bg-white ${buttonHeight} rounded-[30px] shadow-md flex-row items-center justify-center ${spacing} ${
+            loginWithGoogle.isPending ? 'opacity-50' : ''
+          }`}
           style={showDivider ? { marginTop: dividerSpacing === 'mt-[29px]' ? 29 : 20 } : {}}
         >
           {loginWithGoogle.isPending ? (
@@ -70,8 +71,9 @@ export function OAuthButtons({
         <TouchableOpacity
           onPress={() => loginWithApple.mutate()}
           disabled={loginWithApple.isPending}
-          className={`bg-white ${buttonHeight} rounded-[30px] shadow-md flex-row items-center justify-center ${spacing} ${loginWithApple.isPending ? 'opacity-50' : ''
-            }`}
+          className={`bg-white ${buttonHeight} rounded-[30px] shadow-md flex-row items-center justify-center ${spacing} ${
+            loginWithApple.isPending ? 'opacity-50' : ''
+          }`}
         >
           {loginWithApple.isPending ? (
             <View className="flex-row items-center">
@@ -112,7 +114,9 @@ export function GoogleOAuthButton({
       onPress();
     } else {
       if (!isGoogleConfigured) {
-        console.error('Google OAuth not configured. Please set EXPO_PUBLIC_GOOGLE_CLIENT_ID environment variable.');
+        console.error(
+          'Google OAuth not configured. Please set EXPO_PUBLIC_GOOGLE_CLIENT_ID environment variable.',
+        );
         return;
       }
       loginWithGoogle.mutate();
@@ -123,8 +127,9 @@ export function GoogleOAuthButton({
     <TouchableOpacity
       onPress={handlePress}
       disabled={disabled || loginWithGoogle.isPending}
-      className={`bg-white ${buttonHeight} rounded-[30px] shadow-md flex-row items-center justify-center ${disabled || loginWithGoogle.isPending ? 'opacity-50' : ''
-        }`}
+      className={`bg-white ${buttonHeight} rounded-[30px] shadow-md flex-row items-center justify-center ${
+        disabled || loginWithGoogle.isPending ? 'opacity-50' : ''
+      }`}
     >
       {loginWithGoogle.isPending ? (
         <View className="flex-row items-center">
@@ -176,8 +181,9 @@ export function AppleOAuthButton({
     <TouchableOpacity
       onPress={handlePress}
       disabled={disabled || loginWithApple.isPending}
-      className={`bg-white ${buttonHeight} rounded-[30px] shadow-md flex-row items-center justify-center ${disabled || loginWithApple.isPending ? 'opacity-50' : ''
-        }`}
+      className={`bg-white ${buttonHeight} rounded-[30px] shadow-md flex-row items-center justify-center ${
+        disabled || loginWithApple.isPending ? 'opacity-50' : ''
+      }`}
     >
       {loginWithApple.isPending ? (
         <View className="flex-row items-center">

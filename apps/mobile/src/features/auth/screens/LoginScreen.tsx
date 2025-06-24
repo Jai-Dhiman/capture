@@ -6,22 +6,25 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm } from '@tanstack/react-form';
 import React, { useState, useRef, useEffect } from 'react';
 import { ActivityIndicator, Image, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Platform } from 'react-native';
 import { AppleOAuthButton, GoogleOAuthButton } from '../components/OAuthButtons';
 import { useAuth } from '../hooks/useAuth';
 import { usePasskey } from '../hooks/usePasskey';
-import { Platform } from 'react-native';
 
-
-import { Platform } from 'react-native';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 };
 
-type LoginState = 'email' | 'checking-user' | 'user-not-found' | 'checking-passkeys' | 'passkey' | 'email-verification';
+type LoginState =
+  | 'email'
+  | 'checking-user'
+  | 'user-not-found'
+  | 'checking-passkeys'
+  | 'passkey'
+  | 'email-verification';
 
 export default function LoginScreen({ navigation }: Props) {
-  const [isEmailFocused, setIsEmailFocused] = useState(false);
   const [loginState, setLoginState] = useState<LoginState>('email');
   const [biometricName, setBiometricName] = useState<string>('Biometric');
   const emailInputRef = useRef<TextInput>(null);
@@ -32,7 +35,7 @@ export default function LoginScreen({ navigation }: Props) {
     checkUserHasPasskeys,
     getBiometricName,
     isPasskeySupported,
-    hasBiometrics
+    hasBiometrics,
   } = usePasskey();
 
   useEffect(() => {
@@ -151,7 +154,8 @@ export default function LoginScreen({ navigation }: Props) {
     },
   });
 
-  const isLoading = sendCode.isPending || authenticateWithPasskey.isPending || checkUserHasPasskeys.isPending;
+  const isLoading =
+    sendCode.isPending || authenticateWithPasskey.isPending || checkUserHasPasskeys.isPending;
 
   const getButtonText = () => {
     if (isLoading) {
@@ -176,29 +180,6 @@ export default function LoginScreen({ navigation }: Props) {
     }
   };
 
-  const getErrorMessage = () => {
-    const error = sendCode.error;
-    if (!error) return 'Failed to send verification code. Please try again.';
-
-    const errorMessage = error.message || 'Failed to send verification code';
-
-    // Check for specific error messages
-    if (errorMessage.includes('check your email address')) {
-      return 'Unable to send verification code. Please double-check your email address and try again.';
-    }
-
-    if (errorMessage.includes('Email service') || errorMessage.includes('temporarily unavailable')) {
-      return 'Email service is temporarily unavailable. Please try again in a few minutes.';
-    }
-
-    if (errorMessage.includes('Account not found') || errorMessage.includes('user not found')) {
-      return 'No account found with this email address. Please check your email or create a new account.';
-    }
-
-    // Default message
-    return 'Unable to send verification code. Please try again or contact support if the problem persists.';
-  };
-
   return (
     <View style={{ flex: 1 }}>
       <View className="flex-1 bg-[#DCDCDE] overflow-hidden">
@@ -216,7 +197,6 @@ export default function LoginScreen({ navigation }: Props) {
         />
         <Header height={155} showBackground={false} />
         <View className="flex-1 px-[26px] pt-[80px]">
-
           <form.Field
             name="email"
             validators={{
@@ -239,9 +219,8 @@ export default function LoginScreen({ navigation }: Props) {
                   <EmailIcon width={35} height={35} style={{ marginRight: 14 }} />
                   <TextInput
                     ref={emailInputRef}
-                    onFocus={() => setIsEmailFocused(true)}
+                    onFocus={() => { }}
                     onBlur={() => {
-                      setIsEmailFocused(false);
                       field.handleBlur();
                     }}
                     placeholder="johndoe@gmail.com"
@@ -272,11 +251,11 @@ export default function LoginScreen({ navigation }: Props) {
 
           {(sendCode.isError || authenticateWithPasskey.isError) && (
             <Text className="text-red-500 text-xs mt-2 mb-4 text-center font-roboto">
-              {showPasskeyLogin
+              {loginState === 'passkey'
                 ? 'Passkey authentication failed. Please try again.'
                 : 'Failed to send verification code. Please try again.'}
             </Text>
-          )} */}
+          )}
 
           <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
             {([canSubmit, isFormSubmitting]) => (
@@ -289,13 +268,11 @@ export default function LoginScreen({ navigation }: Props) {
                 {isFormSubmitting || isLoading ? (
                   <View className="flex-row justify-center items-center">
                     <ActivityIndicator size="small" color="#000" />
-                    <Text className="text-base font-bold font-roboto ml-2">
-                      {getButtonText()}
-                    </Text>
+                    <Text className="text-base font-bold font-roboto ml-2">{getButtonText()}</Text>
                   </View>
                 ) : (
                   <Text className="text-base font-bold font-roboto text-center">
-                    {showPasskeyLogin ? `Sign in with ${biometricName}` : 'Sign-In'}
+                    {loginState === 'passkey' ? `Sign in with ${biometricName}` : 'Sign-In'}
                   </Text>
                 )}
               </TouchableOpacity>
@@ -305,7 +282,7 @@ export default function LoginScreen({ navigation }: Props) {
           {/* Fallback option for passkey */}
           {loginState === 'passkey' && (
             <View className="items-center mt-[16px]">
-              <TouchableOpacity onPress={() => setShowPasskeyLogin(false)}>
+              <TouchableOpacity onPress={() => setLoginState('email-verification')}>
                 <Text className="text-base font-semibold font-roboto text-[#827B85] underline">
                   Use Email Verification Instead
                 </Text>
@@ -314,7 +291,7 @@ export default function LoginScreen({ navigation }: Props) {
           )}
 
           <View className="items-center mt-[24px]">
-            <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
+            <TouchableOpacity onPress={() => navigation.navigate('RegisterScreen')}>
               <Text className="text-base font-semibold font-roboto text-[#827B85] underline">
                 Account Recovery
               </Text>

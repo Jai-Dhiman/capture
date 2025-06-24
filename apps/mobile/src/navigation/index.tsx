@@ -29,7 +29,7 @@ export const linking: LinkingOptions<RootStackParamList> = {
           PhoneCodeVerification: 'auth/phone-verification',
           PasskeySetup: 'auth/passkey-setup',
           CreateProfile: 'auth/create-profile',
-        }
+        },
       },
       App: {
         screens: {

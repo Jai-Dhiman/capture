@@ -2,9 +2,10 @@ import { useAuthStore } from '@/features/auth/stores/authStore';
 import Constants from 'expo-constants';
 
 // Get API URL from EAS config or fallback
-const API_URL = Constants.expoConfig?.extra?.API_URL || 
-                process.env.API_URL || 
-                'https://capture-api.jai-d.workers.dev';
+const API_URL =
+  Constants.expoConfig?.extra?.API_URL ||
+  process.env.API_URL ||
+  'https://capture-api.jai-d.workers.dev';
 
 class APIError extends Error {
   statusCode: number;

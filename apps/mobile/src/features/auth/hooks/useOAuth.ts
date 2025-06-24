@@ -1,7 +1,7 @@
 import { useAlert } from '@/shared/lib/AlertContext';
 import { errorService } from '@/shared/services/errorService';
-import { useMutation } from '@tanstack/react-query';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import { useMutation } from '@tanstack/react-query';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { Platform } from 'react-native';
 import { workersAuthApi } from '../lib/workersAuthApi';
@@ -15,9 +15,9 @@ const APPLE_CLIENT_ID = process.env.EXPO_PUBLIC_APPLE_CLIENT_ID || '';
 // Configure Google Sign-In SDK
 GoogleSignin.configure({
   webClientId: GOOGLE_CLIENT_ID_WEB,
-  iosClientId: GOOGLE_CLIENT_ID_IOS, 
-  offlineAccess: false, 
-  hostedDomain: '', 
+  iosClientId: GOOGLE_CLIENT_ID_IOS,
+  offlineAccess: false,
+  hostedDomain: '',
   forceCodeForRefreshToken: false,
 });
 
@@ -29,23 +29,24 @@ export function useOAuth() {
   const googleOAuthMutation = useMutation<AuthResponse, Error, void>({
     mutationFn: async () => {
       if (!GOOGLE_CLIENT_ID_WEB || !GOOGLE_CLIENT_ID_IOS) {
-        throw new Error(`Google OAuth not configured - missing client IDs. Web: ${!!GOOGLE_CLIENT_ID_WEB}, iOS: ${!!GOOGLE_CLIENT_ID_IOS}`);
+        throw new Error(
+          `Google OAuth not configured - missing client IDs. Web: ${!!GOOGLE_CLIENT_ID_WEB}, iOS: ${!!GOOGLE_CLIENT_ID_IOS}`,
+        );
       }
 
       try {
         await GoogleSignin.hasPlayServices();
 
         const result = await GoogleSignin.signIn();
-        
+
         if (!result.data?.idToken) {
           throw new Error('No ID token received from Google Sign-In SDK');
         }
 
         // Send ID token to backend for verification
         const authResponse = await workersAuthApi.oauthGoogleToken(result.data.idToken);
-        
-        return authResponse;
 
+        return authResponse;
       } catch (error: any) {
         console.error('❌ Google Sign-In failed:', error);
 
@@ -88,7 +89,7 @@ export function useOAuth() {
       // Check if Apple Authentication is available on this device
       const isAvailable = await AppleAuthentication.isAvailableAsync();
       console.log('🍎 Apple Sign-In availability:', isAvailable);
-      
+
       if (!isAvailable) {
         throw new Error('Apple Sign-In is not available on this device');
       }
@@ -122,10 +123,9 @@ export function useOAuth() {
           code: credential.authorizationCode || '',
           identityToken: credential.identityToken,
         });
-        
+
         console.log('✅ Backend authentication successful');
         return authResponse;
-
       } catch (error: any) {
         console.error('❌ Apple Sign-In failed:', error);
         console.error('❌ Error details:', {
@@ -151,7 +151,7 @@ export function useOAuth() {
         if (error.code === 'ERR_REQUEST_NOT_INTERACTIVE') {
           throw new Error('Apple Sign-In request not interactive');
         }
-        
+
         throw new Error(`Apple Sign-In failed: ${error.message || 'Unknown error'}`);
       }
     },

@@ -37,45 +37,45 @@ export const PostMenu = ({
 }: PostMenuProps) => {
   const menuItems = isOwnPost
     ? [
-      {
-        text: isLoading ? 'Deleting...' : 'Delete Post',
-        onPress: onDeletePost,
-        disabled: isLoading,
-        icon: TrashIcon,
-      },
-    ]
+        {
+          text: isLoading ? 'Deleting...' : 'Delete Post',
+          onPress: onDeletePost,
+          disabled: isLoading,
+          icon: TrashIcon,
+        },
+      ]
     : [
-      {
-        text: isLoading ? 'Blocking...' : 'Block User',
-        onPress: onBlockUser,
-        disabled: isLoading,
-        icon: BlockIcon,
-      },
-      {
-        text: 'Report Post',
-        onPress: onReportPost,
-        icon: ReportIcon,
-      },
-      {
-        text: 'Why Am I Seeing This?',
-        onPress: onWhySeeing,
-        icon: QuestionIcon,
-      },
-      {
-        text: 'Enable Notifications',
-        onPress: onEnableNotifications,
-        icon: NotificationIcon,
-      },
-    ];
+        {
+          text: isLoading ? 'Blocking...' : 'Block User',
+          onPress: onBlockUser,
+          disabled: isLoading,
+          icon: BlockIcon,
+        },
+        {
+          text: 'Report Post',
+          onPress: onReportPost,
+          icon: ReportIcon,
+        },
+        {
+          text: 'Why Am I Seeing This?',
+          onPress: onWhySeeing,
+          icon: QuestionIcon,
+        },
+        {
+          text: 'Enable Notifications',
+          onPress: onEnableNotifications,
+          icon: NotificationIcon,
+        },
+      ];
 
   const screenWidth = Dimensions.get('window').width;
 
   // Calculate menu position based on button position
   const menuPosition = buttonPosition
     ? {
-      top: buttonPosition.y,
-      right: screenWidth - buttonPosition.x,
-    }
+        top: buttonPosition.y,
+        right: screenWidth - buttonPosition.x,
+      }
     : position;
 
   const from = buttonPosition ? { translateY: -10, opacity: 0 } : { translateY: 20, opacity: 0 };

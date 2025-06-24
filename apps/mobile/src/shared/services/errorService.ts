@@ -78,30 +78,32 @@ export const errorService = {
     // Handle API errors with specific auth error codes
     if (error instanceof Error && error.name === 'APIError') {
       const apiError = error as any;
-      
+
       // Check for specific error messages that indicate account/email issues
-      if (apiError.message.includes('Unable to send verification code') || 
-          apiError.message.includes('check your email address')) {
+      if (
+        apiError.message.includes('Unable to send verification code') ||
+        apiError.message.includes('check your email address')
+      ) {
         return this.createError(
           'Unable to send verification code. Please double-check your email address and try again.',
           'auth/email-send-failed',
-          error
+          error,
         );
       }
-      
+
       if (apiError.message.includes('Email service is not configured')) {
         return this.createError(
           'Email service is temporarily unavailable. Please try again later or contact support.',
           'auth/email-service-unavailable',
-          error
+          error,
         );
       }
-      
+
       if (apiError.statusCode === 404) {
         return this.createError(
           'Account not found. Please check your email address or create a new account.',
           'auth/user-not-found',
-          error
+          error,
         );
       }
     }

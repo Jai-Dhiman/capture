@@ -84,8 +84,7 @@ export default function CreateProfile() {
 
   const handleLogout = () => {
     logout.mutate(undefined, {
-      onSuccess: () => {
-      },
+      onSuccess: () => {},
     });
   };
 

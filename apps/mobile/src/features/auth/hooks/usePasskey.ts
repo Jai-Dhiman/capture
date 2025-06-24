@@ -40,10 +40,10 @@ export function usePasskey() {
       try {
         // Begin registration with server
         const registrationOptions = await workersAuthApi.passkeyRegistrationBegin(data);
-        
+
         // Use actual WebAuthn registration
         const credential = await PasskeyService.registerPasskey(registrationOptions);
-        
+
         // Complete registration with server
         return await workersAuthApi.passkeyRegistrationComplete({
           credential,
@@ -77,10 +77,10 @@ export function usePasskey() {
       try {
         // Begin authentication with server
         const authenticationOptions = await workersAuthApi.passkeyAuthenticationBegin(data);
-        
+
         // Use actual WebAuthn authentication
         const credential = await PasskeyService.authenticateWithPasskey(authenticationOptions);
-        
+
         // Complete authentication with server
         return await workersAuthApi.passkeyAuthenticationComplete({
           credential,

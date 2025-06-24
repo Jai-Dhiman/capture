@@ -46,7 +46,7 @@ export default function CodeVerificationScreen({ navigation, route }: Props) {
                 email,
                 phone,
                 isNewUser,
-                message: 'We\'ve sent a verification code to your phone number.',
+                message: "We've sent a verification code to your phone number.",
               });
             }
           },
