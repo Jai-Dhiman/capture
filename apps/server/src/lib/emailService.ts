@@ -37,9 +37,42 @@ export class EmailService {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Failed to send email:', errorText);
-      throw new Error('Failed to send email');
+      let errorText = '';
+      let errorData: any = {};
+      
+      try {
+        errorText = await response.text();
+        errorData = JSON.parse(errorText);
+      } catch (parseError) {
+        console.warn('Failed to parse email service error response:', parseError);
+      }
+
+      console.error('Failed to send email:', { 
+        status: response.status, 
+        statusText: response.statusText, 
+        errorText,
+        errorData 
+      });
+
+      // Provide more specific error messages based on response
+      if (response.status === 422) {
+        throw new Error('Invalid email address format. Please check your email address and try again.');
+      }
+      
+      if (response.status === 429) {
+        throw new Error('Too many email requests. Please wait a moment and try again.');
+      }
+      
+      if (response.status === 401 || response.status === 403) {
+        throw new Error('Email service authentication failed. Please contact support.');
+      }
+      
+      if (response.status >= 500) {
+        throw new Error('Email service is temporarily unavailable. Please try again later.');
+      }
+
+      // Generic error for other cases
+      throw new Error('Unable to send email. Please verify your email address and try again.');
     }
   }
 

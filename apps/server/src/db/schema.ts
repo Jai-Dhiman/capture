@@ -6,6 +6,7 @@ export const users = sqliteTable('users', {
   emailVerified: integer('email_verified').default(0).notNull(),
   phone: text('phone'),
   phoneVerified: integer('phone_verified').default(0).notNull(),
+  appleId: text('apple_id').unique(), // Apple Sign-In subject ID
   createdAt: numeric('created_at').default(new Date().toISOString()).notNull(),
   updatedAt: numeric('updated_at').default(new Date().toISOString()).notNull(),
 });

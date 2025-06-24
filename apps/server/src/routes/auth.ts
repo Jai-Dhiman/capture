@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { createD1Client } from '../db';
 import * as schema from '../db/schema';
 import { createEmailService } from '../lib/emailService';
-import { exchangeGoogleCode, verifyAppleToken } from '../lib/oauthUtils';
+import { exchangeGoogleCode, verifyAppleToken, validateGoogleAccessToken } from '../lib/oauthUtils';
 import { PasskeyService as PS, PasskeyService } from '../lib/passkeyService';
 import { authMiddleware } from '../middleware/auth';
 import { authRateLimiter, otpRateLimiter } from '../middleware/rateLimit';
@@ -39,7 +39,6 @@ const oauthGoogleSchema = z.object({
   code: z.string(),
   codeVerifier: z.string(),
   redirectUri: z.string(),
-  clientId: z.string().optional(), // Accept client ID from frontend
 });
 
 const oauthAppleSchema = z.object({
@@ -131,6 +130,24 @@ async function cleanupExpiredCodes(db: any) {
   await db.delete(schema.emailCodes).where(lt(schema.emailCodes.expiresAt, now)).execute();
 }
 
+// Get current user info
+router.get('/me', authMiddleware, async (c) => {
+  const user = c.get('user');
+  const db = createD1Client(c.env);
+  let profileExists = false;
+  try {
+    const existingProfile = await db
+      .select()
+      .from(schema.profile)
+      .where(eq(schema.profile.userId, user.id))
+      .get();
+    profileExists = Boolean(existingProfile);
+  } catch (e) {
+    console.error('Error checking profile existence in /auth/me:', e);
+  }
+  return c.json({ id: user.id, email: user.email, profileExists });
+});
+
 router.post('/send-code', otpRateLimiter, async (c) => {
   try {
     const body = await c.req.json();
@@ -179,8 +196,24 @@ router.post('/send-code', otpRateLimiter, async (c) => {
       await emailService.sendVerificationCode(email, code, 'login_register');
     } catch (emailError) {
       console.error('Failed to send email:', emailError);
+      
+      // Check if it's a configuration issue
+      if (emailError instanceof Error && emailError.message.includes('RESEND_API_KEY')) {
+        return c.json(
+          { 
+            error: 'Email service is not configured. Please contact support.', 
+            code: 'auth/email-service-unavailable' 
+          },
+          503,
+        );
+      }
+      
+      // Generic email send failure
       return c.json(
-        { error: 'Failed to send verification code', code: 'auth/email-send-failed' },
+        { 
+          error: 'Unable to send verification code. Please check your email address and try again.', 
+          code: 'auth/email-send-failed' 
+        },
         500,
       );
     }
@@ -468,30 +501,17 @@ router.post('/oauth/google', authRateLimiter, async (c) => {
       );
     }
 
-    const { code, codeVerifier, redirectUri, clientId } = validation.data;
+    const { code, codeVerifier, redirectUri } = validation.data;
 
-    if (!clientId && (!c.env.GOOGLE_CLIENT_ID || !c.env.GOOGLE_CLIENT_SECRET)) {
+    if (!c.env.GOOGLE_CLIENT_ID_IOS && !c.env.GOOGLE_CLIENT_ID) {
       return c.json(
-        { error: 'Google OAuth not configured', code: 'auth/oauth-not-configured' },
+        { error: 'Google OAuth not configured. Set GOOGLE_CLIENT_ID_IOS environment variable.', code: 'auth/oauth-not-configured' },
         500,
       );
     }
 
-    if (!c.env.GOOGLE_CLIENT_SECRET) {
-      return c.json(
-        { error: 'Google OAuth client secret not configured', code: 'auth/oauth-not-configured' },
-        500,
-      );
-    }
-
-    // Exchange code for user info
-    const googleUser = await exchangeGoogleCode(
-      code, 
-      codeVerifier, 
-      redirectUri, 
-      c.env,
-      clientId // Pass the received client ID
-    );
+    // Exchange code for user info using the same iOS client ID
+    const googleUser = await exchangeGoogleCode(code, codeVerifier, redirectUri, c.env);
 
     if (!googleUser.email) {
       return c.json(
@@ -604,6 +624,167 @@ router.post('/oauth/google', authRateLimiter, async (c) => {
   }
 });
 
+// New endpoint for Google OAuth with client-side token exchange
+router.post('/oauth/google/token', authRateLimiter, async (c) => {
+  try {
+    const body = await c.req.json();
+    const validation = z.object({
+      idToken: z.string(), // Changed from accessToken to idToken
+    }).safeParse(body);
+
+    if (!validation.success) {
+      return c.json(
+        {
+          error: 'Invalid input',
+          details: validation.error.errors,
+          code: 'auth/invalid-input',
+        },
+        400,
+      );
+    }
+
+    const { idToken } = validation.data;
+
+    const tokenInfoResponse = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
+
+    if (!tokenInfoResponse.ok) {
+      console.error('❌ Failed to verify Google ID token:', {
+        status: tokenInfoResponse.status,
+        statusText: tokenInfoResponse.statusText,
+      });
+      return c.json(
+        { error: 'Invalid Google ID token', code: 'auth/invalid-token' },
+        401,
+      );
+    }
+
+    const tokenInfo = await tokenInfoResponse.json() as any;
+    console.log('✅ Google ID token verified, token info retrieved:', {
+      hasEmail: !!tokenInfo.email,
+      hasSub: !!tokenInfo.sub,
+      emailVerified: tokenInfo.email_verified,
+      aud: tokenInfo.aud ? `${tokenInfo.aud.substring(0, 20)}...` : 'MISSING',
+    });
+
+    // Verify the audience (client ID) matches our expected client ID
+    // The Google Sign-In SDK uses the web client ID for ID token audience
+    const expectedClientId = c.env.GOOGLE_CLIENT_ID || c.env.GOOGLE_CLIENT_ID_IOS;
+    if (tokenInfo.aud !== expectedClientId) {
+      console.error('❌ ID token audience mismatch:', {
+        expected: expectedClientId ? `${expectedClientId.substring(0, 20)}...` : 'MISSING',
+        received: tokenInfo.aud ? `${tokenInfo.aud.substring(0, 20)}...` : 'MISSING',
+        expectedSource: c.env.GOOGLE_CLIENT_ID ? 'GOOGLE_CLIENT_ID (web)' : 'GOOGLE_CLIENT_ID_IOS',
+        sdkNote: 'Google Sign-In SDK uses webClientId for ID token audience',
+      });
+      return c.json(
+        { error: 'ID token audience mismatch', code: 'auth/invalid-audience' },
+        401,
+      );
+    }
+
+    if (!tokenInfo.email) {
+      return c.json(
+        { error: 'Failed to get user email from Google ID token', code: 'auth/oauth-failed' },
+        400,
+      );
+    }
+
+    const db = createD1Client(c.env);
+
+    // Check if user exists or create new user
+    let user = await db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.email, tokenInfo.email))
+      .get();
+    let isNewUser = false;
+
+    if (!user) {
+      // Create new user
+      const userId = nanoid();
+      await db.insert(schema.users).values({
+        id: userId,
+        email: tokenInfo.email,
+        emailVerified: tokenInfo.email_verified === 'true' || tokenInfo.email_verified === true ? 1 : 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+
+      user = await db.select().from(schema.users).where(eq(schema.users.id, userId)).get();
+      isNewUser = true;
+    } else {
+      // Update existing user
+      await db
+        .update(schema.users)
+        .set({
+          emailVerified: tokenInfo.email_verified === 'true' || tokenInfo.email_verified === true ? 1 : 0,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(schema.users.id, user.id));
+
+      // Refresh user data
+      user = await db.select().from(schema.users).where(eq(schema.users.id, user.id)).get();
+    }
+
+    if (!user) {
+      return c.json(
+        { error: 'Failed to create or update user', code: 'auth/user-creation-failed' },
+        500,
+      );
+    }
+
+    // Generate tokens
+    const { accessToken, refreshToken, accessTokenExpiresAt } = await generateJwtToken(
+      user.id,
+      user.email,
+      c.env,
+    );
+
+    // Check if profile exists
+    let profileExists = false;
+    try {
+      const existingProfile = await db
+        .select({ id: schema.profile.id })
+        .from(schema.profile)
+        .where(eq(schema.profile.userId, user.id))
+        .get();
+      profileExists = Boolean(existingProfile);
+
+      // Log activity
+      if (!isNewUser) {
+        await db
+          .insert(schema.userActivity)
+          .values({
+            id: nanoid(),
+            userId: user.id,
+            eventType: 'oauth_login',
+            createdAt: new Date().toISOString(),
+          })
+          .execute();
+      }
+    } catch (dbError) {
+      console.error('Error during profile check or activity logging:', dbError);
+    }
+
+    return c.json({
+      session: {
+        access_token: accessToken,
+        refresh_token: refreshToken,
+        expires_at: accessTokenExpiresAt,
+      },
+      user: {
+        id: user.id,
+        email: user.email,
+      },
+      profileExists,
+      isNewUser,
+    });
+  } catch (error) {
+    console.error('Google OAuth token validation error:', error);
+    return c.json({ error: 'Google OAuth token validation failed', code: 'auth/oauth-failed' }, 500);
+  }
+});
+
 router.post('/oauth/apple', authRateLimiter, async (c) => {
   try {
     const body = await c.req.json();
@@ -629,51 +810,94 @@ router.post('/oauth/apple', authRateLimiter, async (c) => {
       );
     }
 
+    const db = createD1Client(c.env);
+
     // Verify Apple identity token
     const appleUser = await verifyAppleToken(identityToken, c.env);
 
-    if (!appleUser.email) {
-      return c.json(
-        { error: 'Failed to get user email from Apple', code: 'auth/oauth-failed' },
-        400,
-      );
-    }
+    console.log('🍎 Apple user info extracted:', {
+      hasEmail: !!appleUser.email,
+      emailVerified: appleUser.email_verified,
+      sub: appleUser.sub ? `${appleUser.sub.substring(0, 10)}...` : 'MISSING',
+    });
 
-    const db = createD1Client(c.env);
-
-    // Check if user exists or create new user
-    let user = await db
-      .select()
-      .from(schema.users)
-      .where(eq(schema.users.email, appleUser.email))
-      .get();
+    // For Apple Sign-In, email might not be provided on subsequent logins
+    // We'll need to handle this by either:
+    // 1. Looking up existing user by Apple sub (subject ID)
+    // 2. Requiring email for new users only
+    let user = null;
     let isNewUser = false;
 
-    if (!user) {
-      // Create new user
-      const userId = nanoid();
-      await db.insert(schema.users).values({
-        id: userId,
-        email: appleUser.email,
-        emailVerified: appleUser.email_verified ? 1 : 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
+    if (!appleUser.email) {
+      // Check if we have an existing user with this Apple ID (sub)
+      const existingUserBySub = await db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.appleId, appleUser.sub))
+        .get();
 
-      user = await db.select().from(schema.users).where(eq(schema.users.id, userId)).get();
-      isNewUser = true;
+      if (existingUserBySub) {
+        console.log('🍎 Found existing user by Apple ID, proceeding without email');
+        user = existingUserBySub;
+      } else {
+        return c.json(
+          { 
+            error: 'Email required for new Apple Sign-In users. Please sign out of Apple ID and try again to share email.', 
+            code: 'auth/email-required' 
+          },
+          400,
+        );
+      }
     } else {
-      // Update existing user
-      await db
-        .update(schema.users)
-        .set({
+      // Check if user exists by email or Apple ID
+      const existingUserByEmail = await db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.email, appleUser.email))
+        .get();
+
+      const existingUserByAppleId = await db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.appleId, appleUser.sub))
+        .get();
+
+      user = existingUserByEmail || existingUserByAppleId;
+
+      if (!user) {
+        // Create new user
+        const userId = nanoid();
+        await db.insert(schema.users).values({
+          id: userId,
+          email: appleUser.email,
+          emailVerified: appleUser.email_verified ? 1 : 0,
+          appleId: appleUser.sub,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        user = await db.select().from(schema.users).where(eq(schema.users.id, userId)).get();
+        isNewUser = true;
+      } else {
+        // Update existing user with Apple ID if not set, and update email verification
+        const updateData: any = {
           emailVerified: appleUser.email_verified ? 1 : 0,
           updatedAt: new Date().toISOString(),
-        })
-        .where(eq(schema.users.id, user.id));
+        };
 
-      // Refresh user data
-      user = await db.select().from(schema.users).where(eq(schema.users.id, user.id)).get();
+        // Link Apple ID to existing user if not already linked
+        if (!user.appleId) {
+          updateData.appleId = appleUser.sub;
+        }
+
+        await db
+          .update(schema.users)
+          .set(updateData)
+          .where(eq(schema.users.id, user.id));
+
+        // Refresh user data
+        user = await db.select().from(schema.users).where(eq(schema.users.id, user.id)).get();
+      }
     }
 
     if (!user) {
@@ -752,7 +976,7 @@ router.post('/passkey/register/begin', authRateLimiter, async (c) => {
       );
     }
 
-    const { email, deviceName } = validation.data;
+    const { email } = validation.data;
     const db = createD1Client(c.env);
     const passkeyService = new PasskeyService(c.env);
 
@@ -807,7 +1031,8 @@ router.post('/passkey/register/complete', authRateLimiter, async (c) => {
     const passkeyService = new PasskeyService(c.env);
 
     // Get user from credential userHandle or require authentication
-    const userHandle = credential.response.userHandle;
+    // Note: userHandle is not available in registration response, we need to get it differently
+    const userHandle = credential.id; // Use credential ID to find associated user
     if (!userHandle) {
       return c.json({ error: 'User handle required', code: 'auth/user-handle-required' }, 400);
     }
@@ -1120,22 +1345,48 @@ router.delete('/passkey/:passkeyId', authMiddleware, async (c) => {
   }
 });
 
-// Get current user info
-router.get('/me', authMiddleware, async (c) => {
-  const user = c.get('user');
-  const db = createD1Client(c.env);
-  let profileExists = false;
+// Check if user has passkeys
+router.post('/passkey/check', authRateLimiter, async (c) => {
   try {
-    const existingProfile = await db
-      .select()
-      .from(schema.profile)
-      .where(eq(schema.profile.userId, user.id))
-      .get();
-    profileExists = Boolean(existingProfile);
-  } catch (e) {
-    console.error('Error checking profile existence in /auth/me:', e);
+    const body = await c.req.json();
+    const validation = z.object({ email: z.string().email() }).safeParse(body);
+
+    if (!validation.success) {
+      return c.json(
+        {
+          error: 'Invalid input',
+          details: validation.error.errors,
+          code: 'auth/invalid-input',
+        },
+        400,
+      );
+    }
+
+    const { email } = validation.data;
+    const db = createD1Client(c.env);
+
+    // Check if user exists
+    const user = await db.select().from(schema.users).where(eq(schema.users.email, email)).get();
+    if (!user) {
+      return c.json({ userExists: false, hasPasskeys: false });
+    }
+
+    // Check if user has any passkeys
+    const passkeys = await db
+      .select({ id: schema.passkeys.id })
+      .from(schema.passkeys)
+      .where(eq(schema.passkeys.userId, user.id))
+      .limit(1);
+
+    return c.json({ userExists: true, hasPasskeys: Boolean(passkeys.length) });
+  } catch (error) {
+    console.error('Check passkeys error:', error);
+    return c.json(
+      { error: 'Failed to check passkeys', code: 'auth/check-passkeys-failed' },
+      500,
+    );
   }
-  return c.json({ id: user.id, email: user.email, profileExists });
 });
+
 
 export default router;

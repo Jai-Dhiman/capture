@@ -5,27 +5,28 @@
 
 ## **🎯 Overview**
 
-This plan outlines the complete implementation of SMS-based authentication as an alternative to the existing email verification system. The implementation will use:
+This plan outlines the complete implementation of SMS-based phone verification **during registration only**. The implementation will use:
 
 - **Plivo Verify API**: Complete OTP verification system
-- **Zod + libphonenumber-js**: Client-side phone validation
-- **Unified Authentication**: SMS and email verification working seamlessly together
+- **Zod + libphonenumber-js**: Client-side phone validation and formatting
+- **Registration-Only Flow**: Phone verification required for new users, existing users sign in with email/passkey/OAuth
+
+**Key Decision**: Phone verification is **required during registration** but **not required for sign-in**. Existing users sign in with email/passkey/OAuth without phone re-verification.
 
 ---
 
 ## **📋 Implementation Phases**
 
 ### **Phase 1: Backend Foundation**
-- Database schema extensions
-- SMS service integration
-- Core API endpoints
+- SMS service integration with Plivo Verify API
+- Registration-specific API endpoints
 - Rate limiting & security
 
 ### **Phase 2: Frontend Integration**
-- React Native SMS authentication screens
-- Phone number input with validation
-- OTP verification UI
-- Error handling & user feedback
+- Update RegisterScreen with phone input
+- Create PhoneVerificationScreen (similar to CodeVerificationScreen)
+- Update registration flow: Register → Email Verification → Phone Verification → Create Profile
+- Sign-in remains unchanged (email/passkey/OAuth only)
 
 ### **Phase 3: Testing & Optimization**
 - Unit and integration tests
@@ -43,60 +44,52 @@ This plan outlines the complete implementation of SMS-based authentication as an
 
 ## **🏗️ Architecture Overview**
 
-### **Current System**
+### **Registration Flow (NEW)**
 ```
-User Input (Email) → Email Code → Database → Email Service → User
+RegisterScreen (email + phone input)
+    ↓
+CodeVerificationScreen (verify email - existing)
+    ↓  
+PhoneVerificationScreen (verify phone with SMS - new)
+    ↓
+CreateProfile (existing)
 ```
 
-### **New System (Dual Authentication)**
+### **Sign-in Flow (UNCHANGED)**
 ```
-User Input → Choice: Email OR Phone
+LoginScreen (email/passkey/OAuth)
     ↓
-Email Path: Email Code → Email Service → User
-    ↓
-Phone Path: Zod Validation → Plivo Verify API → User
+Authenticated (no phone verification required)
 ```
 
 ### **Data Flow**
-1. **User enters phone number**
-2. **Zod + libphonenumber-js validates** format and country
-3. **Plivo Verify API** generates, stores, and sends OTP
-4. **User enters code** for verification
-5. **Plivo validates** the OTP code
-6. **System creates/logs in user** upon successful validation
-7. **JWT tokens** generated for session
+1. **User enters email + phone** on RegisterScreen
+2. **Email verification** happens first (existing flow)
+3. **Zod + libphonenumber-js validates** phone format and country
+4. **Plivo Verify API** generates, stores, and sends SMS OTP
+5. **User enters SMS code** for verification
+6. **Plivo validates** the OTP code
+7. **System marks phone as verified** and continues to profile creation
+8. **JWT tokens** generated for session
 
 ---
 
-## **🗄️ Database Schema Changes**
+## **🗄️ Database Schema Changes - SIMPLIFIED**
 
-### **Users Table Extensions**
+### **Keep Existing Fields**
+- `phone` TEXT (already exists)
+- `phoneVerified` INTEGER (already exists, 0/1)
+
+### **Add Minimal Fields**
 ```sql
-ALTER TABLE users ADD COLUMN phone TEXT;
-ALTER TABLE users ADD COLUMN phone_country_code TEXT;
-ALTER TABLE users ADD COLUMN phone_verified_at TIMESTAMP;
+ALTER TABLE users ADD COLUMN phone_country_code TEXT; -- For display formatting
 ```
 
-### **New Tables**
+### **Removed from Original Plan**
+- ❌ `phone_verified_at` - Not needed initially, can add later for audit trails
+- ❌ `sms_sessions` table - Plivo handles all session management, local tracking not required initially
 
-#### **SMS Sessions Table** (Optional - for tracking)
-```sql
-CREATE TABLE sms_sessions (
-  id TEXT PRIMARY KEY,
-  phone TEXT NOT NULL,
-  plivo_session_uuid TEXT NOT NULL, -- Plivo's session identifier
-  type TEXT NOT NULL, -- 'verification', 'login', 'reset'
-  user_id TEXT, -- NULL for new registrations
-  created_at NUMERIC DEFAULT (datetime('now')),
-  completed_at NUMERIC, -- When successfully verified
-  
-  FOREIGN KEY (user_id) REFERENCES users(id),
-  INDEX idx_sms_sessions_phone (phone),
-  INDEX idx_sms_sessions_uuid (plivo_session_uuid)
-);
-```
-
-> **Note**: Most OTP logic (generation, storage, expiration, validation) is handled by Plivo Verify API, so we need minimal database schema changes.
+> **Rationale**: Keep it simple. Plivo Verify API handles generation, storage, expiration, and validation. We only need to track the final verification status.
 
 ---
 
@@ -122,19 +115,38 @@ SMS_RATE_LIMIT_MAX_ATTEMPTS=5
 SMS_CODE_EXPIRY_MINUTES=10
 ```
 
+### **Plivo Account Setup Steps**
+1. **Create Plivo account** at [plivo.com](https://plivo.com)
+2. **Navigate to Verify API** (separate from SMS API)
+3. **Get Auth ID and Auth Token** from dashboard
+4. **Enable Verify API** in your account
+5. **Set up billing** (free credits available for testing)
+6. **Test with provided test numbers** before production
+
 ### **Core Services**
 
-#### **SMS Service (`services/sms.ts`)**
+#### **SMS Service (`lib/smsService.ts`)**
 - **Phone validation** using Zod + libphonenumber-js
 - **OTP session creation** via Plivo Verify API
 - **OTP validation** via Plivo Verify API
-- **Session tracking** (optional)
 - **Error handling** and fallbacks
 
-#### **Database Functions (`db/sms.ts`)**
-- **createSMSSession()** - Track Plivo sessions (optional)
-- **validatePhoneNumber()** - Zod validation with libphonenumber-js
-- **getSMSStats()** - Session and cost metrics
+#### **Why Both Zod AND libphonenumber-js?**
+- **Zod**: Schema validation and TypeScript types (`z.string()`, `z.object()`)
+- **libphonenumber-js**: Phone number intelligence:
+  - **Parsing**: `"+1 (555) 123-4567"` → `"+15551234567"`
+  - **Validation**: Is this a valid mobile number?
+  - **Formatting**: Display vs storage formats
+  - **Country detection**: Auto-detect country from number
+  - **Type detection**: Mobile vs landline vs VoIP
+
+```typescript
+// They work together:
+const phoneSchema = z.string().refine((phone) => {
+  const parsed = parsePhoneNumber(phone); // libphonenumber-js
+  return parsed?.isValid() && parsed?.getType() === 'MOBILE';
+}, 'Invalid mobile phone number');
+```
 
 ### **API Endpoints**
 
@@ -142,7 +154,7 @@ SMS_CODE_EXPIRY_MINUTES=10
 ```typescript
 Request: {
   phone: string,
-  type: 'verification' | 'login'
+  userId?: string // Link to user after email verification
 }
 
 Response: {
@@ -159,96 +171,85 @@ Response: {
 Request: {
   sessionUuid: string, // From send-code response
   code: string,
-  name?: string // Required for new users
+  userId: string // Link to verified user
 }
 
 Response: {
   success: boolean,
-  user: UserObject,
-  tokens: {
-    accessToken: string,
-    refreshToken: string
-  },
-  isNewUser: boolean
+  message: string
 }
 ```
 
-#### **Zod Validation Schema**
-```typescript
-const phoneSchema = z.string().refine((phone) => {
-  const parsed = parsePhoneNumber(phone);
-  return parsed?.isValid() && parsed?.getType() === 'MOBILE';
-}, 'Invalid mobile phone number');
-```
+#### **Update Existing Registration Flow**
+- **POST /auth/verify-code** (email) - Update to store phone for later verification
+- **GET /auth/me** - Include `phoneVerified` status in response
 
 ---
 
 ## **📱 Frontend Implementation**
 
-### **New Screens/Components**
+### **Updated Screens**
 
-#### **Phone Input Screen**
-- **International phone input** with country picker
-- **Real-time validation** as user types
-- **Clear error messages** for invalid numbers
-- **Continue button** enabled only for valid numbers
+#### **RegisterScreen (UPDATE EXISTING)**
+- **Add phone input field** with country picker
+- **Real-time validation** using Zod + libphonenumber-js
+- **Store phone for later verification** after email verification
+- **Clear error messages** for invalid phone numbers
 
-#### **SMS Verification Screen**
-- **6-digit OTP input** with auto-focus
+#### **PhoneVerificationScreen (NEW)**
+- **Similar to CodeVerificationScreen** but for SMS codes
+- **6-digit SMS OTP input** with auto-focus
 - **Countdown timer** showing code expiry
-- **Resend code** button with rate limiting
+- **Resend SMS** button with rate limiting
 - **Loading states** during verification
 
-#### **Authentication Choice Screen**
-- **Toggle between email/phone** authentication
-- **Clear visual distinction** between methods
-- **Consistent user experience** across both flows
+#### **CodeVerificationScreen (NO CHANGES)**
+- **Keep existing email verification** logic
+- **After email verification**, redirect to phone verification instead of profile creation
 
-### **State Management**
+### **Updated Auth Flow**
 
-#### **SMS Authentication Store**
-```typescript
-interface SMSAuthState {
-  phone: string;
-  countryCode: string;
-  isValidPhone: boolean;
-  codeSent: boolean;
-  codeExpiresAt: number;
-  isVerifying: boolean;
-  remainingAttempts: number;
-  error: string | null;
-}
+#### **Registration Auth States (NO phoneRequired stage needed)**
+```
+unauthenticated → email verification → phone verification → profileRequired → authenticated
 ```
 
-### **React Native Components**
+#### **Sign-in Auth States (UNCHANGED)**
+```
+unauthenticated → authenticated (no phone verification)
+```
 
-#### **PhoneNumberInput**
-- Uses `react-native-phone-number-input`
-- Real-time validation with Zod + libphonenumber-js
-- Country flag and dial code selection
-- Accessibility support
+### **State Management Updates**
 
-#### **OTPInput**
-- 6-digit input with individual boxes
-- Auto-focus and auto-submit
-- Paste support for codes
-- Visual feedback for errors
+#### **Auth Store Changes**
+- **Remove `phoneRequired` stage** - not needed since phone verification only happens during registration
+- **Update registration flow** to include phone verification step
+- **Keep existing sign-in flow** unchanged
 
-### **API Integration**
-- **TanStack Query** for SMS endpoints
-- **Optimistic updates** for better UX
-- **Error boundary** for SMS failures
-- **Retry logic** with exponential backoff
+#### **Navigation Updates**
+```typescript
+// AuthStackParamList - ADD
+PhoneVerification: {
+  phone: string;
+  userId: string;
+  message: string;
+};
+
+// Registration Flow
+RegisterScreen → CodeVerificationScreen → PhoneVerificationScreen → CreateProfile
+
+// Sign-in Flow (unchanged)
+LoginScreen → Authenticated
+```
 
 ---
 
 ## **🛡️ Security Implementation**
 
 ### **Rate Limiting**
-- **Plivo Verify API** handles rate limiting automatically
+- **Plivo Verify API** handles primary rate limiting
 - **5 SMS per hour** per phone number (Plivo managed)
-- **IP-based limiting** as secondary protection
-- **Application-level limits** for additional protection
+- **Application-level limits** for additional protection on registration attempts
 
 ### **Code Security**
 - **Plivo Verify API** handles all OTP security:
@@ -264,204 +265,21 @@ interface SMSAuthState {
   - **Country validation** against supported regions
   - **Format and length validation**
 
-### **Anti-Fraud Measures**
-- **Plivo Fraud Shield** built-in at no extra cost
-- **Velocity checking** for rapid sign-ups
-- **Device fingerprinting** for suspicious patterns
-- **Geo-blocking** capabilities through Plivo
-
----
-
-## **📊 Cost Management**
-
-### **Estimated Monthly Costs**
-
-| Users | SMS Messages | Phone Validation | Plivo Verify | Total |
-|-------|--------------|------------------|--------------|--------|
-| 100 | 35 | FREE (Zod) | $0.19 | **$0.19** |
-| 1,000 | 220 | FREE (Zod) | $1.21 | **$1.21** |
-| 5,000 | 1,050 | FREE (Zod) | $5.78 | **$5.78** |
-| 10,000 | 2,100 | FREE (Zod) | $11.55 | **$11.55** |
-
-### **Cost Optimization Strategies**
-- **Zod validation** is completely free (client-side)
-- **Intelligent routing** (prefer email for desktop users)
-- **Plivo Fraud Shield** prevents wasted SMS at no extra cost
-- **Failed delivery monitoring** built into Plivo
-- **User preference learning** (email vs SMS)
-
-### **Monitoring & Alerts**
-- **Daily cost tracking** with budget alerts
-- **Delivery rate monitoring** (target: >95%)
-- **Failed validation alerts** for service issues
-- **Monthly cost reporting** with optimization suggestions
-
----
-
-## **🧪 Testing Strategy**
-
-### **Unit Tests**
-- **Phone validation** logic (Zod + libphonenumber-js)
-- **Plivo Verify API** integration
-- **Session tracking** (if implemented)
-- **Database operations** for SMS sessions
-
-### **Integration Tests**
-- **End-to-end SMS flow** (send → receive → verify)
-- **Plivo Verify API** with test numbers
-- **Zod validation** with various phone formats
-- **Error handling** for service failures
-
-### **Load Testing**
-- **Concurrent SMS sending** (100+ simultaneous)
-- **Rate limiting** under load
-- **Database performance** with high volume
-- **API response times** during peaks
-
-### **Security Testing**
-- **Brute force** code attempts
-- **Rate limit bypassing** attempts
-- **Invalid phone number** injection tests
-- **SMS bombing** protection verification
-
 ---
 
 ## **🚀 Deployment Plan**
 
-### **Environment Setup**
-
-#### **Development**
-- **Plivo Verify API sandbox** for testing
-- **Local validation** using Zod + libphonenumber-js
-- **SQLite database** for rapid iteration
-
-#### **Staging**
-- **Plivo Verify API production** with test numbers
-- **Production-like database** with real data volumes
-- **Performance monitoring** setup
-
-#### **Production**
-- **Plivo Verify API production** with live numbers
-- **High-availability database** with backups
-- **CDN and caching** for optimal performance
-- **Comprehensive monitoring** and alerting
-
 ### **Migration Strategy**
 1. **Deploy backend** SMS endpoints (feature flagged)
-2. **Update database schema** with migration scripts
-3. **Deploy frontend** SMS screens (hidden by default)
-4. **Enable feature flag** for internal testing
-5. **Gradual rollout** to user segments
-6. **Full activation** after validation
+2. **Update database schema** (add phone_country_code column)
+3. **Deploy updated RegisterScreen** with phone input
+4. **Deploy PhoneVerificationScreen** 
+5. **Enable feature flag** for internal testing
+6. **Gradual rollout** to new registrations only
+7. **Full activation** after validation
 
 ### **Monitoring & Observability**
-- **SMS delivery dashboards** (Grafana)
-- **Cost tracking** with real-time alerts
-- **Error rate monitoring** with PagerDuty
-- **User adoption metrics** for SMS vs email
-
----
-
-## **📋 Implementation Checklist**
-
-### **Backend Tasks**
-- [ ] Add SMS dependencies to package.json (plivo, zod, libphonenumber-js)
-- [ ] Create database migration scripts (minimal schema)
-- [ ] Implement SMS service with Plivo Verify API
-- [ ] Create Zod validation schemas for phone numbers
-- [ ] Build SMS authentication API routes
-- [ ] Add Plivo Verify webhook handling (optional)
-- [ ] Add comprehensive error handling
-- [ ] Create SMS statistics endpoints (optional)
-- [ ] Write unit tests for SMS logic
-
-### **Frontend Tasks**
-- [ ] Install phone input dependencies
-- [ ] Create phone number input component
-- [ ] Build OTP verification screen
-- [ ] Add authentication choice toggle
-- [ ] Implement SMS authentication flow
-- [ ] Add error handling and user feedback
-- [ ] Create loading states and animations
-- [ ] Add accessibility support
-- [ ] Write component tests
-- [ ] Update navigation flows
-
-### **Infrastructure Tasks**
-- [ ] Set up Plivo Verify API account
-- [ ] Add environment variables (PLIVO_AUTH_ID, PLIVO_AUTH_TOKEN)
-- [ ] Set up Plivo webhooks (optional)
-- [ ] Configure monitoring dashboards
-- [ ] Set up cost tracking alerts
-- [ ] Create backup procedures
-- [ ] Document deployment process
-
-### **Security Tasks**
-- [ ] Implement SMS rate limiting
-- [ ] Add anti-fraud measures
-- [ ] Configure secure code generation
-- [ ] Set up delivery confirmation
-- [ ] Add security monitoring
-- [ ] Create incident response procedures
-- [ ] Document security policies
-- [ ] Conduct security review
-
----
-
-## **🎯 Success Metrics**
-
-### **Technical Metrics**
-- **SMS Delivery Rate**: >95%
-- **Code Verification Success**: >90%
-- **API Response Time**: <500ms
-- **Phone Validation Accuracy**: >98%
-
-### **Business Metrics**
-- **User Registration Completion**: +15%
-- **Login Success Rate**: +10%
-- **User Preference**: 60% email, 40% SMS
-- **Support Tickets**: <5% increase
-
-### **Cost Metrics**
-- **Cost per User**: <$0.012/month
-- **Zod Validation**: 100% free (client-side)
-- **Plivo Delivery Efficiency**: >95%
-- **Failed Message Rate**: <2%
-
----
-
-## **📚 Next Steps**
-
-1. **Review and approve** this implementation plan
-2. **Set up Plivo Verify API account**  
-3. **Begin Phase 1** backend implementation
-4. **Create development environment** for testing
-5. **Start with Zod validation and Plivo integration**
-6. **Iterative development** with continuous testing
-7. **Gradual feature rollout** to minimize risk
-
----
-
-**Total Estimated Development Time**: 2-3 weeks (simplified with Plivo Verify API)
-**Total Estimated Cost at 10K users**: ~$11.55/month (45% cost reduction!)
-**Expected Go-Live Date**: 3 weeks from start
-
-## **🎉 Key Benefits of This Approach**
-
-### **Simplified Implementation**
-- ✅ **No external validation API** to manage
-- ✅ **Plivo handles OTP complexity** (generation, storage, expiration, validation)
-- ✅ **Minimal database changes** required
-- ✅ **Built-in fraud protection** at no extra cost
-
-### **Cost Efficiency**
-- ✅ **45% cheaper** than AbstractAPI approach ($11.55 vs $20.55/month)
-- ✅ **No validation API costs** - Zod is free
-- ✅ **No rate limiting infrastructure** needed - Plivo handles it
-
-### **Developer Experience**
-- ✅ **Faster implementation** - 2-3 weeks instead of 3-4 weeks
-- ✅ **Less code to maintain** - Plivo handles most complexity
-- ✅ **Better error handling** - Plivo provides detailed status
-
-This plan provides a streamlined roadmap for implementing SMS verification while maintaining the existing email authentication system and ensuring optimal cost efficiency and developer productivity.
+- **Registration completion rates** (with vs without phone verification)
+- **SMS delivery rates** during registration
+- **Cost tracking** for new user registrations
+- **Error rate monitoring** with alerts

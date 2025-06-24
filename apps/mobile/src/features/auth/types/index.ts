@@ -46,7 +46,6 @@ export interface OAuthGoogleRequest {
   code: string;
   codeVerifier: string;
   redirectUri: string;
-  clientId?: string; // Optional platform-specific client ID
 }
 
 export interface OAuthAppleRequest {
@@ -161,6 +160,15 @@ export interface PasskeyInfo {
 
 export interface PasskeyListResponse {
   passkeys: PasskeyInfo[];
+}
+
+export interface CheckUserResponse {
+  userExists: boolean;
+  hasPasskeys: boolean;
+}
+
+export interface CheckUserRequest {
+  email: string;
 }
 
 // Zustand store related types

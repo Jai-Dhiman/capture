@@ -1,5 +1,10 @@
 import { useAuthStore } from '@/features/auth/stores/authStore';
-import { API_URL } from '@env';
+import Constants from 'expo-constants';
+
+// Get API URL from EAS config or fallback
+const API_URL = Constants.expoConfig?.extra?.API_URL || 
+                process.env.API_URL || 
+                'https://capture-api.jai-d.workers.dev';
 
 class APIError extends Error {
   statusCode: number;
@@ -80,7 +85,9 @@ export const apiClient = {
         options.body = JSON.stringify(data);
       }
 
-      const response = await fetch(`${API_URL}${endpoint}`, options);
+      const fullUrl = `${API_URL}${endpoint}`;
+
+      const response = await fetch(fullUrl, options);
 
       if (!response.ok) {
         let errorData: any = {};
