@@ -9,6 +9,9 @@ import { ActivityIndicator, Image, Text, TextInput, TouchableOpacity, View } fro
 import { AppleOAuthButton, GoogleOAuthButton } from '../components/OAuthButtons';
 import { useAuth } from '../hooks/useAuth';
 import { usePasskey } from '../hooks/usePasskey';
+import { Platform } from 'react-native';
+
+
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'Login'>;
@@ -108,7 +111,7 @@ export default function LoginScreen({ navigation }: Props) {
           }}
           resizeMode="cover"
         />
-        <Header height={140} showBackground={false} />
+        <Header height={155} showBackground={false} />
         <View className="flex-1 px-[26px] pt-[80px]">
           {/* Auth Method Toggle */}
           {canShowPasskey && (
@@ -149,12 +152,12 @@ export default function LoginScreen({ navigation }: Props) {
             }}
           >
             {(field) => (
-              <View className="mb-[24px]">
+              <View className="mb-[24px] mt-[18px]">
                 <Text className="text-base font-roboto mb-[6px]">Email</Text>
                 <TouchableOpacity
                   activeOpacity={1}
                   onPress={() => emailInputRef.current?.focus()}
-                  className={`bg-white h-[60px] rounded-[16px] shadow-md flex-row items-center px-[9px] ${isEmailFocused ? 'border-2 border-[#E4CAC7]' : ''}`}
+                  className="bg-white h-[60px] rounded-[16px] shadow-md flex-row items-center px-[9px] mb-[64px]"
                   style={shadowStyle}
                 >
                   <EmailIcon width={35} height={35} style={{ marginRight: 14 }} />
@@ -191,14 +194,14 @@ export default function LoginScreen({ navigation }: Props) {
                 ? 'Passkey authentication failed. Please try again.'
                 : 'Failed to send verification code. Please try again.'}
             </Text>
-          )} */}
-
+          )}
           <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
             {([canSubmit, isFormSubmitting]) => (
               <TouchableOpacity
-                className={`h-[56px] ${canSubmit ? 'bg-[#E4CAC7]' : 'bg-stone-300'} rounded-[30px] shadow-md justify-center items-center`}
+                className={`h-[56px] ${canSubmit ? 'bg-[#E4CAC7]' : 'bg-[#E4CAC7]'} rounded-[30px] shadow-md justify-center items-center`}
                 onPress={() => form.handleSubmit()}
                 disabled={!canSubmit || isFormSubmitting || isLoading}
+                style={shadowStyle}
               >
                 {isFormSubmitting || isLoading ? (
                   <View className="flex-row justify-center items-center">
@@ -210,6 +213,7 @@ export default function LoginScreen({ navigation }: Props) {
                 ) : (
                   <Text className="text-base font-bold font-roboto text-center">
                     {showPasskeyLogin ? `Sign in with ${biometricName}` : 'Sign-In'}
+
                   </Text>
                 )}
               </TouchableOpacity>
@@ -219,7 +223,9 @@ export default function LoginScreen({ navigation }: Props) {
           {/* Toggle back to email if passkey fails */}
           {showPasskeyLogin && (
             <View className="items-center mt-[16px]">
-              <TouchableOpacity onPress={() => setShowPasskeyLogin(false)}>
+              <TouchableOpacity
+                style={shadowStyle}
+                onPress={() => setShowPasskeyLogin(false)}>
                 <Text className="text-base font-semibold font-roboto text-[#827B85] underline">
                   Use Email Verification Instead
                 </Text>
@@ -227,24 +233,25 @@ export default function LoginScreen({ navigation }: Props) {
             </View>
           )}
 
-          <View className="items-center mt-[24px]">
+          <View className="items-center mt-[32px]">
             <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
               <Text className="text-base font-semibold font-roboto text-[#827B85] underline">
                 Account Recovery
               </Text>
             </TouchableOpacity>
           </View>
+          <View className="h-[1px] bg-[#7B7B7B] my-4 mt-[32px]" />
 
-          <View className="mt-[29px] mb-[23px]">
+          <View style={shadowStyle} className="mt-[29px] mb-[23px]">
             <GoogleOAuthButton />
           </View>
 
-          <View className="mb-[23px]">
+          <View style={shadowStyle} className="mb-[23px]">
             <AppleOAuthButton />
           </View>
 
           <View className="items-center">
-            <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
+            <TouchableOpacity onPress={() => navigation.navigate('RegisterScreen')}>
               <Text className="text-base font-semibold font-roboto text-[#827B85] underline">
                 Don't Have an Account?
               </Text>
