@@ -70,13 +70,13 @@ export async function handlePostQueue(
           .where(eq(schema.post.id, postId))
           .get();
 
-        if (!post || !post.userId) {
-          console.error(
-            `[handlePostQueue][${messageId}] Post or userId not found: ${postId}. Acknowledging message.`,
-          );
-          message.ack();
-          return;
-        }
+          if (!post || !post.userId) {
+            console.error(
+              `[handlePostQueue][${messageId}] Post or userId not found: ${postId}. Retrying message.`,
+            );
+            message.retry();
+            return;
+          }
 
         const hashtags = await db
           .select({ name: schema.hashtag.name })
