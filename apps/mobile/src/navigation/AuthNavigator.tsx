@@ -5,6 +5,7 @@ import EmailSignupScreen from '@/features/auth/screens/EmailSignupScreen';
 import LoginScreen from '@/features/auth/screens/LoginScreen';
 import RegisterScreen from '@/features/auth/screens/RegisterScreen';
 import PasskeySetupScreen from '@/features/auth/screens/PasskeySetupScreen';
+import { useAuthStore } from '@/features/auth/stores/authStore';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
 import type { AuthStackParamList } from './types';
@@ -12,9 +13,14 @@ import type { AuthStackParamList } from './types';
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
 export default function AuthStack() {
+  const authStage = useAuthStore((state) => state.stage);
+
+  // If user needs security setup, start with PasskeySetup screen
+  const initialRouteName = authStage === 'securitySetupRequired' ? 'PasskeySetup' : 'Login';
+
   return (
     <Stack.Navigator
-      initialRouteName="Login"
+      initialRouteName={initialRouteName}
       screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',

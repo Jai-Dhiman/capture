@@ -54,8 +54,16 @@ export function usePasskey() {
         throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['passkeys'] });
+      
+      // Check if user was in security setup required stage
+      const authStage = useAuthStore.getState().stage;
+      if (authStage === 'securitySetupRequired') {
+        // Refresh auth state to check if security setup is now complete
+        await useAuthStore.getState().checkInitialSession();
+      }
+      
       showAlert('Passkey registered successfully!', { type: 'success' });
     },
     onError: (error) => {

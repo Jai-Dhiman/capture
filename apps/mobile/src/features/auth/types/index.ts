@@ -32,6 +32,8 @@ export interface AuthResponse {
   user: User;
   profileExists?: boolean;
   isNewUser?: boolean;
+  securitySetupRequired?: boolean; // Whether user needs to set up MFA
+  hasPasskeys?: boolean; // Whether user has any passkeys
 }
 
 export interface BasicSuccessResponse {
@@ -171,8 +173,17 @@ export interface CheckUserRequest {
   email: string;
 }
 
+// User profile and security status
+export interface UserProfileResponse {
+  id: string;
+  email: string;
+  profileExists: boolean;
+  securitySetupRequired: boolean;
+  hasPasskeys: boolean;
+}
+
 // Zustand store related types
-export type AuthStage = 'unauthenticated' | 'profileRequired' | 'authenticated';
+export type AuthStage = 'unauthenticated' | 'profileRequired' | 'authenticated' | 'securitySetupRequired';
 export type AuthStatus = 'checking' | 'pending' | 'error' | 'success';
 
 export interface AuthStoreState {

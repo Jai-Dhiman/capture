@@ -25,11 +25,19 @@ export const useAuthStore = create<AuthStoreState & AuthStoreActions>()(
       ...initialState,
 
       setAuthData: (data: AuthResponse) => {
+        let stage: AuthStage = 'authenticated';
+        
+        if (data.profileExists === false) {
+          stage = 'profileRequired';
+        } else if (data.securitySetupRequired === true) {
+          stage = 'securitySetupRequired';
+        }
+        
         set({
           user: data.user,
           session: data.session,
           status: 'success',
-          stage: data.profileExists === false ? 'profileRequired' : 'authenticated',
+          stage,
           error: null,
         });
       },
@@ -119,10 +127,18 @@ export const useAuthStore = create<AuthStoreState & AuthStoreActions>()(
             const me = await workersAuthApi.getMe();
 
             if (me) {
+              let stage: AuthStage = 'authenticated';
+              
+              if (!me.profileExists) {
+                stage = 'profileRequired';
+              } else if (me.securitySetupRequired) {
+                stage = 'securitySetupRequired';
+              }
+              
               set({
                 user: { id: me.id, email: me.email },
                 status: 'success',
-                stage: me.profileExists ? 'authenticated' : 'profileRequired',
+                stage,
                 error: null,
               });
             } else {

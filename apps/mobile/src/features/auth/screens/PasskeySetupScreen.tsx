@@ -2,59 +2,49 @@ import type { AuthStackParamList } from '@/navigation/types';
 import Header from '@/shared/components/Header';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { View } from 'react-native';
+import { PasskeySetup } from '../components/PasskeySetup';
+import { useAuthStore } from '../stores/authStore';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'PasskeySetup'>;
 };
 
 export default function PasskeySetupScreen({ navigation }: Props) {
-  const handleContinue = () => {
-    navigation.navigate('CreateProfile');
+  const authStage = useAuthStore((state) => state.stage);
+
+  // Security setup is mandatory if we're in the securitySetupRequired stage
+  const isMandatory = authStage === 'securitySetupRequired';
+
+  const handleComplete = () => {
+    // Navigate to next step based on auth stage
+    if (authStage === 'securitySetupRequired') {
+      // After security setup, user should be authenticated
+      navigation.replace('MainApp' as any); // TODO: Update with correct main app navigation
+    } else {
+      navigation.navigate('CreateProfile');
+    }
   };
 
   const handleSkip = () => {
-    navigation.navigate('CreateProfile');
+    if (isMandatory) {
+      // Navigate to alternative MFA setup screen (placeholder for now)
+      console.log('TODO: Navigate to alternative MFA setup');
+      // For now, just mark as completed - in real implementation we'd set up other MFA
+      navigation.replace('MainApp' as any);
+    } else {
+      navigation.navigate('CreateProfile');
+    }
   };
 
   return (
     <View style={{ flex: 1 }}>
-      <Header showBackButton={true} onBackPress={() => navigation.goBack()} />
-
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-        <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 20 }}>Passkey Setup</Text>
-
-        <Text style={{ fontSize: 16, textAlign: 'center', marginBottom: 40 }}>
-          Set up a passkey for secure, passwordless authentication (Coming Soon)
-        </Text>
-
-        <TouchableOpacity
-          style={{
-            backgroundColor: '#e7cac4',
-            paddingHorizontal: 32,
-            paddingVertical: 16,
-            borderRadius: 30,
-            marginBottom: 16,
-            width: '100%',
-            alignItems: 'center',
-          }}
-          onPress={handleContinue}
-        >
-          <Text style={{ fontSize: 16, fontWeight: 'bold', color: 'black' }}>Set Up Passkey</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={{
-            paddingHorizontal: 32,
-            paddingVertical: 16,
-            width: '100%',
-            alignItems: 'center',
-          }}
-          onPress={handleSkip}
-        >
-          <Text style={{ fontSize: 16, color: 'gray' }}>Skip for now</Text>
-        </TouchableOpacity>
-      </View>
+      <Header showBackButton={!isMandatory} onBackPress={() => navigation.goBack()} />
+      <PasskeySetup
+        onComplete={handleComplete}
+        onSkip={handleSkip}
+        isMandatory={isMandatory}
+      />
     </View>
   );
 }

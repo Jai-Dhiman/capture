@@ -65,7 +65,6 @@ export function useOAuth() {
     },
     onSuccess: (data) => {
       setAuthData(data);
-      showAlert('Successfully signed in with Google!', { type: 'success' });
     },
     onError: (error) => {
       console.error('Google OAuth error:', error);
@@ -157,7 +156,6 @@ export function useOAuth() {
     },
     onSuccess: (data) => {
       setAuthData(data);
-      showAlert('Successfully signed in with Apple!', { type: 'success' });
     },
     onError: (error) => {
       console.error('Apple OAuth error:', error);

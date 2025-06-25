@@ -6,9 +6,10 @@ import { useAuthStore } from '../stores/authStore';
 interface PasskeySetupProps {
   onComplete: () => void;
   onSkip: () => void;
+  isMandatory?: boolean; // Whether security setup is required
 }
 
-export function PasskeySetup({ onComplete, onSkip }: PasskeySetupProps) {
+export function PasskeySetup({ onComplete, onSkip, isMandatory = false }: PasskeySetupProps) {
   const user = useAuthStore((state) => state.user);
   const [biometricName, setBiometricName] = useState<string>('Biometric');
 
@@ -48,14 +49,25 @@ export function PasskeySetup({ onComplete, onSkip }: PasskeySetupProps) {
   };
 
   const handleSkipPasskey = () => {
-    Alert.alert(
-      'Skip Passkey Setup?',
-      "You can set up passkeys later in Settings. For now, you'll need to use other security methods.",
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Skip', style: 'destructive', onPress: onSkip },
-      ],
-    );
+    if (isMandatory) {
+      Alert.alert(
+        'Alternative Security Required',
+        'You need to set up some form of multi-factor authentication. Would you like to set up alternative MFA instead of passkeys?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Setup MFA Instead', style: 'default', onPress: onSkip },
+        ],
+      );
+    } else {
+      Alert.alert(
+        'Skip Passkey Setup?',
+        "You can set up passkeys later in Settings. For now, you'll need to use other security methods.",
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Skip', style: 'destructive', onPress: onSkip },
+        ],
+      );
+    }
   };
 
   if (isCapabilitiesLoading) {
@@ -72,17 +84,21 @@ export function PasskeySetup({ onComplete, onSkip }: PasskeySetupProps) {
     return (
       <View className="flex-1 p-6 justify-center bg-white">
         <Text className="text-3xl font-bold text-center mb-4 text-gray-900 font-roboto">
-          Passkeys Not Available
+          {isMandatory ? 'Security Setup Required' : 'Passkeys Not Available'}
         </Text>
         <Text className="text-base text-center mb-8 leading-6 text-gray-600 font-roboto">
-          Your device doesn't support passkeys or biometric authentication isn't set up. You can
-          continue with email authentication.
+          {isMandatory
+            ? "Your device doesn't support passkeys, but we need to set up some form of security. Let's set up alternative multi-factor authentication."
+            : "Your device doesn't support passkeys or biometric authentication isn't set up. You can continue with email authentication."
+          }
         </Text>
         <TouchableOpacity
           className="bg-[#E4CAC7] py-4 px-6 rounded-[30px] shadow-md items-center"
           onPress={onSkip}
         >
-          <Text className="text-base font-bold font-roboto text-black">Continue</Text>
+          <Text className="text-base font-bold font-roboto text-black">
+            {isMandatory ? 'Setup Alternative MFA' : 'Continue'}
+          </Text>
         </TouchableOpacity>
       </View>
     );
@@ -91,11 +107,13 @@ export function PasskeySetup({ onComplete, onSkip }: PasskeySetupProps) {
   return (
     <View className="flex-1 p-6 justify-center bg-white">
       <Text className="text-3xl font-bold text-center mb-4 text-gray-900 font-roboto">
-        Set Up {biometricName}
+        {isMandatory ? 'Security Setup Required' : `Set Up ${biometricName}`}
       </Text>
       <Text className="text-base text-center mb-8 leading-6 text-gray-600 font-roboto">
-        Use your {biometricName.toLowerCase()} to sign in quickly and securely. This adds an extra
-        layer of protection to your account.
+        {isMandatory
+          ? `You need to set up multi-factor authentication to continue. We recommend using your ${biometricName.toLowerCase()} for the best security and experience.`
+          : `Use your ${biometricName.toLowerCase()} to sign in quickly and securely. This adds an extra layer of protection to your account.`
+        }
       </Text>
 
       <View className="mb-8 p-5 bg-gray-50 rounded-xl">
@@ -128,12 +146,17 @@ export function PasskeySetup({ onComplete, onSkip }: PasskeySetupProps) {
           onPress={handleSkipPasskey}
           disabled={registerPasskey.isPending}
         >
-          <Text className="text-gray-600 text-base font-medium font-roboto">Skip for now</Text>
+          <Text className="text-gray-600 text-base font-medium font-roboto">
+            {isMandatory ? 'Setup MFA Instead' : 'Skip for now'}
+          </Text>
         </TouchableOpacity>
       </View>
 
       <Text className="text-sm text-center text-gray-400 italic font-roboto">
-        You can always set up {biometricName.toLowerCase()} later in your account settings.
+        {isMandatory
+          ? 'You need some form of multi-factor authentication to use the app securely.'
+          : `You can always set up ${biometricName.toLowerCase()} later in your account settings.`
+        }
       </Text>
     </View>
   );

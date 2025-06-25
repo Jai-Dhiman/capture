@@ -1,6 +1,7 @@
 import type { AuthStackParamList } from '@/navigation/types';
 import Header from '@/shared/components/Header';
 import { useAlert } from '@/shared/lib/AlertContext';
+import { errorService } from '@/shared/services/errorService';
 import EmailIcon from '@assets/icons/EmailIcon.svg';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm } from '@tanstack/react-form';
@@ -82,6 +83,10 @@ export default function LoginScreen({ navigation }: Props) {
 
           if (!result.userExists) {
             setLoginState('user-not-found');
+            // const userNotFoundError = errorService.handleUserNotFound(value.email);
+            // showAlert(userNotFoundError.message, {
+            //   type: errorService.getAlertType(userNotFoundError.category),
+            // });
             return;
           }
 
@@ -115,7 +120,10 @@ export default function LoginScreen({ navigation }: Props) {
         } catch (error) {
           console.error('Error checking user:', error);
           setLoginState('email');
-          showAlert('Unable to verify account. Please try again.', { type: 'error' });
+          const appError = errorService.handleAuthError(error);
+          showAlert(appError.message, {
+            type: errorService.getAlertType(appError.category),
+          });
         }
       } else if (loginState === 'passkey') {
         // Handle passkey authentication
@@ -125,6 +133,11 @@ export default function LoginScreen({ navigation }: Props) {
           });
         } catch (error) {
           console.error('Passkey login failed:', error);
+          const appError = errorService.handlePasskeyError(error);
+          showAlert(appError.message, {
+            type: errorService.getAlertType(appError.category),
+          });
+
           // Fall back to email verification
           setLoginState('email-verification');
           sendCode.mutate(
@@ -141,8 +154,12 @@ export default function LoginScreen({ navigation }: Props) {
                   message: response.message,
                 });
               },
-              onError: () => {
+              onError: (sendCodeError) => {
                 setLoginState('email');
+                const sendCodeAppError = errorService.handleAuthError(sendCodeError);
+                showAlert(sendCodeAppError.message, {
+                  type: errorService.getAlertType(sendCodeAppError.category),
+                });
               },
             },
           );
@@ -219,6 +236,7 @@ export default function LoginScreen({ navigation }: Props) {
                   <EmailIcon width={35} height={35} style={{ marginRight: 14 }} />
                   <TextInput
                     ref={emailInputRef}
+                    autoFocus={false}
                     onFocus={() => { }}
                     onBlur={() => {
                       field.handleBlur();
@@ -234,6 +252,9 @@ export default function LoginScreen({ navigation }: Props) {
                       if (loginState !== 'email') {
                         setLoginState('email');
                       }
+                      // Clear any previous errors
+                      sendCode.reset();
+                      authenticateWithPasskey.reset();
                     }}
                     autoCapitalize="none"
                     keyboardType="email-address"
@@ -249,11 +270,13 @@ export default function LoginScreen({ navigation }: Props) {
             )}
           </form.Field>
 
-          {(sendCode.isError || authenticateWithPasskey.isError) && (
+          {(sendCode.isError || authenticateWithPasskey.isError || loginState === 'user-not-found') && (
             <Text className="text-red-500 text-xs mt-2 mb-4 text-center font-roboto">
               {loginState === 'passkey'
                 ? 'Passkey authentication failed. Please try again.'
-                : 'Failed to send verification code. Please try again.'}
+                : loginState === 'user-not-found'
+                  ? 'No account found for this email address.'
+                  : 'Failed to send verification code. Please try again.'}
             </Text>
           )}
 

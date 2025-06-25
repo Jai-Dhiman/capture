@@ -94,6 +94,9 @@ export function MainNavigator() {
         </Stack.Navigator>
       );
     }
+    if (authStage === 'securitySetupRequired') {
+      return <AuthStack />;
+    }
     // User is fully authenticated
     return <AppNavigator />;
   }

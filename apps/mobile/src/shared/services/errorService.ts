@@ -112,6 +112,48 @@ export const errorService = {
     return this.createError(message, 'auth/unknown', error instanceof Error ? error : undefined);
   },
 
+  handleUserNotFound(email: string): AppError {
+    return this.createError(
+      `No account found for ${email}. Would you like to create a new account?`,
+      'auth/user-not-found',
+    );
+  },
+
+  handlePasskeyError(error: unknown): AppError {
+    if (error instanceof Error) {
+      // Handle specific passkey error messages
+      if (error.message.includes('cancelled by the user')) {
+        return this.createError(
+          'Authentication was cancelled. Please try again.',
+          'auth/user-cancelled',
+        );
+      }
+      
+      if (error.message.includes('not available') || error.message.includes('not supported')) {
+        return this.createError(
+          'Biometric authentication is not available on this device.',
+          'auth/biometric-unavailable',
+        );
+      }
+      
+      if (error.message.includes('locked') || error.message.includes('too many')) {
+        return this.createError(
+          'Biometric authentication is temporarily locked. Please use your device passcode.',
+          'auth/biometric-locked',
+        );
+      }
+      
+      if (error.message.includes('failed')) {
+        return this.createError(
+          'Biometric authentication failed. Please try again.',
+          'auth/biometric-failed',
+        );
+      }
+    }
+    
+    return this.handleAuthError(error);
+  },
+
   getPhoneVerificationAction(navigation: any) {
     return {
       label: 'Verify Now!',

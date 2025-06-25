@@ -21,6 +21,8 @@ import type {
 // Response shape for GET /auth/me
 export interface MeResponse extends User {
   profileExists: boolean;
+  securitySetupRequired: boolean;
+  hasPasskeys: boolean;
 }
 
 export const workersAuthApi = {

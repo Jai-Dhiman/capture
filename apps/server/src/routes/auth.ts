@@ -92,6 +92,34 @@ function generateSecureCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+async function getUserSecurityStatus(db: any, userId: string) {
+  try {
+    // Check if user has any passkeys
+    const passkeys = await db
+      .select({ id: schema.passkeys.id })
+      .from(schema.passkeys)
+      .where(eq(schema.passkeys.userId, userId))
+      .limit(1);
+
+    const hasPasskeys = passkeys.length > 0;
+    
+    // For now, we only check passkeys. In the future, we can add other MFA methods here
+    const hasAnyMFA = hasPasskeys;
+    
+    return {
+      securitySetupRequired: !hasAnyMFA,
+      hasPasskeys,
+    };
+  } catch (error) {
+    console.error('Error checking user security status:', error);
+    // Default to requiring security setup if there's an error
+    return {
+      securitySetupRequired: true,
+      hasPasskeys: false,
+    };
+  }
+}
+
 async function generateJwtToken(
   userId: string,
   email: string,
@@ -145,7 +173,16 @@ router.get('/me', authMiddleware, async (c) => {
   } catch (e) {
     console.error('Error checking profile existence in /auth/me:', e);
   }
-  return c.json({ id: user.id, email: user.email, profileExists });
+
+  // Get security status
+  const securityStatus = await getUserSecurityStatus(db, user.id);
+
+  return c.json({ 
+    id: user.id, 
+    email: user.email, 
+    profileExists,
+    ...securityStatus
+  });
 });
 
 router.post('/send-code', otpRateLimiter, async (c) => {
@@ -367,6 +404,9 @@ router.post('/verify-code', authRateLimiter, async (c) => {
       console.error('Error during profile check or activity logging:', dbError);
     }
 
+    // Get security status
+    const securityStatus = await getUserSecurityStatus(db, user.id);
+
     return c.json({
       session: {
         access_token: accessToken,
@@ -379,6 +419,7 @@ router.post('/verify-code', authRateLimiter, async (c) => {
       },
       profileExists,
       isNewUser,
+      ...securityStatus,
     });
   } catch (error) {
     console.error('Verify code error:', error);
@@ -766,6 +807,9 @@ router.post('/oauth/google/token', authRateLimiter, async (c) => {
       console.error('Error during profile check or activity logging:', dbError);
     }
 
+    // Get security status
+    const securityStatus = await getUserSecurityStatus(db, user.id);
+
     return c.json({
       session: {
         access_token: accessToken,
@@ -778,6 +822,7 @@ router.post('/oauth/google/token', authRateLimiter, async (c) => {
       },
       profileExists,
       isNewUser,
+      ...securityStatus,
     });
   } catch (error) {
     console.error('Google OAuth token validation error:', error);

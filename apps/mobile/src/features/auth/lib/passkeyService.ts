@@ -20,8 +20,18 @@ export namespace PasskeyService {
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
       const supportedTypes = await LocalAuthentication.supportedAuthenticationTypesAsync();
 
-      // Check if passkeys are supported
-      const passkeySupported = await Passkey.isSupported();
+      // Check if passkeys are supported - with proper null checks
+      let passkeySupported = false;
+      try {
+        if (Passkey && typeof (Passkey as any).isSupported === 'function') {
+          passkeySupported = await (Passkey as any).isSupported();
+        } else {
+          console.warn('Passkey library not available or isSupported method missing');
+        }
+      } catch (passkeyError) {
+        console.warn('Error checking passkey support:', passkeyError);
+        passkeySupported = false;
+      }
 
       // Map authentication types to friendly names
       const biometricTypes: string[] = [];
@@ -62,7 +72,7 @@ export namespace PasskeyService {
     registrationOptions: PasskeyRegistrationResponse,
   ): Promise<PasskeyRegistrationCredential> {
     try {
-      const result = await Passkey.register({
+      const result = await (Passkey as any).register({
         challenge: registrationOptions.challenge,
         rp: registrationOptions.rp,
         user: registrationOptions.user,
@@ -94,7 +104,7 @@ export namespace PasskeyService {
     authenticationOptions: PasskeyAuthenticationResponse,
   ): Promise<PasskeyAuthenticationCredential> {
     try {
-      const result = await Passkey.authenticate({
+      const result = await (Passkey as any).authenticate({
         challenge: authenticationOptions.challenge,
         allowCredentials: authenticationOptions.allowCredentials,
         userVerification: authenticationOptions.userVerification as any,
@@ -142,7 +152,7 @@ export namespace PasskeyService {
    * Handle passkey errors and provide user-friendly messages
    */
   function handlePasskeyError(error: any): Error {
-    if (error instanceof PasskeyError) {
+    if (error && typeof error === 'object' && 'code' in error) {
       switch (error.code) {
         case 'UserCancel':
           return new Error('Authentication was cancelled by the user');
