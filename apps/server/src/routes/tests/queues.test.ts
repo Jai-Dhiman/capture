@@ -155,8 +155,8 @@ describe('Queue Handlers', () => {
     expect(mockRetry).toHaveBeenCalled();
     expect(mockAck).not.toHaveBeenCalled();
     expect(mockSend).not.toHaveBeenCalled();
-    
   });
+
   it('should ack even if USER_VECTOR_QUEUE.send fails', async () => {
     const mockAck = vi.fn();
     const mockRetry = vi.fn();
