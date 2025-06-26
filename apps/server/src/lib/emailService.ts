@@ -18,8 +18,7 @@ export class EmailService {
   }
 
   async sendEmail(options: SendEmailOptions): Promise<void> {
-    // Use onboarding@resend.dev for development - this is Resend's testing domain
-    const fromEmail = 'onboarding@resend.dev';
+          const fromEmail = 'noreply@verification.captureapp.org';
 
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',

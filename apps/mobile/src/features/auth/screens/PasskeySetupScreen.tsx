@@ -13,14 +13,32 @@ type Props = {
 export default function PasskeySetupScreen({ navigation }: Props) {
   const authStage = useAuthStore((state) => state.stage);
 
-  // Security setup is mandatory if we're in the securitySetupRequired stage
   const isMandatory = authStage === 'securitySetupRequired';
 
-  const handleComplete = () => {
-    // Navigate to next step based on auth stage
+  const handleComplete = async () => {
     if (authStage === 'securitySetupRequired') {
-      // After security setup, user should be authenticated
-      navigation.replace('MainApp' as any); // TODO: Update with correct main app navigation
+      const waitForAuthUpdate = () => {
+        return new Promise<void>((resolve) => {
+          const checkStage = () => {
+            const currentStage = useAuthStore.getState().stage;
+            if (currentStage !== 'securitySetupRequired') {
+              resolve();
+            } else {
+              setTimeout(checkStage, 50);
+            }
+          };
+          checkStage();
+        });
+      };
+
+      await waitForAuthUpdate();
+
+      const finalStage = useAuthStore.getState().stage;
+      if (finalStage === 'profileRequired') {
+        navigation.replace('CreateProfile');
+      } else {
+        navigation.replace('MainApp' as any); // TODO: Update with correct main app navigation
+      }
     } else {
       navigation.navigate('CreateProfile');
     }

@@ -27,10 +27,11 @@ export const useAuthStore = create<AuthStoreState & AuthStoreActions>()(
       setAuthData: (data: AuthResponse) => {
         let stage: AuthStage = 'authenticated';
         
-        if (data.profileExists === false) {
-          stage = 'profileRequired';
-        } else if (data.securitySetupRequired === true) {
+        // Security setup should happen before profile creation
+        if (data.securitySetupRequired === true) {
           stage = 'securitySetupRequired';
+        } else if (data.profileExists === false) {
+          stage = 'profileRequired';
         }
         
         set({
@@ -129,10 +130,11 @@ export const useAuthStore = create<AuthStoreState & AuthStoreActions>()(
             if (me) {
               let stage: AuthStage = 'authenticated';
               
-              if (!me.profileExists) {
-                stage = 'profileRequired';
-              } else if (me.securitySetupRequired) {
+              // Security setup should happen before profile creation
+              if (me.securitySetupRequired) {
                 stage = 'securitySetupRequired';
+              } else if (!me.profileExists) {
+                stage = 'profileRequired';
               }
               
               set({

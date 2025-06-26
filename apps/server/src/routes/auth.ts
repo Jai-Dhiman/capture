@@ -638,6 +638,9 @@ router.post('/oauth/google', authRateLimiter, async (c) => {
       console.error('Error during profile check or activity logging:', dbError);
     }
 
+    // Get security status
+    const securityStatus = await getUserSecurityStatus(db, user.id);
+
     return c.json({
       session: {
         access_token: accessToken,
@@ -650,6 +653,7 @@ router.post('/oauth/google', authRateLimiter, async (c) => {
       },
       profileExists,
       isNewUser,
+      ...securityStatus,
     });
   } catch (error) {
     console.error('Google OAuth error:', error);
@@ -985,6 +989,8 @@ router.post('/oauth/apple', authRateLimiter, async (c) => {
       console.error('Error during profile check or activity logging:', dbError);
     }
 
+    const securityStatus = await getUserSecurityStatus(db, user.id);
+
     return c.json({
       session: {
         access_token: accessToken,
@@ -997,6 +1003,7 @@ router.post('/oauth/apple', authRateLimiter, async (c) => {
       },
       profileExists,
       isNewUser,
+      ...securityStatus,
     });
   } catch (error) {
     console.error('Apple OAuth error:', error);
