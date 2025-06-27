@@ -81,6 +81,9 @@ export function MainNavigator() {
     initializeAuth();
   }, []);
 
+  // Create a unique key that forces re-mount when auth state changes significantly
+  const navigationKey = `${authStage}-${!!session}-${status}`;
+
   // Show loading screen while checking authentication
   if (status === 'checking' || status === 'pending') {
     return <LoadingScreen />;
@@ -90,18 +93,18 @@ export function MainNavigator() {
   if (status === 'success' && session) {
     if (authStage === 'profileRequired') {
       return (
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Navigator key={navigationKey} screenOptions={{ headerShown: false }}>
           <Stack.Screen name="CreateProfile" component={CreateProfile} />
         </Stack.Navigator>
       );
     }
     if (authStage === 'securitySetupRequired') {
-      return <AuthStack />;
+      return <AuthStack key={navigationKey} />;
     }
     // User is fully authenticated
-    return <AppNavigator />;
+    return <AppNavigator key={navigationKey} />;
   }
 
   // User is not authenticated - show auth stack
-  return <AuthStack />;
+  return <AuthStack key={navigationKey} />;
 }

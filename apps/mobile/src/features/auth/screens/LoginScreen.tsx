@@ -31,6 +31,7 @@ export default function LoginScreen({ navigation }: Props) {
   const emailInputRef = useRef<TextInput>(null);
   const { showAlert } = useAlert();
   const { sendCode } = useAuth();
+
   const {
     authenticateWithPasskey,
     checkUserHasPasskeys,

@@ -67,7 +67,6 @@ export function useOAuth() {
       setAuthData(data);
     },
     onError: (error) => {
-      console.error('Google OAuth error:', error);
       const appError = errorService.handleAuthError(error);
       showAlert(appError.message, {
         type: errorService.getAlertType(appError.category),

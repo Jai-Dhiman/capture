@@ -132,13 +132,10 @@ export class PasskeyService {
         await this.env.REFRESH_TOKEN_KV.put(`passkey_challenge_${userId}`, challenge, {
           expirationTtl: 300, // 5 minutes
         });
-        console.log('Challenge stored successfully for user:', userId);
-      } catch (error) {
-        console.error('Failed to store challenge in KV:', error);
+      } catch {
         throw new Error('Failed to store passkey challenge');
       }
     } else {
-      console.warn('REFRESH_TOKEN_KV not available, challenge cannot be stored');
       throw new Error('KV storage not configured for passkey challenges');
     }
   }
@@ -158,7 +155,6 @@ export class PasskeyService {
 
   public base64ToUint8Array(base64: string | null | undefined): Uint8Array {
     if (!base64 || typeof base64 !== 'string') {
-      console.error('Invalid base64 input:', base64, typeof base64);
       throw new Error(`Invalid base64 input: expected string, got ${typeof base64}`);
     }
     

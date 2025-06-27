@@ -96,7 +96,6 @@ export default function CreateProfile() {
           onPress: () => {
             logout.mutate(undefined, {
               onSuccess: () => {
-                navigation.navigate('Auth', { screen: 'Login' });
               },
             });
           },

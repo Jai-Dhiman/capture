@@ -16,12 +16,26 @@ const Stack = createNativeStackNavigator<AuthStackParamList>();
 export default function AuthStack() {
   const authStage = useAuthStore((state) => state.stage);
 
-  // If user needs security setup, start with PasskeySetup screen
-  const initialRouteName = authStage === 'securitySetupRequired' ? 'PasskeySetup' : 'Login';
+
+  // Return different stacks based on auth stage to ensure proper navigation
+  if (authStage === 'securitySetupRequired') {
+    return (
+      <Stack.Navigator
+        initialRouteName="PasskeySetup"
+        screenOptions={{
+          headerShown: false,
+          animation: 'slide_from_right',
+        }}
+      >
+        <Stack.Screen name="PasskeySetup" component={PasskeySetupScreen} />
+        <Stack.Screen name="MFACreation" component={MFACreationScreen} />
+      </Stack.Navigator>
+    );
+  }
 
   return (
     <Stack.Navigator
-      initialRouteName={initialRouteName}
+      initialRouteName="Login"
       screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',
@@ -32,8 +46,6 @@ export default function AuthStack() {
       <Stack.Screen name="EmailSignup" component={EmailSignupScreen} />
       <Stack.Screen name="EmailCodeVerification" component={EmailCodeVerificationScreen} />
       <Stack.Screen name="PhoneCodeVerification" component={PhoneCodeVerificationScreen} />
-      <Stack.Screen name="PasskeySetup" component={PasskeySetupScreen} />
-      <Stack.Screen name="MFACreation" component={MFACreationScreen} />
       <Stack.Screen name="CreateProfile" component={CreateProfile} />
     </Stack.Navigator>
   );

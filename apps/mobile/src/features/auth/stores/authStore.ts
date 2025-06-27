@@ -33,7 +33,7 @@ export const useAuthStore = create<AuthStoreState & AuthStoreActions>()(
         } else if (data.profileExists === false) {
           stage = 'profileRequired';
         }
-        
+      
         set({
           user: data.user,
           session: data.session,

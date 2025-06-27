@@ -1,7 +1,7 @@
 import type { AuthStackParamList } from '@/navigation/types';
 import Header from '@/shared/components/Header';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Alert, View } from 'react-native';
 import { PasskeySetup } from '../components/PasskeySetup';
 import { useAuth } from '../hooks/useAuth';
@@ -48,7 +48,6 @@ export default function PasskeySetupScreen({ navigation }: Props) {
 
   const handleSkip = () => {
     if (isMandatory) {
-      // Navigate to alternative MFA setup screen
       navigation.navigate('MFACreation');
     } else {
       navigation.navigate('CreateProfile');
@@ -69,7 +68,6 @@ export default function PasskeySetupScreen({ navigation }: Props) {
           onPress: () => {
             logout.mutate(undefined, {
               onSuccess: () => {
-                navigation.navigate('Login');
               },
             });
           },
@@ -82,7 +80,7 @@ export default function PasskeySetupScreen({ navigation }: Props) {
 
   return (
     <View style={{ flex: 1 }}>
-      <Header showBackButton={!isMandatory} onBackPress={handleBackPress} />
+      <Header showBackButton={true} onBackPress={handleBackPress} />
       <PasskeySetup
         onComplete={handleComplete}
         onSkip={handleSkip}

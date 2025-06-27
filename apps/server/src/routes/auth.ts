@@ -705,12 +705,6 @@ router.post('/oauth/google/token', authRateLimiter, async (c) => {
     }
 
     const tokenInfo = (await tokenInfoResponse.json()) as any;
-    console.log('✅ Google ID token verified, token info retrieved:', {
-      hasEmail: !!tokenInfo.email,
-      hasSub: !!tokenInfo.sub,
-      emailVerified: tokenInfo.email_verified,
-      aud: tokenInfo.aud ? `${tokenInfo.aud.substring(0, 20)}...` : 'MISSING',
-    });
 
     // Verify the audience (client ID) matches our expected client ID
     // The Google Sign-In SDK uses the web client ID for ID token audience
@@ -814,7 +808,7 @@ router.post('/oauth/google/token', authRateLimiter, async (c) => {
     // Get security status
     const securityStatus = await getUserSecurityStatus(db, user.id);
 
-    return c.json({
+    const response = {
       session: {
         access_token: accessToken,
         refresh_token: refreshToken,
@@ -827,9 +821,11 @@ router.post('/oauth/google/token', authRateLimiter, async (c) => {
       profileExists,
       isNewUser,
       ...securityStatus,
-    });
+    };
+
+    return c.json(response);
   } catch (error) {
-    console.error('Google OAuth token validation error:', error);
+    console.error('❌ Google OAuth token validation error:', error);
     return c.json(
       { error: 'Google OAuth token validation failed', code: 'auth/oauth-failed' },
       500,
@@ -1020,25 +1016,19 @@ router.post('/passkey/register/begin', authMiddleware, authRateLimiter, async (c
     const db = createD1Client(c.env);
     const passkeyService = new PasskeyService(c.env);
 
-    console.log('Passkey registration begin for user:', user.email);
-
     // Get existing passkeys to exclude
     const existingPasskeys = await db
       .select()
       .from(schema.passkeys)
       .where(eq(schema.passkeys.userId, user.id));
 
-    console.log('Found existing passkeys for user:', user.id, existingPasskeys.length);
     const excludeCredentials = existingPasskeys.map((pk) => pk.credentialId);
-    console.log('Excluding credentials:', excludeCredentials);
 
     // Generate registration options
-    console.log('Generating passkey registration options for user:', user.email);
     const options = await passkeyService.generateRegistrationOptions(
       { id: user.id, email: user.email || '', displayName: user.email || user.id },
       excludeCredentials,
     );
-    console.log('Generated passkey options successfully');
 
     return c.json(options);
   } catch (error) {
@@ -1072,11 +1062,6 @@ router.post('/passkey/register/complete', authMiddleware, authRateLimiter, async
 
     // Get authenticated user
     const user = c.get('user');
-    console.log('Passkey registration complete for user:', user.email);
-
-    // Verify registration response
-    console.log('Starting passkey verification for user:', user.id);
-    console.log('Credential data:', JSON.stringify(credential, null, 2));
 
     // Add missing clientExtensionResults if not present
     const credentialWithExtensions = {
@@ -1089,8 +1074,6 @@ router.post('/passkey/register/complete', authMiddleware, authRateLimiter, async
       credentialWithExtensions,
     );
 
-    console.log('Verification result:', verification);
-
     if (!verification.verified || !verification.registrationInfo) {
       return c.json(
         { error: 'Passkey registration failed', code: 'auth/passkey-verification-failed' },
@@ -1101,21 +1084,12 @@ router.post('/passkey/register/complete', authMiddleware, authRateLimiter, async
     // Store passkey in database
     const passkeyId = nanoid();
     const credentialInfo = verification.registrationInfo;
-    console.log('Registration info structure:', Object.keys(credentialInfo));
 
     const credentialId = typeof credentialInfo.credential.id === 'string'
       ? credentialInfo.credential.id
       : PS.uint8ArrayToBase64(credentialInfo.credential.id);
     
     const publicKey = PS.uint8ArrayToBase64(credentialInfo.credential.publicKey);
-
-    console.log('Storing passkey with:', {
-      credentialId,
-      credentialIdType: typeof credentialId,
-      publicKey,
-      publicKeyType: typeof publicKey,
-      counter: credentialInfo.credential.counter
-    });
 
     await db.insert(schema.passkeys).values({
       id: passkeyId,
@@ -1179,15 +1153,6 @@ router.post('/passkey/authenticate/begin', authRateLimiter, async (c) => {
     if (passkeys.length === 0) {
       return c.json({ error: 'No passkeys found for user', code: 'auth/no-passkeys-found' }, 404);
     }
-
-    console.log('Retrieved passkeys from database:', passkeys.map(pk => ({
-      id: pk.id,
-      credentialId: pk.credentialId,
-      credentialIdType: typeof pk.credentialId,
-      publicKey: pk.publicKey,
-      publicKeyType: typeof pk.publicKey,
-      counter: pk.counter
-    })));
 
     // Convert passkeys to device format
     const devices = passkeys.map((pk) => {
