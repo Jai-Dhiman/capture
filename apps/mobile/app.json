@@ -16,8 +16,15 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.obscuratechnologies.capture",
+      "associatedDomains": ["webcredentials:capture-api.jai-d.workers.dev"],
+      "entitlements": {
+        "com.apple.developer.associated-domains": ["webcredentials:capture-api.jai-d.workers.dev"],
+        "com.apple.developer.authentication-services.autofill-credential-provider": true
+      },
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSFaceIDUsageDescription": "Use Face ID to securely sign in to your account",
+        "NSBiometricUsageDescription": "Use biometric authentication to securely access your account"
       }
     },
     "android": {

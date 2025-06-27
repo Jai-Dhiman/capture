@@ -40,7 +40,7 @@ export default function CodeVerificationScreen({ navigation, route }: Props) {
           phone,
         },
         {
-          onSuccess: () => {
+          onSuccess: (data) => {
             if (isNewUser && phone) {
               navigation.navigate('PhoneCodeVerification', {
                 email,
@@ -48,6 +48,17 @@ export default function CodeVerificationScreen({ navigation, route }: Props) {
                 isNewUser,
                 message: "We've sent a verification code to your phone number.",
               });
+            } else {
+              // Handle navigation based on the auth response
+              if (data.securitySetupRequired) {
+                navigation.navigate('PasskeySetup');
+              } else if (!data.profileExists) {
+                navigation.navigate('CreateProfile');
+              } else {
+                // User is fully authenticated, the main navigator will handle routing to the app
+                // We don't need to navigate here as the main navigator will automatically switch
+                // to the AppNavigator when the auth store is updated
+              }
             }
           },
           onError: () => {

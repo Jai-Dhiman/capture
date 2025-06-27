@@ -14,8 +14,8 @@ import type {
 import type { Bindings } from '../types';
 
 const RP_NAME = 'Capture';
-const RP_ID = 'capture-api.jai-d.workers.dev'; // Your domain
-const ORIGIN = ['https://capture-api.jai-d.workers.dev']; // Your app's origins
+const RP_ID = 'capture-api.jai-d.workers.dev';
+const ORIGIN = ['https://capture-api.jai-d.workers.dev'];
 
 export interface PasskeyUser {
   id: string;
@@ -37,22 +37,21 @@ export class PasskeyService {
     this.env = env;
   }
 
-  /**
-   * Generate registration options for a new passkey
-   */
   async generateRegistrationOptions(user: PasskeyUser, excludeCredentials: string[] = []) {
+    const userIDBuffer = new TextEncoder().encode(user.id);
+    
     const options = await generateRegistrationOptions({
       rpName: RP_NAME,
       rpID: RP_ID,
       userName: user.email,
-      userID: user.id,
+      userID: userIDBuffer,
       userDisplayName: user.displayName,
       attestationType: 'none',
       excludeCredentials: excludeCredentials.map((id) => ({
-        id,
-        type: 'public-key',
+        id: this.base64ToUint8Array(id),
+        type: 'public-key' as const,
         transports: ['internal'] as AuthenticatorTransportFuture[],
-      })),
+      })) as any,
       authenticatorSelection: {
         authenticatorAttachment: 'platform',
         userVerification: 'required',
@@ -67,9 +66,6 @@ export class PasskeyService {
     return options;
   }
 
-  /**
-   * Verify registration response
-   */
   async verifyRegistrationResponse(
     userId: string,
     response: RegistrationResponseJSON,
@@ -93,9 +89,6 @@ export class PasskeyService {
     return verification;
   }
 
-  /**
-   * Generate authentication options
-   */
   async generateAuthenticationOptions(allowCredentials: PasskeyDevice[] = []) {
     const options = await generateAuthenticationOptions({
       rpID: RP_ID,
@@ -110,9 +103,6 @@ export class PasskeyService {
     return options;
   }
 
-  /**
-   * Verify authentication response
-   */
   async verifyAuthenticationResponse(
     response: AuthenticationResponseJSON,
     device: PasskeyDevice,
@@ -135,21 +125,23 @@ export class PasskeyService {
     return verification;
   }
 
-  /**
-   * Store challenge temporarily
-   */
   private async storeChallenge(userId: string, challenge: string) {
     if (this.env.REFRESH_TOKEN_KV) {
-      // Store with 5 minute expiration
-      await this.env.REFRESH_TOKEN_KV.put(`passkey_challenge_${userId}`, challenge, {
-        expirationTtl: 300, // 5 minutes
-      });
+      try {
+        await this.env.REFRESH_TOKEN_KV.put(`passkey_challenge_${userId}`, challenge, {
+          expirationTtl: 300, // 5 minutes
+        });
+        console.log('Challenge stored successfully for user:', userId);
+      } catch (error) {
+        console.error('Failed to store challenge in KV:', error);
+        throw new Error('Failed to store passkey challenge');
+      }
+    } else {
+      console.warn('REFRESH_TOKEN_KV not available, challenge cannot be stored');
+      throw new Error('KV storage not configured for passkey challenges');
     }
   }
 
-  /**
-   * Get stored challenge
-   */
   private async getStoredChallenge(userId: string): Promise<string | null> {
     if (this.env.REFRESH_TOKEN_KV) {
       return await this.env.REFRESH_TOKEN_KV.get(`passkey_challenge_${userId}`);
@@ -157,20 +149,13 @@ export class PasskeyService {
     return null;
   }
 
-  /**
-   * Remove challenge
-   */
   private async removeChallenge(userId: string) {
     if (this.env.REFRESH_TOKEN_KV) {
       await this.env.REFRESH_TOKEN_KV.delete(`passkey_challenge_${userId}`);
     }
   }
 
-  /**
-   * Utility functions
-   */
   public base64ToUint8Array(base64: string): Uint8Array {
-    // Handle URL-safe base64
     const base64Padded = base64.replace(/-/g, '+').replace(/_/g, '/');
     const padding = 4 - (base64Padded.length % 4);
     const paddedBase64 = base64Padded + '='.repeat(padding % 4);

@@ -65,13 +65,13 @@ export const workersAuthApi = {
   async passkeyRegistrationBegin(
     data: PasskeyRegistrationRequest,
   ): Promise<PasskeyRegistrationResponse> {
-    return apiClient.post('/auth/passkey/register/begin', data, false);
+    return apiClient.post('/auth/passkey/register/begin', {}, true); 
   },
 
   async passkeyRegistrationComplete(
     data: PasskeyRegistrationComplete,
   ): Promise<BasicSuccessResponse> {
-    return apiClient.post('/auth/passkey/register/complete', data, false);
+    return apiClient.post('/auth/passkey/register/complete', data, true);
   },
 
   async passkeyAuthenticationBegin(

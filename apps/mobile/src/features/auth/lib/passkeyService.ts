@@ -1,6 +1,6 @@
 import * as LocalAuthentication from 'expo-local-authentication';
 import { Platform } from 'react-native';
-import Passkey, { PasskeyError } from 'react-native-passkey';
+import { Passkey } from 'react-native-passkey';
 import type {
   PasskeyAuthenticationCredential,
   PasskeyAuthenticationResponse,
@@ -20,14 +20,11 @@ export namespace PasskeyService {
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
       const supportedTypes = await LocalAuthentication.supportedAuthenticationTypesAsync();
 
-      // Check if passkeys are supported - with proper null checks
+      // Check if passkeys are supported - using correct API
       let passkeySupported = false;
       try {
-        if (Passkey && typeof (Passkey as any).isSupported === 'function') {
-          passkeySupported = await (Passkey as any).isSupported();
-        } else {
-          console.warn('Passkey library not available or isSupported method missing');
-        }
+        // isSupported is a synchronous method, not async
+        passkeySupported = Passkey.isSupported();
       } catch (passkeyError) {
         console.warn('Error checking passkey support:', passkeyError);
         passkeySupported = false;
@@ -72,7 +69,7 @@ export namespace PasskeyService {
     registrationOptions: PasskeyRegistrationResponse,
   ): Promise<PasskeyRegistrationCredential> {
     try {
-      const result = await (Passkey as any).register({
+      const result = await Passkey.create({
         challenge: registrationOptions.challenge,
         rp: registrationOptions.rp,
         user: registrationOptions.user,
@@ -104,7 +101,7 @@ export namespace PasskeyService {
     authenticationOptions: PasskeyAuthenticationResponse,
   ): Promise<PasskeyAuthenticationCredential> {
     try {
-      const result = await (Passkey as any).authenticate({
+      const result = await Passkey.get({
         challenge: authenticationOptions.challenge,
         allowCredentials: authenticationOptions.allowCredentials,
         userVerification: authenticationOptions.userVerification as any,

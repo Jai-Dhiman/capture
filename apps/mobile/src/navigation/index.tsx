@@ -28,6 +28,7 @@ export const linking: LinkingOptions<RootStackParamList> = {
           EmailCodeVerification: 'auth/email-verification',
           PhoneCodeVerification: 'auth/phone-verification',
           PasskeySetup: 'auth/passkey-setup',
+          MFACreation: 'auth/mfa-setup',
           CreateProfile: 'auth/create-profile',
         },
       },

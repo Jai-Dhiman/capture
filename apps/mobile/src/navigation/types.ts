@@ -25,6 +25,7 @@ export type AuthStackParamList = {
     message: string;
   };
   PasskeySetup: undefined;
+  MFACreation: undefined;
   CreateProfile: undefined;
 };
 

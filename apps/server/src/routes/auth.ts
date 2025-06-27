@@ -47,11 +47,6 @@ const oauthAppleSchema = z.object({
 });
 
 // Passkey validation schemas
-const passkeyRegistrationBeginSchema = z.object({
-  email: z.string().email(),
-  deviceName: z.string().optional(),
-});
-
 const passkeyRegistrationCompleteSchema = z.object({
   credential: z.object({
     id: z.string(),
@@ -669,7 +664,7 @@ router.post('/oauth/google', authRateLimiter, async (c) => {
   }
 });
 
-// New endpoint for Google OAuth with client-side token exchange
+// Google OAuth client-side token exchange
 router.post('/oauth/google/token', authRateLimiter, async (c) => {
   try {
     const body = await c.req.json();
@@ -1012,31 +1007,14 @@ router.post('/oauth/apple', authRateLimiter, async (c) => {
 });
 
 // Passkey endpoints
-router.post('/passkey/register/begin', authRateLimiter, async (c) => {
+router.post('/passkey/register/begin', authMiddleware, authRateLimiter, async (c) => {
   try {
-    const body = await c.req.json();
-    const validation = passkeyRegistrationBeginSchema.safeParse(body);
-
-    if (!validation.success) {
-      return c.json(
-        {
-          error: 'Invalid input',
-          details: validation.error.errors,
-          code: 'auth/invalid-input',
-        },
-        400,
-      );
-    }
-
-    const { email } = validation.data;
+    // Get authenticated user
+    const user = c.get('user');
     const db = createD1Client(c.env);
     const passkeyService = new PasskeyService(c.env);
 
-    // Check if user exists
-    const user = await db.select().from(schema.users).where(eq(schema.users.email, email)).get();
-    if (!user) {
-      return c.json({ error: 'User not found', code: 'auth/user-not-found' }, 404);
-    }
+    console.log('Passkey registration begin for user:', user.email);
 
     // Get existing passkeys to exclude
     const existingPasskeys = await db
@@ -1044,13 +1022,17 @@ router.post('/passkey/register/begin', authRateLimiter, async (c) => {
       .from(schema.passkeys)
       .where(eq(schema.passkeys.userId, user.id));
 
+    console.log('Found existing passkeys for user:', user.id, existingPasskeys.length);
     const excludeCredentials = existingPasskeys.map((pk) => pk.credentialId);
+    console.log('Excluding credentials:', excludeCredentials);
 
     // Generate registration options
+    console.log('Generating passkey registration options for user:', user.email);
     const options = await passkeyService.generateRegistrationOptions(
       { id: user.id, email: user.email, displayName: user.email },
       excludeCredentials,
     );
+    console.log('Generated passkey options successfully');
 
     return c.json(options);
   } catch (error) {
@@ -1062,7 +1044,7 @@ router.post('/passkey/register/begin', authRateLimiter, async (c) => {
   }
 });
 
-router.post('/passkey/register/complete', authRateLimiter, async (c) => {
+router.post('/passkey/register/complete', authMiddleware, authRateLimiter, async (c) => {
   try {
     const body = await c.req.json();
     const validation = passkeyRegistrationCompleteSchema.safeParse(body);
@@ -1082,20 +1064,17 @@ router.post('/passkey/register/complete', authRateLimiter, async (c) => {
     const db = createD1Client(c.env);
     const passkeyService = new PasskeyService(c.env);
 
-    // Get user from credential userHandle or require authentication
-    // Note: userHandle is not available in registration response, we need to get it differently
-    const userHandle = credential.id; // Use credential ID to find associated user
-    if (!userHandle) {
-      return c.json({ error: 'User handle required', code: 'auth/user-handle-required' }, 400);
-    }
-
-    const user = await db.select().from(schema.users).where(eq(schema.users.id, userHandle)).get();
-    if (!user) {
-      return c.json({ error: 'User not found', code: 'auth/user-not-found' }, 404);
-    }
+    // Get authenticated user
+    const user = c.get('user');
+    console.log('Passkey registration complete for user:', user.email);
 
     // Verify registration response
+    console.log('Starting passkey verification for user:', user.id);
+    console.log('Credential data:', JSON.stringify(credential, null, 2));
+    
     const verification = await passkeyService.verifyRegistrationResponse(user.id, credential);
+    
+    console.log('Verification result:', verification);
 
     if (!verification.verified || !verification.registrationInfo) {
       return c.json(
@@ -1106,12 +1085,15 @@ router.post('/passkey/register/complete', authRateLimiter, async (c) => {
 
     // Store passkey in database
     const passkeyId = nanoid();
+    const credentialInfo = verification.registrationInfo;
+    console.log('Registration info structure:', Object.keys(credentialInfo));
+    
     await db.insert(schema.passkeys).values({
       id: passkeyId,
       userId: user.id,
-      credentialId: PS.uint8ArrayToBase64(verification.registrationInfo.credentialID),
-      publicKey: PS.uint8ArrayToBase64(verification.registrationInfo.credentialPublicKey),
-      counter: verification.registrationInfo.counter,
+      credentialId: PS.uint8ArrayToBase64(credentialInfo.credential.id),
+      publicKey: PS.uint8ArrayToBase64(credentialInfo.credential.publicKey),
+      counter: credentialInfo.credential.counter,
       deviceName: deviceName || 'Unknown Device',
       createdAt: new Date().toISOString(),
     });

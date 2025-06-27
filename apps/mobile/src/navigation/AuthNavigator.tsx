@@ -5,6 +5,7 @@ import EmailSignupScreen from '@/features/auth/screens/EmailSignupScreen';
 import LoginScreen from '@/features/auth/screens/LoginScreen';
 import RegisterScreen from '@/features/auth/screens/RegisterScreen';
 import PasskeySetupScreen from '@/features/auth/screens/PasskeySetupScreen';
+import MFACreationScreen from '@/features/auth/screens/MFACreationScreen';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
@@ -32,6 +33,7 @@ export default function AuthStack() {
       <Stack.Screen name="EmailCodeVerification" component={EmailCodeVerificationScreen} />
       <Stack.Screen name="PhoneCodeVerification" component={PhoneCodeVerificationScreen} />
       <Stack.Screen name="PasskeySetup" component={PasskeySetupScreen} />
+      <Stack.Screen name="MFACreation" component={MFACreationScreen} />
       <Stack.Screen name="CreateProfile" component={CreateProfile} />
     </Stack.Navigator>
   );

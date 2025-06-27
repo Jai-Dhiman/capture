@@ -2,8 +2,9 @@ import type { AuthStackParamList } from '@/navigation/types';
 import Header from '@/shared/components/Header';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React from 'react';
-import { View } from 'react-native';
+import { Alert, View } from 'react-native';
 import { PasskeySetup } from '../components/PasskeySetup';
+import { useAuth } from '../hooks/useAuth';
 import { useAuthStore } from '../stores/authStore';
 
 type Props = {
@@ -12,6 +13,7 @@ type Props = {
 
 export default function PasskeySetupScreen({ navigation }: Props) {
   const authStage = useAuthStore((state) => state.stage);
+  const { logout } = useAuth();
 
   const isMandatory = authStage === 'securitySetupRequired';
 
@@ -46,18 +48,41 @@ export default function PasskeySetupScreen({ navigation }: Props) {
 
   const handleSkip = () => {
     if (isMandatory) {
-      // Navigate to alternative MFA setup screen (placeholder for now)
-      console.log('TODO: Navigate to alternative MFA setup');
-      // For now, just mark as completed - in real implementation we'd set up other MFA
-      navigation.replace('MainApp' as any);
+      // Navigate to alternative MFA setup screen
+      navigation.navigate('MFACreation');
     } else {
       navigation.navigate('CreateProfile');
     }
   };
 
+  const handleBackPress = () => {
+    Alert.alert(
+      'Are you sure?',
+      'You will be logged out and returned to the login screen.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Log Out',
+          onPress: () => {
+            logout.mutate(undefined, {
+              onSuccess: () => {
+                navigation.navigate('Login');
+              },
+            });
+          },
+          style: 'destructive',
+        },
+      ],
+      { cancelable: false },
+    );
+  };
+
   return (
     <View style={{ flex: 1 }}>
-      <Header showBackButton={!isMandatory} onBackPress={() => navigation.goBack()} />
+      <Header showBackButton={!isMandatory} onBackPress={handleBackPress} />
       <PasskeySetup
         onComplete={handleComplete}
         onSkip={handleSkip}

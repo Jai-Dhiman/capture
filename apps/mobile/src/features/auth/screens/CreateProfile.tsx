@@ -7,7 +7,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm } from '@tanstack/react-form';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useState, useRef } from 'react';
-import { Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, Text, TextInput, TouchableOpacity, View, Alert } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
 import { useCreateProfile } from '../hooks/useCreateProfile';
 
@@ -69,7 +69,7 @@ export default function CreateProfile() {
         {
           onSuccess: () => {
             showAlert('Profile created successfully!', { type: 'success', duration: 3000 });
-            navigation.navigate('App');
+            navigation.navigate('App', { screen: 'Feed' });
           },
           onError: (error) => {
             const errorMessage =
@@ -82,10 +82,29 @@ export default function CreateProfile() {
     },
   });
 
-  const handleLogout = () => {
-    logout.mutate(undefined, {
-      onSuccess: () => {},
-    });
+  const handleBackPress = () => {
+    Alert.alert(
+      'Are you sure?',
+      'You will be logged out and returned to the login screen.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Log Out',
+          onPress: () => {
+            logout.mutate(undefined, {
+              onSuccess: () => {
+                navigation.navigate('Auth', { screen: 'Login' });
+              },
+            });
+          },
+          style: 'destructive',
+        },
+      ],
+      { cancelable: false },
+    );
   };
 
   return (
@@ -104,7 +123,7 @@ export default function CreateProfile() {
             resizeMode="cover"
           />
 
-          <Header showBackButton={true} onBackPress={() => navigation.goBack()} />
+          <Header showBackButton={true} onBackPress={handleBackPress} />
 
           <View className="w-full h-full absolute top-0 left-0 bg-zinc-300/60" />
 
@@ -313,16 +332,6 @@ export default function CreateProfile() {
               </TouchableOpacity>
             )}
           </form.Subscribe>
-
-          <TouchableOpacity
-            className="mt-6 items-center mb-8 mx-[26px]"
-            onPress={handleLogout}
-            disabled={logout.isPending}
-          >
-            <Text className="text-blue-600 underline text-base font-roboto">
-              {logout.isPending ? 'Logging out...' : 'Log out'}
-            </Text>
-          </TouchableOpacity>
 
           <View className="h-5 left-0 bottom-0 w-full items-center justify-center">
             <View className="w-36 h-[5px] bg-black rounded-[100px]" />
