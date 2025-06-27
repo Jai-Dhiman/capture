@@ -103,9 +103,10 @@ export namespace PasskeyService {
     try {
       const result = await Passkey.get({
         challenge: authenticationOptions.challenge,
-        allowCredentials: authenticationOptions.allowCredentials,
+        allowCredentials: authenticationOptions.allowCredentials as any,
         userVerification: authenticationOptions.userVerification as any,
         timeout: authenticationOptions.timeout,
+        rpId: authenticationOptions.rpId as any,
       });
 
       return {

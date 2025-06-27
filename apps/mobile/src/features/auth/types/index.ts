@@ -133,6 +133,7 @@ export interface PasskeyAuthenticationResponse {
   }>;
   userVerification: string;
   timeout: number;
+  rpId: string;
 }
 
 export interface PasskeyAuthenticationCredential {

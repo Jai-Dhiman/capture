@@ -10,7 +10,6 @@ import type {
   PasskeyAuthenticationResponse,
   PasskeyListResponse,
   PasskeyRegistrationComplete,
-  PasskeyRegistrationRequest,
   PasskeyRegistrationResponse,
   SendCodeRequest,
   SendCodeResponse,
@@ -62,10 +61,8 @@ export const workersAuthApi = {
   },
 
   // Passkey methods
-  async passkeyRegistrationBegin(
-    data: PasskeyRegistrationRequest,
-  ): Promise<PasskeyRegistrationResponse> {
-    return apiClient.post('/auth/passkey/register/begin', {}, true); 
+  async passkeyRegistrationBegin(): Promise<PasskeyRegistrationResponse> {
+    return apiClient.post('/auth/passkey/register/begin', {}, true);
   },
 
   async passkeyRegistrationComplete(

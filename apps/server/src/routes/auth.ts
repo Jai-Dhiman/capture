@@ -1,4 +1,4 @@
-import type { AuthenticatorTransportFuture } from '@simplewebauthn/types';
+import type { AuthenticatorTransport, AuthenticatorTransportFuture } from '@simplewebauthn/types';
 import { and, eq, gt, isNull, lt } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { sign } from 'hono/jwt';
@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { createD1Client } from '../db';
 import * as schema from '../db/schema';
 import { createEmailService } from '../lib/emailService';
-import { exchangeGoogleCode, verifyAppleToken, validateGoogleAccessToken } from '../lib/oauthUtils';
+import { exchangeGoogleCode, validateGoogleAccessToken, verifyAppleToken } from '../lib/oauthUtils';
 import { PasskeyService as PS, PasskeyService } from '../lib/passkeyService';
 import { authMiddleware } from '../middleware/auth';
 import { authRateLimiter, otpRateLimiter } from '../middleware/rateLimit';
@@ -55,7 +55,8 @@ const passkeyRegistrationCompleteSchema = z.object({
       attestationObject: z.string(),
       clientDataJSON: z.string(),
     }),
-    type: z.string(),
+    type: z.literal('public-key'),
+    clientExtensionResults: z.object({}).optional(),
   }),
   deviceName: z.string().optional(),
 });
@@ -74,7 +75,8 @@ const passkeyAuthenticationCompleteSchema = z.object({
       signature: z.string(),
       userHandle: z.string().optional(),
     }),
-    type: z.string(),
+    type: z.literal('public-key'),
+    clientExtensionResults: z.object({}).optional(),
   }),
 });
 
@@ -97,10 +99,10 @@ async function getUserSecurityStatus(db: any, userId: string) {
       .limit(1);
 
     const hasPasskeys = passkeys.length > 0;
-    
+
     // For now, we only check passkeys. In the future, we can add other MFA methods here
     const hasAnyMFA = hasPasskeys;
-    
+
     return {
       securitySetupRequired: !hasAnyMFA,
       hasPasskeys,
@@ -172,11 +174,11 @@ router.get('/me', authMiddleware, async (c) => {
   // Get security status
   const securityStatus = await getUserSecurityStatus(db, user.id);
 
-  return c.json({ 
-    id: user.id, 
-    email: user.email, 
+  return c.json({
+    id: user.id,
+    email: user.email,
     profileExists,
-    ...securityStatus
+    ...securityStatus,
   });
 });
 
@@ -228,23 +230,23 @@ router.post('/send-code', otpRateLimiter, async (c) => {
       await emailService.sendVerificationCode(email, code, 'login_register');
     } catch (emailError) {
       console.error('Failed to send email:', emailError);
-      
+
       // Check if it's a configuration issue
       if (emailError instanceof Error && emailError.message.includes('RESEND_API_KEY')) {
         return c.json(
-          { 
-            error: 'Email service is not configured. Please contact support.', 
-            code: 'auth/email-service-unavailable' 
+          {
+            error: 'Email service is not configured. Please contact support.',
+            code: 'auth/email-service-unavailable',
           },
           503,
         );
       }
-      
+
       // Generic email send failure
       return c.json(
-        { 
-          error: 'Unable to send verification code. Please check your email address and try again.', 
-          code: 'auth/email-send-failed' 
+        {
+          error: 'Unable to send verification code. Please check your email address and try again.',
+          code: 'auth/email-send-failed',
         },
         500,
       );
@@ -541,7 +543,10 @@ router.post('/oauth/google', authRateLimiter, async (c) => {
 
     if (!c.env.GOOGLE_CLIENT_ID_IOS && !c.env.GOOGLE_CLIENT_ID) {
       return c.json(
-        { error: 'Google OAuth not configured. Set GOOGLE_CLIENT_ID_IOS environment variable.', code: 'auth/oauth-not-configured' },
+        {
+          error: 'Google OAuth not configured. Set GOOGLE_CLIENT_ID_IOS environment variable.',
+          code: 'auth/oauth-not-configured',
+        },
         500,
       );
     }
@@ -668,9 +673,11 @@ router.post('/oauth/google', authRateLimiter, async (c) => {
 router.post('/oauth/google/token', authRateLimiter, async (c) => {
   try {
     const body = await c.req.json();
-    const validation = z.object({
-      idToken: z.string(), // Changed from accessToken to idToken
-    }).safeParse(body);
+    const validation = z
+      .object({
+        idToken: z.string(), // Changed from accessToken to idToken
+      })
+      .safeParse(body);
 
     if (!validation.success) {
       return c.json(
@@ -685,20 +692,19 @@ router.post('/oauth/google/token', authRateLimiter, async (c) => {
 
     const { idToken } = validation.data;
 
-    const tokenInfoResponse = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
+    const tokenInfoResponse = await fetch(
+      `https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`,
+    );
 
     if (!tokenInfoResponse.ok) {
       console.error('❌ Failed to verify Google ID token:', {
         status: tokenInfoResponse.status,
         statusText: tokenInfoResponse.statusText,
       });
-      return c.json(
-        { error: 'Invalid Google ID token', code: 'auth/invalid-token' },
-        401,
-      );
+      return c.json({ error: 'Invalid Google ID token', code: 'auth/invalid-token' }, 401);
     }
 
-    const tokenInfo = await tokenInfoResponse.json() as any;
+    const tokenInfo = (await tokenInfoResponse.json()) as any;
     console.log('✅ Google ID token verified, token info retrieved:', {
       hasEmail: !!tokenInfo.email,
       hasSub: !!tokenInfo.sub,
@@ -716,10 +722,7 @@ router.post('/oauth/google/token', authRateLimiter, async (c) => {
         expectedSource: c.env.GOOGLE_CLIENT_ID ? 'GOOGLE_CLIENT_ID (web)' : 'GOOGLE_CLIENT_ID_IOS',
         sdkNote: 'Google Sign-In SDK uses webClientId for ID token audience',
       });
-      return c.json(
-        { error: 'ID token audience mismatch', code: 'auth/invalid-audience' },
-        401,
-      );
+      return c.json({ error: 'ID token audience mismatch', code: 'auth/invalid-audience' }, 401);
     }
 
     if (!tokenInfo.email) {
@@ -745,7 +748,8 @@ router.post('/oauth/google/token', authRateLimiter, async (c) => {
       await db.insert(schema.users).values({
         id: userId,
         email: tokenInfo.email,
-        emailVerified: tokenInfo.email_verified === 'true' || tokenInfo.email_verified === true ? 1 : 0,
+        emailVerified:
+          tokenInfo.email_verified === 'true' || tokenInfo.email_verified === true ? 1 : 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
@@ -757,7 +761,8 @@ router.post('/oauth/google/token', authRateLimiter, async (c) => {
       await db
         .update(schema.users)
         .set({
-          emailVerified: tokenInfo.email_verified === 'true' || tokenInfo.email_verified === true ? 1 : 0,
+          emailVerified:
+            tokenInfo.email_verified === 'true' || tokenInfo.email_verified === true ? 1 : 0,
           updatedAt: new Date().toISOString(),
         })
         .where(eq(schema.users.id, user.id));
@@ -825,7 +830,10 @@ router.post('/oauth/google/token', authRateLimiter, async (c) => {
     });
   } catch (error) {
     console.error('Google OAuth token validation error:', error);
-    return c.json({ error: 'Google OAuth token validation failed', code: 'auth/oauth-failed' }, 500);
+    return c.json(
+      { error: 'Google OAuth token validation failed', code: 'auth/oauth-failed' },
+      500,
+    );
   }
 });
 
@@ -885,9 +893,10 @@ router.post('/oauth/apple', authRateLimiter, async (c) => {
         user = existingUserBySub;
       } else {
         return c.json(
-          { 
-            error: 'Email required for new Apple Sign-In users. Please sign out of Apple ID and try again to share email.', 
-            code: 'auth/email-required' 
+          {
+            error:
+              'Email required for new Apple Sign-In users. Please sign out of Apple ID and try again to share email.',
+            code: 'auth/email-required',
           },
           400,
         );
@@ -934,10 +943,7 @@ router.post('/oauth/apple', authRateLimiter, async (c) => {
           updateData.appleId = appleUser.sub;
         }
 
-        await db
-          .update(schema.users)
-          .set(updateData)
-          .where(eq(schema.users.id, user.id));
+        await db.update(schema.users).set(updateData).where(eq(schema.users.id, user.id));
 
         // Refresh user data
         user = await db.select().from(schema.users).where(eq(schema.users.id, user.id)).get();
@@ -1029,7 +1035,7 @@ router.post('/passkey/register/begin', authMiddleware, authRateLimiter, async (c
     // Generate registration options
     console.log('Generating passkey registration options for user:', user.email);
     const options = await passkeyService.generateRegistrationOptions(
-      { id: user.id, email: user.email, displayName: user.email },
+      { id: user.id, email: user.email || '', displayName: user.email || user.id },
       excludeCredentials,
     );
     console.log('Generated passkey options successfully');
@@ -1071,9 +1077,18 @@ router.post('/passkey/register/complete', authMiddleware, authRateLimiter, async
     // Verify registration response
     console.log('Starting passkey verification for user:', user.id);
     console.log('Credential data:', JSON.stringify(credential, null, 2));
-    
-    const verification = await passkeyService.verifyRegistrationResponse(user.id, credential);
-    
+
+    // Add missing clientExtensionResults if not present
+    const credentialWithExtensions = {
+      ...credential,
+      clientExtensionResults: credential.clientExtensionResults || {},
+    };
+
+    const verification = await passkeyService.verifyRegistrationResponse(
+      user.id,
+      credentialWithExtensions,
+    );
+
     console.log('Verification result:', verification);
 
     if (!verification.verified || !verification.registrationInfo) {
@@ -1087,12 +1102,26 @@ router.post('/passkey/register/complete', authMiddleware, authRateLimiter, async
     const passkeyId = nanoid();
     const credentialInfo = verification.registrationInfo;
     console.log('Registration info structure:', Object.keys(credentialInfo));
+
+    const credentialId = typeof credentialInfo.credential.id === 'string'
+      ? credentialInfo.credential.id
+      : PS.uint8ArrayToBase64(credentialInfo.credential.id);
     
+    const publicKey = PS.uint8ArrayToBase64(credentialInfo.credential.publicKey);
+
+    console.log('Storing passkey with:', {
+      credentialId,
+      credentialIdType: typeof credentialId,
+      publicKey,
+      publicKeyType: typeof publicKey,
+      counter: credentialInfo.credential.counter
+    });
+
     await db.insert(schema.passkeys).values({
       id: passkeyId,
       userId: user.id,
-      credentialId: PS.uint8ArrayToBase64(credentialInfo.credential.id),
-      publicKey: PS.uint8ArrayToBase64(credentialInfo.credential.publicKey),
+      credentialId,
+      publicKey,
       counter: credentialInfo.credential.counter,
       deviceName: deviceName || 'Unknown Device',
       createdAt: new Date().toISOString(),
@@ -1151,13 +1180,38 @@ router.post('/passkey/authenticate/begin', authRateLimiter, async (c) => {
       return c.json({ error: 'No passkeys found for user', code: 'auth/no-passkeys-found' }, 404);
     }
 
+    console.log('Retrieved passkeys from database:', passkeys.map(pk => ({
+      id: pk.id,
+      credentialId: pk.credentialId,
+      credentialIdType: typeof pk.credentialId,
+      publicKey: pk.publicKey,
+      publicKeyType: typeof pk.publicKey,
+      counter: pk.counter
+    })));
+
     // Convert passkeys to device format
-    const devices = passkeys.map((pk) => ({
-      credentialID: passkeyService.base64ToUint8Array(pk.credentialId),
-      credentialPublicKey: passkeyService.base64ToUint8Array(pk.publicKey),
-      counter: pk.counter,
-      transports: ['internal'] as AuthenticatorTransportFuture[],
-    }));
+    const devices = passkeys.map((pk) => {
+      // Ensure credentialId and publicKey are strings, with safety conversion
+      const credentialId = pk.credentialId ? String(pk.credentialId) : null;
+      const publicKey = pk.publicKey ? String(pk.publicKey) : null;
+      
+      if (!credentialId || typeof credentialId !== 'string') {
+        console.error('Invalid credentialId:', pk.credentialId, typeof pk.credentialId);
+        throw new Error(`Invalid credentialId: expected non-empty string, got ${typeof pk.credentialId}`);
+      }
+      if (!publicKey || typeof publicKey !== 'string') {
+        console.error('Invalid publicKey:', pk.publicKey, typeof pk.publicKey);
+        throw new Error(`Invalid publicKey: expected non-empty string, got ${typeof pk.publicKey}`);
+      }
+
+      return {
+        credentialID: passkeyService.base64ToUint8Array(credentialId),
+        credentialPublicKey: passkeyService.base64ToUint8Array(publicKey),
+        counter: pk.counter,
+        transports: ['hybrid'] as AuthenticatorTransportFuture[],
+        credentialIdString: credentialId,
+      };
+    });
 
     // Generate authentication options
     const options = await passkeyService.generateAuthenticationOptions(devices);
@@ -1169,7 +1223,16 @@ router.post('/passkey/authenticate/begin', authRateLimiter, async (c) => {
       });
     }
 
-    return c.json(options);
+    // Transform the response to match mobile app expectations
+    const response = {
+      challenge: options.challenge,
+      allowCredentials: options.allowCredentials || [],
+      userVerification: options.userVerification || 'preferred',
+      timeout: options.timeout || 300000,
+      rpId: options.rpId,
+    };
+
+    return c.json(response);
   } catch (error) {
     console.error('Passkey authentication begin error:', error);
     return c.json(
@@ -1237,15 +1300,22 @@ router.post('/passkey/authenticate/complete', authRateLimiter, async (c) => {
 
     // Prepare device for verification
     const device = {
-      credentialID: passkeyService['base64ToUint8Array'](passkey.credentialId),
-      credentialPublicKey: passkeyService['base64ToUint8Array'](passkey.publicKey),
+      credentialID: passkeyService.base64ToUint8Array(passkey.credentialId),
+      credentialPublicKey: passkeyService.base64ToUint8Array(passkey.publicKey),
       counter: passkey.counter,
-      transports: ['internal'] as AuthenticatorTransport[],
+      transports: ['hybrid'] as AuthenticatorTransportFuture[],
+      credentialIdString: passkey.credentialId,
     };
 
     // Verify authentication response
+    // Add missing clientExtensionResults if not present
+    const credentialWithExtensions = {
+      ...credential,
+      clientExtensionResults: credential.clientExtensionResults || {},
+    };
+
     const verification = await passkeyService.verifyAuthenticationResponse(
-      credential,
+      credentialWithExtensions,
       device,
       challenge,
     );
@@ -1415,12 +1485,8 @@ router.post('/passkey/check', authRateLimiter, async (c) => {
     return c.json({ userExists: true, hasPasskeys: Boolean(passkeys.length) });
   } catch (error) {
     console.error('Check passkeys error:', error);
-    return c.json(
-      { error: 'Failed to check passkeys', code: 'auth/check-passkeys-failed' },
-      500,
-    );
+    return c.json({ error: 'Failed to check passkeys', code: 'auth/check-passkeys-failed' }, 500);
   }
 });
-
 
 export default router;

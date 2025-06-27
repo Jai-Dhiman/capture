@@ -28,6 +28,7 @@ export interface PasskeyDevice {
   credentialPublicKey: Uint8Array;
   counter: number;
   transports?: AuthenticatorTransportFuture[];
+  credentialIdString?: string; // Keep the original string for SimpleWebAuthn
 }
 
 export class PasskeyService {
@@ -93,8 +94,8 @@ export class PasskeyService {
     const options = await generateAuthenticationOptions({
       rpID: RP_ID,
       allowCredentials: allowCredentials.map((device) => ({
-        id: device.credentialID,
-        type: 'public-key',
+        id: device.credentialIdString || '',
+        type: 'public-key' as const,
         transports: device.transports || ['internal'],
       })),
       userVerification: 'required',
@@ -113,9 +114,9 @@ export class PasskeyService {
       expectedChallenge: challenge,
       expectedOrigin: ORIGIN,
       expectedRPID: RP_ID,
-      authenticator: {
-        credentialID: device.credentialID,
-        credentialPublicKey: device.credentialPublicKey,
+      credential: {
+        id: device.credentialIdString || '',
+        publicKey: device.credentialPublicKey,
         counter: device.counter,
         transports: device.transports,
       },
@@ -155,7 +156,12 @@ export class PasskeyService {
     }
   }
 
-  public base64ToUint8Array(base64: string): Uint8Array {
+  public base64ToUint8Array(base64: string | null | undefined): Uint8Array {
+    if (!base64 || typeof base64 !== 'string') {
+      console.error('Invalid base64 input:', base64, typeof base64);
+      throw new Error(`Invalid base64 input: expected string, got ${typeof base64}`);
+    }
+    
     const base64Padded = base64.replace(/-/g, '+').replace(/_/g, '/');
     const padding = 4 - (base64Padded.length % 4);
     const paddedBase64 = base64Padded + '='.repeat(padding % 4);
