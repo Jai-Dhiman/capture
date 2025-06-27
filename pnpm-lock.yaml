@@ -446,6 +446,9 @@ importers:
       typescript:
         specifier: 5.5.4
         version: 5.5.4
+      undici:
+        specifier: ^7.11.0
+        version: 7.11.0
       vitest:
         specifier: ^3.2.2
         version: 3.2.2(@types/node@22.15.30)(jiti@2.4.2)(lightningcss@1.30.1)(msw@2.10.2(@types/node@22.15.30)(typescript@5.5.4))(terser@5.41.0)(yaml@2.8.0)
@@ -7441,6 +7444,10 @@ packages:
   undici@6.21.3:
     resolution: {integrity: sha512-gBLkYIlEnSp8pFbT64yFgGE6UIB9tAkhukC23PmMDCe5Nd+cRqKxSjw5y54MK2AZMgZfJWMaNE4nYUHgi1XEOw==}
     engines: {node: '>=18.17'}
+
+  undici@7.11.0:
+    resolution: {integrity: sha512-heTSIac3iLhsmZhUCjyS3JQEkZELateufzZuBaVM5RHXdSBMb1LPMQf5x+FH7qjsZYDP0ttAc3nnVpUB+wYbOg==}
+    engines: {node: '>=20.18.1'}
 
   unenv@2.0.0-rc.17:
     resolution: {integrity: sha512-B06u0wXkEd+o5gOCMl/ZHl5cfpYbDZKAT+HWTL+Hws6jWu7dCiqBBXXXzMFcFVJb8D4ytAnYmxJA83uwOQRSsg==}
@@ -15742,6 +15749,8 @@ snapshots:
       '@fastify/busboy': 2.1.1
 
   undici@6.21.3: {}
+
+  undici@7.11.0: {}
 
   unenv@2.0.0-rc.17:
     dependencies:
