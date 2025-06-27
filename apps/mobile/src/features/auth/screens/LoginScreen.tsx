@@ -6,7 +6,7 @@ import EmailIcon from '@assets/icons/EmailIcon.svg';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm } from '@tanstack/react-form';
 import React, { useState, useRef, useEffect } from 'react';
-import { ActivityIndicator, Image, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View, Keyboard } from 'react-native';
 import { Platform } from 'react-native';
 import { AppleOAuthButton, GoogleOAuthButton } from '../components/OAuthButtons';
 import { useAuth } from '../hooks/useAuth';
@@ -84,10 +84,6 @@ export default function LoginScreen({ navigation }: Props) {
 
           if (!result.userExists) {
             setLoginState('user-not-found');
-            // const userNotFoundError = errorService.handleUserNotFound(value.email);
-            // showAlert(userNotFoundError.message, {
-            //   type: errorService.getAlertType(userNotFoundError.category),
-            // });
             return;
           }
 
@@ -214,131 +210,140 @@ export default function LoginScreen({ navigation }: Props) {
           resizeMode="cover"
         />
         <Header height={155} showBackground={false} />
-        <View className="flex-1 px-[26px] pt-[80px]">
-          <form.Field
-            name="email"
-            validators={{
-              onChange: ({ value }) => {
-                if (!value) return 'Email is required';
-                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Invalid email format';
-                return undefined;
-              },
-            }}
-          >
-            {(field) => (
-              <View className="mb-[24px] mt-[18px]">
-                <Text className="text-base font-roboto mb-[6px]">Email</Text>
+        <TouchableWithoutFeedback
+          onPress={() => {
+            Keyboard.dismiss();
+            emailInputRef.current?.blur();
+          }}
+        >
+          <View className="flex-1 px-[26px] pt-[80px]">
+            <form.Field
+              name="email"
+              validators={{
+                onChange: ({ value }) => {
+                  if (!value) return 'Email is required';
+                  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Invalid email format';
+                  return undefined;
+                },
+              }}
+            >
+              {(field) => (
+                <View className="mb-[6px]">
+                  <Text className="text-base font-roboto mb-[6px]">Email</Text>
+                  <TouchableOpacity
+                    activeOpacity={1}
+                    onPress={() => emailInputRef.current?.focus()}
+                    className="bg-white h-[60px] rounded-[16px] shadow-md flex-row items-center px-[9px] mb-[64px]"
+                    style={shadowStyle}
+                  >
+                    <EmailIcon width={35} height={35} style={{ marginRight: 14 }} />
+                    <TextInput
+                      ref={emailInputRef}
+                      autoFocus={false}
+                      onFocus={() => { }}
+                      onBlur={() => {
+                        field.handleBlur();
+                      }}
+                      placeholder="johndoe@gmail.com"
+                      placeholderTextColor="#C8C8C8"
+                      className="flex-1 text-base font-roboto text-black outline-none"
+                      style={{ paddingVertical: 0, textAlignVertical: 'center', height: '100%' }}
+                      value={field.state.value}
+                      onChangeText={(text) => {
+                        field.handleChange(text);
+                        // Reset state when email changes
+                        if (loginState !== 'email') {
+                          setLoginState('email');
+                        }
+                        // Clear any previous errors
+                        sendCode.reset();
+                        authenticateWithPasskey.reset();
+                      }}
+                      autoCapitalize="none"
+                      keyboardType="email-address"
+                      editable={!isLoading}
+                    />
+                  </TouchableOpacity>
+                  {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
+                    <Text className="text-red-500 text-xs mt-1 ml-2 font-roboto">
+                      {field.state.meta.errors.join(', ')}
+                    </Text>
+                  )}
+                </View>
+              )}
+            </form.Field>
+
+            <View className="justify-center">
+              {(sendCode.isError || authenticateWithPasskey.isError || loginState === 'user-not-found') && (
+                <Text className="text-red-500 text-xs text-center font-roboto">
+                  {loginState === 'passkey'
+                    ? 'Passkey authentication failed. Please try again.'
+                    : loginState === 'user-not-found'
+                      ? 'No account found for this email address.'
+                      : 'Failed to send verification code. Please try again.'}
+                </Text>
+              )}
+            </View>
+
+            <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+              {([canSubmit, isFormSubmitting]) => (
                 <TouchableOpacity
-                  activeOpacity={1}
-                  onPress={() => emailInputRef.current?.focus()}
-                  className="bg-white h-[60px] rounded-[16px] shadow-md flex-row items-center px-[9px] mb-[64px]"
+                  className={`h-[56px] ${canSubmit ? 'bg-[#E4CAC7]' : 'bg-stone-300'} rounded-[30px] shadow-md justify-center items-center`}
+                  onPress={() => form.handleSubmit()}
+                  disabled={!canSubmit || isFormSubmitting || isLoading}
                   style={shadowStyle}
                 >
-                  <EmailIcon width={35} height={35} style={{ marginRight: 14 }} />
-                  <TextInput
-                    ref={emailInputRef}
-                    autoFocus={false}
-                    onFocus={() => { }}
-                    onBlur={() => {
-                      field.handleBlur();
-                    }}
-                    placeholder="johndoe@gmail.com"
-                    placeholderTextColor="#C8C8C8"
-                    className="flex-1 text-base font-roboto text-black outline-none"
-                    style={{ paddingVertical: 0, textAlignVertical: 'center', height: '100%' }}
-                    value={field.state.value}
-                    onChangeText={(text) => {
-                      field.handleChange(text);
-                      // Reset state when email changes
-                      if (loginState !== 'email') {
-                        setLoginState('email');
-                      }
-                      // Clear any previous errors
-                      sendCode.reset();
-                      authenticateWithPasskey.reset();
-                    }}
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    editable={!isLoading}
-                  />
+                  {isFormSubmitting || isLoading ? (
+                    <View className="flex-row justify-center items-center">
+                      <ActivityIndicator size="small" color="#000" />
+                      <Text className="text-base font-bold font-roboto ml-2">{getButtonText()}</Text>
+                    </View>
+                  ) : (
+                    <Text className="text-base font-bold font-roboto text-center">
+                      {loginState === 'passkey' ? `Sign in with ${biometricName}` : 'Sign-In'}
+                    </Text>
+                  )}
                 </TouchableOpacity>
-                {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
-                  <Text className="text-red-500 text-xs mt-1 ml-2 font-roboto">
-                    {field.state.meta.errors.join(', ')}
+              )}
+            </form.Subscribe>
+
+            {/* Fallback option for passkey */}
+            {loginState === 'passkey' && (
+              <View className="items-center mt-[16px]">
+                <TouchableOpacity onPress={() => setLoginState('email-verification')}>
+                  <Text className="text-base font-semibold font-roboto text-[#827B85] underline">
+                    Use Email Verification Instead
                   </Text>
-                )}
+                </TouchableOpacity>
               </View>
             )}
-          </form.Field>
 
-          {(sendCode.isError || authenticateWithPasskey.isError || loginState === 'user-not-found') && (
-            <Text className="text-red-500 text-xs mt-2 mb-4 text-center font-roboto">
-              {loginState === 'passkey'
-                ? 'Passkey authentication failed. Please try again.'
-                : loginState === 'user-not-found'
-                  ? 'No account found for this email address.'
-                  : 'Failed to send verification code. Please try again.'}
-            </Text>
-          )}
-
-          <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-            {([canSubmit, isFormSubmitting]) => (
-              <TouchableOpacity
-                className={`h-[56px] ${canSubmit ? 'bg-[#E4CAC7]' : 'bg-stone-300'} rounded-[30px] shadow-md justify-center items-center`}
-                onPress={() => form.handleSubmit()}
-                disabled={!canSubmit || isFormSubmitting || isLoading}
-                style={shadowStyle}
-              >
-                {isFormSubmitting || isLoading ? (
-                  <View className="flex-row justify-center items-center">
-                    <ActivityIndicator size="small" color="#000" />
-                    <Text className="text-base font-bold font-roboto ml-2">{getButtonText()}</Text>
-                  </View>
-                ) : (
-                  <Text className="text-base font-bold font-roboto text-center">
-                    {loginState === 'passkey' ? `Sign in with ${biometricName}` : 'Sign-In'}
-                  </Text>
-                )}
-              </TouchableOpacity>
-            )}
-          </form.Subscribe>
-
-          {/* Fallback option for passkey */}
-          {loginState === 'passkey' && (
-            <View className="items-center mt-[16px]">
-              <TouchableOpacity onPress={() => setLoginState('email-verification')}>
+            <View className="items-center mt-[24px]">
+              <TouchableOpacity onPress={() => navigation.navigate('RegisterScreen')}>
                 <Text className="text-base font-semibold font-roboto text-[#827B85] underline">
-                  Use Email Verification Instead
+                  Account Recovery
                 </Text>
               </TouchableOpacity>
             </View>
-          )}
+            <View className="h-[1px] bg-[#7B7B7B] my-4 mt-[32px]" />
 
-          <View className="items-center mt-[24px]">
-            <TouchableOpacity onPress={() => navigation.navigate('RegisterScreen')}>
-              <Text className="text-base font-semibold font-roboto text-[#827B85] underline">
-                Account Recovery
-              </Text>
-            </TouchableOpacity>
-          </View>
-          <View className="h-[1px] bg-[#7B7B7B] my-4 mt-[32px]" />
+            <View style={shadowStyle} className="mt-[29px] mb-[23px]">
+              <GoogleOAuthButton />
+            </View>
 
-          <View style={shadowStyle} className="mt-[29px] mb-[23px]">
-            <GoogleOAuthButton />
-          </View>
+            <View style={shadowStyle} className="mb-[23px]">
+              <AppleOAuthButton />
+            </View>
 
-          <View style={shadowStyle} className="mb-[23px]">
-            <AppleOAuthButton />
+            <View className="items-center">
+              <TouchableOpacity onPress={() => navigation.navigate('RegisterScreen')}>
+                <Text className="text-base font-semibold font-roboto text-[#827B85] underline">
+                  Don't Have an Account?
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-
-          <View className="items-center">
-            <TouchableOpacity onPress={() => navigation.navigate('RegisterScreen')}>
-              <Text className="text-base font-semibold font-roboto text-[#827B85] underline">
-                Don't Have an Account?
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        </TouchableWithoutFeedback>
       </View>
     </View>
   );

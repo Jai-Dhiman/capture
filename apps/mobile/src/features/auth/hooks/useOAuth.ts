@@ -80,20 +80,14 @@ export function useOAuth() {
       if (!APPLE_CLIENT_ID) {
         throw new Error('Apple OAuth not configured - missing EXPO_PUBLIC_APPLE_CLIENT_ID');
       }
-
-      console.log('🍎 Starting Apple Sign-In process...');
-      console.log('🍎 Apple Client ID:', APPLE_CLIENT_ID);
-
       // Check if Apple Authentication is available on this device
       const isAvailable = await AppleAuthentication.isAvailableAsync();
-      console.log('🍎 Apple Sign-In availability:', isAvailable);
 
       if (!isAvailable) {
         throw new Error('Apple Sign-In is not available on this device');
       }
 
       try {
-        console.log('🍎 Requesting Apple Sign-In with scopes...');
         const credential = await AppleAuthentication.signInAsync({
           requestedScopes: [
             AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
@@ -101,28 +95,16 @@ export function useOAuth() {
           ],
         });
 
-        console.log('✅ Apple Sign-In successful:', {
-          hasIdentityToken: !!credential.identityToken,
-          hasAuthorizationCode: !!credential.authorizationCode,
-          email: credential.email,
-          state: credential.state,
-          user: credential.user ? 'PRESENT' : 'MISSING',
-          fullName: credential.fullName ? 'PRESENT' : 'MISSING',
-          credentialState: credential.state,
-        });
-
         if (!credential.identityToken) {
           throw new Error('No identity token received from Apple Sign-In');
         }
 
-        console.log('🔐 Sending identity token to backend...');
         // Send identity token to backend for verification
         const authResponse = await workersAuthApi.oauthApple({
           code: credential.authorizationCode || '',
           identityToken: credential.identityToken,
         });
 
-        console.log('✅ Backend authentication successful');
         return authResponse;
       } catch (error: any) {
         console.error('❌ Apple Sign-In failed:', error);

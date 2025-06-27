@@ -863,16 +863,6 @@ router.post('/oauth/apple', authRateLimiter, async (c) => {
     // Verify Apple identity token
     const appleUser = await verifyAppleToken(identityToken, c.env);
 
-    console.log('🍎 Apple user info extracted:', {
-      hasEmail: !!appleUser.email,
-      emailVerified: appleUser.email_verified,
-      sub: appleUser.sub ? `${appleUser.sub.substring(0, 10)}...` : 'MISSING',
-    });
-
-    // For Apple Sign-In, email might not be provided on subsequent logins
-    // We'll need to handle this by either:
-    // 1. Looking up existing user by Apple sub (subject ID)
-    // 2. Requiring email for new users only
     let user = null;
     let isNewUser = false;
 
@@ -885,7 +875,6 @@ router.post('/oauth/apple', authRateLimiter, async (c) => {
         .get();
 
       if (existingUserBySub) {
-        console.log('🍎 Found existing user by Apple ID, proceeding without email');
         user = existingUserBySub;
       } else {
         return c.json(

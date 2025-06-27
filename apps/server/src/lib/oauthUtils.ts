@@ -256,7 +256,6 @@ async function verifyAppleJWTSignature(
       new TextEncoder().encode(signedData)
     );
 
-    console.log('✅ Apple JWT signature verification result:', isValid);
     return isValid;
   } catch (error) {
     console.error('❌ Apple JWT signature verification failed:', error);
@@ -279,15 +278,6 @@ export async function verifyAppleToken(
     // Decode header and payload
     const header = JSON.parse(base64UrlDecode(headerB64)) as AppleJWTHeader;
     const payload = JSON.parse(base64UrlDecode(payloadB64)) as AppleJWTPayload;
-
-    console.log('🔍 Apple JWT verification - header & payload decoded:', {
-      alg: header.alg,
-      kid: header.kid,
-      aud: payload.aud,
-      iss: payload.iss,
-      exp: payload.exp,
-      email: payload.email ? 'PRESENT' : 'MISSING',
-    });
 
     // Validate basic claims
     if (payload.aud !== env.APPLE_CLIENT_ID) {
@@ -313,14 +303,11 @@ export async function verifyAppleToken(
     }
 
     // Verify JWT signature using Apple's public keys
-    console.log('🔐 Verifying Apple JWT signature...');
     const signatureValid = await verifyAppleJWTSignature(identityToken, header);
     
     if (!signatureValid) {
       throw new Error('Invalid JWT signature - token may have been tampered with');
     }
-
-    console.log('✅ Apple JWT verification successful');
 
     return {
       email: payload.email || '',

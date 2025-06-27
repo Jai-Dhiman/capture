@@ -1,8 +1,6 @@
 import { useAlert } from '@/shared/lib/AlertContext';
 import { errorService } from '@/shared/services/errorService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import * as LocalAuthentication from 'expo-local-authentication';
-import { Platform } from 'react-native';
 import { PasskeyService } from '../lib/passkeyService';
 import { workersAuthApi } from '../lib/workersAuthApi';
 import { useAuthStore } from '../stores/authStore';
@@ -63,8 +61,6 @@ export function usePasskey() {
         // Refresh auth state to check if security setup is now complete
         await useAuthStore.getState().checkInitialSession();
       }
-      
-      showAlert('Passkey registered successfully!', { type: 'success' });
     },
     onError: (error) => {
       console.error('Passkey registration error:', error);
@@ -101,7 +97,6 @@ export function usePasskey() {
     onSuccess: (data) => {
       setAuthData(data);
       queryClient.invalidateQueries({ queryKey: ['profile'] });
-      showAlert('Signed in successfully!', { type: 'success' });
     },
     onError: (error) => {
       console.error('Passkey authentication error:', error);
