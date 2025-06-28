@@ -1,6 +1,6 @@
-import React, { memo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { MediaImage } from '@/features/post/components/MediaImage';
+import React, { memo } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface GridItemProps {
   post: any;
@@ -16,7 +16,7 @@ const GridItem = ({ post, onPress, itemSize }: GridItemProps) => {
         width: itemSize,
         height: itemSize,
         padding: 0.5,
-        backgroundColor: 'transparent'
+        backgroundColor: 'transparent',
       }}
       activeOpacity={0.9}
     >
@@ -28,7 +28,7 @@ const GridItem = ({ post, onPress, itemSize }: GridItemProps) => {
             width: '100%',
             height: '100%',
             borderRadius: 16,
-          }
+          },
         ]}
       >
         {post.media && post.media.length > 0 ? (
@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
-  }
+  },
 });
 
 export const PostsGrid = memo(GridItem, (prevProps, nextProps) => {

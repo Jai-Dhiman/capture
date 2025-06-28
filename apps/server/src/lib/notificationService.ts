@@ -1,7 +1,7 @@
-import { createD1Client } from "../db";
-import { notification } from "../db/schema";
-import { nanoid } from "nanoid";
-import type { ContextType } from "../types";
+import { nanoid } from 'nanoid';
+import { createD1Client } from '../db';
+import { notification } from '../db/schema';
+import type { ContextType } from '../types';
 
 type CreateNotificationParams = {
   userId: string;
@@ -10,11 +10,19 @@ type CreateNotificationParams = {
   resourceId?: string;
   resourceType?: string;
   message: string;
-  env: ContextType["env"];
+  env: ContextType['env'];
 };
 
 export async function createNotification(params: CreateNotificationParams) {
-  const { userId, type, actionUserId = null, resourceId = null, resourceType = null, message, env } = params;
+  const {
+    userId,
+    type,
+    actionUserId = null,
+    resourceId = null,
+    resourceType = null,
+    message,
+    env,
+  } = params;
 
   const db = createD1Client(env);
 
@@ -40,13 +48,13 @@ export async function createFollowRequestNotification({
   targetUserId: string;
   actionUserId: string;
   actionUsername: string;
-  env: ContextType["env"];
+  env: ContextType['env'];
 }) {
   await createNotification({
     userId: targetUserId,
-    type: "FOLLOW_REQUEST",
+    type: 'FOLLOW_REQUEST',
     actionUserId,
-    resourceType: "profile",
+    resourceType: 'profile',
     message: `@${actionUsername} has requested to follow you`,
     env,
   });
@@ -61,13 +69,13 @@ export async function createNewFollowNotification({
   targetUserId: string;
   actionUserId: string;
   actionUsername: string;
-  env: ContextType["env"];
+  env: ContextType['env'];
 }) {
   await createNotification({
     userId: targetUserId,
-    type: "NEW_FOLLOW",
+    type: 'NEW_FOLLOW',
     actionUserId,
-    resourceType: "profile",
+    resourceType: 'profile',
     message: `@${actionUsername} started following you`,
     env,
   });
@@ -84,16 +92,16 @@ export async function createNewCommentNotification({
   actionUserId: string;
   actionUsername: string;
   commentId: string;
-  env: ContextType["env"];
+  env: ContextType['env'];
 }) {
   if (postAuthorId === actionUserId) return;
 
   await createNotification({
     userId: postAuthorId,
-    type: "NEW_COMMENT",
+    type: 'NEW_COMMENT',
     actionUserId,
     resourceId: commentId,
-    resourceType: "comment",
+    resourceType: 'comment',
     message: `@${actionUsername} commented on your post`,
     env,
   });
@@ -110,16 +118,16 @@ export async function createCommentReplyNotification({
   actionUserId: string;
   actionUsername: string;
   commentId: string;
-  env: ContextType["env"];
+  env: ContextType['env'];
 }) {
   if (parentCommentAuthorId === actionUserId) return;
 
   await createNotification({
     userId: parentCommentAuthorId,
-    type: "COMMENT_REPLY",
+    type: 'COMMENT_REPLY',
     actionUserId,
     resourceId: commentId,
-    resourceType: "comment",
+    resourceType: 'comment',
     message: `@${actionUsername} replied to your comment`,
     env,
   });

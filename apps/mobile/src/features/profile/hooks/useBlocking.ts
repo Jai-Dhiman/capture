@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuthStore } from "@/features/auth/stores/authStore";
-import { API_URL } from "@env";
+import { useAuthStore } from '@/features/auth/stores/authStore';
+import { API_URL } from '@env';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export const useBlockUser = (userId: string) => {
   const queryClient = useQueryClient();
@@ -9,13 +9,13 @@ export const useBlockUser = (userId: string) => {
     mutationFn: async () => {
       const { session } = useAuthStore.getState();
       if (!session?.access_token) {
-        throw new Error("No auth token available");
+        throw new Error('No auth token available');
       }
 
       const response = await fetch(`${API_URL}/graphql`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
@@ -36,14 +36,14 @@ export const useBlockUser = (userId: string) => {
 
       const data = await response.json();
       if (data.errors) {
-        throw new Error(data.errors[0]?.message || "Failed to block user");
+        throw new Error(data.errors[0]?.message || 'Failed to block user');
       }
       return data.data.blockUser;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["blockedUsers"] });
-      queryClient.invalidateQueries({ queryKey: ["feed"] });
-      queryClient.invalidateQueries({ queryKey: ["profile", userId] });
+      queryClient.invalidateQueries({ queryKey: ['blockedUsers'] });
+      queryClient.invalidateQueries({ queryKey: ['feed'] });
+      queryClient.invalidateQueries({ queryKey: ['profile', userId] });
     },
   });
 };
@@ -55,13 +55,13 @@ export const useUnblockUser = (userId: string) => {
     mutationFn: async () => {
       const { session } = useAuthStore.getState();
       if (!session?.access_token) {
-        throw new Error("No auth token available");
+        throw new Error('No auth token available');
       }
 
       const response = await fetch(`${API_URL}/graphql`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
@@ -78,13 +78,13 @@ export const useUnblockUser = (userId: string) => {
 
       const data = await response.json();
       if (data.errors) {
-        throw new Error(data.errors[0]?.message || "Failed to unblock user");
+        throw new Error(data.errors[0]?.message || 'Failed to unblock user');
       }
       return data.data.unblockUser;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["blockedUsers"] });
-      queryClient.invalidateQueries({ queryKey: ["feed"] });
+      queryClient.invalidateQueries({ queryKey: ['blockedUsers'] });
+      queryClient.invalidateQueries({ queryKey: ['feed'] });
     },
   });
 };
@@ -93,16 +93,16 @@ export const useBlockedUsers = () => {
   const { session } = useAuthStore();
 
   return useQuery({
-    queryKey: ["blockedUsers"],
+    queryKey: ['blockedUsers'],
     queryFn: async () => {
       if (!session?.access_token) {
         return [];
       }
 
       const response = await fetch(`${API_URL}/graphql`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
@@ -122,7 +122,7 @@ export const useBlockedUsers = () => {
 
       const data = await response.json();
       if (data.errors) {
-        throw new Error(data.errors[0]?.message || "Failed to fetch blocked users");
+        throw new Error(data.errors[0]?.message || 'Failed to fetch blocked users');
       }
       return data.data.blockedUsers || [];
     },

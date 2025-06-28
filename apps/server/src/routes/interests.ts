@@ -1,17 +1,16 @@
-import { Hono } from "hono";
-import { authMiddleware } from "../middleware/auth";
-import type { Bindings, Variables } from "../types";
-import { createD1Client } from "../db";
-import * as schema from "../db/schema";
-import { eq, desc, inArray, sql, and } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
+import { Hono } from 'hono';
+import { createD1Client } from '../db';
+import * as schema from '../db/schema';
+import { authMiddleware } from '../middleware/auth';
+import type { Bindings, Variables } from '../types';
 
 const interstsRouter = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
-interstsRouter.get("/", authMiddleware, async (c) => {
-  const user = c.get("user");
+interstsRouter.get('/', authMiddleware, async (c) => {
+  const user = c.get('user');
   if (!user) {
-    // Should be caught by authMiddleware, but good practice
-    return c.json({ error: "Authentication required" }, 401);
+    return c.json({ error: 'Authentication required' }, 401);
   }
   const userId = user.id;
   const db = createD1Client(c.env);
@@ -20,13 +19,14 @@ interstsRouter.get("/", authMiddleware, async (c) => {
 
   if (!userVectorsKV) {
     console.error(`[interests] USER_VECTORS KV binding missing for user ${userId}`);
-    return c.json({ error: "Server configuration error" }, 500);
+    return c.json({ error: 'Server configuration error' }, 500);
   }
 
   try {
     // 1. Fetch User Embedding Vector & Check Existence
-    const userVectorData = await userVectorsKV.get<number[]>(userId, { type: "json" });
-    const userVectorExists = userVectorData !== null && Array.isArray(userVectorData) && userVectorData.length > 0;
+    const userVectorData = await userVectorsKV.get<number[]>(userId, { type: 'json' });
+    const userVectorExists =
+      userVectorData !== null && Array.isArray(userVectorData) && userVectorData.length > 0;
     // 2. Fetch Source Posts (Saved & Created)
     const savedPostsQuery = db
       .select({
@@ -40,8 +40,8 @@ interstsRouter.get("/", authMiddleware, async (c) => {
         and(
           // Add check to ensure the joined post is not null
           eq(schema.savedPost.userId, userId),
-          sql`${schema.post.id} IS NOT NULL`
-        )
+          sql`${schema.post.id} IS NOT NULL`,
+        ),
       )
       .orderBy(desc(schema.savedPost.createdAt)) // Order by the selected alias
       .limit(POST_LIMIT);
@@ -57,11 +57,14 @@ interstsRouter.get("/", authMiddleware, async (c) => {
       .orderBy(desc(schema.post.createdAt)) // Order by the selected alias
       .limit(POST_LIMIT);
 
-    const [savedPostsRaw, createdPostsRaw] = await Promise.all([savedPostsQuery, createdPostsQuery]);
+    const [savedPostsRaw, createdPostsRaw] = await Promise.all([
+      savedPostsQuery,
+      createdPostsQuery,
+    ]);
 
-    const allPostIds = [...new Set([...savedPostsRaw.map((p) => p.id), ...createdPostsRaw.map((p) => p.id)])].filter(
-      (id) => id != null
-    ) as string[]; // Ensure filtering non-null IDs
+    const allPostIds = [
+      ...new Set([...savedPostsRaw.map((p) => p.id), ...createdPostsRaw.map((p) => p.id)]),
+    ].filter((id) => id != null) as string[]; // Ensure filtering non-null IDs
 
     const postHashtagsMap = new Map<string, string[]>();
     const relevantHashtagsSet = new Set<string>();
@@ -118,7 +121,7 @@ interstsRouter.get("/", authMiddleware, async (c) => {
     return c.json(responsePayload);
   } catch (error) {
     console.error(`[interests] FAILED to fetch interest data for user ${userId}:`, error);
-    return c.json({ error: "Failed to fetch interest data" }, 500);
+    return c.json({ error: 'Failed to fetch interest data' }, 500);
   }
 });
 

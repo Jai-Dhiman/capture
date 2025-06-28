@@ -1,6 +1,6 @@
+import { SkeletonElement } from '@/shared/components/SkeletonLoader';
 import React from 'react';
 import { View } from 'react-native';
-import { SkeletonElement } from '@/shared/components/SkeletonLoader';
 
 export const CommentSkeleton = ({ isReply = false }) => {
   return (

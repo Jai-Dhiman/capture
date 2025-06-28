@@ -1,19 +1,23 @@
-import { createD1Client } from "../../db";
-import { eq, inArray, like, and } from "drizzle-orm";
-import * as schema from "../../db/schema";
-import type { ContextType } from "../../types";
+import { and, eq, inArray, like } from 'drizzle-orm';
+import { createD1Client } from '../../db';
+import * as schema from '../../db/schema';
+import type { ContextType } from '../../types';
 
 export const profileResolvers = {
   Query: {
     async profile(_: unknown, { id }: { id: string }, context: { env: any; user: any }) {
       if (!context.user) {
-        throw new Error("Authentication required");
+        throw new Error('Authentication required');
       }
 
       const db = createD1Client(context.env);
-      const profile = await db.select().from(schema.profile).where(eq(schema.profile.userId, id)).get();
+      const profile = await db
+        .select()
+        .from(schema.profile)
+        .where(eq(schema.profile.userId, id))
+        .get();
 
-      if (!profile) throw new Error("Profile not found");
+      if (!profile) throw new Error('Profile not found');
 
       const profileWithBooleanFields = {
         ...profile,
@@ -27,7 +31,12 @@ export const profileResolvers = {
         const relationship = await db
           .select()
           .from(schema.relationship)
-          .where(and(eq(schema.relationship.followerId, currentUserId), eq(schema.relationship.followedId, id)))
+          .where(
+            and(
+              eq(schema.relationship.followerId, currentUserId),
+              eq(schema.relationship.followedId, id),
+            ),
+          )
           .get();
 
         isFollowing = !!relationship;
@@ -68,8 +77,8 @@ export const profileResolvers = {
               .where(
                 inArray(
                   schema.media.postId,
-                  posts.map((post) => post.id)
-                )
+                  posts.map((post) => post.id),
+                ),
               )
               .all()
           : [];
@@ -95,10 +104,10 @@ export const profileResolvers = {
 
     async searchUsers(_: unknown, { query }: { query: string }, context: { env: any; user: any }) {
       if (!context.user) {
-        throw new Error("Authentication required");
+        throw new Error('Authentication required');
       }
 
-      if (!query || query.trim() === "") {
+      if (!query || query.trim() === '') {
         return [];
       }
 
@@ -129,15 +138,19 @@ export const profileResolvers = {
           isFollowing: followingIds.has(profile.userId),
         }));
       } catch (error) {
-        console.error("Error searching users:", error);
+        console.error('Error searching users:', error);
         return [];
       }
     },
   },
   Mutation: {
-    async updatePrivacySettings(_: unknown, { isPrivate }: { isPrivate: boolean }, context: ContextType) {
+    async updatePrivacySettings(
+      _: unknown,
+      { isPrivate }: { isPrivate: boolean },
+      context: ContextType,
+    ) {
       if (!context?.user) {
-        throw new Error("Authentication required");
+        throw new Error('Authentication required');
       }
 
       const userId = context.user.id;
@@ -151,7 +164,11 @@ export const profileResolvers = {
         })
         .where(eq(schema.profile.userId, userId));
 
-      const updatedProfile = await db.select().from(schema.profile).where(eq(schema.profile.userId, userId)).get();
+      const updatedProfile = await db
+        .select()
+        .from(schema.profile)
+        .where(eq(schema.profile.userId, userId))
+        .get();
 
       return {
         ...updatedProfile,

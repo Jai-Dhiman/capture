@@ -32,6 +32,8 @@ export interface AuthResponse {
   user: User;
   profileExists?: boolean;
   isNewUser?: boolean;
+  securitySetupRequired?: boolean; // Whether user needs to set up MFA
+  hasPasskeys?: boolean; // Whether user has any passkeys
 }
 
 export interface BasicSuccessResponse {
@@ -53,8 +55,136 @@ export interface OAuthAppleRequest {
   identityToken: string;
 }
 
+// PKCE types
+export interface PKCEParams {
+  codeVerifier: string;
+  codeChallenge: string;
+  state: string;
+}
+
+// OAuth configuration
+export interface OAuthConfig {
+  googleClientId?: string;
+  appleClientId?: string;
+}
+
+// Passkey/WebAuthn types
+export interface PasskeyCapabilities {
+  supported: boolean;
+  biometricsAvailable: boolean;
+  deviceType: 'iOS' | 'Android' | 'unsupported';
+  biometricTypes: string[]; // ['FaceID', 'TouchID', 'Fingerprint', etc.]
+}
+
+export interface PasskeyRegistrationRequest {
+  email: string;
+  deviceName?: string;
+}
+
+export interface PasskeyRegistrationResponse {
+  challenge: string;
+  user: {
+    id: string;
+    name: string;
+    displayName: string;
+  };
+  rp: {
+    id: string;
+    name: string;
+  };
+  pubKeyCredParams: Array<{
+    type: string;
+    alg: number;
+  }>;
+  authenticatorSelection: {
+    authenticatorAttachment: string;
+    userVerification: string;
+    residentKey?: string;
+  };
+  attestation: string;
+  timeout: number;
+}
+
+export interface PasskeyRegistrationCredential {
+  id: string;
+  rawId: string;
+  response: {
+    attestationObject: string;
+    clientDataJSON: string;
+  };
+  type: string;
+}
+
+export interface PasskeyRegistrationComplete {
+  credential: PasskeyRegistrationCredential;
+  deviceName?: string;
+}
+
+export interface PasskeyAuthenticationRequest {
+  email: string;
+}
+
+export interface PasskeyAuthenticationResponse {
+  challenge: string;
+  allowCredentials: Array<{
+    id: string;
+    type: string;
+    transports?: string[];
+  }>;
+  userVerification: string;
+  timeout: number;
+  rpId: string;
+}
+
+export interface PasskeyAuthenticationCredential {
+  id: string;
+  rawId: string;
+  response: {
+    authenticatorData: string;
+    clientDataJSON: string;
+    signature: string;
+    userHandle?: string;
+  };
+  type: string;
+}
+
+export interface PasskeyAuthenticationComplete {
+  credential: PasskeyAuthenticationCredential;
+}
+
+export interface PasskeyInfo {
+  id: string;
+  credentialId: string;
+  deviceName?: string;
+  deviceType?: string;
+  createdAt: string;
+  lastUsedAt?: string;
+}
+
+export interface PasskeyListResponse {
+  passkeys: PasskeyInfo[];
+}
+
+export interface CheckUserResponse {
+  userExists: boolean;
+  hasPasskeys: boolean;
+}
+
+export interface CheckUserRequest {
+  email: string;
+}
+
+// User profile and security status
+export interface UserProfileResponse {
+  id: string;
+  email: string;
+  profileExists: boolean;
+  securitySetupRequired: boolean;
+  hasPasskeys: boolean;
+}
+
 // Zustand store related types
-export type AuthStage = 'unauthenticated' | 'profileRequired' | 'authenticated';
+export type AuthStage = 'unauthenticated' | 'profileRequired' | 'authenticated' | 'securitySetupRequired';
 export type AuthStatus = 'checking' | 'pending' | 'error' | 'success';
 
 export interface AuthStoreState {
@@ -73,5 +203,5 @@ export interface AuthStoreActions {
   setStage: (stage: AuthStage) => void;
   setStatus: (status: AuthStatus) => void;
   setError: (error: string | null) => void;
-  setUser: (user: User | null) => void; 
-} 
+  setUser: (user: User | null) => void;
+}

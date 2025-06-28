@@ -1,18 +1,21 @@
 import type React from 'react';
-import { createContext, useContext, useState, type ReactNode } from 'react';
-import { ThemedAlert, type AlertType } from '../components/Alert';
+import { type ReactNode, createContext, useContext, useState } from 'react';
+import { type AlertType, ThemedAlert } from '../components/Alert';
 
 const DEFAULT_TIMEOUT = 3000;
 
 interface AlertContextProps {
-  showAlert: (message: string, options?: {
-    type?: AlertType;
-    action?: {
-      label: string;
-      onPress: () => void;
-    };
-    duration?: number;
-  }) => void;
+  showAlert: (
+    message: string,
+    options?: {
+      type?: AlertType;
+      action?: {
+        label: string;
+        onPress: () => void;
+      };
+      duration?: number;
+    },
+  ) => void;
   hideAlert: () => void;
 }
 
@@ -37,14 +40,17 @@ export const AlertProvider: React.FC<AlertProviderProps> = ({ children }) => {
   const [action, setAction] = useState<{ label: string; onPress: () => void } | undefined>();
   const [duration, setDuration] = useState<number | undefined>(DEFAULT_TIMEOUT);
 
-  const showAlert = (msg: string, options?: {
-    type?: AlertType;
-    action?: {
-      label: string;
-      onPress: () => void;
-    };
-    duration?: number;
-  }) => {
+  const showAlert = (
+    msg: string,
+    options?: {
+      type?: AlertType;
+      action?: {
+        label: string;
+        onPress: () => void;
+      };
+      duration?: number;
+    },
+  ) => {
     setMessage(msg);
     setAlertType(options?.type || 'info');
     setAction(options?.action);

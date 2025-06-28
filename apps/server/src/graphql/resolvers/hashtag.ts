@@ -1,21 +1,21 @@
-import { createD1Client } from '../../db'
-import { eq, like } from 'drizzle-orm'
-import * as schema from '../../db/schema'
-import { nanoid } from 'nanoid'
-import type { ContextType } from '../../types'
+import { eq, like } from 'drizzle-orm';
+import { nanoid } from 'nanoid';
+import { createD1Client } from '../../db';
+import * as schema from '../../db/schema';
+import type { ContextType } from '../../types';
 
 export const hashtagResolvers = {
   Query: {
     async searchHashtags(
       _: unknown,
       { query, limit = 10, offset = 0 }: { query: string; limit?: number; offset?: number },
-      context: ContextType
+      context: ContextType,
     ) {
       if (!context.user) {
-        throw new Error('Authentication required')
+        throw new Error('Authentication required');
       }
 
-      const db = createD1Client(context.env)
+      const db = createD1Client(context.env);
 
       const hashtags = await db
         .select()
@@ -23,60 +23,60 @@ export const hashtagResolvers = {
         .where(like(schema.hashtag.name, `%${query}%`))
         .limit(limit)
         .offset(offset)
-        .all()
+        .all();
 
-      return hashtags
+      return hashtags;
     },
   },
 
   Mutation: {
     async createHashtag(_: unknown, { name }: { name: string }, context: ContextType) {
       if (!context.user) {
-        throw new Error('Authentication required')
+        throw new Error('Authentication required');
       }
 
       if (!name || name.trim() === '') {
-        throw new Error('Hashtag name cannot be empty')
+        throw new Error('Hashtag name cannot be empty');
       }
 
-      const cleanName = name.startsWith('#') ? name.substring(1) : name
+      const cleanName = name.startsWith('#') ? name.substring(1) : name;
 
-      const db = createD1Client(context.env)
+      const db = createD1Client(context.env);
 
       const existingHashtag = await db
         .select()
         .from(schema.hashtag)
         .where(eq(schema.hashtag.name, cleanName))
-        .get()
+        .get();
 
       if (existingHashtag) {
-        return existingHashtag
+        return existingHashtag;
       }
 
-      const hashtagId = nanoid()
+      const hashtagId = nanoid();
       await db.insert(schema.hashtag).values({
         id: hashtagId,
         name: cleanName,
         createdAt: new Date().toISOString(),
-      })
+      });
 
       const createdHashtag = await db
         .select()
         .from(schema.hashtag)
         .where(eq(schema.hashtag.id, hashtagId))
-        .get()
+        .get();
 
       if (!createdHashtag) {
-        throw new Error('Failed to create hashtag')
+        throw new Error('Failed to create hashtag');
       }
 
-      return createdHashtag
+      return createdHashtag;
     },
   },
 
   Hashtag: {
     async posts(parent: { id: string }, _: unknown, context: ContextType) {
-      const db = createD1Client(context.env)
+      const db = createD1Client(context.env);
 
       const postHashtags = await db
         .select({
@@ -84,26 +84,26 @@ export const hashtagResolvers = {
         })
         .from(schema.postHashtag)
         .where(eq(schema.postHashtag.hashtagId, parent.id))
-        .all()
+        .all();
 
       if (postHashtags.length === 0) {
-        return []
+        return [];
       }
 
-      const postIds = postHashtags.map((pc) => pc.postId)
+      const postIds = postHashtags.map((pc) => pc.postId);
 
       const posts = await db.query.post.findMany({
         where: (posts, { inArray }) => {
-          const validPostIds = postIds.filter((id): id is string => id !== null)
-          return inArray(posts.id, validPostIds)
+          const validPostIds = postIds.filter((id): id is string => id !== null);
+          return inArray(posts.id, validPostIds);
         },
         with: {
           user: true,
           media: true,
         },
-      })
+      });
 
-      return posts
+      return posts;
     },
   },
-}
+};

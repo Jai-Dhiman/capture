@@ -1,8 +1,8 @@
-import * as SecureStore from "expo-secure-store";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Platform } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
-const isWeb = Platform.OS === "web";
+const isWeb = Platform.OS === 'web';
 
 export const secureStorage = {
   getItem: async (key: string): Promise<string | null> => {

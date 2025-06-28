@@ -1,6 +1,6 @@
+import type { Bindings, Variables } from '@/types';
 import { Hono } from 'hono';
 import { createImageService } from '../lib/imageService';
-import type { Bindings, Variables } from '@/types';
 
 const mediaRouter = new Hono<{
   Bindings: Bindings;

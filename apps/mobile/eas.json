@@ -6,7 +6,28 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "API_URL": "https://capture-api.jai-d.workers.dev",
+        "SHARE_URL": "https://www.captureapp.org",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "562912588429-ia1001urt4gds03e1b47qpefsum2efns.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS": "562912588429-kjsb2br221rgfnlv11nimbsom1n69ju0.apps.googleusercontent.com",
+        "EXPO_PUBLIC_APPLE_CLIENT_ID": "com.obscuratechnologies.capture.signin"
+      }
+    },
+    "development-simulator": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      },
+      "env": {
+        "API_URL": "https://capture-api.jai-d.workers.dev",
+        "SHARE_URL": "https://www.captureapp.org",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "562912588429-ia1001urt4gds03e1b47qpefsum2efns.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS": "562912588429-kjsb2br221rgfnlv11nimbsom1n69ju0.apps.googleusercontent.com",
+        "EXPO_PUBLIC_APPLE_CLIENT_ID": "com.obscuratechnologies.capture.signin"
+      }
     },
     "preview": {
       "distribution": "internal",
@@ -14,8 +35,11 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "API_URL": "API_URL",
-        "SHARE_URL": "SHARE_URL"
+        "API_URL": "https://capture-api.jai-d.workers.dev",
+        "SHARE_URL": "https://www.captureapp.org",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "562912588429-ia1001urt4gds03e1b47qpefsum2efns.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS": "562912588429-kjsb2br221rgfnlv11nimbsom1n69ju0.apps.googleusercontent.com",
+        "EXPO_PUBLIC_APPLE_CLIENT_ID": "com.obscuratechnologies.capture.signin"
       }
     },
     "production": {

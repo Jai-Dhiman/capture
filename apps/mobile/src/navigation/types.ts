@@ -1,4 +1,4 @@
-import type { NavigatorScreenParams } from "@react-navigation/native";
+import type { NavigatorScreenParams } from '@react-navigation/native';
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -10,16 +10,23 @@ export type RootStackParamList = {
 
 export type AuthStackParamList = {
   Login: undefined;
-  Signup: undefined;
+  RegisterScreen: undefined;
   EmailSignup: undefined;
-  CodeVerification: { 
-    email: string; 
-    phone?: string; 
-    isNewUser: boolean; 
-    message: string; 
+  EmailCodeVerification: {
+    email: string;
+    phone?: string;
+    isNewUser: boolean;
+    message: string;
   };
+  PhoneCodeVerification: {
+    email: string;
+    phone: string;
+    isNewUser: boolean;
+    message: string;
+  };
+  PasskeySetup: undefined;
+  MFACreation: undefined;
   CreateProfile: undefined;
-  EmailVerificationPending: undefined;
 };
 
 export type AppStackParamList = {
@@ -36,5 +43,4 @@ export type SettingsStackParamList = {
   MainSettings: undefined;
   BlockedUsers: undefined;
   AccountSettings: undefined;
-  VerifyPhone: undefined;
 };

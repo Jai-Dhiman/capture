@@ -1,0 +1,20 @@
+name = "rust-test-server"
+main = "build/worker/shim.mjs"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+[vars]
+ENV = "Development"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "capture-rust-test-db"
+database_id = "bfc06dc8-8e17-4922-8a6f-789ba53ef177"
+migrations_dir = "drizzle"
+
+[build]
+command = "cargo install -q worker-build && worker-build --release"
+
+[observability.logs]
+enabled = true

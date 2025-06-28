@@ -26,5 +26,5 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Runß Tests
+      - name: Run Tests
         run: pnpm --filter server test

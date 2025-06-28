@@ -1,48 +1,51 @@
-import React, { useState, useEffect } from 'react'
-import { TouchableOpacity, Text, ActivityIndicator } from 'react-native'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useAuthStore } from '@/features/auth/stores/authStore'
-import { API_URL } from '@env'
-import type { FollowingState } from '@/features/profile/types/followingTypes'
+import { useAuthStore } from '@/features/auth/stores/authStore';
+import type { FollowingState } from '@/features/profile/types/followingTypes';
+import { API_URL } from '@env';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useState, useEffect } from 'react';
+import { ActivityIndicator, Text, TouchableOpacity } from 'react-native';
 
 interface FollowButtonProps {
-  userId: string
-  isFollowing: boolean | null
-  className?: string
+  userId: string;
+  isFollowing: boolean | null;
+  className?: string;
 }
 
-export const FollowButton = ({ userId, isFollowing: initialIsFollowing, className = '' }: FollowButtonProps) => {
-  const [isFollowing, setIsFollowing] = useState<boolean | null>(initialIsFollowing)
-  const queryClient = useQueryClient()
+export const FollowButton = ({
+  userId,
+  isFollowing: initialIsFollowing,
+  className = '',
+}: FollowButtonProps) => {
+  const [isFollowing, setIsFollowing] = useState<boolean | null>(initialIsFollowing);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (initialIsFollowing !== null && initialIsFollowing !== isFollowing) {
-      setIsFollowing(initialIsFollowing)
+      setIsFollowing(initialIsFollowing);
 
-      const jotaiStore = queryClient.getQueryData(["jotai"]) as FollowingState | undefined
-      const followingMap = { ...(jotaiStore?.followingMap || {}) }
+      const jotaiStore = queryClient.getQueryData(['jotai']) as FollowingState | undefined;
+      const followingMap = { ...(jotaiStore?.followingMap || {}) };
 
       if (followingMap[userId] !== initialIsFollowing) {
-        followingMap[userId] = initialIsFollowing
-        queryClient.setQueryData<FollowingState>(["jotai"], {
+        followingMap[userId] = initialIsFollowing;
+        queryClient.setQueryData<FollowingState>(['jotai'], {
           followingMap,
-        })
+        });
       }
     }
-  }, [initialIsFollowing, userId])
-
+  }, [initialIsFollowing, userId]);
 
   const followMutation = useMutation({
     mutationFn: async () => {
-      const { session } = useAuthStore.getState()
+      const { session } = useAuthStore.getState();
       if (!session?.access_token) {
-        throw new Error("No auth token available")
+        throw new Error('No auth token available');
       }
 
       const response = await fetch(`${API_URL}/graphql`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
@@ -61,40 +64,40 @@ export const FollowButton = ({ userId, isFollowing: initialIsFollowing, classNam
           `,
           variables: { userId },
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
       if (data.errors) {
-        throw new Error(data.errors[0]?.message || "Failed to follow user")
+        throw new Error(data.errors[0]?.message || 'Failed to follow user');
       }
-      return data.data.followUser
+      return data.data.followUser;
     },
     onMutate: () => {
-      setIsFollowing(true)
+      setIsFollowing(true);
     },
     onError: () => {
-      setIsFollowing(false)
+      setIsFollowing(false);
     },
     onSuccess: () => {
-      setIsFollowing(true)
+      setIsFollowing(true);
 
-      queryClient.invalidateQueries({ queryKey: ["profile", userId] })
-      queryClient.invalidateQueries({ queryKey: ["followers"] })
-      queryClient.invalidateQueries({ queryKey: ["following"] })
+      queryClient.invalidateQueries({ queryKey: ['profile', userId] });
+      queryClient.invalidateQueries({ queryKey: ['followers'] });
+      queryClient.invalidateQueries({ queryKey: ['following'] });
     },
-  })
+  });
 
   const unfollowMutation = useMutation({
     mutationFn: async () => {
-      const { session } = useAuthStore.getState()
+      const { session } = useAuthStore.getState();
       if (!session?.access_token) {
-        throw new Error("No auth token available")
+        throw new Error('No auth token available');
       }
 
       const response = await fetch(`${API_URL}/graphql`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
@@ -107,38 +110,38 @@ export const FollowButton = ({ userId, isFollowing: initialIsFollowing, classNam
           `,
           variables: { userId },
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
       if (data.errors) {
-        throw new Error(data.errors[0]?.message || "Failed to unfollow user")
+        throw new Error(data.errors[0]?.message || 'Failed to unfollow user');
       }
-      return data.data.unfollowUser
+      return data.data.unfollowUser;
     },
     onMutate: () => {
-      setIsFollowing(false)
+      setIsFollowing(false);
     },
     onError: () => {
-      setIsFollowing(true)
+      setIsFollowing(true);
     },
     onSuccess: () => {
-      setIsFollowing(false)
+      setIsFollowing(false);
 
-      queryClient.invalidateQueries({ queryKey: ["profile", userId] })
-      queryClient.invalidateQueries({ queryKey: ["followers"] })
-      queryClient.invalidateQueries({ queryKey: ["following"] })
+      queryClient.invalidateQueries({ queryKey: ['profile', userId] });
+      queryClient.invalidateQueries({ queryKey: ['followers'] });
+      queryClient.invalidateQueries({ queryKey: ['following'] });
     },
-  })
+  });
 
-  const isPending = followMutation.isPending || unfollowMutation.isPending
+  const isPending = followMutation.isPending || unfollowMutation.isPending;
 
   const handlePress = () => {
     if (isFollowing) {
-      unfollowMutation.mutate()
+      unfollowMutation.mutate();
     } else {
-      followMutation.mutate()
+      followMutation.mutate();
     }
-  }
+  };
 
   if (isFollowing === null) {
     return (
@@ -148,7 +151,7 @@ export const FollowButton = ({ userId, isFollowing: initialIsFollowing, classNam
       >
         <ActivityIndicator size="small" color="#000" />
       </TouchableOpacity>
-    )
+    );
   }
 
   return (
@@ -165,5 +168,5 @@ export const FollowButton = ({ userId, isFollowing: initialIsFollowing, classNam
         </Text>
       )}
     </TouchableOpacity>
-  )
-}
+  );
+};

@@ -1,6 +1,6 @@
+import NewPost from '@assets/icons/PlusIcon.svg';
 import type React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import NewPost from "@assets/icons/PlusIcon.svg";
+import { Text, TouchableOpacity, View } from 'react-native';
 
 interface NewPostButtonProps {
   onPress: () => void;

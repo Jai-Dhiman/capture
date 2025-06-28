@@ -1,7 +1,7 @@
-import type React from 'react';
-import { View, Text, TouchableOpacity, Image } from 'react-native';
-import { formatDistanceToNow } from 'date-fns';
 import { useNavigation } from '@react-navigation/native';
+import { formatDistanceToNow } from 'date-fns';
+import type React from 'react';
+import { Image, Text, TouchableOpacity, View } from 'react-native';
 import { useMarkNotificationRead } from '../hooks/useNotifications';
 
 type NotificationItemProps = {
@@ -76,7 +76,14 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ notification
         />
       ) : (
         <View className="w-12 h-12 rounded-full bg-[#DFD2CD] mr-3 items-center justify-center">
-          <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: getNotificationColor() }} />
+          <View
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 12,
+              backgroundColor: getNotificationColor(),
+            }}
+          />
         </View>
       )}
 
@@ -84,14 +91,10 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ notification
         <Text className="text-sm mb-1" numberOfLines={2}>
           {notification.message}
         </Text>
-        <Text className="text-xs text-gray-500">
-          {getRelativeTime(notification.createdAt)}
-        </Text>
+        <Text className="text-xs text-gray-500">{getRelativeTime(notification.createdAt)}</Text>
       </View>
 
-      {!notification.isRead && (
-        <View className="w-2 h-2 rounded-full bg-blue-500 ml-2" />
-      )}
+      {!notification.isRead && <View className="w-2 h-2 rounded-full bg-blue-500 ml-2" />}
     </TouchableOpacity>
   );
-}; 
+};

@@ -1,12 +1,19 @@
-import React, { useState } from 'react';
-import { View, useWindowDimensions, FlatList, Text, TouchableOpacity, Dimensions } from 'react-native';
-import { TabView, SceneMap } from 'react-native-tab-view';
-import { PostsGrid } from './PostsGrid';
-import { ThreadItem } from '@/features/post/components/ThreadItem';
 import { PostItem } from '@/features/post/components/PostItem';
-import PhotosIcon from "@assets/icons/PhotosIcon.svg";
-import TextIcon from "@assets/icons/TextIcon.svg";
-import SavedPosts from "@assets/icons/FavoriteIcon.svg";
+import { ThreadItem } from '@/features/post/components/ThreadItem';
+import SavedPosts from '@assets/icons/FavoriteIcon.svg';
+import PhotosIcon from '@assets/icons/PhotosIcon.svg';
+import TextIcon from '@assets/icons/TextIcon.svg';
+import React, { useState } from 'react';
+import {
+  Dimensions,
+  FlatList,
+  Text,
+  TouchableOpacity,
+  View,
+  useWindowDimensions,
+} from 'react-native';
+import { SceneMap, TabView } from 'react-native-tab-view';
+import { PostsGrid } from './PostsGrid';
 
 const INITIAL_PAGE_SIZE = 15;
 
@@ -29,7 +36,7 @@ export const ProfileTabView = ({
   onPostPress,
   isLoading,
   isLoadingSaved,
-  onTabPress
+  onTabPress,
 }: ProfileTabViewProps) => {
   const layout = useWindowDimensions();
   const [index, setIndex] = useState(0);
@@ -37,11 +44,11 @@ export const ProfileTabView = ({
   const [routes] = useState([
     { key: 'posts', title: 'Posts' },
     { key: 'threads', title: 'Threads' },
-    { key: 'saved', title: 'Saved' }
+    { key: 'saved', title: 'Saved' },
   ]);
 
-  const photoPosts = posts.filter(post => post.type === 'post');
-  const threadPosts = posts.filter(post => post.type === 'thread');
+  const photoPosts = posts.filter((post) => post.type === 'post');
+  const threadPosts = posts.filter((post) => post.type === 'thread');
 
   const renderPhotosTab = () => {
     const { width } = Dimensions.get('window');
@@ -67,9 +74,11 @@ export const ProfileTabView = ({
 
     const screenWidth = width;
 
-    const itemWidth = Math.floor((screenWidth - (2 * containerPadding) - ((numColumns - 1) * itemSpacing)) / numColumns);
+    const itemWidth = Math.floor(
+      (screenWidth - 2 * containerPadding - (numColumns - 1) * itemSpacing) / numColumns,
+    );
 
-    const totalGridWidth = (itemWidth * numColumns) + ((numColumns - 1) * itemSpacing);
+    const totalGridWidth = itemWidth * numColumns + (numColumns - 1) * itemSpacing;
 
     const leftRightPadding = Math.floor((screenWidth - totalGridWidth) / 2);
 
@@ -85,12 +94,14 @@ export const ProfileTabView = ({
           data={rows}
           keyExtractor={(_, index) => `row-${index}`}
           renderItem={({ item: row }) => (
-            <View style={{
-              flexDirection: 'row',
-              marginBottom: itemSpacing,
-              marginLeft: leftRightPadding,
-              width: totalGridWidth,
-            }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                marginBottom: itemSpacing,
+                marginLeft: leftRightPadding,
+                width: totalGridWidth,
+              }}
+            >
               {row.map((post, index) => (
                 <View
                   key={post.id}
@@ -100,11 +111,7 @@ export const ProfileTabView = ({
                     marginRight: index < row.length - 1 ? itemSpacing : 0,
                   }}
                 >
-                  <PostsGrid
-                    post={post}
-                    onPress={onPostPress}
-                    itemSize={itemWidth}
-                  />
+                  <PostsGrid post={post} onPress={onPostPress} itemSize={itemWidth} />
                 </View>
               ))}
             </View>
@@ -169,8 +176,8 @@ export const ProfileTabView = ({
       );
     }
 
-    const sortedSavedPosts = [...savedPosts].sort((a, b) =>
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    const sortedSavedPosts = [...savedPosts].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
 
     return (
@@ -179,9 +186,7 @@ export const ProfileTabView = ({
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View className="px-4 pt-2">
-            {item.type === 'post'
-              ? <PostItem post={item} />
-              : <ThreadItem thread={item} />}
+            {item.type === 'post' ? <PostItem post={item} /> : <ThreadItem thread={item} />}
           </View>
         )}
         contentContainerStyle={{ paddingTop: 8 }}
@@ -196,7 +201,7 @@ export const ProfileTabView = ({
   const renderScene = SceneMap({
     posts: renderPhotosTab,
     threads: renderThreadsTab,
-    saved: renderSavedTab
+    saved: renderSavedTab,
   });
 
   const handleTabPress = (newIndex: number) => {
@@ -221,29 +226,38 @@ export const ProfileTabView = ({
       }}
     >
       <View className="flex-row justify-between items-end h-full px-4 pb-2">
-        <TouchableOpacity
-          onPress={() => handleTabPress(0)}
-          className="flex-1 items-center"
-        >
-          <View className={index === 0 ? "w-8 h-8 bg-[#E4CAC7] rounded-[10px] items-center justify-center" : "items-center justify-center"}>
+        <TouchableOpacity onPress={() => handleTabPress(0)} className="flex-1 items-center">
+          <View
+            className={
+              index === 0
+                ? 'w-8 h-8 bg-[#E4CAC7] rounded-[10px] items-center justify-center'
+                : 'items-center justify-center'
+            }
+          >
             <PhotosIcon width={20} height={20} />
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={() => handleTabPress(1)}
-          className="flex-1 items-center"
-        >
-          <View className={index === 1 ? "w-8 h-8 bg-[#E4CAC7] rounded-[10px] items-center justify-center" : "items-center justify-center"}>
+        <TouchableOpacity onPress={() => handleTabPress(1)} className="flex-1 items-center">
+          <View
+            className={
+              index === 1
+                ? 'w-8 h-8 bg-[#E4CAC7] rounded-[10px] items-center justify-center'
+                : 'items-center justify-center'
+            }
+          >
             <TextIcon width={20} height={20} />
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={() => handleTabPress(2)}
-          className="flex-1 items-center"
-        >
-          <View className={index === 2 ? "w-8 h-8 bg-[#E4CAC7] rounded-[10px] items-center justify-center" : "items-center justify-center"}>
+        <TouchableOpacity onPress={() => handleTabPress(2)} className="flex-1 items-center">
+          <View
+            className={
+              index === 2
+                ? 'w-8 h-8 bg-[#E4CAC7] rounded-[10px] items-center justify-center'
+                : 'items-center justify-center'
+            }
+          >
             <SavedPosts width={20} height={20} />
           </View>
         </TouchableOpacity>

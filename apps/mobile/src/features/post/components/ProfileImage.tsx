@@ -1,7 +1,7 @@
+import { SkeletonElement } from '@/shared/components/SkeletonLoader';
 import React from 'react';
 import { View } from 'react-native';
 import { MediaImage } from './MediaImage';
-import { SkeletonElement } from '@/shared/components/SkeletonLoader';
 
 interface ProfileImageProps {
   cloudflareId: string;
@@ -10,7 +10,12 @@ interface ProfileImageProps {
   isLoading?: boolean;
 }
 
-export const ProfileImage = ({ cloudflareId, style = {}, expirySeconds = 1800, isLoading = false }: ProfileImageProps) => {
+export const ProfileImage = ({
+  cloudflareId,
+  style = {},
+  expirySeconds = 1800,
+  isLoading = false,
+}: ProfileImageProps) => {
   if (isLoading) {
     return (
       <View className="w-full h-full rounded-full overflow-hidden">
@@ -23,8 +28,16 @@ export const ProfileImage = ({ cloudflareId, style = {}, expirySeconds = 1800, i
     ...style,
     borderRadius: 9999,
     width: '100%',
-    height: '100%'
+    height: '100%',
   };
 
-  return <MediaImage media={cloudflareId} style={profileStyle} expirySeconds={expirySeconds} priority={true} circle />;
+  return (
+    <MediaImage
+      media={cloudflareId}
+      style={profileStyle}
+      expirySeconds={expirySeconds}
+      priority={true}
+      circle
+    />
+  );
 };

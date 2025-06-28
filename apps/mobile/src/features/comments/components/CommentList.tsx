@@ -1,10 +1,10 @@
+import { FlashList } from '@shopify/flash-list';
 import type React from 'react';
 import { useMemo } from 'react';
-import { View, Text, ActivityIndicator, TouchableOpacity, Dimensions } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
+import { ActivityIndicator, Dimensions, Text, TouchableOpacity, View } from 'react-native';
+import type { Comment } from '../types/commentTypes';
 import { CommentItem } from './CommentItem';
 import { CommentSkeleton } from './CommentSkeleton';
-import type { Comment } from '../types/commentTypes';
 
 interface CommentListProps {
   comments: Comment[];
@@ -21,11 +21,11 @@ export const CommentList: React.FC<CommentListProps> = ({
   loadingMore,
   hasNextPage,
   onLoadMore,
-  drawerIndex = 0
+  drawerIndex = 0,
 }) => {
   // Filter to get only top-level comments (those without a parentId)
   const topLevelComments = useMemo(() => {
-    return comments.filter(comment => !comment.parentId);
+    return comments.filter((comment) => !comment.parentId);
   }, [comments]);
 
   if (loading && comments.length === 0) {
@@ -55,10 +55,8 @@ export const CommentList: React.FC<CommentListProps> = ({
   return (
     <FlashList
       data={topLevelComments}
-      keyExtractor={item => item.id}
-      renderItem={({ item }) => (
-        <CommentItem comment={item} />
-      )}
+      keyExtractor={(item) => item.id}
+      renderItem={({ item }) => <CommentItem comment={item} />}
       estimatedItemSize={100}
       contentContainerStyle={{ paddingVertical: 16, paddingBottom }}
       ItemSeparatorComponent={() => <View className="h-2" />}
@@ -75,10 +73,7 @@ export const CommentList: React.FC<CommentListProps> = ({
               <ActivityIndicator size="small" color="#e4cac7" />
             </View>
           ) : hasNextPage ? (
-            <TouchableOpacity
-              onPress={onLoadMore}
-              className="py-4 items-center"
-            >
+            <TouchableOpacity onPress={onLoadMore} className="py-4 items-center">
               <Text className="text-blue-500">Load more comments</Text>
             </TouchableOpacity>
           ) : null}

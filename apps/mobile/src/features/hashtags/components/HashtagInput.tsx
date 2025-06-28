@@ -1,17 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  FlatList,
-  ActivityIndicator,
-} from 'react-native';
-import { useSearchHashtags, useCreateHashtag } from '@/features/post/hooks/useHashtags';
-import { debounce } from 'lodash';
+import { useCreateHashtag, useSearchHashtags } from '@/features/post/hooks/useHashtags';
 import { useAlert } from '@/shared/lib/AlertContext';
 import { errorService } from '@/shared/services/errorService';
-
+import { debounce } from 'lodash';
+import React, { useState, useEffect, useCallback } from 'react';
+import { ActivityIndicator, FlatList, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface HashtagInputProps {
   selectedHashtags: Array<{ id: string; name: string }>;
@@ -22,17 +14,13 @@ interface HashtagInputProps {
 export const HashtagInput = ({
   selectedHashtags,
   onHashtagsChange,
-  maxHashtags = 5
+  maxHashtags = 5,
 }: HashtagInputProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const { showAlert } = useAlert();
 
-  const {
-    data: searchResults,
-    isLoading,
-    refetch
-  } = useSearchHashtags(searchQuery, isSearching);
+  const { data: searchResults, isLoading, refetch } = useSearchHashtags(searchQuery, isSearching);
 
   const createHashtagMutation = useCreateHashtag();
 
@@ -45,7 +33,7 @@ export const HashtagInput = ({
         setIsSearching(false);
       }
     }, 500),
-    [refetch]
+    [],
   );
 
   useEffect(() => {
@@ -59,10 +47,7 @@ export const HashtagInput = ({
     }
 
     if (selectedHashtags.length >= maxHashtags) {
-      showAlert(
-        `You can only add up to ${maxHashtags} hashtags per post.`,
-        { type: 'warning' }
-      );
+      showAlert(`You can only add up to ${maxHashtags} hashtags per post.`, { type: 'warning' });
       return;
     }
 
@@ -86,11 +71,11 @@ export const HashtagInput = ({
       const appError = errorService.createError(
         'Failed to create new hashtag',
         'server/hashtag-error',
-        error instanceof Error ? error : undefined
+        error instanceof Error ? error : undefined,
       );
 
       showAlert(appError.message, {
-        type: errorService.getAlertType(appError.category)
+        type: errorService.getAlertType(appError.category),
       });
     }
   };
@@ -146,9 +131,9 @@ export const HashtagInput = ({
                         disabled={createHashtagMutation.isPending}
                       >
                         <Text className="text-blue-600">
-                          {createHashtagMutation.isPending ?
-                            'Creating...' :
-                            `Create #${searchQuery}`}
+                          {createHashtagMutation.isPending
+                            ? 'Creating...'
+                            : `Create #${searchQuery}`}
                         </Text>
                       </TouchableOpacity>
                     ) : null
@@ -162,9 +147,7 @@ export const HashtagInput = ({
                     disabled={createHashtagMutation.isPending}
                   >
                     <Text className="text-blue-600">
-                      {createHashtagMutation.isPending ?
-                        'Creating...' :
-                        `Create #${searchQuery}`}
+                      {createHashtagMutation.isPending ? 'Creating...' : `Create #${searchQuery}`}
                     </Text>
                   </TouchableOpacity>
                 </View>

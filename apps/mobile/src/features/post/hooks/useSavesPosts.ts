@@ -1,20 +1,20 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuthStore } from "@/features/auth/stores/authStore";
-import { API_URL } from "@env";
+import { useAuthStore } from '@/features/auth/stores/authStore';
+import { API_URL } from '@env';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export const useSavedPosts = (limit = 10, offset = 0) => {
   return useQuery({
-    queryKey: ["savedPosts", limit, offset],
+    queryKey: ['savedPosts', limit, offset],
     queryFn: async () => {
       const { session } = useAuthStore.getState();
       if (!session?.access_token) {
-        throw new Error("No auth token available");
+        throw new Error('No auth token available');
       }
 
       const response = await fetch(`${API_URL}/graphql`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
@@ -55,7 +55,7 @@ export const useSavedPosts = (limit = 10, offset = 0) => {
       const data = await response.json();
 
       if (data.errors) {
-        console.error("GraphQL Errors:", data.errors);
+        console.error('GraphQL Errors:', data.errors);
         throw new Error(data.errors[0].message);
       }
 
@@ -72,13 +72,13 @@ export const useSavePost = () => {
       const { session } = useAuthStore.getState();
 
       if (!session?.access_token) {
-        throw new Error("No auth token available");
+        throw new Error('No auth token available');
       }
 
       const response = await fetch(`${API_URL}/graphql`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
@@ -101,16 +101,16 @@ export const useSavePost = () => {
       const data = await response.json();
 
       if (data.errors) {
-        console.error("GraphQL Errors:", data.errors);
-        throw new Error(data.errors[0].message || "Unknown GraphQL error");
+        console.error('GraphQL Errors:', data.errors);
+        throw new Error(data.errors[0].message || 'Unknown GraphQL error');
       }
 
       return data.data.savePost;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["savedPosts"] });
-      queryClient.invalidateQueries({ queryKey: ["post"] });
-      queryClient.invalidateQueries({ queryKey: ["feed"] });
+      queryClient.invalidateQueries({ queryKey: ['savedPosts'] });
+      queryClient.invalidateQueries({ queryKey: ['post'] });
+      queryClient.invalidateQueries({ queryKey: ['feed'] });
     },
   });
 };
@@ -121,15 +121,15 @@ export const useUnsavePost = () => {
   return useMutation({
     mutationFn: async (postId: string) => {
       const { session } = useAuthStore.getState();
-      
+
       if (!session?.access_token) {
-        throw new Error("No auth token available");
+        throw new Error('No auth token available');
       }
 
       const response = await fetch(`${API_URL}/graphql`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
@@ -149,16 +149,16 @@ export const useUnsavePost = () => {
       const data = await response.json();
 
       if (data.errors) {
-        console.error("GraphQL Errors:", data.errors);
-        throw new Error(data.errors[0].message || "Unknown GraphQL error");
+        console.error('GraphQL Errors:', data.errors);
+        throw new Error(data.errors[0].message || 'Unknown GraphQL error');
       }
 
       return data.data.unsavePost;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["savedPosts"] });
-      queryClient.invalidateQueries({ queryKey: ["post"] });
-      queryClient.invalidateQueries({ queryKey: ["feed"] });
+      queryClient.invalidateQueries({ queryKey: ['savedPosts'] });
+      queryClient.invalidateQueries({ queryKey: ['post'] });
+      queryClient.invalidateQueries({ queryKey: ['feed'] });
     },
   });
 };

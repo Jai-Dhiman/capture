@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Switch, ScrollView, StatusBar } from 'react-native';
+import { useAuthStore } from '@/features/auth/stores/authStore';
+import { ProfileImage } from '@/features/post/components/ProfileImage';
+import { useProfileStore } from '@/features/profile/stores/profileStore';
+import type { SettingsStackParamList } from '@/navigation/types';
+import AlgorithmIcon from '@assets/icons/AlgorithmIcon.svg';
+import BlockIcon from '@assets/icons/BlockIcon.svg';
+import CustomBackIcon from '@assets/icons/CustomBackIcon.svg';
+import EmailIcon from '@assets/icons/EmailIcon.svg';
+import EmptyIcon from '@assets/icons/EmptyIcon.svg';
+import LockIcon2 from '@assets/icons/LockIcon2.svg';
+import { API_URL } from '@env';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { SettingsStackParamList } from '@/navigation/types';
-import { useAuthStore } from '@/features/auth/stores/authStore';
-import { useProfileStore } from '@/features/profile/stores/profileStore';
-import { ProfileImage } from '@/features/post/components/ProfileImage';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { API_URL } from '@env';
-import EmptyIcon from '@assets/icons/EmptyIcon.svg';
-import BlockIcon from '@assets/icons/BlockIcon.svg';
-import AlgorithmIcon from '@assets/icons/AlgorithmIcon.svg';
-import LockIcon2 from '@assets/icons/LockIcon2.svg';
-import EmailIcon from '@assets/icons/EmailIcon.svg';
-import CustomBackIcon from '@assets/icons/CustomBackIcon.svg';
+import React, { useState, useEffect } from 'react';
+import { ScrollView, StatusBar, Switch, Text, TouchableOpacity, View } from 'react-native';
 
 type NavigationProp = NativeStackNavigationProp<SettingsStackParamList, 'AccountSettings'>;
 
@@ -131,12 +131,8 @@ export default function AccountSettingsScreen() {
             )}
           </View>
 
-          <Text className="text-xl font-semibold text-center">
-            {profile?.username || 'User'}
-          </Text>
-          <Text className="text-xs text-center mt-1">
-            {user?.email || ''}
-          </Text>
+          <Text className="text-xl font-semibold text-center">{profile?.username || 'User'}</Text>
+          <Text className="text-xs text-center mt-1">{user?.email || ''}</Text>
         </View>
 
         <View className="bg-stone-400 bg-opacity-0 rounded-[10px] shadow border border-black mb-6">
@@ -156,7 +152,9 @@ export default function AccountSettingsScreen() {
 
           <TouchableOpacity className="flex-row items-center p-3 border-b border-black border-opacity-20">
             <AlgorithmIcon height={25} width={25} />
-            <Text className="ml-4 text-xs font-bold">Profile Verification (Media Outlet / Business)</Text>
+            <Text className="ml-4 text-xs font-bold">
+              Profile Verification (Media Outlet / Business)
+            </Text>
             <View className="flex-1" />
             <EmptyIcon height={20} width={20} />
           </TouchableOpacity>
@@ -183,4 +181,4 @@ export default function AccountSettingsScreen() {
       </ScrollView>
     </View>
   );
-};
+}

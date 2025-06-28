@@ -1,14 +1,14 @@
-import { createD1Client } from "../../db";
-import { eq, and } from "drizzle-orm";
-import * as schema from "../../db/schema";
-import { nanoid } from "nanoid";
-import type { ContextType } from "../../types";
+import { and, eq } from 'drizzle-orm';
+import { nanoid } from 'nanoid';
+import { createD1Client } from '../../db';
+import * as schema from '../../db/schema';
+import type { ContextType } from '../../types';
 
 export const blockingResolvers = {
   Query: {
     async blockedUsers(_: unknown, __: Record<string, never>, context: ContextType) {
       if (!context?.user) {
-        throw new Error("Authentication required");
+        throw new Error('Authentication required');
       }
 
       const blockerId = context.user.id;
@@ -32,7 +32,11 @@ export const blockingResolvers = {
           blockedIds.map(async (blockedId, index) => {
             if (!blockedId) return null;
 
-            const profile = await db.select().from(schema.profile).where(eq(schema.profile.userId, blockedId)).get();
+            const profile = await db
+              .select()
+              .from(schema.profile)
+              .where(eq(schema.profile.userId, blockedId))
+              .get();
 
             if (profile) {
               return {
@@ -43,18 +47,17 @@ export const blockingResolvers = {
             }
 
             return null;
-          })
+          }),
         );
 
         return blockedUsers.filter(Boolean);
       } catch (error) {
-        console.error("Error in blockedUsers resolver:", error);
+        console.error('Error in blockedUsers resolver:', error);
         return [];
       }
     },
 
     async isUserBlocked(_: unknown, { userId }: { userId: string }, context: ContextType) {
-
       if (!context?.user) {
         return false;
       }
@@ -63,11 +66,16 @@ export const blockingResolvers = {
       const blockedId = userId;
 
       const db = createD1Client(context.env);
-      
+
       const blockRelationship = await db
         .select()
         .from(schema.blockedUser)
-        .where(and(eq(schema.blockedUser.blockerId, blockerId), eq(schema.blockedUser.blockedId, blockedId)))
+        .where(
+          and(
+            eq(schema.blockedUser.blockerId, blockerId),
+            eq(schema.blockedUser.blockedId, blockedId),
+          ),
+        )
         .get();
 
       return !!blockRelationship;
@@ -77,28 +85,37 @@ export const blockingResolvers = {
   Mutation: {
     async blockUser(_: unknown, { userId }: { userId: string }, context: ContextType) {
       if (!context?.user) {
-        throw new Error("Authentication required");
+        throw new Error('Authentication required');
       }
 
       const blockerId = context.user.id;
       const blockedId = userId;
 
       if (blockerId === blockedId) {
-        throw new Error("Cannot block yourself");
+        throw new Error('Cannot block yourself');
       }
 
       const db = createD1Client(context.env);
 
-      const blockedUser = await db.select().from(schema.profile).where(eq(schema.profile.userId, blockedId)).get();
+      const blockedUser = await db
+        .select()
+        .from(schema.profile)
+        .where(eq(schema.profile.userId, blockedId))
+        .get();
 
       if (!blockedUser) {
-        throw new Error("User to block not found");
+        throw new Error('User to block not found');
       }
 
       const existingBlock = await db
         .select()
         .from(schema.blockedUser)
-        .where(and(eq(schema.blockedUser.blockerId, blockerId), eq(schema.blockedUser.blockedId, blockedId)))
+        .where(
+          and(
+            eq(schema.blockedUser.blockerId, blockerId),
+            eq(schema.blockedUser.blockedId, blockedId),
+          ),
+        )
         .get();
 
       if (existingBlock) {
@@ -121,12 +138,22 @@ export const blockingResolvers = {
       // Also unfollow the blocked user if following
       await db
         .delete(schema.relationship)
-        .where(and(eq(schema.relationship.followerId, blockerId), eq(schema.relationship.followedId, blockedId)));
+        .where(
+          and(
+            eq(schema.relationship.followerId, blockerId),
+            eq(schema.relationship.followedId, blockedId),
+          ),
+        );
 
       // And remove them from following you
       await db
         .delete(schema.relationship)
-        .where(and(eq(schema.relationship.followerId, blockedId), eq(schema.relationship.followedId, blockerId)));
+        .where(
+          and(
+            eq(schema.relationship.followerId, blockedId),
+            eq(schema.relationship.followedId, blockerId),
+          ),
+        );
 
       return {
         success: true,
@@ -136,7 +163,7 @@ export const blockingResolvers = {
 
     async unblockUser(_: unknown, { userId }: { userId: string }, context: ContextType) {
       if (!context?.user) {
-        throw new Error("Authentication required");
+        throw new Error('Authentication required');
       }
 
       const blockerId = context.user.id;
@@ -146,7 +173,12 @@ export const blockingResolvers = {
 
       await db
         .delete(schema.blockedUser)
-        .where(and(eq(schema.blockedUser.blockerId, blockerId), eq(schema.blockedUser.blockedId, blockedId)));
+        .where(
+          and(
+            eq(schema.blockedUser.blockerId, blockerId),
+            eq(schema.blockedUser.blockedId, blockedId),
+          ),
+        );
 
       return {
         success: true,
@@ -168,7 +200,12 @@ export const blockingResolvers = {
       const blockRelationship = await db
         .select()
         .from(schema.blockedUser)
-        .where(and(eq(schema.blockedUser.blockerId, blockerId), eq(schema.blockedUser.blockedId, blockedId)))
+        .where(
+          and(
+            eq(schema.blockedUser.blockerId, blockerId),
+            eq(schema.blockedUser.blockedId, blockedId),
+          ),
+        )
         .get();
 
       return !!blockRelationship;

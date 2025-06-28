@@ -1,11 +1,24 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
-import { Badge } from "../../components/ui/badge";
+import { Badge } from '../../components/ui/badge';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../../components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../../components/ui/table';
 
 export function meta() {
   return [
-    { title: "Activity Report - Capture" },
-    { name: "description", content: "Activity Report for Capture Platform" },
+    { title: 'Activity Report - Capture' },
+    { name: 'description', content: 'Activity Report for Capture Platform' },
   ];
 }
 
@@ -113,12 +126,15 @@ export default function ActivityReport() {
             <div className="w-full h-full rounded-md overflow-hidden relative">
               <div className="absolute inset-0 bg-gradient-to-t from-transparent to-emerald-500/10" />
               <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-emerald-500/20 to-transparent" />
-              <div className="absolute bottom-0 h-[80%] w-full" style={{
-                background: 'linear-gradient(90deg, transparent 0%, transparent 100%)',
-                borderTop: '2px solid #10b981',
-                borderTopLeftRadius: '50%',
-                borderTopRightRadius: '50%'
-              }} />
+              <div
+                className="absolute bottom-0 h-[80%] w-full"
+                style={{
+                  background: 'linear-gradient(90deg, transparent 0%, transparent 100%)',
+                  borderTop: '2px solid #10b981',
+                  borderTopLeftRadius: '50%',
+                  borderTopRightRadius: '50%',
+                }}
+              />
             </div>
           </CardContent>
         </Card>

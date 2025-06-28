@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "wrangler dev src/index.ts --experimental-vectorize-bind-to-prod",
+    "dev": "wrangler dev src/index.ts",
     "deploy": "wrangler deploy src/index.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "wrangler d1 migrations apply capture-db",
@@ -23,10 +23,13 @@
     "@hono/sentry": "^1.2.1",
     "@hono/zod-validator": "^0.4.2",
     "@sentry/browser": "^9.12.0",
+    "@simplewebauthn/server": "^13.1.1",
+    "@simplewebauthn/types": "^12.0.0",
     "drizzle-orm": "^0.39.1",
     "hono": "^4.7.2",
     "jose": "^5.9.6",
     "nanoid": "^5.0.9",
+    "react-native-video": "^6.15.0",
     "tweetnacl": "^1.0.3",
     "tweetnacl-util": "^0.15.1",
     "zod": "^3.24.2"
@@ -37,7 +40,8 @@
     "drizzle-kit": "^0.30.4",
     "msw": "^2.7.0",
     "typescript": "5.5.4",
-    "vitest": "^3.0.6",
+    "undici": "^7.11.0",
+    "vitest": "^3.2.2",
     "wrangler": "^4.1.0"
   }
 }
