@@ -4,6 +4,7 @@ import { authMiddleware } from '@/middleware/auth';
 import { errorHandler } from '@/middleware/errorHandler';
 import authRouter from '@/routes/auth';
 import deeplinkRouter from '@/routes/deeplink';
+import embeddingsRouter from '@/routes/embeddings';
 import healthRoutes from '@/routes/health';
 import interestsRouter from '@/routes/interests';
 import mediaRouter from '@/routes/media';
@@ -97,6 +98,7 @@ app.get('/.well-known/apple-app-site-association', (c) => {
 app.route('/', healthRoutes);
 app.route('/auth', authRouter);
 app.route('/seed', seedRouter);
+app.route('/embeddings', embeddingsRouter);
 
 // Protected routes
 app.use('/api/*', authMiddleware);

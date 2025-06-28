@@ -6,12 +6,7 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 ENV = "development"
 SENTRY_DSN = "https://74904d3bf1ebb2b0747f5356b0a83624@o4509049381519360.ingest.us.sentry.io/4509049386434560"
-
 APPLE_CLIENT_ID = "com.obscuratechnologies.capture"
-
-QDRANT_URL = "http://localhost:6333"
-QDRANT_API_KEY = ""
-QDRANT_COLLECTION_NAME = "posts"
 
 [[d1_databases]]
 binding = "DB"
