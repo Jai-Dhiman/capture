@@ -74,3 +74,9 @@ expo-env.d.ts
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+#Rust
+target/
+**/*.rs.bk
+wasm-pack.log
+build/

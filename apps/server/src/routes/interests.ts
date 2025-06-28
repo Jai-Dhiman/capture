@@ -10,7 +10,6 @@ const interstsRouter = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 interstsRouter.get('/', authMiddleware, async (c) => {
   const user = c.get('user');
   if (!user) {
-    // Should be caught by authMiddleware, but good practice
     return c.json({ error: 'Authentication required' }, 401);
   }
   const userId = user.id;

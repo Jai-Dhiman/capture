@@ -4,13 +4,13 @@ import { authMiddleware } from '@/middleware/auth';
 import { errorHandler } from '@/middleware/errorHandler';
 import authRouter from '@/routes/auth';
 import deeplinkRouter from '@/routes/deeplink';
-import embeddingsRouter from '@/routes/embeddings';
 import healthRoutes from '@/routes/health';
 import interestsRouter from '@/routes/interests';
 import mediaRouter from '@/routes/media';
 import profileRouter from '@/routes/profile';
 import { handlePostQueue, handleUserEmbeddingQueue } from '@/routes/queues';
 import seedRouter from '@/routes/seed';
+import testVectorsRouter from '@/routes/test-vectors';
 import type { Bindings, ContextType, Variables } from '@/types';
 import { ApolloServer } from '@apollo/server';
 import { startServerAndCreateCloudflareWorkersHandler } from '@as-integrations/cloudflare-workers';
@@ -98,7 +98,6 @@ app.get('/.well-known/apple-app-site-association', (c) => {
 app.route('/', healthRoutes);
 app.route('/auth', authRouter);
 app.route('/seed', seedRouter);
-app.route('/embeddings', embeddingsRouter);
 
 // Protected routes
 app.use('/api/*', authMiddleware);
@@ -106,6 +105,7 @@ app.route('/api/media', mediaRouter);
 app.route('/api/profile', profileRouter);
 app.route('/api/interests', interestsRouter);
 app.route('/api/deeplink', deeplinkRouter);
+app.route('/api/test-vectors', testVectorsRouter);
 
 app.onError(errorHandler);
 

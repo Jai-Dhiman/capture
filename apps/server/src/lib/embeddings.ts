@@ -143,47 +143,4 @@ export async function storePostEmbedding(
   }
 }
 
-const handler = {
-  async fetch(request: Request, env: any): Promise<Response> {
-    try {
-      if (request.method === 'POST') {
-        interface EmbeddingRequestBody {
-          text: string;
-        }
 
-        const body = (await request.json()) as EmbeddingRequestBody;
-
-        if (!body.text) {
-          return new Response(JSON.stringify({ error: 'Text is required' }), {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' },
-          });
-        }
-
-        const vector = await generateEmbedding(body.text, env.AI);
-
-        return new Response(JSON.stringify({ vector }), {
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-
-      return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-        status: 405,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    } catch (error) {
-      let message = 'Unknown error';
-      if (error instanceof Error) {
-        message = error.message;
-      } else if (typeof error === 'string') {
-        message = error;
-      }
-      return new Response(JSON.stringify({ error: message }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-  },
-};
-
-export default handler;

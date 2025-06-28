@@ -19,7 +19,13 @@ seedRouter.post('/', async (c) => {
   const db = createD1Client(c.env);
 
   try {
-    const result = await seedDatabase(db, c.env);
+    // Parse query parameters for optional parameters
+    const url = new URL(c.req.url);
+    const userCount = Number.parseInt(url.searchParams.get('userCount') || '50');
+    const postsPerUser = Number.parseInt(url.searchParams.get('postsPerUser') || '5');
+    const commentsPerPost = Number.parseInt(url.searchParams.get('commentsPerPost') || '3');
+
+    const result = await seedDatabase(db, c.env, userCount, postsPerUser, commentsPerPost);
     return c.json({
       message: 'Database seeded successfully!',
       ...result,

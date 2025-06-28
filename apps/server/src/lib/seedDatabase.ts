@@ -1,15 +1,16 @@
 import { faker } from '@faker-js/faker';
 import { nanoid } from 'nanoid';
 import type { createD1Client } from '../db';
-import { comment, hashtag, media, post, postHashtag, profile, relationship } from '../db/schema';
+import { comment, hashtag, media, post, postHashtag, profile, relationship, users } from '../db/schema';
 import type { Bindings } from '../types';
-// import { generatePostEmbedding, storePostEmbedding } from "./embeddings";
+import { generatePostEmbedding, storePostEmbedding } from './embeddings';
+import { QdrantClient } from './qdrantClient';
 
 const BATCH_SIZE = 10;
 
 const postCaptions = [
   'Just finished my morning coffee ☕️ Ready to take on the day!',
-  'Can’t believe it’s already Thursday. This week flew by!',
+  'Can\'t believe it\'s already Thursday. This week flew by!',
   'Trying out a new recipe tonight. Wish me luck! 🍝',
   'Sunsets always make everything better.',
   'Anyone else obsessed with this new album? 🔥',
@@ -17,22 +18,22 @@ const postCaptions = [
   'Weekend plans: absolutely nothing and loving it.',
   'Grateful for the little things today.',
   'Caught in the rain without an umbrella—classic me.',
-  'If you need me, I’ll be binge-watching my favorite show.',
+  'If you need me, I\'ll be binge-watching my favorite show.',
   'Motivation comes and goes. Discipline gets things done.',
   'Is it too late for coffee? Asking for a friend.',
   'New blog post is live! Check it out on my profile.',
   'Why does my dog always steal my spot on the couch? 🐶',
   'Throwback to the best vacation ever.',
-  'Monday mood: Let’s do this!',
+  'Monday mood: Let\'s do this!',
   'Cooking up something special tonight.',
-  'What’s everyone reading these days? Need recommendations!',
+  'What\'s everyone reading these days? Need recommendations!',
   'Just hit a new personal record at the gym! 💪',
   'Taking a break to enjoy some fresh air.',
   'Dreaming of my next adventure. Where should I go? ✈️',
   'Sometimes a quiet night in is exactly what you need. 😌',
-  "Finally tackling that book I've been meaning to read. 📚",
+  'Finally tackling that book I\'ve been meaning to read. 📚',
   'Is it just me or did this week feel extra long?',
-  "Trying to learn a new skill. It's harder than it looks! 😂",
+  'Trying to learn a new skill. It\'s harder than it looks! 😂',
   'Sunday morning vibes: coffee and pancakes. 🥞☕',
   'Spending the afternoon organizing my space. ✨',
   'That feeling when your favorite song comes on shuffle. 🎶',
@@ -49,7 +50,7 @@ const postCaptions = [
   'Movie night! Any suggestions for a good comedy? 🎬',
   'Working from home has its perks... and distractions. 😅',
   'Golden hour light is just magical. ✨',
-  "Learning to play a new instrument. It's a challenge! 🎸",
+  'Learning to play a new instrument. It\'s a challenge! 🎸',
   'A simple walk can clear the mind. 🚶‍♀️',
   'Decluttering my digital life. Feels good!',
   'Anyone else already thinking about the holidays? 🎄',
@@ -100,14 +101,29 @@ async function batchInsert(db: any, table: any, rows: any[]) {
 
 export async function seedDatabase(
   db: ReturnType<typeof createD1Client>,
-  _env: Bindings,
+  env: Bindings,
   userCount = 50,
   postsPerUser = 5,
   commentsPerPost = 3,
 ) {
-  const users = Array.from({ length: userCount }, () => ({
+  // 1. Create users first (required for foreign keys)
+  const seedUsers = Array.from({ length: userCount }, () => {
+    const userId = nanoid();
+    return {
+      id: userId,
+      email: faker.internet.email().toLowerCase(),
+      emailVerified: 1,
+      createdAt: faker.date.past().toISOString(),
+      updatedAt: faker.date.recent().toISOString(),
+    };
+  });
+
+  await batchInsert(db, users, seedUsers);
+
+  // 2. Create profiles (one per user)
+  const seedProfiles = seedUsers.map((user) => ({
     id: nanoid(),
-    userId: nanoid(),
+    userId: user.id, // Reference to users.id
     username: faker.internet
       .username()
       .toLowerCase()
@@ -120,8 +136,9 @@ export async function seedDatabase(
     updatedAt: faker.date.recent().toISOString(),
   }));
 
-  await batchInsert(db, profile, users);
+  await batchInsert(db, profile, seedProfiles);
 
+  // 3. Create hashtags
   const hashtagNames: string[] = [];
   while (hashtagNames.length < 20) {
     const tag = `#${faker.word.sample().toLowerCase()}`;
@@ -138,19 +155,20 @@ export async function seedDatabase(
 
   await batchInsert(db, hashtag, hashtags);
 
+  // 4. Create posts
   const posts = [];
   const postHashtags = [];
   const mediaItems = [];
   const postHashtagMap: Record<string, string[]> = {};
 
-  for (const user of users) {
+  for (const user of seedUsers) {
     for (let i = 0; i < postsPerUser; i++) {
       const postId = nanoid();
       const postType = faker.helpers.arrayElement(['post', 'thread']);
 
       posts.push({
         id: postId,
-        userId: user.userId,
+        userId: user.id, // Reference users.id (not profile.userId)
         content: postCaptions[Math.floor(Math.random() * postCaptions.length)],
         type: postType,
         createdAt: faker.date.recent().toISOString(),
@@ -178,7 +196,7 @@ export async function seedDatabase(
       for (let k = 0; k < mediaCount; k++) {
         mediaItems.push({
           id: nanoid(),
-          userId: user.userId,
+          userId: user.id, // Reference users.id
           postId,
           type: 'image',
           storageKey: cloudflareImageIds[Math.floor(Math.random() * cloudflareImageIds.length)],
@@ -193,33 +211,54 @@ export async function seedDatabase(
   await batchInsert(db, postHashtag, postHashtags);
   await batchInsert(db, media, mediaItems);
 
-  // ── seed post vectors ──
-  // await Promise.all(
-  //   posts.map(async (p) => {
-  //     try {
-  //       const tagsForPost = postHashtagMap[p.id] || [];
-  //       const vecData = await generatePostEmbedding(p.id, p.content, tagsForPost, env.AI);
-  //       await storePostEmbedding(vecData, env.POST_VECTORS, env.VECTORIZE);
-  //     } catch (err) {
-  //       console.error(`seedDatabase> embedding failed for post ${p.id}:`, err);
-  //     }
-  //   })
-  // );
+  // 5. Generate post embeddings
+  console.log('🔮 Generating embeddings for seeded posts...');
+  const qdrantClient = new QdrantClient(env);
+  let successCount = 0;
+  let failureCount = 0;
 
+  // Process embeddings in smaller batches to avoid overwhelming the AI service
+  const EMBEDDING_BATCH_SIZE = 5;
+  for (let i = 0; i < posts.length; i += EMBEDDING_BATCH_SIZE) {
+    const batch = posts.slice(i, i + EMBEDDING_BATCH_SIZE);
+    
+    await Promise.all(
+      batch.map(async (p) => {
+        try {
+          const tagsForPost = postHashtagMap[p.id] || [];
+          const vecData = await generatePostEmbedding(p.id, p.content, tagsForPost, env.AI);
+          await storePostEmbedding(vecData, env.POST_VECTORS, qdrantClient);
+          successCount++;
+          console.log(`✅ Generated embedding for post ${p.id} (${successCount}/${posts.length})`);
+        } catch (err) {
+          failureCount++;
+          console.error(`❌ Embedding failed for post ${p.id}:`, err);
+        }
+      })
+    );
+
+    // Add a small delay between batches to be gentle on the AI service
+    if (i + EMBEDDING_BATCH_SIZE < posts.length) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+  }
+
+  console.log(`🎯 Embedding generation complete: ${successCount} successful, ${failureCount} failed`);
+
+  // 6. Create comments
   const comments = [];
   for (const p of posts) {
-    // Track comment indices for each post
     let topLevelIndex = 1;
 
     for (let i = 0; i < commentsPerPost; i++) {
       const commentId = nanoid();
-      const randomUser = users[Math.floor(Math.random() * users.length)];
+      const randomUser = seedUsers[Math.floor(Math.random() * seedUsers.length)];
       const path = topLevelIndex.toString().padStart(2, '0');
 
       comments.push({
         id: commentId,
         postId: p.id,
-        userId: randomUser.userId,
+        userId: randomUser.id, // Reference users.id
         parentId: null,
         content: faker.lorem.sentence(),
         path,
@@ -231,13 +270,13 @@ export async function seedDatabase(
       const replyCount = Math.floor(Math.random() * 3);
       for (let j = 0; j < replyCount; j++) {
         const replyId = nanoid();
-        const replyUser = users[Math.floor(Math.random() * users.length)];
+        const replyUser = seedUsers[Math.floor(Math.random() * seedUsers.length)];
         const replyPath = `${path}.${(j + 1).toString().padStart(2, '0')}`;
 
         comments.push({
           id: replyId,
           postId: p.id,
-          userId: replyUser.userId,
+          userId: replyUser.id, // Reference users.id
           parentId: commentId,
           content: faker.lorem.sentence(),
           path: replyPath,
@@ -253,10 +292,11 @@ export async function seedDatabase(
 
   await batchInsert(db, comment, comments);
 
+  // 7. Create relationships
   const relationships = [];
-  for (const user of users) {
+  for (const user of seedUsers) {
     const followCount = 5 + Math.floor(Math.random() * 10);
-    const potentialFollowees = users.filter((u) => u.userId !== user.userId);
+    const potentialFollowees = seedUsers.filter((u) => u.id !== user.id);
 
     const shuffled = [...potentialFollowees].sort(() => 0.5 - Math.random());
     const selectedFollowees = shuffled.slice(0, followCount);
@@ -264,8 +304,8 @@ export async function seedDatabase(
     for (const followee of selectedFollowees) {
       relationships.push({
         id: nanoid(),
-        followerId: user.userId,
-        followedId: followee.userId,
+        followerId: user.id, // Reference users.id
+        followedId: followee.id, // Reference users.id
         createdAt: faker.date.recent().toISOString(),
       });
     }
@@ -274,10 +314,15 @@ export async function seedDatabase(
   await batchInsert(db, relationship, relationships);
 
   return {
-    users: users.length,
+    users: seedUsers.length,
+    profiles: seedProfiles.length,
     hashtags: hashtags.length,
     posts: posts.length,
     comments: comments.length,
     relationships: relationships.length,
+    embeddings: {
+      successful: successCount,
+      failed: failureCount,
+    },
   };
-}
+} 
