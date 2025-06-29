@@ -6,6 +6,7 @@ use nanoid::nanoid;
 use chrono::Utc;
 use crate::middleware::auth::AuthMiddleware;
 use crate::services::email_service::create_email_service;
+use urlencoding;
 
 #[derive(Debug, Deserialize)]
 struct SendCodeRequest {
@@ -657,7 +658,7 @@ impl AuthRoutes {
         let token_response = match worker::Fetch::Url(token_info_url.parse().unwrap()).send().await {
             Ok(response) => response,
             Err(e) => {
-                worker::console_log!("Failed to fetch Google token info: {:?}", e);
+                worker::console_log!("❌ Failed to fetch Google token info: {:?}", e);
                 return Ok(Response::from_json(&json!({
                     "error": "Invalid Google ID token",
                     "code": "auth/invalid-token"
@@ -666,7 +667,7 @@ impl AuthRoutes {
         };
 
         if token_response.status_code() != 200 {
-            worker::console_log!("Google token validation failed with status: {}", token_response.status_code());
+            worker::console_log!("❌ Google token validation failed with status: {}", token_response.status_code());
             return Ok(Response::from_json(&json!({
                 "error": "Invalid Google ID token",
                 "code": "auth/invalid-token"
@@ -677,7 +678,7 @@ impl AuthRoutes {
         let token_info: GoogleTokenInfo = match token_response.json().await {
             Ok(info) => info,
             Err(e) => {
-                worker::console_log!("Failed to parse Google token info: {:?}", e);
+                worker::console_log!("❌ Failed to parse Google token info: {:?}", e);
                 return Ok(Response::from_json(&json!({
                     "error": "Invalid Google ID token",
                     "code": "auth/invalid-token"
@@ -690,19 +691,30 @@ impl AuthRoutes {
             .or_else(|| env.secret("GOOGLE_CLIENT_ID_IOS").ok());
         
         if let Some(expected_id) = expected_client_id {
-            if token_info.aud != expected_id.to_string() {
-                worker::console_log!("ID token audience mismatch: expected {}, got {}", expected_id.to_string(), token_info.aud);
+            let expected_str = expected_id.to_string();
+            if token_info.aud != expected_str {
+                worker::console_log!("❌ ID token audience mismatch: expected {}, got {}", 
+                    if expected_str.len() > 20 { format!("{}...", &expected_str[..20]) } else { expected_str.clone() },
+                    if token_info.aud.len() > 20 { format!("{}...", &token_info.aud[..20]) } else { token_info.aud.clone() }
+                );
                 return Ok(Response::from_json(&json!({
                     "error": "ID token audience mismatch",
                     "code": "auth/invalid-audience"
                 }))?.with_status(401));
             }
         } else {
-            worker::console_log!("Google OAuth not configured - missing GOOGLE_CLIENT_ID");
+            worker::console_log!("❌ Google OAuth not configured - missing GOOGLE_CLIENT_ID");
             return Ok(Response::from_json(&json!({
                 "error": "Google OAuth not configured",
                 "code": "auth/oauth-not-configured"
             }))?.with_status(500));
+        }
+
+        if token_info.email.is_empty() {
+            return Ok(Response::from_json(&json!({
+                "error": "Failed to get user email from Google ID token",
+                "code": "auth/oauth-failed"
+            }))?.with_status(400));
         }
 
         let db = match env.d1("DB") {
@@ -719,11 +731,10 @@ impl AuthRoutes {
         let (user_id, is_new_user) = match Self::find_or_create_oauth_user_with_status(&db, &token_info.email, &token_info.email_verified).await {
             Ok((id, is_new)) => (id, is_new),
             Err(e) => {
-                worker::console_log!("Error finding or creating Google OAuth user: {:?}", e);
+                worker::console_log!("❌ Error finding or creating Google OAuth user: {:?}", e);
                 return Ok(Response::from_json(&json!({
-                    "error": "Internal Server Error",
-                    "message": "Failed to process OAuth login",
-                    "code": "auth/oauth-failed"
+                    "error": "Failed to create or update user",
+                    "code": "auth/user-creation-failed"
                 }))?.with_status(500));
             }
         };
@@ -732,7 +743,7 @@ impl AuthRoutes {
         let tokens = match Self::generate_jwt_tokens(&user_id, &token_info.email, &env).await {
             Ok(tokens) => tokens,
             Err(e) => {
-                worker::console_log!("Error generating JWT tokens: {:?}", e);
+                worker::console_log!("❌ Error generating JWT tokens: {:?}", e);
                 return Ok(Response::from_json(&json!({
                     "error": "Internal Server Error",
                     "message": "Failed to generate tokens",
@@ -753,7 +764,243 @@ impl AuthRoutes {
             },
             Ok(None) => false,
             Err(e) => {
-                worker::console_log!("Error checking profile existence: {:?}", e);
+                worker::console_log!("❌ Error checking profile existence: {:?}", e);
+                false
+            }
+        };
+
+        // Get security status
+        let security_status = Self::get_user_security_status(&db, &user_id).await;
+
+        // Log activity for existing users
+        if !is_new_user {
+            let activity_id = nanoid!();
+            let _ = db
+                .prepare("INSERT INTO user_activity (id, user_id, event_type, created_at) VALUES (?, ?, ?, ?)")
+                .bind(&[
+                    activity_id.into(),
+                    user_id.clone().into(),
+                    "oauth_login".into(),
+                    Utc::now().timestamp().to_string().into(),
+                ])?
+                .run()
+                .await;
+        }
+
+        let response = json!({
+            "session": {
+                "access_token": tokens.access_token,
+                "refresh_token": tokens.refresh_token,
+                "expires_at": tokens.access_token_expires_at
+            },
+            "user": {
+                "id": user_id,
+                "email": token_info.email
+            },
+            "profileExists": profile_exists,
+            "isNewUser": is_new_user,
+            "securitySetupRequired": security_status.security_setup_required,
+            "hasPasskeys": security_status.has_passkeys
+        });
+
+        Ok(Response::from_json(&response)?)
+    }
+
+    pub async fn oauth_google(mut req: Request, ctx: RouteContext<()>) -> worker::Result<Response> {
+        let body: GoogleOAuthRequest = match req.json().await {
+            Ok(body) => body,
+            Err(_) => {
+                return Ok(Response::from_json(&json!({
+                    "error": "Invalid input",
+                    "message": "Invalid JSON body",
+                    "code": "auth/invalid-input"
+                }))?.with_status(400));
+            }
+        };
+
+        let env = ctx.env;
+
+        // Check if Google OAuth is configured
+        let client_id = env.secret("GOOGLE_CLIENT_ID_IOS").ok()
+            .or_else(|| env.secret("GOOGLE_CLIENT_ID").ok());
+        
+        if client_id.is_none() {
+            return Ok(Response::from_json(&json!({
+                "error": "Google OAuth not configured. Set GOOGLE_CLIENT_ID_IOS environment variable.",
+                "code": "auth/oauth-not-configured"
+            }))?.with_status(500));
+        }
+
+        let client_id_str = client_id.unwrap().to_string();
+
+        // Exchange authorization code for tokens using correct worker API
+        let token_params = format!(
+            "client_id={}&code={}&grant_type=authorization_code&redirect_uri={}&code_verifier={}",
+            urlencoding::encode(&client_id_str),
+            urlencoding::encode(&body.code),
+            urlencoding::encode(&body.redirect_uri),
+            urlencoding::encode(&body.code_verifier)
+        );
+
+        // Create headers for token exchange
+        let headers = worker::Headers::new();
+        headers.set("Content-Type", "application/x-www-form-urlencoded")?;
+
+        // Create request for token exchange
+        let mut request_init = worker::RequestInit::new();
+        request_init.method = worker::Method::Post;
+        request_init.headers = headers;
+        request_init.body = Some(token_params.into());
+
+        let request = worker::Request::new_with_init("https://oauth2.googleapis.com/token", &request_init)?;
+        let mut token_response = match worker::Fetch::Request(request).send().await {
+            Ok(response) => response,
+            Err(e) => {
+                worker::console_log!("❌ Failed to exchange Google authorization code: {:?}", e);
+                return Ok(Response::from_json(&json!({
+                    "error": "Google OAuth authentication failed",
+                    "code": "auth/oauth-failed"
+                }))?.with_status(500));
+            }
+        };
+
+        if token_response.status_code() != 200 {
+            let error_text = token_response.text().await.unwrap_or_default();
+            worker::console_log!("❌ Google token exchange failed: status {}, error: {}", 
+                token_response.status_code(), error_text);
+            return Ok(Response::from_json(&json!({
+                "error": "Google OAuth authentication failed",
+                "code": "auth/oauth-failed"
+            }))?.with_status(500));
+        }
+
+        let token_data: serde_json::Value = match token_response.json().await {
+            Ok(data) => data,
+            Err(e) => {
+                worker::console_log!("❌ Failed to parse Google token response: {:?}", e);
+                return Ok(Response::from_json(&json!({
+                    "error": "Google OAuth authentication failed",
+                    "code": "auth/oauth-failed"
+                }))?.with_status(500));
+            }
+        };
+
+        let access_token = match token_data.get("access_token").and_then(|v| v.as_str()) {
+            Some(token) => token,
+            None => {
+                worker::console_log!("❌ No access token in Google response");
+                return Ok(Response::from_json(&json!({
+                    "error": "Google OAuth authentication failed",
+                    "code": "auth/oauth-failed"
+                }))?.with_status(500));
+            }
+        };
+
+        // Get user info from Google using the access token
+        let user_headers = worker::Headers::new();
+        user_headers.set("Authorization", &format!("Bearer {}", access_token))?;
+
+        let mut user_request_init = worker::RequestInit::new();
+        user_request_init.method = worker::Method::Get;
+        user_request_init.headers = user_headers;
+
+        let user_request = worker::Request::new_with_init("https://www.googleapis.com/oauth2/v2/userinfo", &user_request_init)?;
+        let mut user_response = match worker::Fetch::Request(user_request).send().await {
+            Ok(response) => response,
+            Err(e) => {
+                worker::console_log!("❌ Failed to get Google user info: {:?}", e);
+                return Ok(Response::from_json(&json!({
+                    "error": "Google OAuth authentication failed",
+                    "code": "auth/oauth-failed"
+                }))?.with_status(500));
+            }
+        };
+
+        if user_response.status_code() != 200 {
+            worker::console_log!("❌ Failed to get Google user info: status {}", user_response.status_code());
+            return Ok(Response::from_json(&json!({
+                "error": "Google OAuth authentication failed",
+                "code": "auth/oauth-failed"
+            }))?.with_status(500));
+        }
+
+        let user_info: serde_json::Value = match user_response.json().await {
+            Ok(info) => info,
+            Err(e) => {
+                worker::console_log!("❌ Failed to parse Google user info: {:?}", e);
+                return Ok(Response::from_json(&json!({
+                    "error": "Google OAuth authentication failed",
+                    "code": "auth/oauth-failed"
+                }))?.with_status(500));
+            }
+        };
+
+        let email = match user_info.get("email").and_then(|v| v.as_str()) {
+            Some(email) => email,
+            None => {
+                return Ok(Response::from_json(&json!({
+                    "error": "Failed to get user email from Google",
+                    "code": "auth/oauth-failed"
+                }))?.with_status(400));
+            }
+        };
+
+        let email_verified = user_info.get("verified_email")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+
+        let db = match env.d1("DB") {
+            Ok(database) => database,
+            Err(_) => {
+                return Ok(Response::from_json(&json!({
+                    "error": "Internal Server Error",
+                    "message": "Database connection failed"
+                }))?.with_status(500));
+            }
+        };
+
+        // Check if user exists or create new user
+        let (user_id, is_new_user) = match Self::find_or_create_oauth_user_with_status(
+            &db, 
+            email, 
+            &email_verified.to_string()
+        ).await {
+            Ok((id, is_new)) => (id, is_new),
+            Err(e) => {
+                worker::console_log!("❌ Error finding or creating Google OAuth user: {:?}", e);
+                return Ok(Response::from_json(&json!({
+                    "error": "Failed to create or update user",
+                    "code": "auth/user-creation-failed"
+                }))?.with_status(500));
+            }
+        };
+
+        // Generate JWT tokens
+        let tokens = match Self::generate_jwt_tokens(&user_id, email, &env).await {
+            Ok(tokens) => tokens,
+            Err(e) => {
+                worker::console_log!("❌ Error generating JWT tokens: {:?}", e);
+                return Ok(Response::from_json(&json!({
+                    "error": "Internal Server Error",
+                    "message": "Failed to generate tokens",
+                    "code": "auth/server-error"
+                }))?.with_status(500));
+            }
+        };
+
+        // Check if profile exists
+        let profile_exists = match db
+            .prepare("SELECT COUNT(*) as count FROM profile WHERE user_id = ?")
+            .bind(&[user_id.clone().into()])?
+            .first::<serde_json::Value>(None)
+            .await
+        {
+            Ok(Some(result)) => {
+                result.get("count").and_then(|v| v.as_i64()).unwrap_or(0) > 0
+            },
+            Ok(None) => false,
+            Err(e) => {
+                worker::console_log!("❌ Error checking profile existence: {:?}", e);
                 false
             }
         };
@@ -784,7 +1031,7 @@ impl AuthRoutes {
             },
             "user": {
                 "id": user_id,
-                "email": token_info.email
+                "email": email
             },
             "profileExists": profile_exists,
             "isNewUser": is_new_user,
@@ -1013,12 +1260,12 @@ impl AuthRoutes {
         let env = ctx.env;
         
         // Validate authentication
-        let user = match AuthMiddleware::validate_token(&req, &env).await {
+        let _user = match AuthMiddleware::validate_token(&req, &env).await {
             Ok(user) => user,
             Err(response) => return Ok(response),
         };
 
-        let db = match env.d1("DB") {
+        let _db = match env.d1("DB") {
             Ok(database) => database,
             Err(_) => {
                 return Ok(Response::from_json(&json!({
@@ -1090,25 +1337,6 @@ impl AuthRoutes {
                 }))?.with_status(500))
             }
         }
-    }
-
-    pub async fn oauth_google(mut req: Request, _ctx: RouteContext<()>) -> worker::Result<Response> {
-        let _body: GoogleOAuthRequest = match req.json().await {
-            Ok(body) => body,
-            Err(_) => {
-                return Ok(Response::from_json(&json!({
-                    "error": "Invalid input",
-                    "message": "Invalid JSON body",
-                    "code": "auth/invalid-input"
-                }))?.with_status(400));
-            }
-        };
-
-        // For now, return a placeholder response as Google OAuth code exchange is complex
-        return Ok(Response::from_json(&json!({
-            "error": "Google OAuth code exchange not fully implemented yet. Use /auth/oauth/google/token instead.",
-            "code": "auth/not-implemented"
-        }))?.with_status(501));
     }
 
     // Helper functions

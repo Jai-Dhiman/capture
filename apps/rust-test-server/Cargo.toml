@@ -21,6 +21,7 @@ serde_json = "1.0"
 nanoid = "0.4"
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1.0", features = ["v4", "serde", "js"] }
+urlencoding = "2.1"
 
 # Error handling
 anyhow = "1.0"
@@ -33,7 +34,7 @@ tracing-subscriber = "0.3"
 # Simple token and crypto  
 base64 = "0.22"
 js-sys = "0.3"
-# Use version 0.2 for gerandom js compatibility
+# Use version 0.2 for js compatibility
 getrandom = { version = "0.2", features = ["js"] }
 
 # HTTP and async
