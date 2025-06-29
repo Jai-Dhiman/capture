@@ -5,7 +5,7 @@ pub mod prelude;
 pub mod blocked_user;
 pub mod comment;
 pub mod comment_like;
-pub mod d1_migrations;
+// pub mod d1_migrations;  // Temporarily commented out due to DateTimeUtc issues
 pub mod email_codes;
 pub mod hashtag;
 pub mod media;
@@ -13,7 +13,7 @@ pub mod notification;
 pub mod notification_settings;
 pub mod passkeys;
 pub mod post;
-pub mod post_hashtag;
+// pub mod post_hashtag;  // Temporarily commented out due to primary key issues
 pub mod post_like;
 pub mod profile;
 pub mod relationship;

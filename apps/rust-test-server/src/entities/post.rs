@@ -27,8 +27,8 @@ pub enum Relation {
     Comment,
     #[sea_orm(has_many = "super::media::Entity")]
     Media,
-    #[sea_orm(has_many = "super::post_hashtag::Entity")]
-    PostHashtag,
+    // #[sea_orm(has_many = "super::post_hashtag::Entity")]
+    // PostHashtag,  // Temporarily commented out
     #[sea_orm(has_many = "super::post_like::Entity")]
     PostLike,
     #[sea_orm(has_many = "super::saved_posts::Entity")]
@@ -55,11 +55,11 @@ impl Related<super::media::Entity> for Entity {
     }
 }
 
-impl Related<super::post_hashtag::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::PostHashtag.def()
-    }
-}
+// impl Related<super::post_hashtag::Entity> for Entity {
+//     fn to() -> RelationDef {
+//         Relation::PostHashtag.def()
+//     }
+// }
 
 impl Related<super::post_like::Entity> for Entity {
     fn to() -> RelationDef {

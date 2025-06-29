@@ -15,14 +15,14 @@ pub struct Model {
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(has_many = "super::post_hashtag::Entity")]
-    PostHashtag,
+    // #[sea_orm(has_many = "super::post_hashtag::Entity")]
+    // PostHashtag,  // Temporarily commented out
 }
 
-impl Related<super::post_hashtag::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::PostHashtag.def()
-    }
-}
+// impl Related<super::post_hashtag::Entity> for Entity {
+//     fn to() -> RelationDef {
+//         Relation::PostHashtag.def()
+//     }
+// }
 
 impl ActiveModelBehavior for ActiveModel {}

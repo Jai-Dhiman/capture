@@ -3,7 +3,7 @@
 pub use super::blocked_user::Entity as BlockedUser;
 pub use super::comment::Entity as Comment;
 pub use super::comment_like::Entity as CommentLike;
-pub use super::d1_migrations::Entity as D1Migrations;
+// pub use super::d1_migrations::Entity as D1Migrations;  // Temporarily commented out
 pub use super::email_codes::Entity as EmailCodes;
 pub use super::hashtag::Entity as Hashtag;
 pub use super::media::Entity as Media;
@@ -11,7 +11,7 @@ pub use super::notification::Entity as Notification;
 pub use super::notification_settings::Entity as NotificationSettings;
 pub use super::passkeys::Entity as Passkeys;
 pub use super::post::Entity as Post;
-pub use super::post_hashtag::Entity as PostHashtag;
+// pub use super::post_hashtag::Entity as PostHashtag;  // Temporarily commented out
 pub use super::post_like::Entity as PostLike;
 pub use super::profile::Entity as Profile;
 pub use super::relationship::Entity as Relationship;

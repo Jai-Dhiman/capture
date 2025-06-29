@@ -1,8 +1,11 @@
 use serde_json::json;
 use worker::*;
 
+mod entities;
+mod graphql;
 mod middleware;
 mod routes;
+mod services;
 
 use routes::auth::AuthRoutes;
 
@@ -11,8 +14,7 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
     let router = Router::new();
 
     router
-        .get("/", |_, _| Response::ok("Rust Test Server is running!"))
-        .get_async("/health", |_req, ctx| async move {
+        .get_async("/", |_req, ctx| async move {
             // Get the D1 database binding from the environment
             let db = match ctx.env.d1("DB") {
                 Ok(database) => database,
@@ -66,7 +68,41 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
         .get_async("/auth/me", AuthRoutes::get_me)
         .post_async("/auth/send-code", AuthRoutes::send_code)
         .post_async("/auth/verify-code", AuthRoutes::verify_code)
-        .post_async("/auth/refresh-token", AuthRoutes::refresh_token)
+        .post_async("/auth/refresh", AuthRoutes::refresh)
+        .post_async("/auth/logout", AuthRoutes::logout)
+        // OAuth routes
+        .post_async("/auth/oauth/google", AuthRoutes::oauth_google)
+        .post_async("/auth/oauth/google/token", AuthRoutes::oauth_google_token)
+        .post_async("/auth/oauth/apple", AuthRoutes::oauth_apple)
+        // Passkey routes
+        .post_async("/auth/passkey/check", AuthRoutes::passkey_check)
+        .post_async(
+            "/auth/passkey/register/begin",
+            AuthRoutes::passkey_register_begin,
+        )
+        .post_async(
+            "/auth/passkey/register/complete",
+            AuthRoutes::passkey_register_complete,
+        )
+        .post_async(
+            "/auth/passkey/authenticate/begin",
+            AuthRoutes::passkey_authenticate_begin,
+        )
+        .post_async(
+            "/auth/passkey/authenticate/complete",
+            AuthRoutes::passkey_authenticate_complete,
+        )
+        .get_async("/auth/passkey/list", AuthRoutes::passkey_list)
+        .delete_async("/auth/passkey/:passkeyId", AuthRoutes::passkey_delete)
+        // GraphQL routes
+        .post_async("/graphql", |mut req, ctx| async move {
+            let body = req.text().await?;
+
+            // For now, we'll skip authentication - you can add JWT parsing here later
+            let user_id = None; // TODO: Extract from Authorization header
+
+            graphql::handle_graphql_request(body, ctx.env, user_id).await
+        })
         .run(req, env)
         .await
 }
