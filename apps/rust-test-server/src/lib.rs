@@ -1,10 +1,15 @@
 use serde_json::json;
 use worker::*;
 
+mod middleware;
+mod routes;
+
+use routes::auth::AuthRoutes;
+
 #[event(fetch)]
 pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Response> {
     let router = Router::new();
-    
+
     router
         .get("/", |_, _| Response::ok("Rust Test Server is running!"))
         .get_async("/health", |_req, ctx| async move {
@@ -38,15 +43,13 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
                         "database": "connected",
                         "db_check": if count > 0 { "records exist" } else { "no records" }
                     }))
-                },
-                Ok(None) => {
-                    Response::from_json(&json!({
-                        "status": "ok",
-                        "timestamp": chrono::Utc::now().to_rfc3339(),
-                        "database": "connected",
-                        "db_check": "no records"
-                    }))
-                },
+                }
+                Ok(None) => Response::from_json(&json!({
+                    "status": "ok",
+                    "timestamp": chrono::Utc::now().to_rfc3339(),
+                    "database": "connected",
+                    "db_check": "no records"
+                })),
                 Err(e) => {
                     console_log!("Database health check failed: {:?}", e);
                     let response = Response::from_json(&json!({
@@ -59,8 +62,11 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
                 }
             }
         })
+        // Authentication routes
+        .get_async("/auth/me", AuthRoutes::get_me)
+        .post_async("/auth/send-code", AuthRoutes::send_code)
+        .post_async("/auth/verify-code", AuthRoutes::verify_code)
+        .post_async("/auth/refresh-token", AuthRoutes::refresh_token)
         .run(req, env)
         .await
 }
-
-
