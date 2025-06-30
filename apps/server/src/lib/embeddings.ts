@@ -7,6 +7,7 @@ export interface VectorData {
   vector: number[];
   text: string;
   createdAt: string;
+  isPrivate?: boolean;
 }
 
 interface PostMetadata {
@@ -61,6 +62,8 @@ export async function generatePostEmbedding(
   content: string,
   hashtags: string[],
   ai: Ai,
+  userId: string,
+  isPrivate: boolean,
 ): Promise<VectorData> {
   const text = content + (hashtags.length > 0 ? ` ${hashtags.join(' ')}` : '');
 
@@ -68,9 +71,11 @@ export async function generatePostEmbedding(
 
   return {
     postId,
+    userId,
     vector,
     text,
     createdAt: new Date().toISOString(),
+    isPrivate,
   };
 }
 
@@ -118,9 +123,11 @@ export async function storePostEmbedding(
       vector: vectorData.vector,
       payload: {
         post_id: vectorData.postId,
+        user_id: vectorData.userId,
         text: vectorData.text,
         created_at: vectorData.createdAt,
         content_type: 'text',
+        is_private: !!vectorData.isPrivate,
       },
     });
 

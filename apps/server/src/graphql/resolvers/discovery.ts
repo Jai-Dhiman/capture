@@ -1,8 +1,15 @@
-import { and, desc, eq, inArray, notInArray, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, notInArray, sql, gt, lt } from 'drizzle-orm';
 import { createD1Client } from '../../db';
 import * as schema from '../../db/schema';
 import { QdrantClient, type QdrantSearchResult } from '../../lib/qdrantClient';
-import { computeScore } from '../../lib/recommendation';
+import {
+  calculateDiversityBonus,
+  calculateEngagementRate,
+  calculateTemporalRelevance,
+  computeEnhancedScore,
+  extractTopicsFromPost,
+} from '../../lib/recommendation';
+import { buildUserContext } from '../../lib/userContext';
 import type { ContextType } from '../../types';
 
 type GraphQLPostType = 'post' | 'thread';
@@ -70,13 +77,70 @@ export const discoveryResolvers = {
         return { posts: [], nextCursor: null };
       }
 
+      // Fetch seen posts to exclude them from recommendations
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      let seenPostIds: string[] = [];
+      try {
+        seenPostIds = await db
+          .select({ postId: schema.seenPostLog.postId })
+          .from(schema.seenPostLog)
+          .where(and(eq(schema.seenPostLog.userId, userId), gt(schema.seenPostLog.seenAt, thirtyDaysAgo)))
+          .then((rows) => rows.map((r) => r.postId));
+
+        // Periodically clean up old seen posts log (1% chance)
+        if (Math.random() < 0.01) {
+          const thirtyDaysAgoForCleanup = new Date(
+            Date.now() - 30 * 24 * 60 * 60 * 1000,
+          ).toISOString();
+          await db
+            .delete(schema.seenPostLog)
+            .where(lt(schema.seenPostLog.seenAt, thirtyDaysAgoForCleanup));
+          console.log('[discoverFeed] Cleaned up seen post logs older than 30 days.');
+        }
+      } catch (e) {
+        console.error(`Failed to fetch seen posts for user ${userId}:`, e);
+      }
+
+      // Build user context for personalized scoring
+      const userContext = await buildUserContext(userId, db);
+
+      // Fetch blocked user IDs for filtering
+      let blockedUserIds: string[] = [];
+      try {
+        const blockedUsersResult = await db
+          .select({ blockedId: schema.blockedUser.blockedId })
+          .from(schema.blockedUser)
+          .where(eq(schema.blockedUser.blockerId, userId));
+        blockedUserIds = blockedUsersResult.map((r) => r.blockedId);
+      } catch (e) {
+        console.error(`Failed to fetch block relationships for user ${userId}:`, e);
+      }
+
       // 2. Vector Search in Qdrant
       let vectorMatches: QdrantSearchResult[] = [];
       const vectorQueryLimit = limit * 10;
       try {
+        const filter: any = {
+          must: [],
+          should: [{ key: 'is_private', match: { value: false } }, { key: 'user_id', match: { value: userId } }],
+        };
+
+        if (blockedUserIds.length > 0) {
+          filter.must.push({
+            must_not: [{ key: 'user_id', match: { any: blockedUserIds } }],
+          });
+        }
+
+        if (seenPostIds.length > 0) {
+          filter.must.push({
+            must_not: [{ key: 'original_id', match: { any: seenPostIds.map(id => `post:${id}`) } }],
+          });
+        }
+
         vectorMatches = await qdrantClient.searchVectors({
           vector: userVector,
           limit: vectorQueryLimit,
+          filter,
         });
       } catch (e) {
         console.error(`Qdrant query failed for user ${userId}:`, e);
@@ -96,7 +160,6 @@ export const discoveryResolvers = {
           match.score,
         ]),
       );
-      const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
 
       // 3. Fetch Post Details from D1
       let recommendedPosts: (typeof schema.post.$inferSelect & {
@@ -123,52 +186,55 @@ export const discoveryResolvers = {
         throw new Error('Failed to fetch post details');
       }
 
-      // 4. Filtering
-      let followedUserIds: string[] = [];
-      let blockedUserIds: string[] = [];
-      try {
-        const [followedUsersResult, blockedUsersResult] = await Promise.all([
-          db
-            .select({ followedId: schema.relationship.followedId })
-            .from(schema.relationship)
-            .where(eq(schema.relationship.followerId, userId)),
-          db
-            .select({ blockedId: schema.blockedUser.blockedId })
-            .from(schema.blockedUser)
-            .where(eq(schema.blockedUser.blockerId, userId)),
-        ]);
-        followedUserIds = followedUsersResult.map((r) => r.followedId);
-        blockedUserIds = blockedUsersResult.map((r) => r.blockedId);
-      } catch (e) {
-        console.error(`Failed to fetch follow/block relationships for user ${userId}:`, e);
-      }
+      // 5. Ranking with the new enhanced scoring model
+      const rankedPosts = (
+        await Promise.all(
+          recommendedPosts.map(async (post) => {
+            const similarity = similarityScoreMap.get(post.id) ?? 0;
 
-      const filteredPosts = recommendedPosts.filter(
-        (post) => !blockedUserIds.includes(post.userId),
-      );
+            const engagementRate = calculateEngagementRate(
+              post._saveCount ?? 0,
+              post._commentCount ?? 0,
+              post.createdAt,
+            );
 
-      // 4.b. Privacy Filtering — remove private-profile posts unless self or followed
-      const privacyFilteredPosts = filteredPosts.filter((post) => {
-        const isPrivate = !!post.author.isPrivate;
-        if (!isPrivate) return true;
-        return post.userId === userId || followedUserIds.includes(post.userId);
-      });
+            const temporalRelevance = calculateTemporalRelevance(post.createdAt);
 
-      // 5. Ranking
-      const rankedPosts = privacyFilteredPosts.sort((a, b) => {
-        const aIsRecentFollowed =
-          followedUserIds.includes(a.userId) && new Date(a.createdAt).getTime() >= oneWeekAgo;
-        const bIsRecentFollowed =
-          followedUserIds.includes(b.userId) && new Date(b.createdAt).getTime() >= oneWeekAgo;
-        if (aIsRecentFollowed && !bIsRecentFollowed) return -1;
-        if (!aIsRecentFollowed && bIsRecentFollowed) return 1;
+            // Fetch hashtags and media type for the post to calculate remaining signals
+            const postDetails = await db.query.post.findFirst({
+              where: eq(schema.post.id, post.id),
+              with: {
+                hashtags: { with: { hashtag: true } },
+                media: { columns: { type: true } },
+              },
+            });
 
-        const simA = similarityScoreMap.get(a.id) ?? 0;
-        const simB = similarityScoreMap.get(b.id) ?? 0;
-        const scoreA = computeScore(simA, a._saveCount ?? 0, a._commentCount ?? 0);
-        const scoreB = computeScore(simB, b._saveCount ?? 0, b._commentCount ?? 0);
-        return scoreB - scoreA;
-      });
+            const postHashtags = postDetails?.hashtags.map((h) => h.hashtag.name) ?? [];
+            const postTopics = extractTopicsFromPost(post.content, postHashtags);
+            const diversityBonus = calculateDiversityBonus(postTopics, userContext.recentTopics);
+
+            const getContentType = (): 'text' | 'image' | 'video' | 'mixed' => {
+              const mediaTypes = postDetails?.media.map((m) => m.type) ?? [];
+              if (mediaTypes.length === 0) return 'text';
+              if (mediaTypes.length > 1) return 'mixed';
+              const type = mediaTypes[0];
+              return type === 'image' || type === 'video' ? type : 'text';
+            };
+
+            const signals = {
+              similarity,
+              engagementRate,
+              contentType: getContentType(),
+              temporalRelevance,
+              diversityBonus,
+            };
+
+            const score = computeEnhancedScore(signals, userContext);
+
+            return { ...post, score };
+          }),
+        )
+      ).sort((a, b) => b.score - a.score);
 
       // 6. Pagination (Cursor-based)
       const startIndex = cursor

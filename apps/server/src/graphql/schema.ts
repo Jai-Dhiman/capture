@@ -40,6 +40,7 @@ export const typeDefs = `
     unblockUser(userId: ID!): UnblockResponse!
     markNotificationRead(id: ID!): NotificationReadResponse!
     markAllNotificationsRead: NotificationReadResponse!
+    markPostsAsSeen(postIds: [ID!]!): SeenPostsResponse!
   }
 
   type Subscription {
@@ -189,6 +190,10 @@ export const typeDefs = `
 }
 
 type UnblockResponse {
+  success: Boolean!
+}
+
+type SeenPostsResponse {
   success: Boolean!
 }
 

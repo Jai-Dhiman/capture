@@ -252,3 +252,46 @@ export const useDeletePost = () => {
     },
   });
 };
+
+export const useMarkPostsAsSeen = () => {
+  return useMutation({
+    mutationFn: async (postIds: string[]) => {
+      if (postIds.length === 0) {
+        return { success: true };
+      }
+      const { session } = useAuthStore.getState();
+      if (!session?.access_token) {
+        console.log('No auth token available for marking posts as seen.');
+        return { success: false };
+      }
+      const response = await fetch(`${API_URL}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          query: `
+            mutation MarkPostsAsSeen($postIds: [ID!]!) {
+              markPostsAsSeen(postIds: $postIds) {
+                success
+              }
+            }
+          `,
+          variables: {
+            postIds,
+          },
+        }),
+      });
+      const data = await response.json();
+      if (data.errors) {
+        console.error('GraphQL Errors marking posts as seen:', data.errors);
+        return { success: false };
+      }
+      return data.data.markPostsAsSeen;
+    },
+    onError: (error) => {
+      console.error('Error marking posts as seen:', error);
+    },
+  });
+};

@@ -5,7 +5,7 @@ import Header from '@/shared/components/Header';
 import { SkeletonElement } from '@/shared/components/SkeletonLoader';
 import { FlashList } from '@shopify/flash-list';
 import { MotiView } from 'moti';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   ActivityIndicator,
   type NativeScrollEvent,
@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { EmptyState } from '../components/EmptyState';
 import { useDiscoverFeed } from '../hooks/useDiscoverFeed';
+import { useMarkPostsAsSeen } from '@/features/post/hooks/usePosts';
 
 const HEADER_HEIGHT = 150;
 
@@ -33,6 +34,8 @@ export default function Feed() {
     hasNextPage,
     isFetchingNextPage,
   } = useDiscoverFeed();
+  const { mutate: markAsSeen } = useMarkPostsAsSeen();
+  const seenPostIdsRef = useRef(new Set<string>());
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -41,6 +44,19 @@ export default function Feed() {
   };
 
   const posts = data?.pages.flatMap((page) => page.posts) || [];
+
+  useEffect(() => {
+    if (posts.length > 0) {
+      const newPostIds = posts.map((p) => p.id).filter((id) => !seenPostIdsRef.current.has(id));
+
+      if (newPostIds.length > 0) {
+        for (const id of newPostIds) {
+          seenPostIdsRef.current.add(id);
+        }
+        markAsSeen(newPostIds);
+      }
+    }
+  }, [posts, markAsSeen]);
 
   const renderItem = ({ item }: { item: Post | Thread }) => {
     if (item.type === 'thread') {

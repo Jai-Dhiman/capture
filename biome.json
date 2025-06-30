@@ -18,7 +18,17 @@
         "useConst": "error"
       }
     },
-    "ignore": ["node_modules", "dist", ".next", "build", "out", ".turbo", "drizzle", "coverage"]
+    "ignore": [
+      "node_modules",
+      "dist",
+      ".next",
+      "build",
+      "out",
+      ".turbo",
+      "drizzle",
+      "coverage",
+      "apps/server/.wrangler/**"
+    ]
   },
   "formatter": {
     "enabled": true,
@@ -35,7 +45,8 @@
       ".turbo",
       "drizzle",
       "coverage",
-      "*.md"
+      "*.md",
+      "apps/server/.wrangler/**"
     ]
   },
   "javascript": {

@@ -1,4 +1,4 @@
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, not, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { createD1Client } from '../../db';
 import * as schema from '../../db/schema';
@@ -254,6 +254,38 @@ export const postResolvers = {
         throw new Error(
           `Failed to delete post: ${error instanceof Error ? error.message : 'Unknown error'}`,
         );
+      }
+    },
+
+    markPostsAsSeen: async (
+      _: unknown,
+      { postIds }: { postIds: string[] },
+      context: ContextType,
+    ): Promise<{ success: boolean }> => {
+      const { user, env } = context;
+      if (!user) {
+        throw new Error('Authentication required');
+      }
+      if (!postIds || postIds.length === 0) {
+        return { success: true };
+      }
+
+      const db = createD1Client(env);
+      const seenAt = new Date().toISOString();
+
+      try {
+        const seenPostsData = postIds.map((postId) => ({
+          userId: user.id,
+          postId,
+          seenAt,
+        }));
+
+        await db.insert(schema.seenPostLog).values(seenPostsData).execute();
+
+        return { success: true };
+      } catch (error) {
+        console.error('Failed to mark posts as seen:', error);
+        throw new Error('Could not update seen posts');
       }
     },
   },

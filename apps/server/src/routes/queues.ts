@@ -66,18 +66,20 @@ export async function handlePostQueue(
             id: schema.post.id,
             content: schema.post.content,
             userId: schema.post.userId,
+            authorIsPrivate: schema.profile.isPrivate,
           })
           .from(schema.post)
+          .leftJoin(schema.profile, eq(schema.post.userId, schema.profile.userId))
           .where(eq(schema.post.id, postId))
           .get();
 
-          if (!post || !post.userId) {
-            console.error(
-              `[handlePostQueue][${messageId}] Post or userId not found: ${postId}. Retrying message.`,
-            );
-            message.retry();
-            return;
-          }
+        if (!post || !post.userId) {
+          console.error(
+            `[handlePostQueue][${messageId}] Post or userId not found: ${postId}. Retrying message.`,
+          );
+          message.retry();
+          return;
+        }
 
         const hashtags = await db
           .select({ name: schema.hashtag.name })
@@ -88,7 +90,14 @@ export async function handlePostQueue(
           .then((rows) => rows.map((r) => r.name));
         const validHashtags = hashtags.filter((tag): tag is string => tag !== null);
 
-        const vectorData = await generatePostEmbedding(postId, post.content, validHashtags, env.AI);
+        const vectorData = await generatePostEmbedding(
+          postId,
+          post.content,
+          validHashtags,
+          env.AI,
+          post.userId,
+          !!post.authorIsPrivate,
+        );
 
         if (!vectorData || !Array.isArray(vectorData.vector) || vectorData.vector.length === 0) {
           console.error(

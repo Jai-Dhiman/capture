@@ -1,4 +1,5 @@
 import { foreignKey, index, integer, numeric, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { relations } from 'drizzle-orm';
 
 export const users = sqliteTable('users', {
   id: text('id').primaryKey(),
@@ -79,6 +80,17 @@ export const post = sqliteTable(
   },
   (table) => [index('user_posts_idx').on(table.userId), index('post_time_idx').on(table.createdAt)],
 );
+
+export const postRelations = relations(post, ({ one, many }) => ({
+  user: one(users, {
+    fields: [post.userId],
+    references: [users.id],
+  }),
+  media: many(media),
+  comments: many(comment),
+  savedBy: many(savedPost),
+  hashtags: many(postHashtag),
+}));
 
 export const media = sqliteTable(
   'media',
@@ -170,6 +182,17 @@ export const postHashtag = sqliteTable(
   ],
 );
 
+export const postHashtagRelations = relations(postHashtag, ({ one }) => ({
+  post: one(post, {
+    fields: [postHashtag.postId],
+    references: [post.id],
+  }),
+  hashtag: one(hashtag, {
+    fields: [postHashtag.hashtagId],
+    references: [hashtag.id],
+  }),
+}));
+
 export const relationship = sqliteTable(
   'relationship',
   {
@@ -243,6 +266,24 @@ export const commentLike = sqliteTable(
     index('user_comment_likes_idx').on(table.userId),
     index('comment_likes_idx').on(table.commentId),
     index('comment_like_composite_idx').on(table.userId, table.commentId),
+  ],
+);
+
+export const seenPostLog = sqliteTable(
+  'seen_post_log',
+  {
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id),
+    postId: text('post_id')
+      .notNull()
+      .references(() => post.id),
+    seenAt: numeric('seen_at').default(new Date().toISOString()).notNull(),
+  },
+  (table) => [
+    index('seen_post_user_id_idx').on(table.userId),
+    index('seen_post_seen_at_idx').on(table.seenAt),
+    index('seen_post_composite_idx').on(table.userId, table.postId),
   ],
 );
 
