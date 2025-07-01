@@ -1,0 +1,51 @@
+[package]
+name = "rust-test-server"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[dependencies]
+# Web framework
+worker = { version = "0.6", features = ["d1"] }
+
+# Database - SeaORM for entity generation only (no runtime database features needed)  
+sea-orm = { version = "1.0", default-features = false, features = ["macros"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Utilities
+nanoid = "0.4"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.0", features = ["v4", "serde", "js"] }
+urlencoding = "2.1"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "2.0.12"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+# Simple token and crypto  
+base64 = "0.22"
+js-sys = "0.3"
+# Use version 0.2 for js compatibility
+getrandom = { version = "0.2", features = ["js"] }
+
+# Web Crypto API bindings
+web-sys = { version = "0.3", features = [
+  "Crypto",
+  "SubtleCrypto",
+  "CryptoKey",
+] }
+wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
+wasm-bindgen-futures = "0.4"
+
+# HTTP and async
+url = "2.4"
+reqwest = { version = "0.12.20", features = ["json"] }
