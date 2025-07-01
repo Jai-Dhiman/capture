@@ -10,7 +10,6 @@ import mediaRouter from '@/routes/media';
 import profileRouter from '@/routes/profile';
 import { handlePostQueue, handleUserEmbeddingQueue } from '@/routes/queues';
 import seedRouter from '@/routes/seed';
-import testVectorsRouter from '@/routes/test-vectors';
 import type { Bindings, ContextType, Variables } from '@/types';
 import { ApolloServer } from '@apollo/server';
 import { startServerAndCreateCloudflareWorkersHandler } from '@as-integrations/cloudflare-workers';
@@ -105,7 +104,6 @@ app.route('/api/media', mediaRouter);
 app.route('/api/profile', profileRouter);
 app.route('/api/interests', interestsRouter);
 app.route('/api/deeplink', deeplinkRouter);
-app.route('/api/test-vectors', testVectorsRouter);
 
 app.onError(errorHandler);
 
