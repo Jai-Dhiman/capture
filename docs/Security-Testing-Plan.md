@@ -4,7 +4,7 @@
  
 ---
  
-## 🔰 Phase 1: Manual Testing (Weeks 1–2)
+## 🔰 Phase 1: Manual Testing
  
 ### 🎯 Objectives
 - Understand the structure and flow of Capture’s authentication system
@@ -42,7 +42,7 @@
  
 ---
  
-## 🧨 Phase 2: Tool-Assisted Ethical Hacking (Weeks 3–4)
+## 🧨 Phase 2: Tool-Assisted Ethical Hacking
  
 ### 🎯 Objectives
 - Explore how automated tools find vulnerabilities
@@ -77,7 +77,7 @@
 ---
 
 ## Bonus
-## 🧰 Phase 3: CI-Integrated Security Scanning (Weeks 5+)
+## 🧰 Phase 3: CI-Integrated Security Scanning
 
 **Goal:** Identify and mitigate vulnerabilities through automated scanning across the codebase, runtime environment, and dependencies.
 
