@@ -73,15 +73,33 @@
 - What was tested
 - What was found (or not)
 - What you learned
- 
+
+---
+
+## Bonus
+## 🧰 Phase 3: CI-Integrated Security Scanning (Weeks 5+)
+
+**Goal:** Identify and mitigate vulnerabilities through automated scanning across the codebase, runtime environment, and dependencies.
+
+| Category                | Tooling                                         | Trigger                        | Purpose                                                                 |
+|-------------------------|-------------------------------------------------|--------------------------------|-------------------------------------------------------------------------|
+| **SAST** (Static App Security Testing)   | GitHub CodeQL, SonarQube, Snyk Code             | On every PR                    | Identify insecure code patterns (e.g. unsanitized inputs, unsafe functions) |
+| **DAST** (Dynamic App Security Testing) | OWASP ZAP CLI, Burp Suite Pro (optional)        | Weekly or pre-release on staging | Simulate real-world attacks on the running application                 |
+| **Dependency Scanning** | `npm audit`, `yarn audit`, Snyk, Dependabot     | On every PR                    | Detect known CVEs in third-party libraries                             |
+| **Secrets Scanning**    | GitGuardian, TruffleHog, GitHub Secret Scanning | On every commit                | Prevent accidental secret/key leaks in code                            |
+| **Authentication Logic Tests** | Manual + automated (e.g. Playwright)       | Before major auth changes      | Ensure fallback paths, session logic, and MFA flows are secure         |
+
 ---
  
 ## 🎓 Resources
  
 - [OWASP Juice Shop](https://owasp.org/www-project-juice-shop/) (practice app)
 - [ZAP Getting Started Guide](https://www.zaproxy.org/getting-started/)
+- [OWASP ZAP Docker Guide](https://www.zaproxy.org/docs/docker/baseline-scan/)
 - [Burp Suite Academy](https://portswigger.net/web-security)
 - [sqlmap Tutorial (Infosec Writeups)](https://infosecwriteups.com/sqlmap-guide-beginners-edition-f355b8e89050)
 - [WebAuthn Guide](https://webauthn.guide/)
+- [Snyk Learn](https://learn.snyk.io/)
+- [Github Secret Scanning](https://docs.github.com/en/code-security/secret-scanning)
+- [CodeQL Docs](https://codeql.github.com/docs/)
  
----
