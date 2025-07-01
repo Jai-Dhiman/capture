@@ -68,9 +68,6 @@ expo-env.d.ts
 # Metro
 .metro-health-check*
 
-#Cursor
-.cursor/
-
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
@@ -80,3 +77,33 @@ target/
 **/*.rs.bk
 wasm-pack.log
 build/
+
+# Logs
+logs
+*.log
+yarn-debug.log*
+yarn-error.log*
+dev-debug.log
+# Dependency directories
+node_modules/
+# Environment variables
+# Editor directories and files
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+# OS specific
+
+# Taskmaster
+.roomodees
+.taskmaster/
+.roo/
+.clinerules
+.vscode/
+.claude/
+.cursor/
+instructions/
+
+CLAUDE.md
