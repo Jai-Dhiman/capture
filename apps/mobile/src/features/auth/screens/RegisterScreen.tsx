@@ -52,11 +52,11 @@ export default function RegisterScreen({ navigation }: Props) {
         />
 
         <View className="flex-1 px-[26px] justify-center">
-          <View className="flex flex-col space-y-[23px] mb-[160px]">
+          <View className="flex flex-col space-y-[23px] mb-[145px]">
 
             <TouchableOpacity
               onPress={() => navigation.navigate('EmailSignup')}
-              className="bg-white h-[56px] rounded-[30px] shadow-md flex-row items-center justify-center mb-[23px]"
+              className="bg-white h-[56px] rounded-[30px] shadow-md flex-row items-center justify-center mb-[30px]"
             >
               <EmailIcon width={24} height={24} style={{ marginRight: 16 }} />
               <Text className="text-base font-bold font-roboto text-[#1C1C1C]">
@@ -67,11 +67,11 @@ export default function RegisterScreen({ navigation }: Props) {
             <OAuthButtons showDivider={false} />
 
 
-            <View className="mb-[23px]" style={shadowStyle}>
+            <View className="mb-[30px]" style={shadowStyle}>
               <GoogleOAuthButton />
             </View>
 
-            <View className="mb-[23px]" style={shadowStyle}>
+            <View className="mb-[30px]" style={shadowStyle}>
               <AppleOAuthButton />
             </View>
 
