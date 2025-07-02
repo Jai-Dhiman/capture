@@ -216,7 +216,7 @@ export default function LoginScreen({ navigation }: Props) {
             emailInputRef.current?.blur();
           }}
         >
-          <View className="flex-1 px-[26px] pt-[80px]">
+          <View className="flex-1 px-[26px] pt-[96px]">
             <form.Field
               name="email"
               validators={{
@@ -288,7 +288,7 @@ export default function LoginScreen({ navigation }: Props) {
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
               {([canSubmit, isFormSubmitting]) => (
                 <TouchableOpacity
-                  className={`h-[56px] ${canSubmit ? 'bg-[#E4CAC7]' : 'bg-stone-300'} rounded-[30px] shadow-md justify-center items-center`}
+                  className={`h-[56px] ${canSubmit ? 'bg-[#E4CAC7]' : 'bg-stone-300'} mt-[26px] rounded-[30px] shadow-md justify-center items-center`}
                   onPress={() => form.handleSubmit()}
                   disabled={!canSubmit || isFormSubmitting || isLoading}
                   style={shadowStyle}
@@ -344,7 +344,7 @@ export default function LoginScreen({ navigation }: Props) {
             </View>
           </View>
         </TouchableWithoutFeedback>
-      </View>
-    </View>
+      </View >
+    </View >
   );
 }

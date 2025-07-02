@@ -122,7 +122,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
 
           <View className="h-[40px]" />
 
-          <View className="px-[26px] w-full">
+          <View className="px-[26px] w-full mt-[170px]">
             <form.Field
               name="email"
               validators={{
@@ -217,6 +217,10 @@ export default function EmailSignupScreen({ navigation }: Props) {
               )}
             </form.Field>
 
+            <Text
+              className='text-center mt-[240px] mb-4'
+            >We recommend saving this information</Text>
+
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
               {([canSubmit, isFormSubmitting]) => (
                 <TouchableOpacity
@@ -230,7 +234,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
                     <LoadingSpinner message="Sending verification codes..." />
                   ) : (
                     <Text className="text-center text-black text-[16px] font-bold font-roboto">
-                      Continue
+                      Create Account
                     </Text>
                   )}
                 </TouchableOpacity>
