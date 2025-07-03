@@ -31,7 +31,6 @@ router.get('/check-username', async (c) => {
 
 router.post('/', async (c) => {
   const user = c.get('user');
-  console.log('Profile creation attempt - User:', user?.id, 'Email:', user?.email);
 
   const schema = z.object({
     userId: z.string(),
@@ -42,23 +41,15 @@ router.post('/', async (c) => {
 
   try {
     const body = await c.req.json();
-    console.log('Profile creation request body:', JSON.stringify(body, null, 2));
     
     const data = schema.parse(body);
-    console.log('Parsed profile data:', JSON.stringify(data, null, 2));
 
     if (data.userId !== user.id) {
-      console.error('Unauthorized profile creation attempt:', {
-        requestUserId: data.userId,
-        authenticatedUserId: user.id
-      });
       return c.json({ message: 'Unauthorized' }, 403);
     }
-
-    console.log('Initializing database connection...');
+    
     const db = drizzle(c.env.DB);
 
-    console.log('Checking for existing username:', data.username);
     const existingProfile = await db
       .select()
       .from(profile)
@@ -66,7 +57,6 @@ router.post('/', async (c) => {
       .get();
 
     if (existingProfile) {
-      console.log('Username already taken:', data.username, 'by user:', existingProfile.userId);
       return c.json({ message: 'Username already taken' }, 400);
     }
 
@@ -81,9 +71,7 @@ router.post('/', async (c) => {
       updatedAt: new Date().toISOString(),
     };
 
-    console.log('Inserting new profile:', JSON.stringify(newProfile, null, 2));
     await db.insert(profile).values(newProfile);
-    console.log('Profile created successfully for user:', user.id);
 
     return c.json(newProfile, 201);
   } catch (error) {

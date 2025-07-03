@@ -261,7 +261,6 @@ export const useMarkPostsAsSeen = () => {
       }
       const { session } = useAuthStore.getState();
       if (!session?.access_token) {
-        console.log('No auth token available for marking posts as seen.');
         return { success: false };
       }
       const response = await fetch(`${API_URL}/graphql`, {

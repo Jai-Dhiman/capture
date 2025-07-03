@@ -21,11 +21,6 @@ export default function CreateProfile() {
   const { logout } = useAuth();
   const createProfileMutation = useCreateProfile();
 
-  // Debug auth state
-  React.useEffect(() => {
-    console.log('[CREATE_PROFILE] Component mounted - checking auth state');
-  }, []);
-
   const usernameInputRef = useRef<TextInput>(null);
   const bioInputRef = useRef<TextInput>(null);
 
@@ -60,20 +55,10 @@ export default function CreateProfile() {
       bio: '',
     },
     onSubmit: async ({ value }) => {
-      console.log('[CREATE_PROFILE] Form submit triggered with value:', value);
-      console.log('[CREATE_PROFILE] Profile image:', profileImage);
-      
       if (!value.username.trim()) {
-        console.log('[CREATE_PROFILE] Username validation failed - empty username');
         showAlert('Username is required', { type: 'warning' });
         return;
       }
-
-      console.log('[CREATE_PROFILE] Starting mutation with data:', {
-        username: value.username.trim(),
-        bio: value.bio.trim() || undefined,
-        profileImage,
-      });
 
       createProfileMutation.mutate(
         {
@@ -83,12 +68,10 @@ export default function CreateProfile() {
         },
         {
           onSuccess: () => {
-            console.log('[CREATE_PROFILE] Mutation succeeded');
             showAlert('Profile created successfully!', { type: 'success', duration: 3000 });
             navigation.navigate('App', { screen: 'Feed' });
           },
           onError: (error) => {
-            console.log('[CREATE_PROFILE] Mutation failed:', error);
             const errorMessage =
               error instanceof Error ? error.message : 'Failed to create profile';
 
@@ -171,24 +154,18 @@ export default function CreateProfile() {
                 name="username"
                 validators={{
                   onChange: ({ value }) => {
-                    console.log('[CREATE_PROFILE] Username validation for:', value);
                     if (!value.trim()) {
-                      console.log('[CREATE_PROFILE] Username validation failed: empty');
                       return 'Username is required';
                     }
                     if (value.length < 3) {
-                      console.log('[CREATE_PROFILE] Username validation failed: too short');
                       return 'Username must be at least 3 characters';
                     }
                     if (value.length > USERNAME_MAX_LENGTH) {
-                      console.log('[CREATE_PROFILE] Username validation failed: too long');
                       return `Username must be ${USERNAME_MAX_LENGTH} characters or less`;
                     }
                     if (!/^[a-zA-Z0-9_]+$/.test(value)) {
-                      console.log('[CREATE_PROFILE] Username validation failed: invalid characters');
                       return 'Username can only contain letters, numbers, and underscores';
                     }
-                    console.log('[CREATE_PROFILE] Username validation passed');
                     return undefined;
                   },
                 }}
@@ -345,26 +322,22 @@ export default function CreateProfile() {
 
           <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
             {([canSubmit, isSubmitting]) => {
-              console.log('[CREATE_PROFILE] Form subscription update - canSubmit:', canSubmit, 'isSubmitting:', isSubmitting);
               return (
-              <TouchableOpacity
-                className={`bg-stone-300 h-[56px] rounded-[30px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] justify-center mt-8 items-center backdrop-blur-[2px] mx-[26px] ${!canSubmit ? 'opacity-70' : ''}`}
-                onPress={() => {
-                  console.log('[CREATE_PROFILE] Button pressed - triggering form submit');
-                  console.log('[CREATE_PROFILE] Form state - canSubmit:', canSubmit, 'isSubmitting:', isSubmitting);
-                  console.log('[CREATE_PROFILE] Mutation state - isPending:', createProfileMutation.isPending);
-                  form.handleSubmit();
-                }}
-                disabled={createProfileMutation.isPending || isSubmitting}
-              >
-                {createProfileMutation.isPending || isSubmitting ? (
-                  <LoadingSpinner />
-                ) : (
-                  <Text className="text-base font-bold font-roboto text-center text-black">
-                    Create Profile
-                  </Text>
-                )}
-              </TouchableOpacity>
+                <TouchableOpacity
+                  className={`bg-stone-300 h-[56px] rounded-[30px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] justify-center mt-8 items-center backdrop-blur-[2px] mx-[26px] ${!canSubmit ? 'opacity-70' : ''}`}
+                  onPress={() => {
+                    form.handleSubmit();
+                  }}
+                  disabled={createProfileMutation.isPending || isSubmitting}
+                >
+                  {createProfileMutation.isPending || isSubmitting ? (
+                    <LoadingSpinner />
+                  ) : (
+                    <Text className="text-base font-bold font-roboto text-center text-black">
+                      Create Profile
+                    </Text>
+                  )}
+                </TouchableOpacity>
               );
             }}
           </form.Subscribe>

@@ -62,33 +62,23 @@ export const discoveryResolvers = {
       const userId = user.id;
       const { USER_VECTORS } = env;
 
-      // Check cache first for the complete feed result
-      const feedCacheKey = CacheKeys.discoveryFeed(userId, cursor);
-      const cachedFeed = await cachingService.get<GraphQLFeedPayload>(feedCacheKey);
-      if (cachedFeed) {
-        return cachedFeed;
-      }
+      // Check cache first for the complete feed result - TEMPORARILY DISABLED
+      // const feedCacheKey = CacheKeys.discoveryFeed(userId, cursor);
+      // const cachedFeed = await cachingService.get<GraphQLFeedPayload>(feedCacheKey);
+      // if (cachedFeed) {
+      //   return cachedFeed;
+      // }
 
       if (!USER_VECTORS) {
         console.error('USER_VECTORS KV binding missing');
         throw new Error('Server configuration error: Bindings missing');
       }
 
-      // 1. Get User Vector from cache or KV
+      // 1. Get User Vector from KV directly - CACHE DISABLED
       let userVector: number[] | null = null;
-      const userVectorCacheKey = CacheKeys.userVector(userId);
       
       try {
-        // Try cache first
-        userVector = await cachingService.get<number[]>(userVectorCacheKey);
-        
-        // If not in cache, get from KV and cache it
-        if (!userVector) {
-          userVector = await USER_VECTORS.get<number[]>(userId, { type: 'json' });
-          if (userVector) {
-            await cachingService.set(userVectorCacheKey, userVector, CacheTTL.USER_VECTOR);
-          }
-        }
+        userVector = await USER_VECTORS.get<number[]>(userId, { type: 'json' });
       } catch (e) {
         console.error(`Failed to get user interest vector for ${userId}:`, e);
         return { posts: [], nextCursor: null };
@@ -98,27 +88,16 @@ export const discoveryResolvers = {
         return { posts: [], nextCursor: null };
       }
 
-      // Fetch seen posts to exclude them from recommendations (with caching)
+      // Fetch seen posts to exclude them from recommendations - CACHE DISABLED
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
       let seenPostIds: string[] = [];
-      const seenPostsCacheKey = CacheKeys.seenPosts(userId);
       
       try {
-        // Try cache first
-        seenPostIds = await cachingService.get<string[]>(seenPostsCacheKey) || [];
-        
-        // If not in cache or empty, fetch from DB and cache
-        if (seenPostIds.length === 0) {
-          seenPostIds = await db
-            .select({ postId: schema.seenPostLog.postId })
-            .from(schema.seenPostLog)
-            .where(and(eq(schema.seenPostLog.userId, userId), gt(schema.seenPostLog.seenAt, thirtyDaysAgo)))
-            .then((rows) => rows.map((r) => r.postId));
-          
-          if (seenPostIds.length > 0) {
-            await cachingService.set(seenPostsCacheKey, seenPostIds, CacheTTL.SEEN_POSTS);
-          }
-        }
+        seenPostIds = await db
+          .select({ postId: schema.seenPostLog.postId })
+          .from(schema.seenPostLog)
+          .where(and(eq(schema.seenPostLog.userId, userId), gt(schema.seenPostLog.seenAt, thirtyDaysAgo)))
+          .then((rows) => rows.map((r) => r.postId));
 
         // Periodically clean up old seen posts log (1% chance)
         if (Math.random() < 0.01) {
@@ -128,44 +107,23 @@ export const discoveryResolvers = {
           await db
             .delete(schema.seenPostLog)
             .where(lt(schema.seenPostLog.seenAt, thirtyDaysAgoForCleanup));
-          console.log('[discoverFeed] Cleaned up seen post logs older than 30 days.');
-          
-          // Invalidate cache after cleanup
-          await cachingService.delete(seenPostsCacheKey);
         }
       } catch (e) {
         console.error(`Failed to fetch seen posts for user ${userId}:`, e);
       }
 
-      // Build user context for personalized scoring (with caching)
-      const userContextCacheKey = CacheKeys.userContext(userId);
-      let userContext = await cachingService.get<UserContext>(userContextCacheKey);
-      
-      if (!userContext) {
-        userContext = await buildUserContext(userId, db);
-        await cachingService.set(userContextCacheKey, userContext, CacheTTL.USER_CONTEXT);
-      }
+      // Build user context for personalized scoring - CACHE DISABLED
+      let userContext = await buildUserContext(userId, db);
 
-      // Fetch blocked user IDs for filtering (with caching)
+      // Fetch blocked user IDs for filtering - CACHE DISABLED
       let blockedUserIds: string[] = [];
-      const blockedUsersCacheKey = CacheKeys.blockedUsers(userId);
       
       try {
-        // Try cache first
-        blockedUserIds = await cachingService.get<string[]>(blockedUsersCacheKey) || [];
-        
-        // If not in cache, fetch from DB and cache
-        if (blockedUserIds.length === 0) {
-          const blockedUsersResult = await db
-            .select({ blockedId: schema.blockedUser.blockedId })
-            .from(schema.blockedUser)
-            .where(eq(schema.blockedUser.blockerId, userId));
-          blockedUserIds = blockedUsersResult.map((r) => r.blockedId);
-          
-          if (blockedUserIds.length > 0) {
-            await cachingService.set(blockedUsersCacheKey, blockedUserIds, CacheTTL.BLOCKED_USERS);
-          }
-        }
+        const blockedUsersResult = await db
+          .select({ blockedId: schema.blockedUser.blockedId })
+          .from(schema.blockedUser)
+          .where(eq(schema.blockedUser.blockerId, userId));
+        blockedUserIds = blockedUsersResult.map((r) => r.blockedId);
       } catch (e) {
         console.error(`Failed to fetch block relationships for user ${userId}:`, e);
       }
@@ -345,8 +303,8 @@ export const discoveryResolvers = {
         nextCursor,
       };
 
-      // Cache the final feed result
-      await cachingService.set(feedCacheKey, response, CacheTTL.DISCOVERY_FEED);
+      // Cache the final feed result - DISABLED
+      // await cachingService.set(feedCacheKey, response, CacheTTL.DISCOVERY_FEED);
 
       return response;
     },

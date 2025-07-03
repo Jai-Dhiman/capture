@@ -43,29 +43,15 @@ export const useAuthStore = create<AuthStoreState & AuthStoreActions>()(
       ...initialState,
 
       setAuthData: (data: AuthResponse) => {
-        console.log('[AUTH] setAuthData called with:', {
-          securitySetupRequired: data.securitySetupRequired,
-          profileExists: data.profileExists,
-          hasPasskeys: data.hasPasskeys,
-          isNewUser: data.isNewUser,
-          userId: data.user?.id,
-          userEmail: data.user?.email
-        });
 
         let stage: AuthStage = 'authenticated';
         
         // Security setup should happen before profile creation
         if (data.securitySetupRequired === true) {
           stage = 'securitySetupRequired';
-          console.log('[AUTH] Stage set to securitySetupRequired - passkey setup will be shown');
         } else if (data.profileExists === false) {
           stage = 'profileRequired';
-          console.log('[AUTH] Stage set to profileRequired - profile creation will be shown');
-        } else {
-          console.log('[AUTH] Stage set to authenticated - user is fully set up');
         }
-
-        console.log('[AUTH] Final auth stage decision:', stage);
       
         set({
           user: data.user,
@@ -132,12 +118,10 @@ export const useAuthStore = create<AuthStoreState & AuthStoreActions>()(
       },
 
       checkInitialSession: async () => {
-        console.log('[AUTH] checkInitialSession starting...');
         set({ status: 'checking', error: null });
         const currentSession = get().session;
 
         if (!currentSession?.access_token || !currentSession?.refresh_token) {
-          console.log('[AUTH] checkInitialSession: No valid session found, setting to unauthenticated');
           set({
             status: 'success',
             stage: 'unauthenticated',
@@ -146,8 +130,6 @@ export const useAuthStore = create<AuthStoreState & AuthStoreActions>()(
           });
           return;
         }
-
-        console.log('[AUTH] checkInitialSession: Session found, checking validity...');
 
         const now = Date.now();
         const fiveMinutes = 5 * 60 * 1000;
@@ -165,28 +147,16 @@ export const useAuthStore = create<AuthStoreState & AuthStoreActions>()(
             const me = await workersAuthApi.getMe();
 
             if (me) {
-              console.log('[AUTH] checkInitialSession - getMe response:', {
-                userId: me.id,
-                email: me.email,
-                profileExists: me.profileExists,
-                securitySetupRequired: me.securitySetupRequired,
-                hasPasskeys: me.hasPasskeys
-              });
-
               let stage: AuthStage = 'authenticated';
               
               // Security setup should happen before profile creation
               if (me.securitySetupRequired) {
                 stage = 'securitySetupRequired';
-                console.log('[AUTH] checkInitialSession: Stage set to securitySetupRequired - passkey setup will be shown');
               } else if (!me.profileExists) {
                 stage = 'profileRequired';
-                console.log('[AUTH] checkInitialSession: Stage set to profileRequired - profile creation will be shown');
               } else {
-                console.log('[AUTH] checkInitialSession: Stage set to authenticated - user is fully set up');
               }
 
-              console.log('[AUTH] checkInitialSession final stage decision:', stage);
               
               set({
                 user: { id: me.id, email: me.email },

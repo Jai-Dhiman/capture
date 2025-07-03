@@ -81,29 +81,17 @@ export function MainNavigator() {
     initializeAuth();
   }, []);
 
-  // Log navigation decisions
-  useEffect(() => {
-    console.log('[NAVIGATION] Main navigator state changed:', {
-      authStage,
-      hasSession: !!session,
-      status,
-      timestamp: new Date().toISOString()
-    });
-  }, [authStage, session, status]);
-
   // Create a unique key that forces re-mount when auth state changes significantly
   const navigationKey = `${authStage}-${!!session}-${status}`;
 
   // Show loading screen while checking authentication
   if (status === 'checking' || status === 'pending') {
-    console.log('[NAVIGATION] Showing loading screen - status:', status);
     return <LoadingScreen />;
   }
 
   // User is authenticated
   if (status === 'success' && session) {
     if (authStage === 'profileRequired') {
-      console.log('[NAVIGATION] Showing profile creation screen');
       return (
         <Stack.Navigator key={navigationKey} screenOptions={{ headerShown: false }}>
           <Stack.Screen name="CreateProfile" component={CreateProfile} />
@@ -111,15 +99,12 @@ export function MainNavigator() {
       );
     }
     if (authStage === 'securitySetupRequired') {
-      console.log('[NAVIGATION] Showing auth stack for security setup (PasskeySetupScreen)');
       return <AuthStack key={navigationKey} />;
     }
     // User is fully authenticated
-    console.log('[NAVIGATION] Showing main app navigator');
     return <AppNavigator key={navigationKey} />;
   }
 
   // User is not authenticated - show auth stack
-  console.log('[NAVIGATION] Showing auth stack for unauthenticated user');
   return <AuthStack key={navigationKey} />;
 }

@@ -31,16 +31,7 @@ export const workersAuthApi = {
   },
 
   async verifyCode(data: VerifyCodeRequest): Promise<AuthResponse> {
-    console.log('[API] verifyCode request:', { email: data.email, hasPhone: !!data.phone });
     const response = await apiClient.post('/auth/verify-code', data, false);
-    console.log('[API] verifyCode response:', {
-      userId: response.user?.id,
-      userEmail: response.user?.email,
-      securitySetupRequired: response.securitySetupRequired,
-      profileExists: response.profileExists,
-      hasPasskeys: response.hasPasskeys,
-      isNewUser: response.isNewUser
-    });
     return response;
   },
 
@@ -106,15 +97,7 @@ export const workersAuthApi = {
   // User info
   async getMe(): Promise<MeResponse | null> {
     try {
-      console.log('[API] getMe request starting...');
       const me = await apiClient.get('/auth/me', true);
-      console.log('[API] getMe response:', {
-        userId: me.id,
-        email: me.email,
-        profileExists: me.profileExists,
-        securitySetupRequired: me.securitySetupRequired,
-        hasPasskeys: me.hasPasskeys
-      });
       return me as MeResponse;
     } catch (error) {
       console.warn('[API] getMe failed, possibly invalid token:', error);

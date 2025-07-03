@@ -94,10 +94,28 @@ export const profileResolvers = {
         },
       }));
 
+      // Get follower and following counts
+      const [followersCount, followingCount] = await Promise.all([
+        db
+          .select({ count: schema.relationship.followedId })
+          .from(schema.relationship)
+          .where(eq(schema.relationship.followedId, id))
+          .all()
+          .then(rows => rows.length),
+        db
+          .select({ count: schema.relationship.followerId })
+          .from(schema.relationship)
+          .where(eq(schema.relationship.followerId, id))
+          .all()
+          .then(rows => rows.length),
+      ]);
+
       return {
         ...profile,
         isPrivate: !!profile.isPrivate,
         isFollowing,
+        followersCount,
+        followingCount,
         posts: postsWithMedia,
       };
     },

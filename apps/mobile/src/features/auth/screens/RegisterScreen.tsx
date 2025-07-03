@@ -4,7 +4,6 @@ import Header from '@/shared/components/Header';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React from 'react';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
-import { OAuthButtons } from '../components/OAuthButtons';
 import { AppleOAuthButton, GoogleOAuthButton } from '../components/OAuthButtons';
 import { Platform } from 'react-native';
 
@@ -63,9 +62,6 @@ export default function RegisterScreen({ navigation }: Props) {
                 Continue with Email
               </Text>
             </TouchableOpacity>
-
-            <OAuthButtons showDivider={false} />
-
 
             <View className="mb-[30px]" style={shadowStyle}>
               <GoogleOAuthButton />
