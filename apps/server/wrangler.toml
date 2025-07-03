@@ -30,6 +30,10 @@ id = "7edac15c451741d28833d410037d090a"
 binding = "USER_VECTORS"
 id = "99abeb7032754aa59283001ec4ed4006"
 
+[[kv_namespaces]]
+binding = "CACHE_KV"
+id = "9755928f8e3c4323b63f06e84fc1b5a1"
+
 [[queues.producers]]
 binding = "POST_QUEUE"
 queue = "post-queue"

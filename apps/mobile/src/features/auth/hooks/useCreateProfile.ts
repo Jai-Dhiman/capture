@@ -64,14 +64,27 @@ export function useCreateProfile() {
   };
 
   const checkUsernameAvailability = async (username: string) => {
-    if (!session?.access_token) throw new Error('No auth token available');
+    console.log('[USE_CREATE_PROFILE] checkUsernameAvailability called for:', username);
+    
+    if (!session?.access_token) {
+      console.log('[USE_CREATE_PROFILE] ERROR: No access token for username check');
+      throw new Error('No auth token available');
+    }
 
-    const response = await fetch(`${API_URL}/api/profile/check-username?username=${username}`, {
+    const url = `${API_URL}/api/profile/check-username?username=${username}`;
+    console.log('[USE_CREATE_PROFILE] Making username check request to:', url);
+
+    const response = await fetch(url, {
       headers: {
         Authorization: `Bearer ${session.access_token}`,
       },
     });
+    
+    console.log('[USE_CREATE_PROFILE] Username check response status:', response.status);
+    
     const data = await response.json();
+    console.log('[USE_CREATE_PROFILE] Username check response data:', data);
+    
     return data.available;
   };
 
@@ -85,22 +98,46 @@ export function useCreateProfile() {
       bio?: string;
       profileImage?: string | null;
     }) => {
-      if (!user) throw new Error('Not authenticated');
-      if (!session?.access_token) throw new Error('No auth token available');
+      console.log('[USE_CREATE_PROFILE] Mutation function called with:', { username, bio, profileImage });
+      console.log('[USE_CREATE_PROFILE] Current auth state - user:', user, 'session exists:', !!session);
+      
+      if (!user) {
+        console.log('[USE_CREATE_PROFILE] ERROR: No user found');
+        throw new Error('Not authenticated');
+      }
+      if (!session?.access_token) {
+        console.log('[USE_CREATE_PROFILE] ERROR: No access token found');
+        throw new Error('No auth token available');
+      }
 
+      console.log('[USE_CREATE_PROFILE] Checking username availability for:', username);
       const isAvailable = await checkUsernameAvailability(username);
+      console.log('[USE_CREATE_PROFILE] Username availability result:', isAvailable);
+      
       if (!isAvailable) {
+        console.log('[USE_CREATE_PROFILE] ERROR: Username already taken');
         throw new Error('Username already taken');
       }
 
       let cloudflareImageId = null;
       if (profileImage) {
+        console.log('[USE_CREATE_PROFILE] Uploading profile image...');
         try {
           cloudflareImageId = await uploadImage(profileImage);
+          console.log('[USE_CREATE_PROFILE] Image upload successful, ID:', cloudflareImageId);
         } catch (error) {
-          console.error('Image upload failed but continuing:', error);
+          console.error('[USE_CREATE_PROFILE] Image upload failed but continuing:', error);
         }
       }
+
+      console.log('[USE_CREATE_PROFILE] Making API call to create profile...');
+      console.log('[USE_CREATE_PROFILE] API URL:', `${API_URL}/api/profile`);
+      console.log('[USE_CREATE_PROFILE] Request payload:', {
+        userId: user.id,
+        username,
+        bio: bio?.trim() || null,
+        profileImage: cloudflareImageId,
+      });
 
       const response = await fetch(`${API_URL}/api/profile`, {
         method: 'POST',
@@ -116,12 +153,17 @@ export function useCreateProfile() {
         }),
       });
 
+      console.log('[USE_CREATE_PROFILE] API Response status:', response.status);
+
       if (!response.ok) {
         const errorData = await response.json();
+        console.log('[USE_CREATE_PROFILE] API Error response:', errorData);
         throw new Error(errorData.message || 'Failed to create profile');
       }
 
-      return await response.json();
+      const result = await response.json();
+      console.log('[USE_CREATE_PROFILE] API Success response:', result);
+      return result;
     },
     onError: (error) => {
       const errorMessage = error instanceof Error ? error.message : 'Failed to create profile';

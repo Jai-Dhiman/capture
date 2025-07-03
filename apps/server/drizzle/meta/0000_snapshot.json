@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "f5fa444e-fe57-4e31-a6c2-58b4a24e5d14",
+  "id": "00d2d6c4-cb22-4941-9caf-97f29fc55124",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "blocked_user": {
@@ -34,7 +34,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-06-23T23:11:35.176Z'"
+          "default": "'2025-07-02T23:16:36.835Z'"
         }
       },
       "indexes": {
@@ -160,7 +160,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-06-23T23:11:35.175Z'"
+          "default": "'2025-07-02T23:16:36.835Z'"
         },
         "_like_count": {
           "name": "_like_count",
@@ -276,7 +276,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-06-23T23:11:35.176Z'"
+          "default": "'2025-07-02T23:16:36.835Z'"
         }
       },
       "indexes": {
@@ -335,6 +335,179 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
+    "draft_post": {
+      "name": "draft_post",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "content": {
+          "name": "content",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'post'"
+        },
+        "editing_metadata": {
+          "name": "editing_metadata",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'2025-07-02T23:16:36.834Z'"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'2025-07-02T23:16:36.834Z'"
+        }
+      },
+      "indexes": {
+        "user_drafts_idx": {
+          "name": "user_drafts_idx",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": false
+        },
+        "draft_time_idx": {
+          "name": "draft_time_idx",
+          "columns": [
+            "updated_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "draft_post_user_id_users_id_fk": {
+          "name": "draft_post_user_id_users_id_fk",
+          "tableFrom": "draft_post",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "draft_post_hashtag": {
+      "name": "draft_post_hashtag",
+      "columns": {
+        "draft_post_id": {
+          "name": "draft_post_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "hashtag_id": {
+          "name": "hashtag_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'2025-07-02T23:16:36.834Z'"
+        }
+      },
+      "indexes": {
+        "draft_post_hashtag_idx": {
+          "name": "draft_post_hashtag_idx",
+          "columns": [
+            "draft_post_id"
+          ],
+          "isUnique": false
+        },
+        "draft_hashtag_post_idx": {
+          "name": "draft_hashtag_post_idx",
+          "columns": [
+            "hashtag_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "draft_post_hashtag_draft_post_id_draft_post_id_fk": {
+          "name": "draft_post_hashtag_draft_post_id_draft_post_id_fk",
+          "tableFrom": "draft_post_hashtag",
+          "tableTo": "draft_post",
+          "columnsFrom": [
+            "draft_post_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "draft_post_hashtag_hashtag_id_hashtag_id_fk": {
+          "name": "draft_post_hashtag_hashtag_id_hashtag_id_fk",
+          "tableFrom": "draft_post_hashtag",
+          "tableTo": "hashtag",
+          "columnsFrom": [
+            "hashtag_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "email_codes": {
       "name": "email_codes",
       "columns": {
@@ -379,7 +552,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-06-23T23:11:35.175Z'"
+          "default": "'2025-07-02T23:16:36.834Z'"
         },
         "used_at": {
           "name": "used_at",
@@ -440,7 +613,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-06-23T23:11:35.176Z'"
+          "default": "'2025-07-02T23:16:36.835Z'"
         }
       },
       "indexes": {
@@ -488,6 +661,13 @@
           "notNull": false,
           "autoincrement": false
         },
+        "draft_post_id": {
+          "name": "draft_post_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "type": {
           "name": "type",
           "type": "text",
@@ -515,7 +695,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-06-23T23:11:35.175Z'"
+          "default": "'2025-07-02T23:16:36.834Z'"
         }
       },
       "indexes": {
@@ -523,6 +703,13 @@
           "name": "post_media_idx",
           "columns": [
             "post_id"
+          ],
+          "isUnique": false
+        },
+        "draft_media_idx": {
+          "name": "draft_media_idx",
+          "columns": [
+            "draft_post_id"
           ],
           "isUnique": false
         },
@@ -554,6 +741,19 @@
           "tableTo": "post",
           "columnsFrom": [
             "post_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "media_draft_post_id_draft_post_id_fk": {
+          "name": "media_draft_post_id_draft_post_id_fk",
+          "tableFrom": "media",
+          "tableTo": "draft_post",
+          "columnsFrom": [
+            "draft_post_id"
           ],
           "columnsTo": [
             "id"
@@ -632,7 +832,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-06-23T23:11:35.176Z'"
+          "default": "'2025-07-02T23:16:36.835Z'"
         }
       },
       "indexes": {
@@ -737,7 +937,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-06-23T23:11:35.176Z'"
+          "default": "'2025-07-02T23:16:36.835Z'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -745,7 +945,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-06-23T23:11:35.176Z'"
+          "default": "'2025-07-02T23:16:36.835Z'"
         }
       },
       "indexes": {
@@ -828,7 +1028,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-06-23T23:11:35.175Z'"
+          "default": "'2025-07-02T23:16:36.834Z'"
         },
         "last_used_at": {
           "name": "last_used_at",
@@ -912,13 +1112,44 @@
           "autoincrement": false,
           "default": "'post'"
         },
+        "is_draft": {
+          "name": "is_draft",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "editing_metadata": {
+          "name": "editing_metadata",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        },
         "created_at": {
           "name": "created_at",
           "type": "numeric",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-06-23T23:11:35.175Z'"
+          "default": "'2025-07-02T23:16:36.834Z'"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'2025-07-02T23:16:36.834Z'"
         },
         "_save_count": {
           "name": "_save_count",
@@ -995,7 +1226,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-06-23T23:11:35.176Z'"
+          "default": "'2025-07-02T23:16:36.835Z'"
         }
       },
       "indexes": {
@@ -1084,7 +1315,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-06-23T23:11:35.176Z'"
+          "default": "'2025-07-02T23:16:36.835Z'"
         }
       },
       "indexes": {
@@ -1131,6 +1362,156 @@
           "tableTo": "post",
           "columnsFrom": [
             "post_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "post_version_history": {
+      "name": "post_version_history",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "post_id": {
+          "name": "post_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "draft_post_id": {
+          "name": "draft_post_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "content": {
+          "name": "content",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "editing_metadata": {
+          "name": "editing_metadata",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "change_type": {
+          "name": "change_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "change_description": {
+          "name": "change_description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'2025-07-02T23:16:36.834Z'"
+        }
+      },
+      "indexes": {
+        "post_version_history_post_idx": {
+          "name": "post_version_history_post_idx",
+          "columns": [
+            "post_id"
+          ],
+          "isUnique": false
+        },
+        "post_version_history_draft_idx": {
+          "name": "post_version_history_draft_idx",
+          "columns": [
+            "draft_post_id"
+          ],
+          "isUnique": false
+        },
+        "post_version_history_user_idx": {
+          "name": "post_version_history_user_idx",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": false
+        },
+        "post_version_history_time_idx": {
+          "name": "post_version_history_time_idx",
+          "columns": [
+            "created_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "post_version_history_post_id_post_id_fk": {
+          "name": "post_version_history_post_id_post_id_fk",
+          "tableFrom": "post_version_history",
+          "tableTo": "post",
+          "columnsFrom": [
+            "post_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "post_version_history_draft_post_id_draft_post_id_fk": {
+          "name": "post_version_history_draft_post_id_draft_post_id_fk",
+          "tableFrom": "post_version_history",
+          "tableTo": "draft_post",
+          "columnsFrom": [
+            "draft_post_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "post_version_history_user_id_users_id_fk": {
+          "name": "post_version_history_user_id_users_id_fk",
+          "tableFrom": "post_version_history",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
           ],
           "columnsTo": [
             "id"
@@ -1203,7 +1584,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-06-23T23:11:35.174Z'"
+          "default": "'2025-07-02T23:16:36.833Z'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -1211,7 +1592,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-06-23T23:11:35.174Z'"
+          "default": "'2025-07-02T23:16:36.833Z'"
         }
       },
       "indexes": {
@@ -1279,7 +1660,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-06-23T23:11:35.176Z'"
+          "default": "'2025-07-02T23:16:36.835Z'"
         }
       },
       "indexes": {
@@ -1368,7 +1749,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-06-23T23:11:35.175Z'"
+          "default": "'2025-07-02T23:16:36.835Z'"
         }
       },
       "indexes": {
@@ -1419,6 +1800,88 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
+    "seen_post_log": {
+      "name": "seen_post_log",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "post_id": {
+          "name": "post_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "seen_at": {
+          "name": "seen_at",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'2025-07-02T23:16:36.835Z'"
+        }
+      },
+      "indexes": {
+        "seen_post_user_id_idx": {
+          "name": "seen_post_user_id_idx",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": false
+        },
+        "seen_post_seen_at_idx": {
+          "name": "seen_post_seen_at_idx",
+          "columns": [
+            "seen_at"
+          ],
+          "isUnique": false
+        },
+        "seen_post_composite_idx": {
+          "name": "seen_post_composite_idx",
+          "columns": [
+            "user_id",
+            "post_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "seen_post_log_user_id_users_id_fk": {
+          "name": "seen_post_log_user_id_users_id_fk",
+          "tableFrom": "seen_post_log",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "seen_post_log_post_id_post_id_fk": {
+          "name": "seen_post_log_post_id_post_id_fk",
+          "tableFrom": "seen_post_log",
+          "tableTo": "post",
+          "columnsFrom": [
+            "post_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "user_activity": {
       "name": "user_activity",
       "columns": {
@@ -1449,7 +1912,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-06-23T23:11:35.176Z'"
+          "default": "'2025-07-02T23:16:36.835Z'"
         }
       },
       "indexes": {
@@ -1540,7 +2003,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-06-23T23:11:35.172Z'"
+          "default": "'2025-07-02T23:16:36.827Z'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -1548,7 +2011,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-06-23T23:11:35.173Z'"
+          "default": "'2025-07-02T23:16:36.832Z'"
         }
       },
       "indexes": {

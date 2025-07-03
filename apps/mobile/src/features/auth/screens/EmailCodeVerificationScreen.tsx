@@ -41,7 +41,18 @@ export default function CodeVerificationScreen({ navigation, route }: Props) {
         },
         {
           onSuccess: (data) => {
+            console.log('[EMAIL_VERIFICATION] Code verification successful:', {
+              securitySetupRequired: data.securitySetupRequired,
+              profileExists: data.profileExists,
+              hasPasskeys: data.hasPasskeys,
+              isNewUser: data.isNewUser,
+              nextStep: isNewUser && phone ? 'phone_verification' : 
+                       data.securitySetupRequired ? 'passkey_setup' :
+                       !data.profileExists ? 'profile_creation' : 'authenticated'
+            });
+
             if (isNewUser && phone) {
+              console.log('[EMAIL_VERIFICATION] Navigating to phone verification');
               navigation.navigate('PhoneCodeVerification', {
                 email,
                 phone,
@@ -51,10 +62,13 @@ export default function CodeVerificationScreen({ navigation, route }: Props) {
             } else {
               // Handle navigation based on the auth response
               if (data.securitySetupRequired) {
+                console.log('[EMAIL_VERIFICATION] Navigating to PasskeySetup due to securitySetupRequired=true');
                 navigation.navigate('PasskeySetup');
               } else if (!data.profileExists) {
+                console.log('[EMAIL_VERIFICATION] Navigating to CreateProfile due to profileExists=false');
                 navigation.navigate('CreateProfile');
               } else {
+                console.log('[EMAIL_VERIFICATION] User fully authenticated, main navigator will handle routing');
                 // User is fully authenticated, the main navigator will handle routing to the app
                 // We don't need to navigate here as the main navigator will automatically switch
                 // to the AppNavigator when the auth store is updated

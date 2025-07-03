@@ -53,11 +53,14 @@ export function usePasskey() {
       }
     },
     onSuccess: async () => {
+      console.log('[PASSKEY] Registration successful, invalidating queries and checking auth state');
       queryClient.invalidateQueries({ queryKey: ['passkeys'] });
       
       // Check if user was in security setup required stage
       const authStage = useAuthStore.getState().stage;
+      console.log('[PASSKEY] Current auth stage after registration:', authStage);
       if (authStage === 'securitySetupRequired') {
+        console.log('[PASSKEY] User was in securitySetupRequired stage, refreshing auth state to check completion');
         // Refresh auth state to check if security setup is now complete
         await useAuthStore.getState().checkInitialSession();
       }

@@ -16,9 +16,11 @@ const Stack = createNativeStackNavigator<AuthStackParamList>();
 export default function AuthStack() {
   const authStage = useAuthStore((state) => state.stage);
 
+  console.log('[AUTH_NAVIGATOR] AuthStack rendered with stage:', authStage);
 
   // Return different stacks based on auth stage to ensure proper navigation
   if (authStage === 'securitySetupRequired') {
+    console.log('[AUTH_NAVIGATOR] Rendering security setup stack with PasskeySetup as initial route');
     return (
       <Stack.Navigator
         initialRouteName="PasskeySetup"
@@ -33,6 +35,7 @@ export default function AuthStack() {
     );
   }
 
+  console.log('[AUTH_NAVIGATOR] Rendering standard auth stack with Login as initial route');
   return (
     <Stack.Navigator
       initialRouteName="Login"

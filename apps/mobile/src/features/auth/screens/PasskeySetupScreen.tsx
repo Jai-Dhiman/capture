@@ -18,6 +18,12 @@ export default function PasskeySetupScreen({ navigation }: Props) {
   const { logout } = useAuth();
   const [biometricName, setBiometricName] = useState<string>('Biometric');
 
+  console.log('[PASSKEY_SETUP] Screen rendered with:', {
+    authStage,
+    userEmail: user?.email,
+    isMandatory: authStage === 'securitySetupRequired'
+  });
+
   const {
     deviceCapabilities,
     isCapabilitiesLoading,
@@ -125,6 +131,7 @@ export default function PasskeySetupScreen({ navigation }: Props) {
 
   const renderPasskeySetupContent = () => {
     if (isCapabilitiesLoading) {
+      console.log('[PASSKEY_SETUP] Still loading device capabilities...');
       return (
         <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color="#000" />
@@ -135,7 +142,15 @@ export default function PasskeySetupScreen({ navigation }: Props) {
       );
     }
 
+    console.log('[PASSKEY_SETUP] Device capabilities loaded:', {
+      isPasskeySupported,
+      hasBiometrics,
+      biometricTypes,
+      deviceType: deviceCapabilities?.deviceType
+    });
+
     if (!isPasskeySupported || !hasBiometrics) {
+      console.log('[PASSKEY_SETUP] Passkeys not supported or biometrics unavailable');
       return (
         <View className="flex-1 px-[26px] pt-[80px]">
           <View className="mb-8">

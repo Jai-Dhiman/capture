@@ -74,7 +74,11 @@ export const post = sqliteTable(
       .references(() => users.id),
     content: text('content').notNull(),
     type: text('type').default('post').notNull(),
+    isDraft: integer('is_draft').default(0).notNull(),
+    editingMetadata: text('editing_metadata'), // JSON string
+    version: integer('version').default(1).notNull(),
     createdAt: numeric('created_at').default(new Date().toISOString()).notNull(),
+    updatedAt: numeric('updated_at').default(new Date().toISOString()).notNull(),
     _saveCount: integer('_save_count').default(0).notNull(),
     _commentCount: integer('_comment_count').default(0).notNull(),
   },
@@ -92,6 +96,101 @@ export const postRelations = relations(post, ({ one, many }) => ({
   hashtags: many(postHashtag),
 }));
 
+export const draftPost = sqliteTable(
+  'draft_post',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id),
+    content: text('content').notNull(),
+    type: text('type').default('post').notNull(),
+    editingMetadata: text('editing_metadata'), // JSON string
+    version: integer('version').default(1).notNull(),
+    createdAt: numeric('created_at').default(new Date().toISOString()).notNull(),
+    updatedAt: numeric('updated_at').default(new Date().toISOString()).notNull(),
+  },
+  (table) => [index('user_drafts_idx').on(table.userId), index('draft_time_idx').on(table.updatedAt)],
+);
+
+export const draftPostRelations = relations(draftPost, ({ one, many }) => ({
+  user: one(users, {
+    fields: [draftPost.userId],
+    references: [users.id],
+  }),
+  media: many(media),
+  hashtags: many(draftPostHashtag),
+}));
+
+export const draftPostHashtag = sqliteTable(
+  'draft_post_hashtag',
+  {
+    draftPostId: text('draft_post_id')
+      .notNull()
+      .references(() => draftPost.id),
+    hashtagId: text('hashtag_id')
+      .notNull()
+      .references(() => hashtag.id),
+    createdAt: numeric('created_at').default(new Date().toISOString()).notNull(),
+  },
+  (table) => [
+    index('draft_post_hashtag_idx').on(table.draftPostId),
+    index('draft_hashtag_post_idx').on(table.hashtagId),
+  ],
+);
+
+export const draftPostHashtagRelations = relations(draftPostHashtag, ({ one }) => ({
+  draftPost: one(draftPost, {
+    fields: [draftPostHashtag.draftPostId],
+    references: [draftPost.id],
+  }),
+  hashtag: one(hashtag, {
+    fields: [draftPostHashtag.hashtagId],
+    references: [hashtag.id],
+  }),
+}));
+
+export const postVersionHistory = sqliteTable(
+  'post_version_history',
+  {
+    id: text('id').primaryKey(),
+    postId: text('post_id')
+      .notNull()
+      .references(() => post.id),
+    draftPostId: text('draft_post_id').references(() => draftPost.id),
+    version: integer('version').notNull(),
+    content: text('content').notNull(),
+    editingMetadata: text('editing_metadata'), // JSON string
+    changeType: text('change_type').notNull(), // 'created', 'edited', 'published', 'reverted'
+    changeDescription: text('change_description'), // Human-readable description
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id),
+    createdAt: numeric('created_at').default(new Date().toISOString()).notNull(),
+  },
+  (table) => [
+    index('post_version_history_post_idx').on(table.postId),
+    index('post_version_history_draft_idx').on(table.draftPostId),
+    index('post_version_history_user_idx').on(table.userId),
+    index('post_version_history_time_idx').on(table.createdAt),
+  ],
+);
+
+export const postVersionHistoryRelations = relations(postVersionHistory, ({ one }) => ({
+  post: one(post, {
+    fields: [postVersionHistory.postId],
+    references: [post.id],
+  }),
+  draftPost: one(draftPost, {
+    fields: [postVersionHistory.draftPostId],
+    references: [draftPost.id],
+  }),
+  user: one(users, {
+    fields: [postVersionHistory.userId],
+    references: [users.id],
+  }),
+}));
+
 export const media = sqliteTable(
   'media',
   {
@@ -100,12 +199,17 @@ export const media = sqliteTable(
       .notNull()
       .references(() => users.id),
     postId: text('post_id').references(() => post.id),
+    draftPostId: text('draft_post_id').references(() => draftPost.id),
     type: text('type').notNull(),
     storageKey: text('storage_key').notNull(),
     order: integer('order').notNull(),
     createdAt: numeric('created_at').default(new Date().toISOString()).notNull(),
   },
-  (table) => [index('post_media_idx').on(table.postId), index('user_media_idx').on(table.userId)],
+  (table) => [
+    index('post_media_idx').on(table.postId), 
+    index('draft_media_idx').on(table.draftPostId),
+    index('user_media_idx').on(table.userId)
+  ],
 );
 
 export const comment = sqliteTable(

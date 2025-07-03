@@ -3,6 +3,7 @@ import { typeDefs } from '@/graphql/schema';
 import { authMiddleware } from '@/middleware/auth';
 import { errorHandler } from '@/middleware/errorHandler';
 import authRouter from '@/routes/auth';
+import cacheRouter from '@/routes/cache';
 import deeplinkRouter from '@/routes/deeplink';
 import healthRoutes from '@/routes/health';
 import interestsRouter from '@/routes/interests';
@@ -100,6 +101,7 @@ app.route('/seed', seedRouter);
 
 // Protected routes
 app.use('/api/*', authMiddleware);
+app.route('/api/cache', cacheRouter);
 app.route('/api/media', mediaRouter);
 app.route('/api/profile', profileRouter);
 app.route('/api/interests', interestsRouter);

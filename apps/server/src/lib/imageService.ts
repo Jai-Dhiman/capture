@@ -1,12 +1,13 @@
 import { createD1Client } from '@/db';
 import * as schema from '@/db/schema';
 import type { Bindings } from '@/types';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { generateImageSignature, verifyImageSignature } from './crypto';
 
 export interface ImageService {
   getUploadUrl: () => Promise<{ uploadURL: string; id: string }>;
+  getBatchUploadUrls: (count: number) => Promise<Array<{ uploadURL: string; id: string }>>;
   getImageUrl: (imageId: string, variant?: string, expirySeconds?: number) => Promise<string>;
   getDirectCloudflareUrl: (
     cloudflareId: string,
@@ -18,6 +19,18 @@ export interface ImageService {
     imageId: string;
     [key: string]: any;
   }) => Promise<any>;
+  createBatch: (mediaItems: Array<{
+    userId: string;
+    imageId: string;
+    order: number;
+    postId?: string;
+    draftPostId?: string;
+  }>) => Promise<any[]>;
+  processEditedImage: (data: {
+    originalImageId: string;
+    editingMetadata: Record<string, unknown>;
+    userId: string;
+  }) => Promise<{ processedImageId: string }>;
   list: (userId: string) => Promise<any[]>;
   findById: (id: string, userId: string) => Promise<any>;
   delete: (id: string, userId: string) => Promise<void>;
@@ -64,6 +77,15 @@ export function createImageService(env: Bindings): ImageService {
         uploadURL: (data as { result: { uploadURL: string } }).result.uploadURL,
         id: imageId,
       };
+    },
+
+    async getBatchUploadUrls(count: number) {
+      if (count > 10) {
+        throw new Error('Maximum 10 images per batch');
+      }
+
+      const promises = Array.from({ length: count }, () => this.getUploadUrl());
+      return await Promise.all(promises);
     },
 
     async getImageUrl(imageId, variant = 'public', expirySeconds = 1800) {
@@ -129,6 +151,7 @@ export function createImageService(env: Bindings): ImageService {
           storageKey: imageId,
           order: data.order || 0,
           postId: data.postId,
+          draftPostId: data.draftPostId,
           createdAt: new Date().toISOString(),
         });
 
@@ -145,6 +168,73 @@ export function createImageService(env: Bindings): ImageService {
             error instanceof Error ? error.message : 'Unknown error'
           }`,
         );
+      }
+    },
+
+    async createBatch(mediaItems) {
+      if (mediaItems.length > 10) {
+        throw new Error('Maximum 10 media items per batch');
+      }
+
+      try {
+        const mediaRecords = mediaItems.map(item => ({
+          id: nanoid(),
+          userId: item.userId,
+          type: 'image',
+          storageKey: item.imageId,
+          order: item.order,
+          postId: item.postId,
+          draftPostId: item.draftPostId,
+          createdAt: new Date().toISOString(),
+        }));
+
+        await db.insert(schema.media).values(mediaRecords);
+
+        // Return the created records
+        const createdMedia = await Promise.all(
+          mediaRecords.map(record =>
+            db.query.media.findFirst({
+              where: (media, { eq }) => eq(media.id, record.id),
+            })
+          )
+        );
+
+        return createdMedia.filter(Boolean);
+      } catch (error) {
+        console.error('Batch creation error:', error);
+        throw new Error(
+          `Failed to create media batch: ${
+            error instanceof Error ? error.message : 'Unknown error'
+          }`,
+        );
+      }
+    },
+
+    async processEditedImage({ originalImageId, editingMetadata, userId }) {
+      try {
+        // Note: For basic image editing (filters, cropping, etc.), Cloudflare Images
+        // provides resizing and basic transformations via URL parameters.
+        // For complex editing, you would:
+        // 1. Download the original image
+        // 2. Apply complex filters/adjustments using a processing library
+        // 3. Upload the processed version to Cloudflare Images
+        
+        // For now, we'll return the original image ID since Cloudflare Images
+        // handles most transformations via URL parameters
+        const processedImageId = originalImageId;
+
+        console.log('Image editing metadata stored for client-side processing:', {
+          originalImageId,
+          editingMetadata,
+          userId,
+        });
+
+        return {
+          processedImageId,
+        };
+      } catch (error) {
+        console.error('Image processing error:', error);
+        throw new Error('Failed to process edited image');
       }
     },
 
@@ -176,7 +266,7 @@ export function createImageService(env: Bindings): ImageService {
 
       await db
         .delete(schema.media)
-        .where(eq(schema.media.id, id) && eq(schema.media.userId, userId));
+        .where(and(eq(schema.media.id, id), eq(schema.media.userId, userId)));
     },
   };
 }
