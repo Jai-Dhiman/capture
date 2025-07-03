@@ -81,7 +81,8 @@ const Header: React.FC<HeaderProps> = ({
               className="w-10 h-10 bg-[#DFD2CD] rounded-full flex justify-center items-center"
               onPress={onBackPress}
             >
-              <CustomBackIcon width={30} height={30} />
+              <Text className="text-xl">{'<'}</Text>
+              {/* <CustomBackIcon width={24} height={24} /> */}
             </TouchableOpacity>
           ) : (
             <View className="w-10 h-10" />

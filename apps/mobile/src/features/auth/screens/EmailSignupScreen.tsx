@@ -110,6 +110,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
             source={require('@assets/DefaultBackground.png')}
             style={{
               width: '100%',
+              opacity: 0.58,
               height: '100%',
               position: 'absolute',
               top: 0,
@@ -122,50 +123,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
 
           <View className="h-[40px]" />
 
-          <View className="px-[26px] w-full">
-            <form.Field
-              name="email"
-              validators={{
-                onChange: ({ value }) => {
-                  if (!value) return 'Email is required';
-                  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Invalid email format';
-                  return undefined;
-                },
-              }}
-            >
-              {(field) => (
-                <View className="mb-[24px]">
-                  <TouchableOpacity
-                    activeOpacity={1}
-                    onPress={() => emailInputRef.current?.focus()}
-                    className={`bg-white h-[60px] rounded-[16px] shadow-md flex-row items-center px-[9px] ${isEmailFocused ? 'border-2 border-[#E4CAC7]' : ''}`}
-                  >
-                    <EmailIcon width={30} height={30} style={{ marginRight: 14 }} />
-                    <TextInput
-                      ref={emailInputRef}
-                      onFocus={() => setIsEmailFocused(true)}
-                      onBlur={() => {
-                        setIsEmailFocused(false);
-                        field.handleBlur();
-                      }}
-                      className="flex-1 text-[16px] font-semibold font-roboto text-black outline-none"
-                      style={{ paddingVertical: 0, textAlignVertical: 'center', height: '100%' }}
-                      value={field.state.value}
-                      onChangeText={field.handleChange}
-                      autoCapitalize="none"
-                      keyboardType="email-address"
-                      placeholder="Email"
-                      placeholderTextColor="#C8C8C8"
-                    />
-                  </TouchableOpacity>
-                  {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
-                    <Text className="text-red-500 text-xs mt-1 ml-2 font-roboto">
-                      {field.state.meta.errors.join(', ')}
-                    </Text>
-                  )}
-                </View>
-              )}
-            </form.Field>
+          <View className="px-[26px] w-full mt-[170px]">
 
             <form.Field
               name="phone"
@@ -217,6 +175,54 @@ export default function EmailSignupScreen({ navigation }: Props) {
               )}
             </form.Field>
 
+            <form.Field
+              name="email"
+              validators={{
+                onChange: ({ value }) => {
+                  if (!value) return 'Email is required';
+                  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Invalid email format';
+                  return undefined;
+                },
+              }}
+            >
+              {(field) => (
+                <View className="mb-[24px]">
+                  <TouchableOpacity
+                    activeOpacity={1}
+                    onPress={() => emailInputRef.current?.focus()}
+                    className={`bg-white h-[60px] rounded-[16px] shadow-md flex-row items-center px-[9px] ${isEmailFocused ? 'border-2 border-[#E4CAC7]' : ''}`}
+                  >
+                    <EmailIcon width={30} height={30} style={{ marginRight: 14 }} />
+                    <TextInput
+                      ref={emailInputRef}
+                      onFocus={() => setIsEmailFocused(true)}
+                      onBlur={() => {
+                        setIsEmailFocused(false);
+                        field.handleBlur();
+                      }}
+                      className="flex-1 text-[16px] font-semibold font-roboto text-black outline-none"
+                      style={{ paddingVertical: 0, textAlignVertical: 'center', height: '100%' }}
+                      value={field.state.value}
+                      onChangeText={field.handleChange}
+                      autoCapitalize="none"
+                      keyboardType="email-address"
+                      placeholder="Email"
+                      placeholderTextColor="#C8C8C8"
+                    />
+                  </TouchableOpacity>
+                  {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
+                    <Text className="text-red-500 text-xs mt-1 ml-2 font-roboto">
+                      {field.state.meta.errors.join(', ')}
+                    </Text>
+                  )}
+                </View>
+              )}
+            </form.Field>
+
+            <Text
+              className='text-center mt-[240px] mb-4'
+            >We recommend saving this information</Text>
+
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
               {([canSubmit, isFormSubmitting]) => (
                 <TouchableOpacity
@@ -230,7 +236,7 @@ export default function EmailSignupScreen({ navigation }: Props) {
                     <LoadingSpinner message="Sending verification codes..." />
                   ) : (
                     <Text className="text-center text-black text-[16px] font-bold font-roboto">
-                      Continue
+                      Create Account
                     </Text>
                   )}
                 </TouchableOpacity>
