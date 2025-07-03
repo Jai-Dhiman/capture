@@ -3,11 +3,13 @@ use worker::*;
 
 pub mod db;
 mod entities;
+pub mod graphql;
 mod middleware;
 mod routes;
 mod services;
 
 use routes::auth::AuthRoutes;
+use routes::graphql::GraphQLRoutes;
 use routes::profile::ProfileRoutes;
 
 #[event(fetch)]
@@ -95,6 +97,8 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
         )
         .get_async("/auth/passkey/list", AuthRoutes::passkey_list)
         .delete_async("/auth/passkey/:passkeyId", AuthRoutes::passkey_delete)
+        // GraphQL routes
+        .post_async("/graphql", GraphQLRoutes::handle_graphql)
         // Profile routes
         .get_async(
             "/profile/check-username",
