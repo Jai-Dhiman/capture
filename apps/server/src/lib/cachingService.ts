@@ -15,23 +15,18 @@ export function createCachingService(env: Bindings): CachingService {
   return {
     async get<T>(key: string): Promise<T | null> {
       try {
-        console.log(`[CACHE] Getting key: ${key}`);
         const cached = await kv.get(key, 'json');
-        console.log(`[CACHE] Raw result for ${key}:`, cached ? 'found' : 'null');
 
         if (cached && typeof cached === 'object' && 'data' in cached && 'expires' in cached) {
           const { data, expires } = cached as { data: T; expires: number };
 
           if (Date.now() < expires) {
-            console.log(`[CACHE] Cache hit for ${key}`);
             return data;
           }
           // Expired, delete it
-          console.log(`[CACHE] Cache expired for ${key}, deleting`);
           await kv.delete(key);
           return null;
         }
-        console.log(`[CACHE] Cache miss for ${key}`);
         return cached as T | null;
       } catch (error) {
         console.error(`[CACHE] Cache get error for ${key}:`, error);
@@ -41,7 +36,6 @@ export function createCachingService(env: Bindings): CachingService {
 
     async set<T>(key: string, value: T, ttl: number = defaultTtl): Promise<void> {
       try {
-        console.log(`[CACHE] Setting key: ${key} with TTL: ${ttl}s`);
         const expires = Date.now() + ttl * 1000;
         const cacheData = {
           data: value,
@@ -52,7 +46,6 @@ export function createCachingService(env: Bindings): CachingService {
         await kv.put(key, JSON.stringify(cacheData), {
           expirationTtl: ttl,
         });
-        console.log(`[CACHE] Successfully cached ${key}`);
       } catch (error) {
         console.error(`[CACHE] Cache set error for ${key}:`, error);
         // Don't throw - caching failures shouldn't break the app

@@ -15,7 +15,6 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
-
 } from 'react-native';
 import { Platform } from 'react-native';
 import { AppleOAuthButton, GoogleOAuthButton } from '../components/OAuthButtons';
@@ -249,7 +248,7 @@ export default function LoginScreen({ navigation }: Props) {
                     <TextInput
                       ref={emailInputRef}
                       autoFocus={false}
-                      onFocus={() => { }}
+                      onFocus={() => {}}
                       onBlur={() => {
                         field.handleBlur();
                       }}
@@ -286,14 +285,14 @@ export default function LoginScreen({ navigation }: Props) {
               {(sendCode.isError ||
                 authenticateWithPasskey.isError ||
                 loginState === 'user-not-found') && (
-                  <Text className="text-red-500 text-xs text-center font-roboto">
-                    {loginState === 'passkey'
-                      ? 'Passkey authentication failed. Please try again.'
-                      : loginState === 'user-not-found'
-                        ? 'No account found for this email address.'
-                        : 'Failed to send verification code. Please try again.'}
-                  </Text>
-                )}
+                <Text className="text-red-500 text-xs text-center font-roboto">
+                  {loginState === 'passkey'
+                    ? 'Passkey authentication failed. Please try again.'
+                    : loginState === 'user-not-found'
+                      ? 'No account found for this email address.'
+                      : 'Failed to send verification code. Please try again.'}
+                </Text>
+              )}
             </View>
 
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>

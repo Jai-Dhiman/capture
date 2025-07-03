@@ -225,12 +225,6 @@ export function createImageService(env: Bindings): ImageService {
         // handles most transformations via URL parameters
         const processedImageId = originalImageId;
 
-        console.log('Image editing metadata stored for client-side processing:', {
-          originalImageId,
-          editingMetadata,
-          userId,
-        });
-
         return {
           processedImageId,
         };

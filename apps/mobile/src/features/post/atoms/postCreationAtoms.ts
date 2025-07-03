@@ -61,7 +61,7 @@ export const currentDraftAtom = atom(
   },
   (get, set, draft: PostDraft | null) => {
     const drafts = get(draftsAtom);
-    
+
     if (draft) {
       // Update or create draft
       set(draftsAtom, {
@@ -76,140 +76,125 @@ export const currentDraftAtom = atom(
       // Clear current draft
       set(currentDraftIdAtom, null);
     }
-  }
+  },
 );
 
 // Create a new draft atom
-export const createNewDraftAtom = atom(
-  null,
-  (get, set) => {
-    const newDraft: PostDraft = {
-      id: `draft_${Date.now()}`,
-      content: '',
-      selectedPhotos: [],
-      selectedHashtags: [],
-      settings: {
-        type: 'post',
-        privacy: 'public',
-        allowComments: true,
-        allowSharing: true,
-      },
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    set(currentDraftAtom, newDraft);
-    
-    // Reset form atoms to draft values
-    set(postContentAtom, newDraft.content);
-    set(selectedPhotosAtom, newDraft.selectedPhotos);
-    set(selectedHashtagsAtom, newDraft.selectedHashtags);
-    set(postSettingsAtom, newDraft.settings);
-    set(currentStepAtom, 'content');
-    
-    return newDraft;
-  }
-);
-
-// Load draft atom
-export const loadDraftAtom = atom(
-  null,
-  (get, set, draftId: string) => {
-    const drafts = get(draftsAtom);
-    const draft = drafts[draftId];
-    
-    if (draft) {
-      set(currentDraftIdAtom, draftId);
-      set(postContentAtom, draft.content);
-      set(selectedPhotosAtom, draft.selectedPhotos);
-      set(selectedHashtagsAtom, draft.selectedHashtags);
-      set(postSettingsAtom, draft.settings);
-    }
-  }
-);
-
-// Save current form state to draft atom
-export const saveToDraftAtom = atom(
-  null,
-  (get, set) => {
-    const content = get(postContentAtom);
-    const photos = get(selectedPhotosAtom);
-    const hashtags = get(selectedHashtagsAtom);
-    const settings = get(postSettingsAtom);
-    const currentDraft = get(currentDraftAtom);
-    
-    // Only save if there's actual content
-    if (content.trim() || photos.length > 0 || hashtags.length > 0) {
-      const draftId = currentDraft?.id || `draft_${Date.now()}`;
-      
-      const updatedDraft: PostDraft = {
-        id: draftId,
-        content,
-        selectedPhotos: photos,
-        selectedHashtags: hashtags,
-        settings,
-        createdAt: currentDraft?.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      
-      set(currentDraftAtom, updatedDraft);
-    }
-  }
-);
-
-// Delete draft atom
-export const deleteDraftAtom = atom(
-  null,
-  (get, set, draftId: string) => {
-    const drafts = get(draftsAtom);
-    const { [draftId]: deletedDraft, ...remainingDrafts } = drafts;
-    
-    set(draftsAtom, remainingDrafts);
-    
-    // If deleting current draft, clear current draft ID
-    const currentDraftId = get(currentDraftIdAtom);
-    if (currentDraftId === draftId) {
-      set(currentDraftIdAtom, null);
-    }
-  }
-);
-
-// Clear all form data atom
-export const clearFormAtom = atom(
-  null,
-  (get, set) => {
-    set(postContentAtom, '');
-    set(selectedPhotosAtom, []);
-    set(selectedHashtagsAtom, []);
-    set(postSettingsAtom, {
+export const createNewDraftAtom = atom(null, (get, set) => {
+  const newDraft: PostDraft = {
+    id: `draft_${Date.now()}`,
+    content: '',
+    selectedPhotos: [],
+    selectedHashtags: [],
+    settings: {
       type: 'post',
       privacy: 'public',
       allowComments: true,
       allowSharing: true,
-    });
-    set(currentStepAtom, 'content');
-    set(postCreationErrorAtom, null);
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  set(currentDraftAtom, newDraft);
+
+  // Reset form atoms to draft values
+  set(postContentAtom, newDraft.content);
+  set(selectedPhotosAtom, newDraft.selectedPhotos);
+  set(selectedHashtagsAtom, newDraft.selectedHashtags);
+  set(postSettingsAtom, newDraft.settings);
+  set(currentStepAtom, 'content');
+
+  return newDraft;
+});
+
+// Load draft atom
+export const loadDraftAtom = atom(null, (get, set, draftId: string) => {
+  const drafts = get(draftsAtom);
+  const draft = drafts[draftId];
+
+  if (draft) {
+    set(currentDraftIdAtom, draftId);
+    set(postContentAtom, draft.content);
+    set(selectedPhotosAtom, draft.selectedPhotos);
+    set(selectedHashtagsAtom, draft.selectedHashtags);
+    set(postSettingsAtom, draft.settings);
+  }
+});
+
+// Save current form state to draft atom
+export const saveToDraftAtom = atom(null, (get, set) => {
+  const content = get(postContentAtom);
+  const photos = get(selectedPhotosAtom);
+  const hashtags = get(selectedHashtagsAtom);
+  const settings = get(postSettingsAtom);
+  const currentDraft = get(currentDraftAtom);
+
+  // Only save if there's actual content
+  if (content.trim() || photos.length > 0 || hashtags.length > 0) {
+    const draftId = currentDraft?.id || `draft_${Date.now()}`;
+
+    const updatedDraft: PostDraft = {
+      id: draftId,
+      content,
+      selectedPhotos: photos,
+      selectedHashtags: hashtags,
+      settings,
+      createdAt: currentDraft?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    set(currentDraftAtom, updatedDraft);
+  }
+});
+
+// Delete draft atom
+export const deleteDraftAtom = atom(null, (get, set, draftId: string) => {
+  const drafts = get(draftsAtom);
+  const { [draftId]: deletedDraft, ...remainingDrafts } = drafts;
+
+  set(draftsAtom, remainingDrafts);
+
+  // If deleting current draft, clear current draft ID
+  const currentDraftId = get(currentDraftIdAtom);
+  if (currentDraftId === draftId) {
     set(currentDraftIdAtom, null);
   }
-);
+});
+
+// Clear all form data atom
+export const clearFormAtom = atom(null, (get, set) => {
+  set(postContentAtom, '');
+  set(selectedPhotosAtom, []);
+  set(selectedHashtagsAtom, []);
+  set(postSettingsAtom, {
+    type: 'post',
+    privacy: 'public',
+    allowComments: true,
+    allowSharing: true,
+  });
+  set(currentStepAtom, 'content');
+  set(postCreationErrorAtom, null);
+  set(currentDraftIdAtom, null);
+});
 
 // Validation atoms
 export const isFormValidAtom = atom((get) => {
   const content = get(postContentAtom);
   const photos = get(selectedPhotosAtom);
   const settings = get(postSettingsAtom);
-  
+
   if (settings.type === 'thread') {
     return content.trim().length > 0;
   }
-    return content.trim().length > 0 || photos.length > 0;
+  return content.trim().length > 0 || photos.length > 0;
 });
 
 export const contentCharacterCountAtom = atom((get) => {
   const content = get(postContentAtom);
   const settings = get(postSettingsAtom);
   const maxLength = settings.type === 'post' ? 500 : 800;
-  
+
   return {
     current: content.length,
     max: maxLength,
@@ -230,136 +215,115 @@ export const remainingPhotoSlotsAtom = atom((get) => {
 });
 
 // Add photo atom
-export const addPhotosAtom = atom(
-  null,
-  (get, set, newPhotos: SelectedPhoto[]) => {
-    const currentPhotos = get(selectedPhotosAtom);
-    const remainingSlots = get(remainingPhotoSlotsAtom);
-    
-    // Only add photos if we have space
-    const photosToAdd = newPhotos.slice(0, remainingSlots);
-    const updatedPhotos = [...currentPhotos, ...photosToAdd];
-    
-    set(selectedPhotosAtom, updatedPhotos);
-    
-    // Auto-save to draft
-    set(saveToDraftAtom);
-  }
-);
+export const addPhotosAtom = atom(null, (get, set, newPhotos: SelectedPhoto[]) => {
+  const currentPhotos = get(selectedPhotosAtom);
+  const remainingSlots = get(remainingPhotoSlotsAtom);
+
+  // Only add photos if we have space
+  const photosToAdd = newPhotos.slice(0, remainingSlots);
+  const updatedPhotos = [...currentPhotos, ...photosToAdd];
+
+  set(selectedPhotosAtom, updatedPhotos);
+
+  // Auto-save to draft
+  set(saveToDraftAtom);
+});
 
 // Remove photo atom
-export const removePhotoAtom = atom(
-  null,
-  (get, set, index: number) => {
-    const photos = get(selectedPhotosAtom);
-    const updatedPhotos = photos.filter((_, i) => i !== index);
-    set(selectedPhotosAtom, updatedPhotos);
-    
-    // Auto-save to draft
-    set(saveToDraftAtom);
-  }
-);
+export const removePhotoAtom = atom(null, (get, set, index: number) => {
+  const photos = get(selectedPhotosAtom);
+  const updatedPhotos = photos.filter((_, i) => i !== index);
+  set(selectedPhotosAtom, updatedPhotos);
+
+  // Auto-save to draft
+  set(saveToDraftAtom);
+});
 
 // Reorder photos atom
-export const reorderPhotosAtom = atom(
-  null,
-  (get, set, reorderedPhotos: SelectedPhoto[]) => {
-    set(selectedPhotosAtom, reorderedPhotos);
-    
-    // Auto-save to draft
-    set(saveToDraftAtom);
-  }
-);
+export const reorderPhotosAtom = atom(null, (get, set, reorderedPhotos: SelectedPhoto[]) => {
+  set(selectedPhotosAtom, reorderedPhotos);
+
+  // Auto-save to draft
+  set(saveToDraftAtom);
+});
 
 // Add hashtag atom
-export const addHashtagAtom = atom(
-  null,
-  (get, set, hashtag: { id: string; name: string }) => {
-    const hashtags = get(selectedHashtagsAtom);
-    
-    // Don't add duplicate hashtags
-    if (!hashtags.find(h => h.id === hashtag.id)) {
-      set(selectedHashtagsAtom, [...hashtags, hashtag]);
-      
-      // Auto-save to draft
-      set(saveToDraftAtom);
-    }
-  }
-);
+export const addHashtagAtom = atom(null, (get, set, hashtag: { id: string; name: string }) => {
+  const hashtags = get(selectedHashtagsAtom);
 
-// Remove hashtag atom
-export const removeHashtagAtom = atom(
-  null,
-  (get, set, hashtagId: string) => {
-    const hashtags = get(selectedHashtagsAtom);
-    const updatedHashtags = hashtags.filter(h => h.id !== hashtagId);
-    set(selectedHashtagsAtom, updatedHashtags);
-    
+  // Don't add duplicate hashtags
+  if (!hashtags.find((h) => h.id === hashtag.id)) {
+    set(selectedHashtagsAtom, [...hashtags, hashtag]);
+
     // Auto-save to draft
     set(saveToDraftAtom);
   }
-);
+});
+
+// Remove hashtag atom
+export const removeHashtagAtom = atom(null, (get, set, hashtagId: string) => {
+  const hashtags = get(selectedHashtagsAtom);
+  const updatedHashtags = hashtags.filter((h) => h.id !== hashtagId);
+  set(selectedHashtagsAtom, updatedHashtags);
+
+  // Auto-save to draft
+  set(saveToDraftAtom);
+});
 
 // Navigation atoms
-export const nextStepAtom = atom(
-  null,
-  (get, set) => {
-    const currentStep = get(currentStepAtom);
-    const settings = get(postSettingsAtom);
-    
-    switch (currentStep) {
-      case 'content':
-        // For threads, skip photos step
-        if (settings.type === 'thread') {
-          set(currentStepAtom, 'settings');
-        } else {
-          set(currentStepAtom, 'photos');
-        }
-        break;
-      case 'photos':
-        set(currentStepAtom, 'settings');
-        break;
-      case 'settings':
-        set(currentStepAtom, 'preview');
-        break;
-      default:
-        break;
-    }
-  }
-);
+export const nextStepAtom = atom(null, (get, set) => {
+  const currentStep = get(currentStepAtom);
+  const settings = get(postSettingsAtom);
 
-export const previousStepAtom = atom(
-  null,
-  (get, set) => {
-    const currentStep = get(currentStepAtom);
-    const settings = get(postSettingsAtom);
-    
-    switch (currentStep) {
-      case 'photos':
-        set(currentStepAtom, 'content');
-        break;
-      case 'settings':
-        // For threads, go back to content, otherwise photos
-        if (settings.type === 'thread') {
-          set(currentStepAtom, 'content');
-        } else {
-          set(currentStepAtom, 'photos');
-        }
-        break;
-      case 'preview':
+  switch (currentStep) {
+    case 'content':
+      // For threads, skip photos step
+      if (settings.type === 'thread') {
         set(currentStepAtom, 'settings');
-        break;
-      default:
-        break;
-    }
+      } else {
+        set(currentStepAtom, 'photos');
+      }
+      break;
+    case 'photos':
+      set(currentStepAtom, 'settings');
+      break;
+    case 'settings':
+      set(currentStepAtom, 'preview');
+      break;
+    default:
+      break;
   }
-);
+});
+
+export const previousStepAtom = atom(null, (get, set) => {
+  const currentStep = get(currentStepAtom);
+  const settings = get(postSettingsAtom);
+
+  switch (currentStep) {
+    case 'photos':
+      set(currentStepAtom, 'content');
+      break;
+    case 'settings':
+      // For threads, go back to content, otherwise photos
+      if (settings.type === 'thread') {
+        set(currentStepAtom, 'content');
+      } else {
+        set(currentStepAtom, 'photos');
+      }
+      break;
+    case 'preview':
+      set(currentStepAtom, 'settings');
+      break;
+    default:
+      break;
+  }
+});
 
 // Get all drafts list atom
 export const draftsListAtom = atom((get) => {
   const drafts = get(draftsAtom);
-  return Object.values(drafts).sort((a, b) => 
-    new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  return Object.values(drafts).sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
   );
 });
 
@@ -599,73 +563,67 @@ export const loadServerDraftsMutationAtom = atomWithMutation(() => {
 });
 
 // Compound atom for creating a post with media upload
-export const createPostWithMediaAtom = atom(
-  null,
-  async (get, set) => {
-    try {
-      set(isCreatingPostAtom, true);
-      set(postCreationErrorAtom, null);
+export const createPostWithMediaAtom = atom(null, async (get, set) => {
+  try {
+    set(isCreatingPostAtom, true);
+    set(postCreationErrorAtom, null);
 
-      const content = get(postContentAtom);
-      const photos = get(selectedPhotosAtom);
-      const hashtags = get(selectedHashtagsAtom);
-      const settings = get(postSettingsAtom);
+    const content = get(postContentAtom);
+    const photos = get(selectedPhotosAtom);
+    const hashtags = get(selectedHashtagsAtom);
+    const settings = get(postSettingsAtom);
 
-      // Validate form
-      const isValid = get(isFormValidAtom);
-      if (!isValid) {
-        throw errorService.createError('Please fill in all required fields', 'validation/incomplete');
-      }
-
-      let mediaIds: string[] = [];
-
-      // Upload media if we have photos
-      if (photos.length > 0) {
-        const uploadMutation = get(uploadMediaMutationAtom);
-        const uploadedMedia = await uploadMutation.mutateAsync(photos);
-        mediaIds = uploadedMedia.map((media: any) => media.id);
-      }
-
-      // Create the post
-      const createMutation = get(createPostMutationAtom);
-      const hashtagIds = hashtags.map(h => h.id);
-      
-      const result = await createMutation.mutateAsync({
-        content,
-        type: settings.type,
-        mediaIds,
-        hashtagIds,
-        settings,
-      });
-
-      // Clear form and draft on successful post creation
-      set(clearFormAtom);
-
-      return result;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create post';
-      set(postCreationErrorAtom, errorMessage);
-      throw error;
-    } finally {
-      set(isCreatingPostAtom, false);
+    // Validate form
+    const isValid = get(isFormValidAtom);
+    if (!isValid) {
+      throw errorService.createError('Please fill in all required fields', 'validation/incomplete');
     }
+
+    let mediaIds: string[] = [];
+
+    // Upload media if we have photos
+    if (photos.length > 0) {
+      const uploadMutation = get(uploadMediaMutationAtom);
+      const uploadedMedia = await uploadMutation.mutateAsync(photos);
+      mediaIds = uploadedMedia.map((media: any) => media.id);
+    }
+
+    // Create the post
+    const createMutation = get(createPostMutationAtom);
+    const hashtagIds = hashtags.map((h) => h.id);
+
+    const result = await createMutation.mutateAsync({
+      content,
+      type: settings.type,
+      mediaIds,
+      hashtagIds,
+      settings,
+    });
+
+    // Clear form and draft on successful post creation
+    set(clearFormAtom);
+
+    return result;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to create post';
+    set(postCreationErrorAtom, errorMessage);
+    throw error;
+  } finally {
+    set(isCreatingPostAtom, false);
   }
-);
+});
 
 // Auto-save draft atom (throttled)
 let autoSaveTimeout: NodeJS.Timeout | null = null;
 
-export const autoSaveDraftAtom = atom(
-  null,
-  (get, set) => {
-    // Clear existing timeout
-    if (autoSaveTimeout) {
-      clearTimeout(autoSaveTimeout);
-    }
-
-    // Set new timeout for auto-save
-    autoSaveTimeout = setTimeout(() => {
-      set(saveToDraftAtom);
-    }, 2000); // Auto-save after 2 seconds of inactivity
+export const autoSaveDraftAtom = atom(null, (get, set) => {
+  // Clear existing timeout
+  if (autoSaveTimeout) {
+    clearTimeout(autoSaveTimeout);
   }
-);
+
+  // Set new timeout for auto-save
+  autoSaveTimeout = setTimeout(() => {
+    set(saveToDraftAtom);
+  }, 2000); // Auto-save after 2 seconds of inactivity
+});

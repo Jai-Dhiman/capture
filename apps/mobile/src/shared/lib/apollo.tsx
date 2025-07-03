@@ -44,16 +44,18 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
 
   if (networkError) {
     console.error(`Network error: ${networkError.message}`);
-    
+
     // If unauthorized, try to refresh token and retry
     if (networkError.message.includes('401') || networkError.message.includes('Unauthorized')) {
       const { refreshSession } = useAuthStore.getState();
-      return refreshSession().then(() => {
-        return forward(operation);
-      }).catch(() => {
-        // If refresh fails, redirect to login or handle appropriately
-        console.error('Token refresh failed, user needs to re-authenticate');
-      });
+      return refreshSession()
+        .then(() => {
+          return forward(operation);
+        })
+        .catch(() => {
+          // If refresh fails, redirect to login or handle appropriately
+          console.error('Token refresh failed, user needs to re-authenticate');
+        });
     }
   }
 });
@@ -63,12 +65,12 @@ const retryLink = new RetryLink({
   delay: {
     initial: 300,
     max: Infinity,
-    jitter: true
+    jitter: true,
   },
   attempts: {
     max: 3,
-    retryIf: (error, _operation) => !!error && !error.message.includes('401')
-  }
+    retryIf: (error, _operation) => !!error && !error.message.includes('401'),
+  },
 });
 
 export const apolloClient = new ApolloClient({

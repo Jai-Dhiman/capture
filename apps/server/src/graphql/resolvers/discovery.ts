@@ -178,10 +178,6 @@ export const discoveryResolvers = {
       let vectorMatches: QdrantSearchResult[] = [];
       const vectorQueryLimit = limit * 10;
       try {
-        console.log(
-          `[QDRANT] Starting vector search for user ${userId} with vector length: ${userVector?.length}`,
-        );
-
         const filter = {
           must: [] as Array<Record<string, unknown>>,
           // Removed is_private filter due to missing Qdrant index - will filter in app layer
@@ -201,22 +197,16 @@ export const discoveryResolvers = {
         //   });
         // }
 
-        console.log('[QDRANT] Filter:', JSON.stringify(filter, null, 2));
-        console.log(`[QDRANT] Searching with limit: ${vectorQueryLimit}`);
-
         vectorMatches = await qdrantClient.searchVectors({
           vector: userVector,
           limit: vectorQueryLimit,
           filter,
         });
-
-        console.log(`[QDRANT] Found ${vectorMatches.length} matches`);
       } catch (e) {
         console.error(`[QDRANT] Query failed for user ${userId}:`, e);
 
         // For new users without vectors, return fallback feed instead of error
         if (!userVector || userVector.length === 0) {
-          console.log('[QDRANT] No user vector available, returning empty feed');
           return { posts: [], nextCursor: null };
         }
 
@@ -292,25 +282,13 @@ export const discoveryResolvers = {
           return followedPrivateUserIds.includes(post.userId);
         });
 
-        console.log(`[PRIVACY] Filtered ${recommendedPosts.length} posts after privacy check`);
-
         // Filter out posts from blocked users (moved from Qdrant due to potential missing index)
         const blockedUserIdsSet = new Set(blockedUserIds);
-        const beforeBlockedFilter = recommendedPosts.length;
         recommendedPosts = recommendedPosts.filter((post) => !blockedUserIdsSet.has(post.userId));
-
-        console.log(
-          `[BLOCKED] Filtered out ${beforeBlockedFilter - recommendedPosts.length} blocked user posts, ${recommendedPosts.length} remaining`,
-        );
 
         // Filter out seen posts (moved from Qdrant due to missing index)
         const seenPostIdsSet = new Set(seenPostIds);
-        const beforeSeenFilter = recommendedPosts.length;
         recommendedPosts = recommendedPosts.filter((post) => !seenPostIdsSet.has(post.id));
-
-        console.log(
-          `[SEEN] Filtered out ${beforeSeenFilter - recommendedPosts.length} seen posts, ${recommendedPosts.length} remaining`,
-        );
       } catch (e) {
         console.error(`Failed to fetch post details from D1 for user ${userId}:`, e);
         throw new Error('Failed to fetch post details');

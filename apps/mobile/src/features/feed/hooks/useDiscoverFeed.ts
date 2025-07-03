@@ -49,7 +49,7 @@ export const useDiscoverFeed = (limit = 10) => {
         `,
         variables: { limit, cursor },
       });
-      
+
       return data.discoverFeed;
     },
     initialPageParam: null,

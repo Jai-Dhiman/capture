@@ -13,7 +13,7 @@ interface GraphQLResponse<T = any> {
 
 export async function graphqlFetch<T = any>(
   request: GraphQLRequest,
-  options: { requiresAuth?: boolean } = { requiresAuth: true }
+  options: { requiresAuth?: boolean } = { requiresAuth: true },
 ): Promise<T> {
   const { session, refreshSession } = useAuthStore.getState();
   let token = session?.access_token;
@@ -54,7 +54,7 @@ export async function graphqlFetch<T = any>(
   }
 
   const { data, errors }: GraphQLResponse<T> = await response.json();
-  
+
   if (errors) {
     throw new Error(errors[0].message);
   }

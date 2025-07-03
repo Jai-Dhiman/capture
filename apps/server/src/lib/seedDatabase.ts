@@ -221,7 +221,6 @@ export async function seedDatabase(
   await batchInsert(db, media, mediaItems);
 
   // 5. Generate post embeddings
-  console.log('🔮 Generating embeddings for seeded posts...');
   const qdrantClient = new QdrantClient(env);
   let successCount = 0;
   let failureCount = 0;
@@ -238,7 +237,6 @@ export async function seedDatabase(
           const vecData = await generatePostEmbedding(p.id, p.content, tagsForPost, env.AI);
           await storePostEmbedding(vecData, env.POST_VECTORS, qdrantClient);
           successCount++;
-          console.log(`✅ Generated embedding for post ${p.id} (${successCount}/${posts.length})`);
         } catch (err) {
           failureCount++;
           console.error(`❌ Embedding failed for post ${p.id}:`, err);

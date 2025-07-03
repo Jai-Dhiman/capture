@@ -7,7 +7,7 @@ import {
   FlatList,
   Pressable,
   useWindowDimensions,
-  StatusBar
+  StatusBar,
 } from 'react-native';
 import { Image } from 'expo-image';
 import * as MediaLibrary from 'expo-media-library';
@@ -390,11 +390,7 @@ const PhotoSelectionScreen: React.FC<PhotoSelectionScreenProps> = ({ route }) =>
       <StatusBar barStyle="dark-content" backgroundColor="#DCDCDE" />
 
       {/* Header */}
-      <Header
-        height={120}
-        showBackButton={true}
-        onBackPress={() => navigation.goBack()}
-      />
+      <Header height={120} showBackButton={true} onBackPress={() => navigation.goBack()} />
 
       {/* Album selector */}
       <View style={{ backgroundColor: 'white', paddingHorizontal: 16, paddingVertical: 12 }}>

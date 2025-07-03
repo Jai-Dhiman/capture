@@ -228,6 +228,9 @@ importers:
       expo-image:
         specifier: ^2.0.7
         version: 2.0.7(expo@52.0.47(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@expo/metro-runtime@4.0.1(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1)))(graphql@16.11.0)(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1))(react@18.3.1))(react-native-web@0.19.13(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1))(react@18.3.1)
+      expo-image-manipulator:
+        specifier: ~13.0.6
+        version: 13.0.6(expo@52.0.47(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@expo/metro-runtime@4.0.1(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1)))(graphql@16.11.0)(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1))(react@18.3.1))
       expo-image-picker:
         specifier: ~16.0.6
         version: 16.0.6(expo@52.0.47(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@expo/metro-runtime@4.0.1(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1)))(graphql@16.11.0)(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1))(react@18.3.1))
@@ -4616,6 +4619,11 @@ packages:
 
   expo-image-loader@5.0.0:
     resolution: {integrity: sha512-Eg+5FHtyzv3Jjw9dHwu2pWy4xjf8fu3V0Asyy42kO+t/FbvW/vjUixpTjPtgKQLQh+2/9Nk4JjFDV6FwCnF2ZA==}
+    peerDependencies:
+      expo: '*'
+
+  expo-image-manipulator@13.0.6:
+    resolution: {integrity: sha512-Rz8Kcfx1xYm0AsIDi6zfKYUDnwCP8edgYXWb00KAkzOF8bDxwzTrnvESWhCiveM4IB3fojjLpNeENME34p3bzA==}
     peerDependencies:
       expo: '*'
 
@@ -12615,6 +12623,11 @@ snapshots:
   expo-image-loader@5.0.0(expo@52.0.47(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@expo/metro-runtime@4.0.1(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1)))(graphql@16.11.0)(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1))(react@18.3.1)):
     dependencies:
       expo: 52.0.47(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@expo/metro-runtime@4.0.1(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1)))(graphql@16.11.0)(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1))(react@18.3.1)
+
+  expo-image-manipulator@13.0.6(expo@52.0.47(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@expo/metro-runtime@4.0.1(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1)))(graphql@16.11.0)(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1))(react@18.3.1)):
+    dependencies:
+      expo: 52.0.47(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@expo/metro-runtime@4.0.1(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1)))(graphql@16.11.0)(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1))(react@18.3.1)
+      expo-image-loader: 5.0.0(expo@52.0.47(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@expo/metro-runtime@4.0.1(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1)))(graphql@16.11.0)(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1))(react@18.3.1))
 
   expo-image-picker@16.0.6(expo@52.0.47(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@expo/metro-runtime@4.0.1(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1)))(graphql@16.11.0)(react-native@0.76.9(@babel/core@7.27.4)(@babel/preset-env@7.22.20(@babel/core@7.27.4))(@types/react@18.3.23)(react@18.3.1))(react@18.3.1)):
     dependencies:

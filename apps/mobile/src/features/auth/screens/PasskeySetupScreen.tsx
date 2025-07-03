@@ -112,7 +112,7 @@ export default function PasskeySetupScreen({ navigation }: Props) {
           text: 'Log Out',
           onPress: () => {
             logout.mutate(undefined, {
-              onSuccess: () => { },
+              onSuccess: () => {},
             });
           },
           style: 'destructive',

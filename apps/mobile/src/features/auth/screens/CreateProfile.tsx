@@ -95,7 +95,7 @@ export default function CreateProfile() {
           text: 'Log Out',
           onPress: () => {
             logout.mutate(undefined, {
-              onSuccess: () => { },
+              onSuccess: () => {},
             });
           },
           style: 'destructive',

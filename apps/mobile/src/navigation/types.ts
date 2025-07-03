@@ -48,6 +48,14 @@ export type AppStackParamList = {
       }>,
     ) => void;
   };
+  PostSettingsScreen: {
+    selectedPhotos: Array<{
+      uri: string;
+      type: string;
+      name: string;
+      order: number;
+    }>;
+  };
 };
 
 export type SettingsStackParamList = {
