@@ -62,23 +62,33 @@ export const discoveryResolvers = {
       const userId = user.id;
       const { USER_VECTORS } = env;
 
-      // Check cache first for the complete feed result - TEMPORARILY DISABLED
-      // const feedCacheKey = CacheKeys.discoveryFeed(userId, cursor);
-      // const cachedFeed = await cachingService.get<GraphQLFeedPayload>(feedCacheKey);
-      // if (cachedFeed) {
-      //   return cachedFeed;
-      // }
+      // Check cache first for the complete feed result
+      const feedCacheKey = CacheKeys.discoveryFeed(userId, cursor);
+      const cachedFeed = await cachingService.get<GraphQLFeedPayload>(feedCacheKey);
+      if (cachedFeed) {
+        return cachedFeed;
+      }
 
       if (!USER_VECTORS) {
         console.error('USER_VECTORS KV binding missing');
         throw new Error('Server configuration error: Bindings missing');
       }
 
-      // 1. Get User Vector from KV directly - CACHE DISABLED
+      // 1. Get User Vector from cache or KV
       let userVector: number[] | null = null;
+      const userVectorCacheKey = CacheKeys.userVector(userId);
       
       try {
-        userVector = await USER_VECTORS.get<number[]>(userId, { type: 'json' });
+        // Try cache first
+        userVector = await cachingService.get<number[]>(userVectorCacheKey);
+        
+        // If not in cache, get from KV and cache it
+        if (!userVector) {
+          userVector = await USER_VECTORS.get<number[]>(userId, { type: 'json' });
+          if (userVector) {
+            await cachingService.set(userVectorCacheKey, userVector, CacheTTL.USER_VECTOR);
+          }
+        }
       } catch (e) {
         console.error(`Failed to get user interest vector for ${userId}:`, e);
         return { posts: [], nextCursor: null };
@@ -88,16 +98,27 @@ export const discoveryResolvers = {
         return { posts: [], nextCursor: null };
       }
 
-      // Fetch seen posts to exclude them from recommendations - CACHE DISABLED
+      // Fetch seen posts to exclude them from recommendations (with caching)
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
       let seenPostIds: string[] = [];
+      const seenPostsCacheKey = CacheKeys.seenPosts(userId);
       
       try {
-        seenPostIds = await db
-          .select({ postId: schema.seenPostLog.postId })
-          .from(schema.seenPostLog)
-          .where(and(eq(schema.seenPostLog.userId, userId), gt(schema.seenPostLog.seenAt, thirtyDaysAgo)))
-          .then((rows) => rows.map((r) => r.postId));
+        // Try cache first
+        seenPostIds = await cachingService.get<string[]>(seenPostsCacheKey) || [];
+        
+        // If not in cache or empty, fetch from DB and cache
+        if (seenPostIds.length === 0) {
+          seenPostIds = await db
+            .select({ postId: schema.seenPostLog.postId })
+            .from(schema.seenPostLog)
+            .where(and(eq(schema.seenPostLog.userId, userId), gt(schema.seenPostLog.seenAt, thirtyDaysAgo)))
+            .then((rows) => rows.map((r) => r.postId));
+          
+          if (seenPostIds.length > 0) {
+            await cachingService.set(seenPostsCacheKey, seenPostIds, CacheTTL.SEEN_POSTS);
+          }
+        }
 
         // Periodically clean up old seen posts log (1% chance)
         if (Math.random() < 0.01) {
@@ -107,23 +128,43 @@ export const discoveryResolvers = {
           await db
             .delete(schema.seenPostLog)
             .where(lt(schema.seenPostLog.seenAt, thirtyDaysAgoForCleanup));
+          
+          // Invalidate cache after cleanup
+          await cachingService.delete(seenPostsCacheKey);
         }
       } catch (e) {
         console.error(`Failed to fetch seen posts for user ${userId}:`, e);
       }
 
-      // Build user context for personalized scoring - CACHE DISABLED
-      let userContext = await buildUserContext(userId, db);
+      // Build user context for personalized scoring (with caching)
+      const userContextCacheKey = CacheKeys.userContext(userId);
+      let userContext = await cachingService.get<UserContext>(userContextCacheKey);
+      
+      if (!userContext) {
+        userContext = await buildUserContext(userId, db);
+        await cachingService.set(userContextCacheKey, userContext, CacheTTL.USER_CONTEXT);
+      }
 
-      // Fetch blocked user IDs for filtering - CACHE DISABLED
+      // Fetch blocked user IDs for filtering (with caching)
       let blockedUserIds: string[] = [];
+      const blockedUsersCacheKey = CacheKeys.blockedUsers(userId);
       
       try {
-        const blockedUsersResult = await db
-          .select({ blockedId: schema.blockedUser.blockedId })
-          .from(schema.blockedUser)
-          .where(eq(schema.blockedUser.blockerId, userId));
-        blockedUserIds = blockedUsersResult.map((r) => r.blockedId);
+        // Try cache first
+        blockedUserIds = await cachingService.get<string[]>(blockedUsersCacheKey) || [];
+        
+        // If not in cache, fetch from DB and cache
+        if (blockedUserIds.length === 0) {
+          const blockedUsersResult = await db
+            .select({ blockedId: schema.blockedUser.blockedId })
+            .from(schema.blockedUser)
+            .where(eq(schema.blockedUser.blockerId, userId));
+          blockedUserIds = blockedUsersResult.map((r) => r.blockedId);
+          
+          if (blockedUserIds.length > 0) {
+            await cachingService.set(blockedUsersCacheKey, blockedUserIds, CacheTTL.BLOCKED_USERS);
+          }
+        }
       } catch (e) {
         console.error(`Failed to fetch block relationships for user ${userId}:`, e);
       }
@@ -132,30 +173,47 @@ export const discoveryResolvers = {
       let vectorMatches: QdrantSearchResult[] = [];
       const vectorQueryLimit = limit * 10;
       try {
+        console.log(`[QDRANT] Starting vector search for user ${userId} with vector length: ${userVector?.length}`);
+        
         const filter = {
           must: [] as Array<Record<string, unknown>>,
-          should: [{ key: 'is_private', match: { value: false } }, { key: 'user_id', match: { value: userId } }],
+          // Removed is_private filter due to missing Qdrant index - will filter in app layer
         };
 
-        if (blockedUserIds.length > 0) {
-          filter.must.push({
-            must_not: [{ key: 'user_id', match: { any: blockedUserIds } }],
-          });
-        }
+        // Removed blocked users filter due to potential missing Qdrant index - will filter in app layer
+        // if (blockedUserIds.length > 0) {
+        //   filter.must.push({
+        //     must_not: [{ key: 'user_id', match: { any: blockedUserIds } }],
+        //   });
+        // }
 
-        if (seenPostIds.length > 0) {
-          filter.must.push({
-            must_not: [{ key: 'original_id', match: { any: seenPostIds.map(id => `post:${id}`) } }],
-          });
-        }
+        // Removed seen posts filter due to missing Qdrant index - will filter in app layer
+        // if (seenPostIds.length > 0) {
+        //   filter.must.push({
+        //     must_not: [{ key: 'original_id', match: { any: seenPostIds.map(id => `post:${id}`) } }],
+        //   });
+        // }
+
+        console.log(`[QDRANT] Filter:`, JSON.stringify(filter, null, 2));
+        console.log(`[QDRANT] Searching with limit: ${vectorQueryLimit}`);
 
         vectorMatches = await qdrantClient.searchVectors({
           vector: userVector,
           limit: vectorQueryLimit,
           filter,
         });
+        
+        console.log(`[QDRANT] Found ${vectorMatches.length} matches`);
       } catch (e) {
-        console.error(`Qdrant query failed for user ${userId}:`, e);
+        console.error(`[QDRANT] Query failed for user ${userId}:`, e);
+        console.error(`[QDRANT] Error details:`, e.message, e.stack);
+        
+        // For new users without vectors, return fallback feed instead of error
+        if (!userVector || userVector.length === 0) {
+          console.log(`[QDRANT] No user vector available, returning empty feed`);
+          return { posts: [], nextCursor: null };
+        }
+        
         throw new Error('Failed to query recommendations');
       }
 
@@ -197,6 +255,52 @@ export const discoveryResolvers = {
           .innerJoin(schema.profile, eq(schema.post.userId, schema.profile.userId))
           .where(inArray(schema.post.id, recommendedPostIds))
           .orderBy(desc(schema.post.createdAt));
+
+        // Filter out private posts from users not followed by current user
+        // Check following relationships for private profile owners
+        const privateProfileUserIds = recommendedPosts
+          .filter(post => !!post.author.isPrivate && post.userId !== userId)
+          .map(post => post.userId);
+
+        let followedPrivateUserIds: string[] = [];
+        if (privateProfileUserIds.length > 0) {
+          const followingRelationships = await db
+            .select({ followedId: schema.relationship.followedId })
+            .from(schema.relationship)
+            .where(
+              and(
+                eq(schema.relationship.followerId, userId),
+                inArray(schema.relationship.followedId, privateProfileUserIds)
+              )
+            );
+          followedPrivateUserIds = followingRelationships.map(r => r.followedId);
+        }
+
+        // Filter out posts from private users that current user doesn't follow
+        recommendedPosts = recommendedPosts.filter(post => {
+          // Allow own posts
+          if (post.userId === userId) return true;
+          // Allow public profile posts
+          if (!post.author.isPrivate) return true;
+          // Allow private profile posts only if following
+          return followedPrivateUserIds.includes(post.userId);
+        });
+
+        console.log(`[PRIVACY] Filtered ${recommendedPosts.length} posts after privacy check`);
+
+        // Filter out posts from blocked users (moved from Qdrant due to potential missing index)
+        const blockedUserIdsSet = new Set(blockedUserIds);
+        const beforeBlockedFilter = recommendedPosts.length;
+        recommendedPosts = recommendedPosts.filter(post => !blockedUserIdsSet.has(post.userId));
+        
+        console.log(`[BLOCKED] Filtered out ${beforeBlockedFilter - recommendedPosts.length} blocked user posts, ${recommendedPosts.length} remaining`);
+
+        // Filter out seen posts (moved from Qdrant due to missing index)
+        const seenPostIdsSet = new Set(seenPostIds);
+        const beforeSeenFilter = recommendedPosts.length;
+        recommendedPosts = recommendedPosts.filter(post => !seenPostIdsSet.has(post.id));
+        
+        console.log(`[SEEN] Filtered out ${beforeSeenFilter - recommendedPosts.length} seen posts, ${recommendedPosts.length} remaining`);
       } catch (e) {
         console.error(`Failed to fetch post details from D1 for user ${userId}:`, e);
         throw new Error('Failed to fetch post details');
@@ -227,7 +331,11 @@ export const discoveryResolvers = {
 
             const postHashtags = postDetails?.hashtags.map((h) => h.hashtag.name) ?? [];
             const postTopics = extractTopicsFromPost(post.content, postHashtags);
-            const diversityBonus = calculateDiversityBonus(postTopics, userContext.recentTopics);
+            // Ensure recentTopics is a Set (cache may have serialized it to array)
+            const recentTopicsSet = userContext.recentTopics instanceof Set 
+              ? userContext.recentTopics 
+              : new Set(Array.isArray(userContext.recentTopics) ? userContext.recentTopics : []);
+            const diversityBonus = calculateDiversityBonus(postTopics, recentTopicsSet);
 
             const getContentType = (): 'text' | 'image' | 'video' | 'mixed' => {
               const mediaTypes = postDetails?.media.map((m) => m.type) ?? [];
@@ -303,8 +411,8 @@ export const discoveryResolvers = {
         nextCursor,
       };
 
-      // Cache the final feed result - DISABLED
-      // await cachingService.set(feedCacheKey, response, CacheTTL.DISCOVERY_FEED);
+      // Cache the final feed result
+      await cachingService.set(feedCacheKey, response, CacheTTL.DISCOVERY_FEED);
 
       return response;
     },

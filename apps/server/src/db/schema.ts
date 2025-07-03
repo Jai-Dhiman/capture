@@ -212,6 +212,21 @@ export const media = sqliteTable(
   ],
 );
 
+export const mediaRelations = relations(media, ({ one }) => ({
+  post: one(post, {
+    fields: [media.postId],
+    references: [post.id],
+  }),
+  draftPost: one(draftPost, {
+    fields: [media.draftPostId],
+    references: [draftPost.id],
+  }),
+  user: one(users, {
+    fields: [media.userId],
+    references: [users.id],
+  }),
+}));
+
 export const comment = sqliteTable(
   'comment',
   {
