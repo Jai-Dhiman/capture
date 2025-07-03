@@ -18,7 +18,7 @@ export class EmailService {
   }
 
   async sendEmail(options: SendEmailOptions): Promise<void> {
-          const fromEmail = 'noreply@verification.captureapp.org';
+    const fromEmail = 'noreply@verification.captureapp.org';
 
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -38,7 +38,7 @@ export class EmailService {
     if (!response.ok) {
       let errorText = '';
       let errorData: any = {};
-      
+
       try {
         errorText = await response.text();
         errorData = JSON.parse(errorText);
@@ -46,26 +46,28 @@ export class EmailService {
         console.warn('Failed to parse email service error response:', parseError);
       }
 
-      console.error('Failed to send email:', { 
-        status: response.status, 
-        statusText: response.statusText, 
+      console.error('Failed to send email:', {
+        status: response.status,
+        statusText: response.statusText,
         errorText,
-        errorData 
+        errorData,
       });
 
       // Provide more specific error messages based on response
       if (response.status === 422) {
-        throw new Error('Invalid email address format. Please check your email address and try again.');
+        throw new Error(
+          'Invalid email address format. Please check your email address and try again.',
+        );
       }
-      
+
       if (response.status === 429) {
         throw new Error('Too many email requests. Please wait a moment and try again.');
       }
-      
+
       if (response.status === 401 || response.status === 403) {
         throw new Error('Email service authentication failed. Please contact support.');
       }
-      
+
       if (response.status >= 500) {
         throw new Error('Email service is temporarily unavailable. Please try again later.');
       }

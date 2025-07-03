@@ -6,10 +6,8 @@ import Header from '@/shared/components/Header';
 import { useAlert } from '@/shared/lib/AlertContext';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import * as ImagePicker from 'expo-image-picker';
 import React, { useState, useEffect } from 'react';
 import {
-  GestureResponderEvent,
   Image,
   Pressable,
   ScrollView,
@@ -19,8 +17,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { Platform } from 'react-native';
-import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
+import DraggableFlatList from 'react-native-draggable-flatlist';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type PostType = 'post' | 'thread';
@@ -46,41 +43,19 @@ export default function NewPost() {
   const numColumns = imageCount <= 3 ? imageCount : 2;
 
   // Image selection logic
-  const handleImageSelection = async () => {
-    try {
-      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permissionResult.granted) {
-        showAlert('Please allow access to your photos', { type: 'warning' });
-        return;
-      }
-
-      const remainingSlots = 4 - selectedImages.length;
-      if (remainingSlots <= 0) {
-        showAlert('Maximum of 4 images allowed per post', { type: 'warning' });
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsMultipleSelection: true,
-        selectionLimit: remainingSlots,
-        quality: 0.8,
-        base64: Platform.OS === 'web',
-      });
-
-      if (!result.canceled && result.assets.length > 0) {
-        const formattedImages = result.assets.map((asset, index) => ({
-          uri: asset.uri,
-          type: 'image/jpeg',
-          name: `upload-${Date.now()}-${index}.jpg`,
-          order: selectedImages.length + index,
-        }));
-        setSelectedImages((prevImages) => [...prevImages, ...formattedImages]);
-      }
-    } catch (error) {
-      console.error('Selection error:', error);
-      showAlert('Failed to select images', { type: 'error' });
+  const handleImageSelection = () => {
+    const remainingSlots = 4 - selectedImages.length;
+    if (remainingSlots <= 0) {
+      showAlert('Maximum of 4 images allowed per post', { type: 'warning' });
+      return;
     }
+
+    navigation.navigate('PhotoSelectionScreen', {
+      maxSelection: remainingSlots,
+      onPhotosSelected: (photos) => {
+        setSelectedImages((prevImages) => [...prevImages, ...photos]);
+      },
+    });
   };
 
   // Remove image

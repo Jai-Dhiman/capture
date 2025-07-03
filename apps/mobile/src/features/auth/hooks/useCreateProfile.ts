@@ -64,7 +64,6 @@ export function useCreateProfile() {
   };
 
   const checkUsernameAvailability = async (username: string) => {
-    
     if (!session?.access_token) {
       throw new Error('No auth token available');
     }
@@ -76,9 +75,9 @@ export function useCreateProfile() {
         Authorization: `Bearer ${session.access_token}`,
       },
     });
-    
+
     const data = await response.json();
-    
+
     return data.available;
   };
 
@@ -100,7 +99,7 @@ export function useCreateProfile() {
       }
 
       const isAvailable = await checkUsernameAvailability(username);
-      
+
       if (!isAvailable) {
         throw new Error('Username already taken');
       }

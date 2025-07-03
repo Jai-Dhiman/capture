@@ -132,7 +132,7 @@ mediaRouter.post('/batch-records', async (c) => {
       createdMedia.map(async (media) => {
         const url = await imageService.getImageUrl(media.storageKey, 'public', 300);
         return { ...media, url };
-      })
+      }),
     );
 
     return c.json({ media: mediaWithUrls });

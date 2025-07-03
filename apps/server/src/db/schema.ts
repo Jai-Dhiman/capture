@@ -110,7 +110,10 @@ export const draftPost = sqliteTable(
     createdAt: numeric('created_at').default(new Date().toISOString()).notNull(),
     updatedAt: numeric('updated_at').default(new Date().toISOString()).notNull(),
   },
-  (table) => [index('user_drafts_idx').on(table.userId), index('draft_time_idx').on(table.updatedAt)],
+  (table) => [
+    index('user_drafts_idx').on(table.userId),
+    index('draft_time_idx').on(table.updatedAt),
+  ],
 );
 
 export const draftPostRelations = relations(draftPost, ({ one, many }) => ({
@@ -206,9 +209,9 @@ export const media = sqliteTable(
     createdAt: numeric('created_at').default(new Date().toISOString()).notNull(),
   },
   (table) => [
-    index('post_media_idx').on(table.postId), 
+    index('post_media_idx').on(table.postId),
     index('draft_media_idx').on(table.draftPostId),
-    index('user_media_idx').on(table.userId)
+    index('user_media_idx').on(table.userId),
   ],
 );
 

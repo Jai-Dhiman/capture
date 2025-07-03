@@ -6,12 +6,21 @@ import EmailIcon from '@assets/icons/EmailIcon.svg';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm } from '@tanstack/react-form';
 import React, { useState, useRef, useEffect } from 'react';
-import { ActivityIndicator, Image, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View, Keyboard } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  Keyboard,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
+
+} from 'react-native';
 import { Platform } from 'react-native';
 import { AppleOAuthButton, GoogleOAuthButton } from '../components/OAuthButtons';
 import { useAuth } from '../hooks/useAuth';
 import { usePasskey } from '../hooks/usePasskey';
-
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'Login'>;
@@ -274,15 +283,17 @@ export default function LoginScreen({ navigation }: Props) {
             </form.Field>
 
             <View className="justify-center">
-              {(sendCode.isError || authenticateWithPasskey.isError || loginState === 'user-not-found') && (
-                <Text className="text-red-500 text-xs text-center font-roboto">
-                  {loginState === 'passkey'
-                    ? 'Passkey authentication failed. Please try again.'
-                    : loginState === 'user-not-found'
-                      ? 'No account found for this email address.'
-                      : 'Failed to send verification code. Please try again.'}
-                </Text>
-              )}
+              {(sendCode.isError ||
+                authenticateWithPasskey.isError ||
+                loginState === 'user-not-found') && (
+                  <Text className="text-red-500 text-xs text-center font-roboto">
+                    {loginState === 'passkey'
+                      ? 'Passkey authentication failed. Please try again.'
+                      : loginState === 'user-not-found'
+                        ? 'No account found for this email address.'
+                        : 'Failed to send verification code. Please try again.'}
+                  </Text>
+                )}
             </View>
 
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
@@ -296,7 +307,9 @@ export default function LoginScreen({ navigation }: Props) {
                   {isFormSubmitting || isLoading ? (
                     <View className="flex-row justify-center items-center">
                       <ActivityIndicator size="small" color="#000" />
-                      <Text className="text-base font-bold font-roboto ml-2">{getButtonText()}</Text>
+                      <Text className="text-base font-bold font-roboto ml-2">
+                        {getButtonText()}
+                      </Text>
                     </View>
                   ) : (
                     <Text className="text-base font-bold font-roboto text-center">
@@ -344,7 +357,7 @@ export default function LoginScreen({ navigation }: Props) {
             </View>
           </View>
         </TouchableWithoutFeedback>
-      </View >
-    </View >
+      </View>
+    </View>
   );
 }

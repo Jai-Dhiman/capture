@@ -101,13 +101,13 @@ export const profileResolvers = {
           .from(schema.relationship)
           .where(eq(schema.relationship.followedId, id))
           .all()
-          .then(rows => rows.length),
+          .then((rows) => rows.length),
         db
           .select({ count: schema.relationship.followerId })
           .from(schema.relationship)
           .where(eq(schema.relationship.followerId, id))
           .all()
-          .then(rows => rows.length),
+          .then((rows) => rows.length),
       ]);
 
       return {

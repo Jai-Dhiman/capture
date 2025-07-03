@@ -184,7 +184,11 @@ export interface UserProfileResponse {
 }
 
 // Zustand store related types
-export type AuthStage = 'unauthenticated' | 'profileRequired' | 'authenticated' | 'securitySetupRequired';
+export type AuthStage =
+  | 'unauthenticated'
+  | 'profileRequired'
+  | 'authenticated'
+  | 'securitySetupRequired';
 export type AuthStatus = 'checking' | 'pending' | 'error' | 'success';
 
 export interface AuthStoreState {

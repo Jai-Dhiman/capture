@@ -1,18 +1,17 @@
 import type { AuthStackParamList } from '@/navigation/types';
-import EmailIcon from '@assets/icons/EmailIcon.svg';
 import Header from '@/shared/components/Header';
+import EmailIcon from '@assets/icons/EmailIcon.svg';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React from 'react';
-import { View, Text, TouchableOpacity, Image } from 'react-native';
-import { AppleOAuthButton, GoogleOAuthButton } from '../components/OAuthButtons';
+import { Image, Text, TouchableOpacity, View } from 'react-native';
 import { Platform } from 'react-native';
+import { AppleOAuthButton, GoogleOAuthButton } from '../components/OAuthButtons';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'RegisterScreen'>;
 };
 
 export default function RegisterScreen({ navigation }: Props) {
-
   const shadowStyle = {
     ...Platform.select({
       ios: {
@@ -52,7 +51,6 @@ export default function RegisterScreen({ navigation }: Props) {
 
         <View className="flex-1 px-[26px] justify-center">
           <View className="flex flex-col space-y-[23px] mb-[145px]">
-
             <TouchableOpacity
               onPress={() => navigation.navigate('EmailSignup')}
               className="bg-white h-[56px] rounded-[30px] shadow-md flex-row items-center justify-center mb-[30px]"

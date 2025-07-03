@@ -32,7 +32,7 @@ export function createCacheWarmingService(env: Bindings): CacheWarmingService {
               .where(eq(schema.profile.userId, userId))
               .get();
           },
-          CacheTTL.PROFILE
+          CacheTTL.PROFILE,
         );
 
         // Warm user's recent drafts
@@ -48,7 +48,7 @@ export function createCacheWarmingService(env: Bindings): CacheWarmingService {
               .limit(10)
               .all();
           },
-          CacheTTL.SHORT
+          CacheTTL.SHORT,
         );
 
         console.log(`Warmed cache for user ${userId}`);
@@ -72,7 +72,7 @@ export function createCacheWarmingService(env: Bindings): CacheWarmingService {
         await Promise.all(
           popularPosts.map(async (post) => {
             const cacheKey = CacheKeys.post(post.id);
-            
+
             return cachingService.getOrSet(
               cacheKey,
               async () => {
@@ -99,9 +99,9 @@ export function createCacheWarmingService(env: Bindings): CacheWarmingService {
                   editingMetadata: post.editingMetadata ? JSON.parse(post.editingMetadata) : null,
                 };
               },
-              CacheTTL.LONG
+              CacheTTL.LONG,
             );
-          })
+          }),
         );
 
         console.log(`Warmed cache for ${popularPosts.length} popular posts`);
@@ -125,7 +125,7 @@ export function createCacheWarmingService(env: Bindings): CacheWarmingService {
         await Promise.all(
           recentPosts.map(async (post) => {
             const cacheKey = CacheKeys.post(post.id);
-            
+
             return cachingService.getOrSet(
               cacheKey,
               async () => {
@@ -151,9 +151,9 @@ export function createCacheWarmingService(env: Bindings): CacheWarmingService {
                   editingMetadata: post.editingMetadata ? JSON.parse(post.editingMetadata) : null,
                 };
               },
-              CacheTTL.MEDIUM
+              CacheTTL.MEDIUM,
             );
-          })
+          }),
         );
 
         console.log(`Warmed cache for ${recentPosts.length} recent posts`);
@@ -166,10 +166,12 @@ export function createCacheWarmingService(env: Bindings): CacheWarmingService {
       try {
         // Note: Traditional social feeds are not implemented yet as this app focuses on discovery feeds
         // If you implement following/followers functionality, you would implement the chronological
-        // feed algorithm here and warm those caches. For now, we skip this as discovery feeds 
+        // feed algorithm here and warm those caches. For now, we skip this as discovery feeds
         // provide the main content discovery mechanism.
-        
-        console.log(`Skipped user feed warming - discovery feeds are the primary mechanism (${userIds.length} users)`);
+
+        console.log(
+          `Skipped user feed warming - discovery feeds are the primary mechanism (${userIds.length} users)`,
+        );
       } catch (error) {
         console.error('User feeds cache warming failed:', error);
       }
@@ -178,7 +180,7 @@ export function createCacheWarmingService(env: Bindings): CacheWarmingService {
     async warmRecommendationData(userId: string) {
       try {
         const { USER_VECTORS } = env;
-        
+
         // Warm user vector cache
         const userVectorKey = CacheKeys.userVector(userId);
         await cachingService.getOrSet(
@@ -189,7 +191,7 @@ export function createCacheWarmingService(env: Bindings): CacheWarmingService {
             }
             return null;
           },
-          CacheTTL.USER_VECTOR
+          CacheTTL.USER_VECTOR,
         );
 
         // Warm user context cache
@@ -199,7 +201,7 @@ export function createCacheWarmingService(env: Bindings): CacheWarmingService {
           async () => {
             return await buildUserContext(userId, db);
           },
-          CacheTTL.USER_CONTEXT
+          CacheTTL.USER_CONTEXT,
         );
 
         // Warm seen posts cache
@@ -211,11 +213,16 @@ export function createCacheWarmingService(env: Bindings): CacheWarmingService {
             const seenPosts = await db
               .select({ postId: schema.seenPostLog.postId })
               .from(schema.seenPostLog)
-              .where(and(eq(schema.seenPostLog.userId, userId), gt(schema.seenPostLog.seenAt, thirtyDaysAgo)))
+              .where(
+                and(
+                  eq(schema.seenPostLog.userId, userId),
+                  gt(schema.seenPostLog.seenAt, thirtyDaysAgo),
+                ),
+              )
               .then((rows) => rows.map((r) => r.postId));
             return seenPosts;
           },
-          CacheTTL.SEEN_POSTS
+          CacheTTL.SEEN_POSTS,
         );
 
         // Warm blocked users cache
@@ -230,7 +237,7 @@ export function createCacheWarmingService(env: Bindings): CacheWarmingService {
               .then((rows) => rows.map((r) => r.blockedId));
             return blockedUsers;
           },
-          CacheTTL.BLOCKED_USERS
+          CacheTTL.BLOCKED_USERS,
         );
 
         console.log(`Warmed recommendation cache for user ${userId}`);
@@ -243,21 +250,23 @@ export function createCacheWarmingService(env: Bindings): CacheWarmingService {
       try {
         // Pre-warm discovery feeds for active users (first page only to avoid performance issues)
         const limitedUserIds = userIds.slice(0, 10); // Limit to 10 users for discovery feeds
-        
+
         await Promise.allSettled(
           limitedUserIds.map(async (userId) => {
             // First warm the recommendation data
             await this.warmRecommendationData(userId);
-            
+
             // Note: We don't pre-warm the full discovery feed as it's computationally expensive
             // Instead, we just warm the supporting data (user vectors, context, etc.)
             // The actual feed will be computed on first request and then cached
-            
+
             console.log(`Prepared discovery feed cache dependencies for user ${userId}`);
-          })
+          }),
         );
 
-        console.log(`Prepared discovery feed cache dependencies for ${limitedUserIds.length} users`);
+        console.log(
+          `Prepared discovery feed cache dependencies for ${limitedUserIds.length} users`,
+        );
       } catch (error) {
         console.error('Discovery feeds cache warming failed:', error);
       }
@@ -269,16 +278,16 @@ export function createCacheWarmingService(env: Bindings): CacheWarmingService {
 export async function runCacheWarming(env: Bindings) {
   const warmingService = createCacheWarmingService(env);
   const db = createD1Client(env);
-  
+
   // Get active users for recommendation cache warming
   const activeUsers = await db
     .select({ userId: schema.profile.userId })
     .from(schema.profile)
     .limit(50) // Limit to prevent overloading
     .all();
-  
-  const activeUserIds = activeUsers.map(u => u.userId);
-  
+
+  const activeUserIds = activeUsers.map((u) => u.userId);
+
   // Run cache warming operations in parallel
   await Promise.allSettled([
     warmingService.warmPopularPosts(),
@@ -286,17 +295,15 @@ export async function runCacheWarming(env: Bindings) {
     warmingService.warmUserFeeds(activeUserIds),
     warmingService.warmDiscoveryFeeds(activeUserIds),
   ]);
-  
+
   console.log('Cache warming completed');
 }
 
 // Utility function specifically for recommendation system cache warming
 export async function runRecommendationCacheWarming(env: Bindings, userIds: string[]) {
   const warmingService = createCacheWarmingService(env);
-  
-  await Promise.allSettled(
-    userIds.map(userId => warmingService.warmRecommendationData(userId))
-  );
-  
+
+  await Promise.allSettled(userIds.map((userId) => warmingService.warmRecommendationData(userId)));
+
   console.log(`Recommendation cache warming completed for ${userIds.length} users`);
 }

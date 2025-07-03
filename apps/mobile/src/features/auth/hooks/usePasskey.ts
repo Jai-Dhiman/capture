@@ -54,7 +54,7 @@ export function usePasskey() {
     },
     onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['passkeys'] });
-      
+
       // Check if user was in security setup required stage
       const authStage = useAuthStore.getState().stage;
       if (authStage === 'securitySetupRequired') {

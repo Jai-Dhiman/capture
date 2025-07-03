@@ -28,10 +28,7 @@ export function normalizeEngagement(rawEngagement: number): number {
   return Math.log(rawEngagement + 1) / Math.log(100);
 }
 
-export function getContentTypeAffinity(
-  contentType: string,
-  userContext: UserContext,
-): number {
+export function getContentTypeAffinity(contentType: string, userContext: UserContext): number {
   const preferences = userContext.naturalContentPreferences;
   return preferences[contentType] || 0.5; // Neutral default
 }
@@ -60,7 +57,10 @@ export function calculateEngagementRate(
   return Math.min(ratePerHour / 10, 1);
 }
 
-export function calculateDiversityBonus(postTopics: string[], userRecentTopics: Set<string>): number {
+export function calculateDiversityBonus(
+  postTopics: string[],
+  userRecentTopics: Set<string>,
+): number {
   const hasNewTopic = postTopics.some((topic) => !userRecentTopics.has(topic.toLowerCase()));
   return hasNewTopic ? 1.0 : 0; // Return 1.0 or 0, will be weighted in final score
 }

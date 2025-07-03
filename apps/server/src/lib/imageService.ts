@@ -19,13 +19,15 @@ export interface ImageService {
     imageId: string;
     [key: string]: any;
   }) => Promise<any>;
-  createBatch: (mediaItems: Array<{
-    userId: string;
-    imageId: string;
-    order: number;
-    postId?: string;
-    draftPostId?: string;
-  }>) => Promise<any[]>;
+  createBatch: (
+    mediaItems: Array<{
+      userId: string;
+      imageId: string;
+      order: number;
+      postId?: string;
+      draftPostId?: string;
+    }>,
+  ) => Promise<any[]>;
   processEditedImage: (data: {
     originalImageId: string;
     editingMetadata: Record<string, unknown>;
@@ -177,7 +179,7 @@ export function createImageService(env: Bindings): ImageService {
       }
 
       try {
-        const mediaRecords = mediaItems.map(item => ({
+        const mediaRecords = mediaItems.map((item) => ({
           id: nanoid(),
           userId: item.userId,
           type: 'image',
@@ -192,11 +194,11 @@ export function createImageService(env: Bindings): ImageService {
 
         // Return the created records
         const createdMedia = await Promise.all(
-          mediaRecords.map(record =>
+          mediaRecords.map((record) =>
             db.query.media.findFirst({
               where: (media, { eq }) => eq(media.id, record.id),
-            })
-          )
+            }),
+          ),
         );
 
         return createdMedia.filter(Boolean);
@@ -218,7 +220,7 @@ export function createImageService(env: Bindings): ImageService {
         // 1. Download the original image
         // 2. Apply complex filters/adjustments using a processing library
         // 3. Upload the processed version to Cloudflare Images
-        
+
         // For now, we'll return the original image ID since Cloudflare Images
         // handles most transformations via URL parameters
         const processedImageId = originalImageId;

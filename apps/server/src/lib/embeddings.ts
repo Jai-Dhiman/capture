@@ -149,5 +149,3 @@ export async function storePostEmbedding(
     throw new Error(`Qdrant storage failed: ${errorMessage}`);
   }
 }
-
-

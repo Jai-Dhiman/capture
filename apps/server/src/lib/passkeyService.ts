@@ -40,7 +40,7 @@ export class PasskeyService {
 
   async generateRegistrationOptions(user: PasskeyUser, excludeCredentials: string[] = []) {
     const userIDBuffer = new TextEncoder().encode(user.id);
-    
+
     const options = await generateRegistrationOptions({
       rpName: RP_NAME,
       rpID: RP_ID,
@@ -157,7 +157,7 @@ export class PasskeyService {
     if (!base64 || typeof base64 !== 'string') {
       throw new Error(`Invalid base64 input: expected string, got ${typeof base64}`);
     }
-    
+
     const base64Padded = base64.replace(/-/g, '+').replace(/_/g, '/');
     const padding = 4 - (base64Padded.length % 4);
     const paddedBase64 = base64Padded + '='.repeat(padding % 4);

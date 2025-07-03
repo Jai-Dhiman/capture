@@ -86,7 +86,7 @@ export const passwordResetRateLimiter = createRateLimiter({
 });
 
 export const otpRateLimiter = createRateLimiter({
-  windowMs: 1 * 60 * 1000, // 1 minute window 
+  windowMs: 1 * 60 * 1000, // 1 minute window
   max: 20, // 20 requests per minute
   message: 'Too many OTP requests, please try again later.',
 });

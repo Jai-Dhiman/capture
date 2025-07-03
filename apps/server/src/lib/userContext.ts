@@ -59,4 +59,4 @@ export async function buildUserContext(
     naturalContentPreferences,
     recentTopics,
   };
-} 
+}

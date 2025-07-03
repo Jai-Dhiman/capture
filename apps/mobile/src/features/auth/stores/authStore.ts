@@ -13,19 +13,19 @@ import type {
 
 /*
  * AUTH DEBUGGING LOGS:
- * 
+ *
  * Look for these console log prefixes to debug auth flow issues:
  * - [AUTH] - Auth store decisions and stage changes
- * - [API] - Server API requests and responses  
+ * - [API] - Server API requests and responses
  * - [NAVIGATION] - Navigation state changes
  * - [AUTH_NAVIGATOR] - Auth stack navigator decisions
  * - [EMAIL_VERIFICATION] - Email verification flow
  * - [PASSKEY_SETUP] - Passkey setup screen state
  * - [PASSKEY] - Passkey registration/authentication
- * 
+ *
  * Key fields that determine auth stage:
  * - securitySetupRequired: true = shows PasskeySetupScreen
- * - profileExists: false = shows CreateProfile screen  
+ * - profileExists: false = shows CreateProfile screen
  * - Both false = user is fully authenticated
  */
 
@@ -43,16 +43,15 @@ export const useAuthStore = create<AuthStoreState & AuthStoreActions>()(
       ...initialState,
 
       setAuthData: (data: AuthResponse) => {
-
         let stage: AuthStage = 'authenticated';
-        
+
         // Security setup should happen before profile creation
         if (data.securitySetupRequired === true) {
           stage = 'securitySetupRequired';
         } else if (data.profileExists === false) {
           stage = 'profileRequired';
         }
-      
+
         set({
           user: data.user,
           session: data.session,
@@ -148,7 +147,7 @@ export const useAuthStore = create<AuthStoreState & AuthStoreActions>()(
 
             if (me) {
               let stage: AuthStage = 'authenticated';
-              
+
               // Security setup should happen before profile creation
               if (me.securitySetupRequired) {
                 stage = 'securitySetupRequired';
@@ -157,7 +156,6 @@ export const useAuthStore = create<AuthStoreState & AuthStoreActions>()(
               } else {
               }
 
-              
               set({
                 user: { id: me.id, email: me.email },
                 status: 'success',

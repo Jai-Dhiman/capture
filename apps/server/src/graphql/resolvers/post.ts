@@ -1,4 +1,4 @@
-import {  desc, eq, inArray, sql } from 'drizzle-orm';
+import { desc, eq, inArray, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { createD1Client } from '../../db';
 import * as schema from '../../db/schema';
@@ -67,11 +67,17 @@ export const postResolvers = {
         };
       } catch (error) {
         console.error('Error fetching draft post:', error);
-        throw new Error(`Failed to fetch draft post: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new Error(
+          `Failed to fetch draft post: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
       }
     },
 
-    async draftPosts(_parent: unknown, { limit = 10, offset = 0 }: { limit?: number; offset?: number }, context: ContextType) {
+    async draftPosts(
+      _parent: unknown,
+      { limit = 10, offset = 0 }: { limit?: number; offset?: number },
+      context: ContextType,
+    ) {
       if (!context.user) {
         throw new Error('Authentication required');
       }
@@ -114,20 +120,26 @@ export const postResolvers = {
                   hashtags: [],
                   editingMetadata: draft.editingMetadata ? JSON.parse(draft.editingMetadata) : null,
                 };
-              })
+              }),
             );
           },
-          CacheTTL.SHORT // Shorter TTL for frequently changing drafts
+          CacheTTL.SHORT, // Shorter TTL for frequently changing drafts
         );
 
         return cachedDrafts;
       } catch (error) {
         console.error('Error fetching draft posts:', error);
-        throw new Error(`Failed to fetch draft posts: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new Error(
+          `Failed to fetch draft posts: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
       }
     },
 
-    async postVersionHistory(_parent: unknown, { postId, limit = 10, offset = 0 }: { postId: string; limit?: number; offset?: number }, context: ContextType) {
+    async postVersionHistory(
+      _parent: unknown,
+      { postId, limit = 10, offset = 0 }: { postId: string; limit?: number; offset?: number },
+      context: ContextType,
+    ) {
       if (!context.user) {
         throw new Error('Authentication required');
       }
@@ -149,13 +161,15 @@ export const postResolvers = {
               ...version,
               user,
             };
-          })
+          }),
         );
 
         return enrichedVersions;
       } catch (error) {
         console.error('Error fetching version history:', error);
-        throw new Error(`Failed to fetch version history: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new Error(
+          `Failed to fetch version history: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
       }
     },
 
@@ -180,7 +194,9 @@ export const postResolvers = {
         };
       } catch (error) {
         console.error('Error fetching version:', error);
-        throw new Error(`Failed to fetch version: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new Error(
+          `Failed to fetch version: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
       }
     },
 
@@ -227,7 +243,9 @@ export const postResolvers = {
                 .select()
                 .from(schema.hashtag)
                 .where(
-                  validHashtagIds.length > 0 ? inArray(schema.hashtag.id, validHashtagIds) : sql`FALSE`,
+                  validHashtagIds.length > 0
+                    ? inArray(schema.hashtag.id, validHashtagIds)
+                    : sql`FALSE`,
                 )
                 .all();
             }
@@ -248,7 +266,7 @@ export const postResolvers = {
               editingMetadata: post.editingMetadata ? JSON.parse(post.editingMetadata) : null,
             };
           },
-          CacheTTL.MEDIUM
+          CacheTTL.MEDIUM,
         );
 
         return cachedPost;
@@ -281,7 +299,9 @@ export const postResolvers = {
         }
 
         const draftId = nanoid();
-        const editingMetadata = input.editingMetadata ? JSON.stringify(input.editingMetadata) : null;
+        const editingMetadata = input.editingMetadata
+          ? JSON.stringify(input.editingMetadata)
+          : null;
 
         await db.insert(schema.draftPost).values({
           id: draftId,
@@ -343,15 +363,23 @@ export const postResolvers = {
           user: existingProfile,
           media,
           hashtags: [],
-          editingMetadata: createdDraft.editingMetadata ? JSON.parse(createdDraft.editingMetadata) : null,
+          editingMetadata: createdDraft.editingMetadata
+            ? JSON.parse(createdDraft.editingMetadata)
+            : null,
         };
       } catch (error) {
         console.error('Draft creation error:', error);
-        throw new Error(`Failed to create draft post: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new Error(
+          `Failed to create draft post: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
       }
     },
 
-    async updateDraftPost(_parent: unknown, { id, input }: { id: string; input: any }, context: ContextType) {
+    async updateDraftPost(
+      _parent: unknown,
+      { id, input }: { id: string; input: any },
+      context: ContextType,
+    ) {
       if (!context?.user) {
         throw new Error('Authentication required');
       }
@@ -373,7 +401,9 @@ export const postResolvers = {
           throw new Error('Not authorized to update this draft');
         }
 
-        const editingMetadata = input.editingMetadata ? JSON.stringify(input.editingMetadata) : existingDraft.editingMetadata;
+        const editingMetadata = input.editingMetadata
+          ? JSON.stringify(input.editingMetadata)
+          : existingDraft.editingMetadata;
 
         const newVersion = existingDraft.version + 1;
 
@@ -425,11 +455,15 @@ export const postResolvers = {
           user,
           media,
           hashtags: [],
-          editingMetadata: updatedDraft.editingMetadata ? JSON.parse(updatedDraft.editingMetadata) : null,
+          editingMetadata: updatedDraft.editingMetadata
+            ? JSON.parse(updatedDraft.editingMetadata)
+            : null,
         };
       } catch (error) {
         console.error('Draft update error:', error);
-        throw new Error(`Failed to update draft post: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new Error(
+          `Failed to update draft post: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
       }
     },
 
@@ -515,7 +549,10 @@ export const postResolvers = {
         try {
           await context.env.POST_QUEUE.send({ postId });
         } catch (queueError) {
-          console.error(`[publishDraftPost] FAILED to send postId ${postId} to POST_QUEUE:`, queueError);
+          console.error(
+            `[publishDraftPost] FAILED to send postId ${postId} to POST_QUEUE:`,
+            queueError,
+          );
         }
 
         // Return the published post
@@ -544,11 +581,15 @@ export const postResolvers = {
           comments: [],
           hashtags: [],
           savedBy: [],
-          editingMetadata: publishedPost?.editingMetadata ? JSON.parse(publishedPost.editingMetadata) : null,
+          editingMetadata: publishedPost?.editingMetadata
+            ? JSON.parse(publishedPost.editingMetadata)
+            : null,
         };
       } catch (error) {
         console.error('Draft publish error:', error);
-        throw new Error(`Failed to publish draft post: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new Error(
+          `Failed to publish draft post: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
       }
     },
 
@@ -576,7 +617,10 @@ export const postResolvers = {
 
         // Clean up associated data
         await db.delete(schema.draftPostHashtag).where(eq(schema.draftPostHashtag.draftPostId, id));
-        await db.update(schema.media).set({ draftPostId: null }).where(eq(schema.media.draftPostId, id));
+        await db
+          .update(schema.media)
+          .set({ draftPostId: null })
+          .where(eq(schema.media.draftPostId, id));
         await db.delete(schema.draftPost).where(eq(schema.draftPost.id, id));
 
         return {
@@ -585,18 +629,28 @@ export const postResolvers = {
         };
       } catch (error) {
         console.error('Draft delete error:', error);
-        throw new Error(`Failed to delete draft post: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new Error(
+          `Failed to delete draft post: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
       }
     },
 
-    async revertPostToVersion(_parent: unknown, { postId, versionId }: { postId: string; versionId: string }, context: ContextType) {
+    async revertPostToVersion(
+      _parent: unknown,
+      { postId, versionId }: { postId: string; versionId: string },
+      context: ContextType,
+    ) {
       if (!context?.user) {
         throw new Error('Authentication required');
       }
 
       try {
         const versionHistoryService = createVersionHistoryService(context.env);
-        const revertedPost = await versionHistoryService.revertToVersion(postId, versionId, context.user.id);
+        const revertedPost = await versionHistoryService.revertToVersion(
+          postId,
+          versionId,
+          context.user.id,
+        );
 
         const db = createD1Client(context.env);
         const user = await db
@@ -629,7 +683,9 @@ export const postResolvers = {
         };
       } catch (error) {
         console.error('Post revert error:', error);
-        throw new Error(`Failed to revert post: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new Error(
+          `Failed to revert post: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
       }
     },
 
@@ -652,7 +708,9 @@ export const postResolvers = {
         }
 
         const postId = nanoid();
-        const editingMetadata = input.editingMetadata ? JSON.stringify(input.editingMetadata) : null;
+        const editingMetadata = input.editingMetadata
+          ? JSON.stringify(input.editingMetadata)
+          : null;
 
         await db.insert(schema.post).values({
           id: postId,

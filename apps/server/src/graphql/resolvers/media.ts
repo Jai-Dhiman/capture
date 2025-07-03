@@ -3,7 +3,11 @@ import type { ContextType } from '../../types';
 
 export const mediaResolvers = {
   Mutation: {
-    async uploadMedia(_parent: unknown, { input }: { input: { count?: number } }, context: ContextType) {
+    async uploadMedia(
+      _parent: unknown,
+      { input }: { input: { count?: number } },
+      context: ContextType,
+    ) {
       if (!context?.user) {
         throw new Error('Authentication required');
       }
@@ -20,17 +24,22 @@ export const mediaResolvers = {
           const upload = await imageService.getUploadUrl();
           return { uploads: [upload] };
         }
-        
+
         const uploads = await imageService.getBatchUploadUrls(count);
         return { uploads };
-
       } catch (error) {
         console.error('Upload URL generation error:', error);
-        throw new Error(`Failed to generate upload URLs: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new Error(
+          `Failed to generate upload URLs: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
       }
     },
 
-    async uploadMediaBatch(_parent: unknown, { input }: { input: { mediaItems: any[] } }, context: ContextType) {
+    async uploadMediaBatch(
+      _parent: unknown,
+      { input }: { input: { mediaItems: any[] } },
+      context: ContextType,
+    ) {
       if (!context?.user) {
         throw new Error('Authentication required');
       }
@@ -65,11 +74,17 @@ export const mediaResolvers = {
         return { media: createdMedia };
       } catch (error) {
         console.error('Batch media creation error:', error);
-        throw new Error(`Failed to create batch media: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new Error(
+          `Failed to create batch media: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
       }
     },
 
-    async processEditedImage(_parent: unknown, { input }: { input: { originalImageId: string; editingMetadata: any } }, context: ContextType) {
+    async processEditedImage(
+      _parent: unknown,
+      { input }: { input: { originalImageId: string; editingMetadata: any } },
+      context: ContextType,
+    ) {
       if (!context?.user) {
         throw new Error('Authentication required');
       }
@@ -98,7 +113,9 @@ export const mediaResolvers = {
         };
       } catch (error) {
         console.error('Image processing error:', error);
-        throw new Error(`Failed to process edited image: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new Error(
+          `Failed to process edited image: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
       }
     },
   },

@@ -2,10 +2,10 @@ import type { AuthStackParamList } from '@/navigation/types';
 import Header from '@/shared/components/Header';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect, useState } from 'react';
-import { Alert, Text, TouchableOpacity, View, Image, ActivityIndicator } from 'react-native';
+import { ActivityIndicator, Alert, Image, Text, TouchableOpacity, View } from 'react-native';
 import { Platform } from 'react-native';
-import { usePasskey } from '../hooks/usePasskey';
 import { useAuth } from '../hooks/useAuth';
+import { usePasskey } from '../hooks/usePasskey';
 import { useAuthStore } from '../stores/authStore';
 
 type Props = {
@@ -112,8 +112,7 @@ export default function PasskeySetupScreen({ navigation }: Props) {
           text: 'Log Out',
           onPress: () => {
             logout.mutate(undefined, {
-              onSuccess: () => {
-              },
+              onSuccess: () => { },
             });
           },
           style: 'destructive',
@@ -145,8 +144,7 @@ export default function PasskeySetupScreen({ navigation }: Props) {
             <Text className="text-sm text-center text-gray-900/80 font-roboto leading-normal">
               {isMandatory
                 ? "Your device doesn't support passkeys, but we need to set up some form of security. Let's set up alternative multi-factor authentication."
-                : "Your device doesn't support passkeys or biometric authentication isn't set up. You can continue with email authentication."
-              }
+                : "Your device doesn't support passkeys or biometric authentication isn't set up. You can continue with email authentication."}
             </Text>
           </View>
 
@@ -261,8 +259,7 @@ export default function PasskeySetupScreen({ navigation }: Props) {
           <Text className="text-sm text-center text-gray-400 font-roboto">
             {isMandatory
               ? 'You need some form of multi-factor authentication to use the app securely.'
-              : `You can always set up ${biometricName.toLowerCase()} later in your account settings.`
-            }
+              : `You can always set up ${biometricName.toLowerCase()} later in your account settings.`}
           </Text>
         </View>
       </View>
@@ -284,7 +281,12 @@ export default function PasskeySetupScreen({ navigation }: Props) {
           }}
           resizeMode="cover"
         />
-        <Header height={155} showBackground={false} showBackButton={true} onBackPress={handleBackPress} />
+        <Header
+          height={155}
+          showBackground={false}
+          showBackButton={true}
+          onBackPress={handleBackPress}
+        />
         {renderPasskeySetupContent()}
       </View>
     </View>

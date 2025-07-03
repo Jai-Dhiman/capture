@@ -124,7 +124,6 @@ export default function EmailSignupScreen({ navigation }: Props) {
           <View className="h-[40px]" />
 
           <View className="px-[26px] w-full mt-[170px]">
-
             <form.Field
               name="phone"
               validators={{
@@ -219,9 +218,9 @@ export default function EmailSignupScreen({ navigation }: Props) {
               )}
             </form.Field>
 
-            <Text
-              className='text-center mt-[240px] mb-4'
-            >We recommend saving this information</Text>
+            <Text className="text-center mt-[240px] mb-4">
+              We recommend saving this information
+            </Text>
 
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
               {([canSubmit, isFormSubmitting]) => (

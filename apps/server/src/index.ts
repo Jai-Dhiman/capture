@@ -79,17 +79,15 @@ app.use('/graphql', authMiddleware, async (c) => {
 // Apple App Site Association for passkeys
 app.get('/.well-known/apple-app-site-association', (c) => {
   const aasa = {
-    "webcredentials": {
-      "apps": [
-        "J2C869U2JJ.com.obscuratechnologies.capture"
-      ]
+    webcredentials: {
+      apps: ['J2C869U2JJ.com.obscuratechnologies.capture'],
     },
-    "applinks": {
-      "apps": [],
-      "details": []
-    }
+    applinks: {
+      apps: [],
+      details: [],
+    },
   };
-  
+
   c.header('Content-Type', 'application/json');
   return c.json(aasa);
 });

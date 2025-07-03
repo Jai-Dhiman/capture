@@ -45,10 +45,22 @@ export interface VersionHistoryService {
     changeDescription?: string;
     userId: string;
   }) => Promise<ProcessedVersionData>;
-  getVersionHistory: (postId: string, limit?: number, offset?: number) => Promise<ProcessedVersionData[]>;
+  getVersionHistory: (
+    postId: string,
+    limit?: number,
+    offset?: number,
+  ) => Promise<ProcessedVersionData[]>;
   getVersion: (versionId: string, userId: string) => Promise<ProcessedVersionData>;
-  revertToVersion: (postId: string, versionId: string, userId: string) => Promise<ProcessedPostData>;
-  getDraftVersionHistory: (draftPostId: string, limit?: number, offset?: number) => Promise<ProcessedVersionData[]>;
+  revertToVersion: (
+    postId: string,
+    versionId: string,
+    userId: string,
+  ) => Promise<ProcessedPostData>;
+  getDraftVersionHistory: (
+    draftPostId: string,
+    limit?: number,
+    offset?: number,
+  ) => Promise<ProcessedVersionData[]>;
 }
 
 export function createVersionHistoryService(env: Bindings): VersionHistoryService {
@@ -83,11 +95,15 @@ export function createVersionHistoryService(env: Bindings): VersionHistoryServic
 
         return {
           ...version,
-          editingMetadata: version.editingMetadata ? JSON.parse(version.editingMetadata) as EditingMetadata : null,
+          editingMetadata: version.editingMetadata
+            ? (JSON.parse(version.editingMetadata) as EditingMetadata)
+            : null,
         };
       } catch (error) {
         console.error('Version creation error:', error);
-        throw new Error(`Failed to create version: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new Error(
+          `Failed to create version: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
       }
     },
 
@@ -102,13 +118,19 @@ export function createVersionHistoryService(env: Bindings): VersionHistoryServic
           .offset(offset)
           .all();
 
-        return versions.map((version): ProcessedVersionData => ({
-          ...version,
-          editingMetadata: version.editingMetadata ? JSON.parse(version.editingMetadata) as EditingMetadata : null,
-        }));
+        return versions.map(
+          (version): ProcessedVersionData => ({
+            ...version,
+            editingMetadata: version.editingMetadata
+              ? (JSON.parse(version.editingMetadata) as EditingMetadata)
+              : null,
+          }),
+        );
       } catch (error) {
         console.error('Version history fetch error:', error);
-        throw new Error(`Failed to fetch version history: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new Error(
+          `Failed to fetch version history: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
       }
     },
 
@@ -123,13 +145,19 @@ export function createVersionHistoryService(env: Bindings): VersionHistoryServic
           .offset(offset)
           .all();
 
-        return versions.map((version): ProcessedVersionData => ({
-          ...version,
-          editingMetadata: version.editingMetadata ? JSON.parse(version.editingMetadata) as EditingMetadata : null,
-        }));
+        return versions.map(
+          (version): ProcessedVersionData => ({
+            ...version,
+            editingMetadata: version.editingMetadata
+              ? (JSON.parse(version.editingMetadata) as EditingMetadata)
+              : null,
+          }),
+        );
       } catch (error) {
         console.error('Draft version history fetch error:', error);
-        throw new Error(`Failed to fetch draft version history: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new Error(
+          `Failed to fetch draft version history: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
       }
     },
 
@@ -154,11 +182,15 @@ export function createVersionHistoryService(env: Bindings): VersionHistoryServic
 
         return {
           ...version,
-          editingMetadata: version.editingMetadata ? JSON.parse(version.editingMetadata) as EditingMetadata : null,
+          editingMetadata: version.editingMetadata
+            ? (JSON.parse(version.editingMetadata) as EditingMetadata)
+            : null,
         };
       } catch (error) {
         console.error('Version fetch error:', error);
-        throw new Error(`Failed to fetch version: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new Error(
+          `Failed to fetch version: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
       }
     },
 
@@ -190,7 +222,9 @@ export function createVersionHistoryService(env: Bindings): VersionHistoryServic
           postId,
           version: currentPost.version + 1,
           content: currentPost.content,
-          editingMetadata: currentPost.editingMetadata ? JSON.parse(currentPost.editingMetadata) : null,
+          editingMetadata: currentPost.editingMetadata
+            ? JSON.parse(currentPost.editingMetadata)
+            : null,
           changeType: 'EDITED',
           changeDescription: `Auto-save before reverting to version ${targetVersion.version}`,
           userId,
@@ -201,7 +235,9 @@ export function createVersionHistoryService(env: Bindings): VersionHistoryServic
           .update(schema.post)
           .set({
             content: targetVersion.content,
-            editingMetadata: targetVersion.editingMetadata ? JSON.stringify(targetVersion.editingMetadata) : null,
+            editingMetadata: targetVersion.editingMetadata
+              ? JSON.stringify(targetVersion.editingMetadata)
+              : null,
             version: currentPost.version + 2, // Increment version for the revert
             updatedAt: new Date().toISOString(),
           })
@@ -227,11 +263,15 @@ export function createVersionHistoryService(env: Bindings): VersionHistoryServic
 
         return {
           ...updatedPost,
-          editingMetadata: updatedPost?.editingMetadata ? JSON.parse(updatedPost.editingMetadata) as EditingMetadata : null,
+          editingMetadata: updatedPost?.editingMetadata
+            ? (JSON.parse(updatedPost.editingMetadata) as EditingMetadata)
+            : null,
         } as ProcessedPostData;
       } catch (error) {
         console.error('Version revert error:', error);
-        throw new Error(`Failed to revert to version: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new Error(
+          `Failed to revert to version: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
       }
     },
   };

@@ -21,7 +21,7 @@ cacheRouter.post('/warm', async (c) => {
 
   try {
     const warmingService = createCacheWarmingService(c.env);
-    
+
     // Get active users for recommendation cache warming
     const db = createD1Client(c.env);
     const activeUsers = await db
@@ -29,8 +29,8 @@ cacheRouter.post('/warm', async (c) => {
       .from(schema.profile)
       .limit(50)
       .all();
-    
-    const activeUserIds = activeUsers.map(u => u.userId);
+
+    const activeUserIds = activeUsers.map((u) => u.userId);
 
     // Run cache warming including recommendation system
     await Promise.allSettled([
@@ -56,7 +56,7 @@ cacheRouter.post('/warm-recommendations/:userId', async (c) => {
   if (!user && c.req.header('Authorization') !== `Bearer ${c.env.SEED_SECRET}`) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
-  
+
   if (user && user.id !== targetUserId) {
     return c.json({ error: 'Can only warm your own recommendation cache' }, 403);
   }
@@ -65,10 +65,10 @@ cacheRouter.post('/warm-recommendations/:userId', async (c) => {
     const warmingService = createCacheWarmingService(c.env);
     await warmingService.warmRecommendationData(targetUserId);
 
-    return c.json({ 
-      success: true, 
+    return c.json({
+      success: true,
       message: 'Recommendation cache warmed',
-      userId: targetUserId 
+      userId: targetUserId,
     });
   } catch (error) {
     console.error('Recommendation cache warming error:', error);
@@ -88,15 +88,15 @@ cacheRouter.post('/clear-discovery/:userId', async (c) => {
 
   try {
     const cachingService = createCachingService(c.env);
-    
+
     // Clear discovery feed cache patterns for this user
     await cachingService.invalidatePattern(CacheKeys.discoveryPattern(targetUserId));
     await cachingService.invalidatePattern(CacheKeys.recommendationPattern(targetUserId));
 
-    return c.json({ 
-      success: true, 
+    return c.json({
+      success: true,
       message: 'Discovery cache cleared',
-      userId: targetUserId
+      userId: targetUserId,
     });
   } catch (error) {
     console.error('Discovery cache clear error:', error);
@@ -121,17 +121,13 @@ cacheRouter.post('/invalidate', async (c) => {
     }
 
     const cachingService = createCachingService(c.env);
-    
-    await Promise.all(
-      patterns.map((pattern: string) => 
-        cachingService.invalidatePattern(pattern)
-      )
-    );
 
-    return c.json({ 
-      success: true, 
+    await Promise.all(patterns.map((pattern: string) => cachingService.invalidatePattern(pattern)));
+
+    return c.json({
+      success: true,
       message: `Invalidated ${patterns.length} cache patterns`,
-      patterns 
+      patterns,
     });
   } catch (error) {
     console.error('Cache invalidation error:', error);
@@ -149,14 +145,14 @@ cacheRouter.post('/clear-user', async (c) => {
 
   try {
     const cachingService = createCachingService(c.env);
-    
+
     // Clear all cache entries related to this user
     await cachingService.invalidatePattern(CacheKeys.userPattern(user.id));
 
-    return c.json({ 
-      success: true, 
+    return c.json({
+      success: true,
       message: 'User cache cleared',
-      userId: user.id
+      userId: user.id,
     });
   } catch (error) {
     console.error('User cache clear error:', error);
@@ -174,10 +170,10 @@ cacheRouter.get('/stats', async (c) => {
 
   try {
     const kv = c.env.CACHE_KV;
-    
+
     // Get basic KV stats
     const list = await kv.list({ limit: 1000 });
-    
+
     const stats = {
       totalKeys: list.keys.length,
       cacheHit: 'N/A', // KV doesn't provide hit/miss stats
@@ -202,18 +198,17 @@ cacheRouter.get('/stats', async (c) => {
 cacheRouter.get('/health', async (c) => {
   try {
     const cachingService = createCachingService(c.env);
-    
+
     // Test cache operations
     const testKey = 'health_check_test';
     const testValue = { timestamp: Date.now() };
-    
+
     await cachingService.set(testKey, testValue, 60); // 1 minute TTL
     const retrieved = await cachingService.get(testKey);
     await cachingService.delete(testKey);
-    
-    const isHealthy = retrieved !== null && 
-                     typeof retrieved === 'object' && 
-                     'timestamp' in retrieved;
+
+    const isHealthy =
+      retrieved !== null && typeof retrieved === 'object' && 'timestamp' in retrieved;
 
     return c.json({
       status: isHealthy ? 'healthy' : 'unhealthy',
@@ -221,16 +216,19 @@ cacheRouter.get('/health', async (c) => {
       operations: {
         set: 'ok',
         get: retrieved !== null ? 'ok' : 'failed',
-        delete: 'ok'
-      }
+        delete: 'ok',
+      },
     });
   } catch (error) {
     console.error('Cache health check error:', error);
-    return c.json({
-      status: 'unhealthy',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
-    }, 500);
+    return c.json(
+      {
+        status: 'unhealthy',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString(),
+      },
+      500,
+    );
   }
 });
 

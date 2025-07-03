@@ -61,7 +61,7 @@ export function createGraphQLTestClient(options: TestClientOptions = {}): {
       APPLE_CLIENT_SECRET: '',
       QDRANT_URL: '',
       QDRANT_API_KEY: '',
-      QDRANT_COLLECTION_NAME: ''
+      QDRANT_COLLECTION_NAME: '',
     },
     user: { id: 'test-user-id' },
   };

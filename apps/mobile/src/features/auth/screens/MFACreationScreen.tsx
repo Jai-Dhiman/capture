@@ -49,7 +49,7 @@ export default function MFACreationScreen({ navigation }: Props) {
     // In a real implementation, you'd integrate with your backend
     Alert.alert(
       'MFA Setup',
-      `${mfaOptions.find(option => option.id === selectedMFA)?.title} setup would be implemented here.`,
+      `${mfaOptions.find((option) => option.id === selectedMFA)?.title} setup would be implemented here.`,
       [
         {
           text: 'OK',
@@ -93,10 +93,7 @@ export default function MFACreationScreen({ navigation }: Props) {
 
   return (
     <View style={{ flex: 1 }}>
-      <Header
-        showBackButton={!isMandatory}
-        onBackPress={() => navigation.goBack()}
-      />
+      <Header showBackButton={!isMandatory} onBackPress={() => navigation.goBack()} />
 
       <ScrollView className="flex-1 bg-white">
         <View className="flex-1 p-6 justify-center">
@@ -107,18 +104,18 @@ export default function MFACreationScreen({ navigation }: Props) {
           <Text className="text-base text-center mb-8 leading-6 text-gray-600 font-roboto">
             {isMandatory
               ? 'Choose a multi-factor authentication method to secure your account and continue.'
-              : 'Add an extra layer of security to protect your account with multi-factor authentication.'
-            }
+              : 'Add an extra layer of security to protect your account with multi-factor authentication.'}
           </Text>
 
           <View className="mb-8">
             {mfaOptions.map((option) => (
               <TouchableOpacity
                 key={option.id}
-                className={`p-4 mb-3 rounded-xl border-2 ${selectedMFA === option.id
-                  ? 'border-[#E4CAC7] bg-[#E4CAC7]/10'
-                  : 'border-gray-200 bg-white'
-                  } ${!option.available ? 'opacity-50' : ''}`}
+                className={`p-4 mb-3 rounded-xl border-2 ${
+                  selectedMFA === option.id
+                    ? 'border-[#E4CAC7] bg-[#E4CAC7]/10'
+                    : 'border-gray-200 bg-white'
+                } ${!option.available ? 'opacity-50' : ''}`}
                 onPress={() => option.available && setSelectedMFA(option.id)}
                 disabled={!option.available}
               >
@@ -131,9 +128,7 @@ export default function MFACreationScreen({ navigation }: Props) {
                         <Text className="text-sm text-gray-500"> (Coming Soon)</Text>
                       )}
                     </Text>
-                    <Text className="text-sm text-gray-600 font-roboto">
-                      {option.description}
-                    </Text>
+                    <Text className="text-sm text-gray-600 font-roboto">{option.description}</Text>
                   </View>
                   {selectedMFA === option.id && (
                     <View className="w-6 h-6 rounded-full bg-[#E4CAC7] items-center justify-center">
@@ -165,16 +160,13 @@ export default function MFACreationScreen({ navigation }: Props) {
 
           <View className="space-y-3 mb-6">
             <TouchableOpacity
-              className={`py-4 px-6 rounded-[30px] shadow-md items-center ${selectedMFA
-                ? 'bg-[#E4CAC7]'
-                : 'bg-gray-300'
-                }`}
+              className={`py-4 px-6 rounded-[30px] shadow-md items-center ${
+                selectedMFA ? 'bg-[#E4CAC7]' : 'bg-gray-300'
+              }`}
               onPress={handleSetupMFA}
               disabled={!selectedMFA}
             >
-              <Text className="text-base font-bold font-roboto text-black">
-                Set Up MFA
-              </Text>
+              <Text className="text-base font-bold font-roboto text-black">Set Up MFA</Text>
             </TouchableOpacity>
 
             {!isMandatory && (
@@ -192,8 +184,7 @@ export default function MFACreationScreen({ navigation }: Props) {
           <Text className="text-sm text-center text-gray-400 italic font-roboto">
             {isMandatory
               ? 'Multi-factor authentication is required to use the app securely.'
-              : 'You can always set up MFA later in your account settings.'
-            }
+              : 'You can always set up MFA later in your account settings.'}
           </Text>
         </View>
       </ScrollView>

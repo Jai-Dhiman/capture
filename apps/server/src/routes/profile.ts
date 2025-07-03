@@ -41,13 +41,13 @@ router.post('/', async (c) => {
 
   try {
     const body = await c.req.json();
-    
+
     const data = schema.parse(body);
 
     if (data.userId !== user.id) {
       return c.json({ message: 'Unauthorized' }, 403);
     }
-    
+
     const db = drizzle(c.env.DB);
 
     const existingProfile = await db
@@ -79,7 +79,7 @@ router.post('/', async (c) => {
       console.error('Profile validation error:', {
         userId: user?.id,
         errors: error.errors,
-        receivedData: error.issues
+        receivedData: error.issues,
       });
       return c.json({ message: 'Invalid input', errors: error.errors }, 400);
     }
@@ -88,7 +88,7 @@ router.post('/', async (c) => {
       userId: user?.id,
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-      type: typeof error
+      type: typeof error,
     });
     return c.json({ message: 'Failed to create profile' }, 500);
   }
