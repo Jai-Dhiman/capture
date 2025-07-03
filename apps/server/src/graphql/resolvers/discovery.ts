@@ -194,7 +194,7 @@ export const discoveryResolvers = {
         //   });
         // }
 
-        console.log(`[QDRANT] Filter:`, JSON.stringify(filter, null, 2));
+        console.log('[QDRANT] Filter:', JSON.stringify(filter, null, 2));
         console.log(`[QDRANT] Searching with limit: ${vectorQueryLimit}`);
 
         vectorMatches = await qdrantClient.searchVectors({
@@ -206,11 +206,10 @@ export const discoveryResolvers = {
         console.log(`[QDRANT] Found ${vectorMatches.length} matches`);
       } catch (e) {
         console.error(`[QDRANT] Query failed for user ${userId}:`, e);
-        console.error(`[QDRANT] Error details:`, e.message, e.stack);
         
         // For new users without vectors, return fallback feed instead of error
         if (!userVector || userVector.length === 0) {
-          console.log(`[QDRANT] No user vector available, returning empty feed`);
+          console.log('[QDRANT] No user vector available, returning empty feed');
           return { posts: [], nextCursor: null };
         }
         
