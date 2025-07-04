@@ -4,48 +4,33 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "comment")]
+#[sea_orm(table_name = "draft_post")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false, column_type = "Text")]
     pub id: String,
     #[sea_orm(column_type = "Text")]
-    pub post_id: String,
-    #[sea_orm(column_type = "Text")]
     pub user_id: String,
-    #[sea_orm(column_type = "Text", nullable)]
-    pub parent_id: Option<String>,
     #[sea_orm(column_type = "Text")]
     pub content: String,
     #[sea_orm(column_type = "Text")]
-    pub path: String,
-    pub depth: i32,
-    pub is_deleted: i32,
+    pub r#type: String,
+    #[sea_orm(column_type = "Text", nullable)]
+    pub editing_metadata: Option<String>,
+    pub version: i32,
     #[sea_orm(column_type = "custom(\"numeric\")")]
     pub created_at: String,
-    #[sea_orm(column_name = "_like_count")]
-    pub like_count: i32,
+    #[sea_orm(column_type = "custom(\"numeric\")")]
+    pub updated_at: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(
-        belongs_to = "Entity",
-        from = "Column::ParentId",
-        to = "Column::Id",
-        on_update = "NoAction",
-        on_delete = "NoAction"
-    )]
-    SelfRef,
-    #[sea_orm(has_many = "super::comment_like::Entity")]
-    CommentLike,
-    #[sea_orm(
-        belongs_to = "super::post::Entity",
-        from = "Column::PostId",
-        to = "super::post::Column::Id",
-        on_update = "NoAction",
-        on_delete = "NoAction"
-    )]
-    Post,
+    // #[sea_orm(has_many = "super::draft_post_hashtag::Entity")] // Disabled - missing entity
+    // DraftPostHashtag,
+    #[sea_orm(has_many = "super::media::Entity")]
+    Media,
+    #[sea_orm(has_many = "super::post_version_history::Entity")]
+    PostVersionHistory,
     #[sea_orm(
         belongs_to = "super::users::Entity",
         from = "Column::UserId",
@@ -56,15 +41,21 @@ pub enum Relation {
     Users,
 }
 
-impl Related<super::comment_like::Entity> for Entity {
+// impl Related<super::draft_post_hashtag::Entity> for Entity {
+//     fn to() -> RelationDef {
+//         Relation::DraftPostHashtag.def()
+//     }
+// }
+
+impl Related<super::media::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::CommentLike.def()
+        Relation::Media.def()
     }
 }
 
-impl Related<super::post::Entity> for Entity {
+impl Related<super::post_version_history::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Post.def()
+        Relation::PostVersionHistory.def()
     }
 }
 

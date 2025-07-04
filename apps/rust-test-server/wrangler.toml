@@ -13,6 +13,7 @@ GRAPHQL_ENDPOINT = "http://localhost:8787/graphql"
 binding = "DB"
 database_name = "capture-rust-test-db"
 database_id = "bfc06dc8-8e17-4922-8a6f-789ba53ef177"
+migrations_dir = "src/db"
 
 [[kv_namespaces]]
 binding = "REFRESH_TOKEN_KV"

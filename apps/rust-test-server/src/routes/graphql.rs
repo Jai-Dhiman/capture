@@ -1,13 +1,16 @@
 use worker::*;
 use crate::graphql::{
     GraphQLRequest, GraphQLResponse, GraphQLExecutor, GraphQLSchema, ObjectType, 
-    Field as SchemaField, ScalarType, GraphQLType, GraphQLValue, GraphQLError
+    Field as SchemaField, ScalarType, GraphQLType, GraphQLValue, GraphQLError,
+    create_graphql_engine_with_all_resolvers
 };
+use crate::services::database_simple::DatabaseService;
+use std::sync::Arc;
 
 pub struct GraphQLRoutes;
 
 impl GraphQLRoutes {
-    pub async fn handle_graphql(mut req: Request, _ctx: RouteContext<()>) -> Result<Response> {
+    pub async fn handle_graphql(mut req: Request, ctx: RouteContext<()>) -> Result<Response> {
         // Only accept POST requests for GraphQL
         if req.method() != Method::Post {
             return Response::error("GraphQL endpoint only accepts POST requests", 405);
@@ -24,11 +27,22 @@ impl GraphQLRoutes {
             }
         };
 
-        // Create a basic schema with health check
-        let executor = Self::create_health_check_executor();
+        // Create the database service
+        let db_service = match DatabaseService::new(&ctx.env) {
+            Ok(service) => Arc::new(service),
+            Err(_) => {
+                let error_response = GraphQLResponse::error(
+                    GraphQLError::new("Failed to create database service")
+                );
+                return Response::from_json(&error_response);
+            }
+        };
+
+        // Create the GraphQL engine with all resolvers
+        let engine = create_graphql_engine_with_all_resolvers(db_service);
 
         // Execute the GraphQL query
-        let response = executor.execute(graphql_request);
+        let response = engine.execute_request(graphql_request);
 
         Response::from_json(&response)
     }

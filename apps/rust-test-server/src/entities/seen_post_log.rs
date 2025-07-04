@@ -4,36 +4,46 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "relationship")]
+#[sea_orm(table_name = "seen_post_log")]
 pub struct Model {
-    #[sea_orm(primary_key, auto_increment = false, column_type = "Text")]
-    pub id: String,
     #[sea_orm(column_type = "Text")]
-    pub follower_id: String,
+    pub user_id: String,
     #[sea_orm(column_type = "Text")]
-    pub followed_id: String,
+    pub post_id: String,
     #[sea_orm(column_type = "custom(\"numeric\")")]
-    pub created_at: String,
+    pub seen_at: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::users::Entity",
-        from = "Column::FollowedId",
-        to = "super::users::Column::Id",
+        belongs_to = "super::post::Entity",
+        from = "Column::PostId",
+        to = "super::post::Column::Id",
         on_update = "NoAction",
         on_delete = "NoAction"
     )]
-    Users2,
+    Post,
     #[sea_orm(
         belongs_to = "super::users::Entity",
-        from = "Column::FollowerId",
+        from = "Column::UserId",
         to = "super::users::Column::Id",
         on_update = "NoAction",
         on_delete = "NoAction"
     )]
-    Users1,
+    Users,
+}
+
+impl Related<super::post::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Post.def()
+    }
+}
+
+impl Related<super::users::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Users.def()
+    }
 }
 
 impl ActiveModelBehavior for ActiveModel {}

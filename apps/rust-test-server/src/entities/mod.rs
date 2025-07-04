@@ -5,7 +5,9 @@ pub mod prelude;
 pub mod blocked_user;
 pub mod comment;
 pub mod comment_like;
-// pub mod d1_migrations;  // Temporarily commented out due to DateTimeUtc issues
+// pub mod d1_migrations; // Temporarily disabled due to DateTimeUtc issue
+pub mod draft_post;
+// pub mod draft_post_hashtag; // Temporarily disabled due to missing primary key
 pub mod email_codes;
 pub mod hashtag;
 pub mod media;
@@ -13,10 +15,12 @@ pub mod notification;
 pub mod notification_settings;
 pub mod passkeys;
 pub mod post;
-// pub mod post_hashtag;  // Temporarily commented out due to primary key issues
+// pub mod post_hashtag; // Temporarily disabled due to missing primary key
 pub mod post_like;
+pub mod post_version_history;
 pub mod profile;
 pub mod relationship;
 pub mod saved_posts;
+// pub mod seen_post_log; // Temporarily disabled due to missing primary key
 pub mod user_activity;
 pub mod users;

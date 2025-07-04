@@ -4,40 +4,39 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "comment")]
+#[sea_orm(table_name = "post_version_history")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false, column_type = "Text")]
     pub id: String,
     #[sea_orm(column_type = "Text")]
     pub post_id: String,
-    #[sea_orm(column_type = "Text")]
-    pub user_id: String,
     #[sea_orm(column_type = "Text", nullable)]
-    pub parent_id: Option<String>,
+    pub draft_post_id: Option<String>,
+    pub version: i32,
     #[sea_orm(column_type = "Text")]
     pub content: String,
+    #[sea_orm(column_type = "Text", nullable)]
+    pub editing_metadata: Option<String>,
     #[sea_orm(column_type = "Text")]
-    pub path: String,
-    pub depth: i32,
-    pub is_deleted: i32,
+    pub change_type: String,
+    #[sea_orm(column_type = "Text", nullable)]
+    pub change_description: Option<String>,
+    #[sea_orm(column_type = "Text")]
+    pub user_id: String,
     #[sea_orm(column_type = "custom(\"numeric\")")]
     pub created_at: String,
-    #[sea_orm(column_name = "_like_count")]
-    pub like_count: i32,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "Entity",
-        from = "Column::ParentId",
-        to = "Column::Id",
+        belongs_to = "super::draft_post::Entity",
+        from = "Column::DraftPostId",
+        to = "super::draft_post::Column::Id",
         on_update = "NoAction",
         on_delete = "NoAction"
     )]
-    SelfRef,
-    #[sea_orm(has_many = "super::comment_like::Entity")]
-    CommentLike,
+    DraftPost,
     #[sea_orm(
         belongs_to = "super::post::Entity",
         from = "Column::PostId",
@@ -56,9 +55,9 @@ pub enum Relation {
     Users,
 }
 
-impl Related<super::comment_like::Entity> for Entity {
+impl Related<super::draft_post::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::CommentLike.def()
+        Relation::DraftPost.def()
     }
 }
 
