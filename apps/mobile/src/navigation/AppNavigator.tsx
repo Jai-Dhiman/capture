@@ -1,6 +1,8 @@
 import Feed from '@/features/feed/screens/Feed';
 import ImageEditScreen from '@/features/post/screens/ImageEditScreen';
 import NewPost from '@/features/post/screens/NewPost';
+import PhotoSelectionScreen from '@/features/post/screens/PhotoSelectionScreen';
+import PostSettingsScreen from '@/features/post/screens/PostSettingsScreen';
 import Profile from '@/features/profile/screens/Profile';
 import Search from '@/features/search/screens/Search';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -28,6 +30,22 @@ export default function AppNavigator() {
         options={{
           headerShown: false,
           presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="PhotoSelectionScreen"
+        component={PhotoSelectionScreen}
+        options={{
+          headerShown: false,
+          presentation: 'fullScreenModal',
+        }}
+      />
+      <Stack.Screen
+        name="PostSettingsScreen"
+        component={PostSettingsScreen}
+        options={{
+          headerShown: false,
+          presentation: 'card',
         }}
       />
     </Stack.Navigator>

@@ -66,18 +66,20 @@ export async function handlePostQueue(
             id: schema.post.id,
             content: schema.post.content,
             userId: schema.post.userId,
+            authorIsPrivate: schema.profile.isPrivate,
           })
           .from(schema.post)
+          .leftJoin(schema.profile, eq(schema.post.userId, schema.profile.userId))
           .where(eq(schema.post.id, postId))
           .get();
 
-          if (!post || !post.userId) {
-            console.error(
-              `[handlePostQueue][${messageId}] Post or userId not found: ${postId}. Retrying message.`,
-            );
-            message.retry();
-            return;
-          }
+        if (!post || !post.userId) {
+          console.error(
+            `[handlePostQueue][${messageId}] Post or userId not found: ${postId}. Retrying message.`,
+          );
+          message.retry();
+          return;
+        }
 
         const hashtags = await db
           .select({ name: schema.hashtag.name })
@@ -88,7 +90,14 @@ export async function handlePostQueue(
           .then((rows) => rows.map((r) => r.name));
         const validHashtags = hashtags.filter((tag): tag is string => tag !== null);
 
-        const vectorData = await generatePostEmbedding(postId, post.content, validHashtags, env.AI);
+        const vectorData = await generatePostEmbedding(
+          postId,
+          post.content,
+          validHashtags,
+          env.AI,
+          post.userId,
+          !!post.authorIsPrivate,
+        );
 
         if (!vectorData || !Array.isArray(vectorData.vector) || vectorData.vector.length === 0) {
           console.error(
@@ -163,12 +172,14 @@ export async function handleUserEmbeddingQueue(
           .orderBy(desc(schema.post.createdAt))
           .limit(POST_LIMIT);
 
-        const savedPostIds = savedPostsResult.map(p => p.postId).filter(Boolean);
-        const createdPostIds = createdPostsResult.map(p => p.id).filter(Boolean);
+        const savedPostIds = savedPostsResult.map((p) => p.postId).filter(Boolean);
+        const createdPostIds = createdPostsResult.map((p) => p.id).filter(Boolean);
         const allPostIds = [...new Set([...savedPostIds, ...createdPostIds])];
 
         if (allPostIds.length === 0) {
-          console.debug(`[handleUserEmbeddingQueue][${messageId}] No posts found for user ${userId}, storing null vector`);
+          console.debug(
+            `[handleUserEmbeddingQueue][${messageId}] No posts found for user ${userId}, storing null vector`,
+          );
           await env.USER_VECTORS.delete(userId);
           message.ack();
           return;
@@ -181,24 +192,34 @@ export async function handleUserEmbeddingQueue(
         // Get saved post vectors
         for (const postId of savedPostIds) {
           try {
-            const vectorData = await env.POST_VECTORS.get<{ vector: number[] }>(`post:${postId}`, { type: 'json' });
+            const vectorData = await env.POST_VECTORS.get<{ vector: number[] }>(`post:${postId}`, {
+              type: 'json',
+            });
             if (vectorData?.vector && Array.isArray(vectorData.vector)) {
               savedVectors.push(vectorData.vector);
             }
           } catch (error) {
-            console.warn(`[handleUserEmbeddingQueue][${messageId}] Failed to get vector for saved post ${postId}:`, error);
+            console.warn(
+              `[handleUserEmbeddingQueue][${messageId}] Failed to get vector for saved post ${postId}:`,
+              error,
+            );
           }
         }
 
         // Get created post vectors
         for (const postId of createdPostIds) {
           try {
-            const vectorData = await env.POST_VECTORS.get<{ vector: number[] }>(`post:${postId}`, { type: 'json' });
+            const vectorData = await env.POST_VECTORS.get<{ vector: number[] }>(`post:${postId}`, {
+              type: 'json',
+            });
             if (vectorData?.vector && Array.isArray(vectorData.vector)) {
               createdVectors.push(vectorData.vector);
             }
           } catch (error) {
-            console.warn(`[handleUserEmbeddingQueue][${messageId}] Failed to get vector for created post ${postId}:`, error);
+            console.warn(
+              `[handleUserEmbeddingQueue][${messageId}] Failed to get vector for created post ${postId}:`,
+              error,
+            );
           }
         }
 
@@ -225,19 +246,27 @@ export async function handleUserEmbeddingQueue(
                   hashtagVectors.push(hashtagVector);
                 }
               } catch (error) {
-                console.warn(`[handleUserEmbeddingQueue][${messageId}] Failed to generate hashtag vector for ${hashtag.name}:`, error);
+                console.warn(
+                  `[handleUserEmbeddingQueue][${messageId}] Failed to generate hashtag vector for ${hashtag.name}:`,
+                  error,
+                );
               }
             }
           }
         } catch (error) {
-          console.warn(`[handleUserEmbeddingQueue][${messageId}] Failed to process hashtags for user ${userId}:`, error);
+          console.warn(
+            `[handleUserEmbeddingQueue][${messageId}] Failed to process hashtags for user ${userId}:`,
+            error,
+          );
         }
 
         // 5. Calculate average user vector
         const userVector = calculateAverageVector(savedVectors, createdVectors, hashtagVectors);
 
         if (!userVector) {
-          console.warn(`[handleUserEmbeddingQueue][${messageId}] Failed to calculate user vector for ${userId}`);
+          console.warn(
+            `[handleUserEmbeddingQueue][${messageId}] Failed to calculate user vector for ${userId}`,
+          );
           await env.USER_VECTORS.delete(userId);
           message.ack();
           return;
@@ -246,7 +275,9 @@ export async function handleUserEmbeddingQueue(
         // 6. Store user vector in KV
         await env.USER_VECTORS.put(userId, JSON.stringify(userVector));
 
-        console.debug(`[handleUserEmbeddingQueue][${messageId}] Successfully updated user vector for ${userId} using ${savedVectors.length} saved, ${createdVectors.length} created, ${hashtagVectors.length} hashtag vectors`);
+        console.debug(
+          `[handleUserEmbeddingQueue][${messageId}] Successfully updated user vector for ${userId} using ${savedVectors.length} saved, ${createdVectors.length} created, ${hashtagVectors.length} hashtag vectors`,
+        );
 
         message.ack();
       } catch (error) {

@@ -1,5 +1,4 @@
-import { useAuthStore } from '@/features/auth/stores/authStore';
-import { API_URL } from '@env';
+import { graphqlFetch } from '@/shared/lib/graphqlClient';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
@@ -23,18 +22,8 @@ export const useNotifications = (limit = 20, offset = 0, includeRead = false) =>
   return useQuery({
     queryKey: ['notifications', limit, offset, includeRead],
     queryFn: async () => {
-      const { session } = useAuthStore.getState();
-      if (!session?.access_token) {
-        return [];
-      }
-
-      const response = await fetch(`${API_URL}/graphql`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
+      try {
+        const data = await graphqlFetch<{ notifications: any[] }>({
           query: `
             query GetNotifications($limit: Int, $offset: Int, $includeRead: Boolean) {
               notifications(limit: $limit, offset: $offset, includeRead: $includeRead) {
@@ -54,15 +43,12 @@ export const useNotifications = (limit = 20, offset = 0, includeRead = false) =>
             }
           `,
           variables: { limit, offset, includeRead },
-        }),
-      });
-
-      const data = await response.json();
-      if (data.errors) {
-        console.error(data.errors);
+        });
+        return data.notifications || [];
+      } catch (error) {
+        console.error(error);
         return [];
       }
-      return data.data.notifications || [];
     },
   });
 };
@@ -86,31 +72,18 @@ export const useUnreadNotificationCount = () => {
   return useQuery({
     queryKey: ['unreadNotificationCount'],
     queryFn: async () => {
-      const { session } = useAuthStore.getState();
-      if (!session?.access_token) {
-        return 0;
-      }
-
-      const response = await fetch(`${API_URL}/graphql`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
+      try {
+        const data = await graphqlFetch<{ unreadNotificationCount: number }>({
           query: `
             query GetUnreadNotificationCount {
               unreadNotificationCount
             }
           `,
-        }),
-      });
-
-      const data = await response.json();
-      if (data.errors) {
+        });
+        return data.unreadNotificationCount || 0;
+      } catch (error) {
         return 0;
       }
-      return data.data.unreadNotificationCount || 0;
     },
   });
 };
@@ -120,34 +93,17 @@ export const useMarkNotificationRead = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { session } = useAuthStore.getState();
-      if (!session?.access_token) {
-        throw new Error('No auth token available');
-      }
-
-      const response = await fetch(`${API_URL}/graphql`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          query: `
-            mutation MarkNotificationRead($id: ID!) {
-              markNotificationRead(id: $id) {
-                success
-              }
+      const data = await graphqlFetch<{ markNotificationRead: any }>({
+        query: `
+          mutation MarkNotificationRead($id: ID!) {
+            markNotificationRead(id: $id) {
+              success
             }
-          `,
-          variables: { id },
-        }),
+          }
+        `,
+        variables: { id },
       });
-
-      const data = await response.json();
-      if (data.errors) {
-        throw new Error(data.errors[0]?.message || 'Failed to mark notification as read');
-      }
-      return data.data.markNotificationRead;
+      return data.markNotificationRead;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
@@ -161,34 +117,17 @@ export const useMarkAllNotificationsRead = () => {
 
   return useMutation({
     mutationFn: async () => {
-      const { session } = useAuthStore.getState();
-      if (!session?.access_token) {
-        throw new Error('No auth token available');
-      }
-
-      const response = await fetch(`${API_URL}/graphql`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          query: `
-            mutation MarkAllNotificationsRead {
-              markAllNotificationsRead {
-                success
-                count
-              }
+      const data = await graphqlFetch<{ markAllNotificationsRead: any }>({
+        query: `
+          mutation MarkAllNotificationsRead {
+            markAllNotificationsRead {
+              success
+              count
             }
-          `,
-        }),
+          }
+        `,
       });
-
-      const data = await response.json();
-      if (data.errors) {
-        throw new Error(data.errors[0]?.message || 'Failed to mark all notifications as read');
-      }
-      return data.data.markAllNotificationsRead;
+      return data.markAllNotificationsRead;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });

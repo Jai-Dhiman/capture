@@ -16,7 +16,6 @@ const Stack = createNativeStackNavigator<AuthStackParamList>();
 export default function AuthStack() {
   const authStage = useAuthStore((state) => state.stage);
 
-
   // Return different stacks based on auth stage to ensure proper navigation
   if (authStage === 'securitySetupRequired') {
     return (

@@ -54,10 +54,6 @@ export default function CodeVerificationScreen({ navigation, route }: Props) {
                 navigation.navigate('PasskeySetup');
               } else if (!data.profileExists) {
                 navigation.navigate('CreateProfile');
-              } else {
-                // User is fully authenticated, the main navigator will handle routing to the app
-                // We don't need to navigate here as the main navigator will automatically switch
-                // to the AppNavigator when the auth store is updated
               }
             }
           },

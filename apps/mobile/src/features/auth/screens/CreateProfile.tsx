@@ -7,7 +7,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm } from '@tanstack/react-form';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useState, useRef } from 'react';
-import { Image, ScrollView, Text, TextInput, TouchableOpacity, View, Alert } from 'react-native';
+import { Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
 import { useCreateProfile } from '../hooks/useCreateProfile';
 
@@ -95,8 +95,7 @@ export default function CreateProfile() {
           text: 'Log Out',
           onPress: () => {
             logout.mutate(undefined, {
-              onSuccess: () => {
-              },
+              onSuccess: () => {},
             });
           },
           style: 'destructive',
@@ -154,12 +153,18 @@ export default function CreateProfile() {
                 name="username"
                 validators={{
                   onChange: ({ value }) => {
-                    if (!value.trim()) return 'Username is required';
-                    if (value.length < 3) return 'Username must be at least 3 characters';
-                    if (value.length > USERNAME_MAX_LENGTH)
+                    if (!value.trim()) {
+                      return 'Username is required';
+                    }
+                    if (value.length < 3) {
+                      return 'Username must be at least 3 characters';
+                    }
+                    if (value.length > USERNAME_MAX_LENGTH) {
                       return `Username must be ${USERNAME_MAX_LENGTH} characters or less`;
-                    if (!/^[a-zA-Z0-9_]+$/.test(value))
+                    }
+                    if (!/^[a-zA-Z0-9_]+$/.test(value)) {
                       return 'Username can only contain letters, numbers, and underscores';
+                    }
                     return undefined;
                   },
                 }}
@@ -265,71 +270,26 @@ export default function CreateProfile() {
             </form.Field>
           </View>
 
-          <View className="px-[18px] mt-0">
-            <Text className="justify-start text-black text-xs font-bold font-roboto leading-3">
-              Profile Background Design
-            </Text>
-            <Text className="justify-start text-black text-[10px] font-light font-roboto leading-3 mt-2">
-              Give your profile a pop of color and a personal flair by selecting the design people
-              will see when visiting your profile.{' '}
-            </Text>
-
-            <View className="flex-row mt-4">
-              <View className="w-16 h-6 bg-stone-300 rounded-[30px] border border-black items-center justify-center mr-4">
-                <Text className="text-center justify-start text-black text-xs font-normal font-roboto leading-3">
-                  Fluid
-                </Text>
-              </View>
-              <View className="w-16 h-6 bg-stone-300/0 rounded-[30px] border border-black items-center justify-center mr-4">
-                <Text className="text-center justify-start text-black text-xs font-normal font-roboto leading-3">
-                  Splatter
-                </Text>
-              </View>
-              <View className="w-16 h-6 bg-stone-300/0 rounded-[30px] border border-black items-center justify-center">
-                <Text className="text-center justify-start text-black text-xs font-normal font-roboto leading-3">
-                  Smokey
-                </Text>
-              </View>
-            </View>
-
-            <View className="flex-row mt-6">
-              <View className="w-32 h-60 rounded-[10px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] outline outline-1 outline-offset-[-1px] outline-black/10 mr-4">
-                <Image
-                  className="w-32 h-60 rounded-[10px]"
-                  source={{ uri: 'https://placehold.co/124x236' }}
-                />
-              </View>
-              <View className="w-32 h-60 rounded-[10px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] outline outline-1 outline-offset-[-1px] outline-black/10 mr-4">
-                <Image
-                  className="w-32 h-60 rounded-[10px]"
-                  source={{ uri: 'https://placehold.co/124x236' }}
-                />
-              </View>
-              <View className="w-32 h-60 rounded-[10px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] outline outline-1 outline-offset-[-1px] outline-black/10">
-                <Image
-                  className="w-32 h-60 rounded-[10px]"
-                  source={{ uri: 'https://placehold.co/124x236' }}
-                />
-              </View>
-            </View>
-          </View>
-
           <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-            {([canSubmit, isSubmitting]) => (
-              <TouchableOpacity
-                className={`bg-stone-300 h-[56px] rounded-[30px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] justify-center mt-8 items-center backdrop-blur-[2px] mx-[26px] ${!canSubmit ? 'opacity-70' : ''}`}
-                onPress={() => form.handleSubmit()}
-                disabled={createProfileMutation.isPending || isSubmitting}
-              >
-                {createProfileMutation.isPending || isSubmitting ? (
-                  <LoadingSpinner />
-                ) : (
-                  <Text className="text-base font-bold font-roboto text-center text-black">
-                    Create Profile
-                  </Text>
-                )}
-              </TouchableOpacity>
-            )}
+            {([canSubmit, isSubmitting]) => {
+              return (
+                <TouchableOpacity
+                  className={`bg-stone-300 h-[56px] rounded-[30px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] justify-center mt-8 items-center backdrop-blur-[2px] mx-[26px] ${!canSubmit ? 'opacity-70' : ''}`}
+                  onPress={() => {
+                    form.handleSubmit();
+                  }}
+                  disabled={createProfileMutation.isPending || isSubmitting}
+                >
+                  {createProfileMutation.isPending || isSubmitting ? (
+                    <LoadingSpinner />
+                  ) : (
+                    <Text className="text-base font-bold font-roboto text-center text-black">
+                      Create Profile
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              );
+            }}
           </form.Subscribe>
 
           <View className="h-5 left-0 bottom-0 w-full items-center justify-center">

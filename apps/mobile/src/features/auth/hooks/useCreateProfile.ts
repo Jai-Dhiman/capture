@@ -64,14 +64,20 @@ export function useCreateProfile() {
   };
 
   const checkUsernameAvailability = async (username: string) => {
-    if (!session?.access_token) throw new Error('No auth token available');
+    if (!session?.access_token) {
+      throw new Error('No auth token available');
+    }
 
-    const response = await fetch(`${API_URL}/api/profile/check-username?username=${username}`, {
+    const url = `${API_URL}/api/profile/check-username?username=${username}`;
+
+    const response = await fetch(url, {
       headers: {
         Authorization: `Bearer ${session.access_token}`,
       },
     });
+
     const data = await response.json();
+
     return data.available;
   };
 
@@ -85,10 +91,15 @@ export function useCreateProfile() {
       bio?: string;
       profileImage?: string | null;
     }) => {
-      if (!user) throw new Error('Not authenticated');
-      if (!session?.access_token) throw new Error('No auth token available');
+      if (!user) {
+        throw new Error('Not authenticated');
+      }
+      if (!session?.access_token) {
+        throw new Error('No auth token available');
+      }
 
       const isAvailable = await checkUsernameAvailability(username);
+
       if (!isAvailable) {
         throw new Error('Username already taken');
       }
@@ -121,7 +132,8 @@ export function useCreateProfile() {
         throw new Error(errorData.message || 'Failed to create profile');
       }
 
-      return await response.json();
+      const result = await response.json();
+      return result;
     },
     onError: (error) => {
       const errorMessage = error instanceof Error ? error.message : 'Failed to create profile';

@@ -128,21 +128,21 @@ export const errorService = {
           'auth/user-cancelled',
         );
       }
-      
+
       if (error.message.includes('not available') || error.message.includes('not supported')) {
         return this.createError(
           'Biometric authentication is not available on this device.',
           'auth/biometric-unavailable',
         );
       }
-      
+
       if (error.message.includes('locked') || error.message.includes('too many')) {
         return this.createError(
           'Biometric authentication is temporarily locked. Please use your device passcode.',
           'auth/biometric-locked',
         );
       }
-      
+
       if (error.message.includes('failed')) {
         return this.createError(
           'Biometric authentication failed. Please try again.',
@@ -150,7 +150,7 @@ export const errorService = {
         );
       }
     }
-    
+
     return this.handleAuthError(error);
   },
 

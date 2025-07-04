@@ -6,12 +6,47 @@ workers_dev = true
 
 [vars]
 ENV = "Development"
+SENTRY_DSN = "https://74904d3bf1ebb2b0747f5356b0a83624@o4509049381519360.ingest.us.sentry.io/4509049386434560"
+GRAPHQL_ENDPOINT = "http://localhost:8787/graphql"
 
 [[d1_databases]]
 binding = "DB"
 database_name = "capture-rust-test-db"
 database_id = "bfc06dc8-8e17-4922-8a6f-789ba53ef177"
-migrations_dir = "drizzle"
+migrations_dir = "src/db"
+
+[[kv_namespaces]]
+binding = "REFRESH_TOKEN_KV"
+id = "26595ad6034b4448922107a1cc70e012"
+
+[[kv_namespaces]]
+binding = "Capture_Rate_Limits"
+id = "94122c41067e4db7b87b7618ecf06b49"
+
+[[kv_namespaces]]
+binding = "POST_VECTORS"
+id = "7edac15c451741d28833d410037d090a"
+
+[[kv_namespaces]]
+binding = "USER_VECTORS"
+id = "99abeb7032754aa59283001ec4ed4006"
+
+[[queues.producers]]
+binding = "POST_QUEUE"
+queue = "post-queue"
+
+[[queues.producers]]
+binding = "USER_VECTOR_QUEUE"
+queue = "user-vector-queue"
+
+[[queues.consumers]]
+queue = "post-queue"
+
+[[queues.consumers]]
+queue = "user-vector-queue"
+
+[ai]
+binding = "AI"
 
 [build]
 command = "cargo install -q worker-build && worker-build --release"

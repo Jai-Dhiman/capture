@@ -1,13 +1,23 @@
 use serde_json::json;
 use worker::*;
 
+pub mod db;
+mod entities;
+pub mod graphql;
+mod middleware;
+mod routes;
+mod services;
+
+use routes::auth::AuthRoutes;
+use routes::graphql::GraphQLRoutes;
+use routes::profile::ProfileRoutes;
+
 #[event(fetch)]
 pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Response> {
     let router = Router::new();
-    
+
     router
-        .get("/", |_, _| Response::ok("Rust Test Server is running!"))
-        .get_async("/health", |_req, ctx| async move {
+        .get_async("/", |_req, ctx| async move {
             // Get the D1 database binding from the environment
             let db = match ctx.env.d1("DB") {
                 Ok(database) => database,
@@ -38,15 +48,13 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
                         "database": "connected",
                         "db_check": if count > 0 { "records exist" } else { "no records" }
                     }))
-                },
-                Ok(None) => {
-                    Response::from_json(&json!({
-                        "status": "ok",
-                        "timestamp": chrono::Utc::now().to_rfc3339(),
-                        "database": "connected",
-                        "db_check": "no records"
-                    }))
-                },
+                }
+                Ok(None) => Response::from_json(&json!({
+                    "status": "ok",
+                    "timestamp": chrono::Utc::now().to_rfc3339(),
+                    "database": "connected",
+                    "db_check": "no records"
+                })),
                 Err(e) => {
                     console_log!("Database health check failed: {:?}", e);
                     let response = Response::from_json(&json!({
@@ -59,8 +67,45 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
                 }
             }
         })
+        // Authentication routes
+        .get_async("/auth/me", AuthRoutes::get_me)
+        .post_async("/auth/send-code", AuthRoutes::send_code)
+        .post_async("/auth/verify-code", AuthRoutes::verify_code)
+        .post_async("/auth/refresh", AuthRoutes::refresh)
+        .post_async("/auth/logout", AuthRoutes::logout)
+        // OAuth routes
+        .post_async("/auth/oauth/google", AuthRoutes::oauth_google)
+        .post_async("/auth/oauth/google/token", AuthRoutes::oauth_google_token)
+        .post_async("/auth/oauth/apple", AuthRoutes::oauth_apple)
+        // Passkey routes
+        .post_async("/auth/passkey/check", AuthRoutes::passkey_check)
+        .post_async(
+            "/auth/passkey/register/begin",
+            AuthRoutes::passkey_register_begin,
+        )
+        .post_async(
+            "/auth/passkey/register/complete",
+            AuthRoutes::passkey_register_complete,
+        )
+        .post_async(
+            "/auth/passkey/authenticate/begin",
+            AuthRoutes::passkey_authenticate_begin,
+        )
+        .post_async(
+            "/auth/passkey/authenticate/complete",
+            AuthRoutes::passkey_authenticate_complete,
+        )
+        .get_async("/auth/passkey/list", AuthRoutes::passkey_list)
+        .delete_async("/auth/passkey/:passkeyId", AuthRoutes::passkey_delete)
+        // GraphQL routes
+        .post_async("/graphql", GraphQLRoutes::handle_graphql)
+        // Profile routes
+        .get_async(
+            "/profile/check-username",
+            ProfileRoutes::check_username_availability,
+        )
+        .post_async("/profile", ProfileRoutes::create_profile)
+        .delete_async("/profile/:userId", ProfileRoutes::delete_profile)
         .run(req, env)
         .await
 }
-
-

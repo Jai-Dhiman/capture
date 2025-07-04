@@ -17,8 +17,8 @@ Capture is a full-stack mobile application that reimagines social media by prior
 
 - Building a responsive, performant cross-platform mobile UI with React Native and Expo
 - Implementing secure user authentication and data encryption
-- Designing an efficient GraphQL API with Apollo Server
-- Creating a scalable serverless backend with Cloudflare Workers
+- Designing an efficient GraphQL API with custom Rust implementation
+- Creating a high-performance serverless backend with Rust WebAssembly and Cloudflare Workers
 - Establishing a robust CI/CD pipeline with automated testing
 
 ## Core Principles
@@ -44,7 +44,7 @@ apps/mobile/
 └── ...
 ```
 
-### Backend (Cloudflare Workers)
+### Backend (Rust WebAssembly + Cloudflare Workers)
 
 ```
 apps/server/
@@ -53,20 +53,7 @@ apps/server/
 │   ├── db/            # Database schema and queries
 │   ├── routes/        # API routes
 │   ├── middleware/    # Request processing middleware
-│   └── index.ts       # Server entry point
-└── ...
-```
-
-### Dashboard (Remix.js + Cloudflare Workers)
-
-```
-apps/dashboard/
-├── app/
-│   ├── components/    # Reusable UI components
-│   ├── lib/           # Utilities and helpers
-│   ├── routes/        # Nested Remix routes
-│   ├── entry.server.tsx  # Cloudflare Worker server entry
-│   └── root.tsx       # Application root component
+│   └── lib.rs         # Server entry point
 └── ...
 ```
 
@@ -83,34 +70,26 @@ apps/dashboard/
 
 ### Backend
 
+- **Rust**: Systems programming language compiled to WebAssembly
+- **WebAssembly (wasm32-unknown-unknown)**: High-performance runtime for Cloudflare Workers
 - **Cloudflare Workers**: Serverless computing platform
-- **Hono**: Lightweight web framework
-- **Apollo GraphQL**: API query language
-- **Drizzle ORM**: Type-safe SQL query builder
-- **D1 SQLite**: Serverless SQL database
-- **TweetNaCl.js**: Cryptographic operations
-
-### Dashboard
-
-- **Remix.js**: Full-stack React framework with nested routing
-- **TypeScript**: Provides type safety
-- **Tailwind CSS & shadcn/ui**: Utility-first styling and accessible components
-- **TanStack Query**: Data fetching and caching
-- **Jotai**: Atomic state management
-- **Recharts**: Charting library for data visualization
+- **GraphQL**: API query language with custom Rust implementation
+- **SQLite**: Serverless SQL database integration
+- **Serde**: Serialization framework for Rust
 
 ### Security
 
 - **Signal Protocol implementation**: End-to-end encrypted messaging
-- **TweetNaCl.js**: Cryptographic operations
-- **Zod**: Runtime type validation and request sanitization
+- **Rust cryptographic libraries**: High-performance cryptographic operations
+- **Type safety**: Rust's ownership model and TypeScript validation
 
 ### DevOps
 
 - **Turborepo**: Monorepo build system
 - **pnpm**: Fast, disk-efficient package manager
 - **GitHub Actions**: CI/CD automation
-- **Vitest**: Testing framework
+- **Cargo**: Rust package manager and build tool
+- **wasm-pack**: WebAssembly build tool for Rust
 - **Wrangler**: Cloudflare Workers CLI
 
 ## Development Approach
@@ -118,11 +97,11 @@ apps/dashboard/
 This project employs modern development practices including:
 
 - **Monorepo Architecture**: Using Turborepo for efficient build caching and dependency management
-- **Type Safety**: Comprehensive TypeScript and Zod validations throughout
-- **Error Handling**: Robust error boundaries and Sentry integration
+- **Type Safety**: Rust's ownership model and comprehensive TypeScript validations
+- **Error Handling**: Robust error boundaries and Result types in Rust
 - **Testing**: Automated test suites for critical functionality
-- **Performance Optimization**: React Query caching, lazy loading, and minimal re-renders
-- **Security**: End-to-end encryption for messages, secure storage for sensitive data
+- **Performance Optimization**: WebAssembly compilation, React Query caching, and minimal re-renders
+- **Security**: End-to-end encryption for messages, memory-safe Rust backend
 
 ## Key Differentiators
 
@@ -145,6 +124,8 @@ This project employs modern development practices including:
 - Node.js v20+
 - pnpm 9.0.0+
 - Expo CLI
+- Rust (latest stable)
+- wasm-pack
 - Wrangler CLI (for Cloudflare Workers)
 
 ### Setup and Installation
@@ -157,13 +138,18 @@ cd capture
 # Install dependencies
 pnpm install
 
-# Start both servers
+# Build the Rust WebAssembly backend
+cd server
+wasm-pack build --target bundler
+cd ..
+
+# Start the development environment
 pnpm dev
 ```
 
 ## Project Status
 
-This project is in active development as a solo venture. It is currently a portfolio demonstration and may eventually evolve into a closed-source product. The codebase represents my approach to tackling the technical challenges of modern application development.
+This project is in active development. It is currently a portfolio demonstration and may eventually evolve into a closed-source product. The codebase represents my approach to tackling the technical challenges of modern application development.
 
 ---
 

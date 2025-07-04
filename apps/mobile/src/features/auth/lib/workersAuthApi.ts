@@ -31,7 +31,8 @@ export const workersAuthApi = {
   },
 
   async verifyCode(data: VerifyCodeRequest): Promise<AuthResponse> {
-    return apiClient.post('/auth/verify-code', data, false);
+    const response = await apiClient.post('/auth/verify-code', data, false);
+    return response;
   },
 
   // Session management
@@ -99,7 +100,7 @@ export const workersAuthApi = {
       const me = await apiClient.get('/auth/me', true);
       return me as MeResponse;
     } catch (error) {
-      console.warn('getMe failed, possibly invalid token:', error);
+      console.warn('[API] getMe failed, possibly invalid token:', error);
       return null;
     }
   },

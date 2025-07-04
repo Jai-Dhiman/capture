@@ -79,7 +79,6 @@ export async function verifyPKCE(codeVerifier: string, codeChallenge: string): P
 
 // Google OAuth functions
 export async function validateGoogleAccessToken(accessToken: string): Promise<GoogleUserInfo> {
-
   // Get user info from Google using the access token
   const userResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
     headers: {
@@ -96,7 +95,7 @@ export async function validateGoogleAccessToken(accessToken: string): Promise<Go
   }
 
   const userInfo = (await userResponse.json()) as GoogleUserInfo;
-  
+
   return userInfo;
 }
 
@@ -106,7 +105,7 @@ export async function exchangeGoogleCode(
   redirectUri: string,
   env: Bindings,
 ): Promise<GoogleUserInfo> {
-  // Use the iOS client ID from environment variables 
+  // Use the iOS client ID from environment variables
   const clientId = env.GOOGLE_CLIENT_ID_IOS || env.GOOGLE_CLIENT_ID;
 
   if (!clientId) {
@@ -164,7 +163,7 @@ export async function exchangeGoogleCode(
   }
 
   const userInfo = (await userResponse.json()) as GoogleUserInfo;
-  
+
   return userInfo;
 }
 
@@ -214,7 +213,7 @@ async function importApplePublicKey(key: ApplePublicKey): Promise<CryptoKey> {
         hash: 'SHA-256',
       },
       false,
-      ['verify']
+      ['verify'],
     );
   } catch (error) {
     console.error('❌ Failed to import Apple public key:', error);
@@ -223,16 +222,13 @@ async function importApplePublicKey(key: ApplePublicKey): Promise<CryptoKey> {
 }
 
 // Verify JWT signature using Apple's public key
-async function verifyAppleJWTSignature(
-  token: string,
-  header: AppleJWTHeader,
-): Promise<boolean> {
+async function verifyAppleJWTSignature(token: string, header: AppleJWTHeader): Promise<boolean> {
   try {
     // Fetch Apple's public keys
     const publicKeys = await fetchApplePublicKeys();
-    
+
     // Find the key matching the JWT header kid
-    const publicKey = publicKeys.find(key => key.kid === header.kid);
+    const publicKey = publicKeys.find((key) => key.kid === header.kid);
     if (!publicKey) {
       console.error('❌ No matching public key found for kid:', header.kid);
       throw new Error(`No matching Apple public key found for kid: ${header.kid}`);
@@ -244,22 +240,24 @@ async function verifyAppleJWTSignature(
     // Split the token to get signature and payload
     const [headerB64, payloadB64, signatureB64] = token.split('.');
     const signedData = `${headerB64}.${payloadB64}`;
-    
+
     // Decode the signature
-    const signature = Uint8Array.from(base64UrlDecode(signatureB64), c => c.charCodeAt(0));
-    
+    const signature = Uint8Array.from(base64UrlDecode(signatureB64), (c) => c.charCodeAt(0));
+
     // Verify the signature
     const isValid = await crypto.subtle.verify(
       'RSASSA-PKCS1-v1_5',
       cryptoKey,
       signature,
-      new TextEncoder().encode(signedData)
+      new TextEncoder().encode(signedData),
     );
 
     return isValid;
   } catch (error) {
     console.error('❌ Apple JWT signature verification failed:', error);
-    throw new Error(`Apple JWT signature verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Apple JWT signature verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    );
   }
 }
 
@@ -304,7 +302,7 @@ export async function verifyAppleToken(
 
     // Verify JWT signature using Apple's public keys
     const signatureValid = await verifyAppleJWTSignature(identityToken, header);
-    
+
     if (!signatureValid) {
       throw new Error('Invalid JWT signature - token may have been tampered with');
     }

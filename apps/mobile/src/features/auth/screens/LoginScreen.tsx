@@ -6,12 +6,20 @@ import EmailIcon from '@assets/icons/EmailIcon.svg';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm } from '@tanstack/react-form';
 import React, { useState, useRef, useEffect } from 'react';
-import { ActivityIndicator, Image, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View, Keyboard } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  Keyboard,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
+} from 'react-native';
 import { Platform } from 'react-native';
 import { AppleOAuthButton, GoogleOAuthButton } from '../components/OAuthButtons';
 import { useAuth } from '../hooks/useAuth';
 import { usePasskey } from '../hooks/usePasskey';
-
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'Login'>;
@@ -216,7 +224,7 @@ export default function LoginScreen({ navigation }: Props) {
             emailInputRef.current?.blur();
           }}
         >
-          <View className="flex-1 px-[26px] pt-[80px]">
+          <View className="flex-1 px-[26px] pt-[96px]">
             <form.Field
               name="email"
               validators={{
@@ -240,7 +248,7 @@ export default function LoginScreen({ navigation }: Props) {
                     <TextInput
                       ref={emailInputRef}
                       autoFocus={false}
-                      onFocus={() => { }}
+                      onFocus={() => {}}
                       onBlur={() => {
                         field.handleBlur();
                       }}
@@ -274,7 +282,9 @@ export default function LoginScreen({ navigation }: Props) {
             </form.Field>
 
             <View className="justify-center">
-              {(sendCode.isError || authenticateWithPasskey.isError || loginState === 'user-not-found') && (
+              {(sendCode.isError ||
+                authenticateWithPasskey.isError ||
+                loginState === 'user-not-found') && (
                 <Text className="text-red-500 text-xs text-center font-roboto">
                   {loginState === 'passkey'
                     ? 'Passkey authentication failed. Please try again.'
@@ -288,7 +298,7 @@ export default function LoginScreen({ navigation }: Props) {
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
               {([canSubmit, isFormSubmitting]) => (
                 <TouchableOpacity
-                  className={`h-[56px] ${canSubmit ? 'bg-[#E4CAC7]' : 'bg-stone-300'} rounded-[30px] shadow-md justify-center items-center`}
+                  className={`h-[56px] ${canSubmit ? 'bg-[#E4CAC7]' : 'bg-stone-300'} mt-[26px] rounded-[30px] shadow-md justify-center items-center`}
                   onPress={() => form.handleSubmit()}
                   disabled={!canSubmit || isFormSubmitting || isLoading}
                   style={shadowStyle}
@@ -296,7 +306,9 @@ export default function LoginScreen({ navigation }: Props) {
                   {isFormSubmitting || isLoading ? (
                     <View className="flex-row justify-center items-center">
                       <ActivityIndicator size="small" color="#000" />
-                      <Text className="text-base font-bold font-roboto ml-2">{getButtonText()}</Text>
+                      <Text className="text-base font-bold font-roboto ml-2">
+                        {getButtonText()}
+                      </Text>
                     </View>
                   ) : (
                     <Text className="text-base font-bold font-roboto text-center">

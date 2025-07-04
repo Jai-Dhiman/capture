@@ -1,7 +1,16 @@
 import { faker } from '@faker-js/faker';
 import { nanoid } from 'nanoid';
 import type { createD1Client } from '../db';
-import { comment, hashtag, media, post, postHashtag, profile, relationship, users } from '../db/schema';
+import {
+  comment,
+  hashtag,
+  media,
+  post,
+  postHashtag,
+  profile,
+  relationship,
+  users,
+} from '../db/schema';
 import type { Bindings } from '../types';
 import { generatePostEmbedding, storePostEmbedding } from './embeddings';
 import { QdrantClient } from './qdrantClient';
@@ -10,7 +19,7 @@ const BATCH_SIZE = 10;
 
 const postCaptions = [
   'Just finished my morning coffee ☕️ Ready to take on the day!',
-  'Can\'t believe it\'s already Thursday. This week flew by!',
+  "Can't believe it's already Thursday. This week flew by!",
   'Trying out a new recipe tonight. Wish me luck! 🍝',
   'Sunsets always make everything better.',
   'Anyone else obsessed with this new album? 🔥',
@@ -18,22 +27,22 @@ const postCaptions = [
   'Weekend plans: absolutely nothing and loving it.',
   'Grateful for the little things today.',
   'Caught in the rain without an umbrella—classic me.',
-  'If you need me, I\'ll be binge-watching my favorite show.',
+  "If you need me, I'll be binge-watching my favorite show.",
   'Motivation comes and goes. Discipline gets things done.',
   'Is it too late for coffee? Asking for a friend.',
   'New blog post is live! Check it out on my profile.',
   'Why does my dog always steal my spot on the couch? 🐶',
   'Throwback to the best vacation ever.',
-  'Monday mood: Let\'s do this!',
+  "Monday mood: Let's do this!",
   'Cooking up something special tonight.',
-  'What\'s everyone reading these days? Need recommendations!',
+  "What's everyone reading these days? Need recommendations!",
   'Just hit a new personal record at the gym! 💪',
   'Taking a break to enjoy some fresh air.',
   'Dreaming of my next adventure. Where should I go? ✈️',
   'Sometimes a quiet night in is exactly what you need. 😌',
-  'Finally tackling that book I\'ve been meaning to read. 📚',
+  "Finally tackling that book I've been meaning to read. 📚",
   'Is it just me or did this week feel extra long?',
-  'Trying to learn a new skill. It\'s harder than it looks! 😂',
+  "Trying to learn a new skill. It's harder than it looks! 😂",
   'Sunday morning vibes: coffee and pancakes. 🥞☕',
   'Spending the afternoon organizing my space. ✨',
   'That feeling when your favorite song comes on shuffle. 🎶',
@@ -50,7 +59,7 @@ const postCaptions = [
   'Movie night! Any suggestions for a good comedy? 🎬',
   'Working from home has its perks... and distractions. 😅',
   'Golden hour light is just magical. ✨',
-  'Learning to play a new instrument. It\'s a challenge! 🎸',
+  "Learning to play a new instrument. It's a challenge! 🎸",
   'A simple walk can clear the mind. 🚶‍♀️',
   'Decluttering my digital life. Feels good!',
   'Anyone else already thinking about the holidays? 🎄',
@@ -212,7 +221,6 @@ export async function seedDatabase(
   await batchInsert(db, media, mediaItems);
 
   // 5. Generate post embeddings
-  console.log('🔮 Generating embeddings for seeded posts...');
   const qdrantClient = new QdrantClient(env);
   let successCount = 0;
   let failureCount = 0;
@@ -221,7 +229,7 @@ export async function seedDatabase(
   const EMBEDDING_BATCH_SIZE = 5;
   for (let i = 0; i < posts.length; i += EMBEDDING_BATCH_SIZE) {
     const batch = posts.slice(i, i + EMBEDDING_BATCH_SIZE);
-    
+
     await Promise.all(
       batch.map(async (p) => {
         try {
@@ -229,21 +237,22 @@ export async function seedDatabase(
           const vecData = await generatePostEmbedding(p.id, p.content, tagsForPost, env.AI);
           await storePostEmbedding(vecData, env.POST_VECTORS, qdrantClient);
           successCount++;
-          console.log(`✅ Generated embedding for post ${p.id} (${successCount}/${posts.length})`);
         } catch (err) {
           failureCount++;
           console.error(`❌ Embedding failed for post ${p.id}:`, err);
         }
-      })
+      }),
     );
 
     // Add a small delay between batches to be gentle on the AI service
     if (i + EMBEDDING_BATCH_SIZE < posts.length) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
   }
 
-  console.log(`🎯 Embedding generation complete: ${successCount} successful, ${failureCount} failed`);
+  console.log(
+    `🎯 Embedding generation complete: ${successCount} successful, ${failureCount} failed`,
+  );
 
   // 6. Create comments
   const comments = [];
@@ -325,4 +334,4 @@ export async function seedDatabase(
       failed: failureCount,
     },
   };
-} 
+}

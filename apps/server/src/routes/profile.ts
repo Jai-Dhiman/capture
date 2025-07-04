@@ -41,6 +41,7 @@ router.post('/', async (c) => {
 
   try {
     const body = await c.req.json();
+
     const data = schema.parse(body);
 
     if (data.userId !== user.id) {
@@ -75,10 +76,20 @@ router.post('/', async (c) => {
     return c.json(newProfile, 201);
   } catch (error) {
     if (error instanceof z.ZodError) {
+      console.error('Profile validation error:', {
+        userId: user?.id,
+        errors: error.errors,
+        receivedData: error.issues,
+      });
       return c.json({ message: 'Invalid input', errors: error.errors }, 400);
     }
 
-    console.error('Error creating profile:', error);
+    console.error('Profile creation error:', {
+      userId: user?.id,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      type: typeof error,
+    });
     return c.json({ message: 'Failed to create profile' }, 500);
   }
 });

@@ -1074,10 +1074,11 @@ router.post('/passkey/register/complete', authMiddleware, authRateLimiter, async
     const passkeyId = nanoid();
     const credentialInfo = verification.registrationInfo;
 
-    const credentialId = typeof credentialInfo.credential.id === 'string'
-      ? credentialInfo.credential.id
-      : PS.uint8ArrayToBase64(credentialInfo.credential.id);
-    
+    const credentialId =
+      typeof credentialInfo.credential.id === 'string'
+        ? credentialInfo.credential.id
+        : PS.uint8ArrayToBase64(credentialInfo.credential.id);
+
     const publicKey = PS.uint8ArrayToBase64(credentialInfo.credential.publicKey);
 
     await db.insert(schema.passkeys).values({
@@ -1148,10 +1149,12 @@ router.post('/passkey/authenticate/begin', authRateLimiter, async (c) => {
       // Ensure credentialId and publicKey are strings, with safety conversion
       const credentialId = pk.credentialId ? String(pk.credentialId) : null;
       const publicKey = pk.publicKey ? String(pk.publicKey) : null;
-      
+
       if (!credentialId || typeof credentialId !== 'string') {
         console.error('Invalid credentialId:', pk.credentialId, typeof pk.credentialId);
-        throw new Error(`Invalid credentialId: expected non-empty string, got ${typeof pk.credentialId}`);
+        throw new Error(
+          `Invalid credentialId: expected non-empty string, got ${typeof pk.credentialId}`,
+        );
       }
       if (!publicKey || typeof publicKey !== 'string') {
         console.error('Invalid publicKey:', pk.publicKey, typeof pk.publicKey);

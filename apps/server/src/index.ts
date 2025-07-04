@@ -3,6 +3,7 @@ import { typeDefs } from '@/graphql/schema';
 import { authMiddleware } from '@/middleware/auth';
 import { errorHandler } from '@/middleware/errorHandler';
 import authRouter from '@/routes/auth';
+import cacheRouter from '@/routes/cache';
 import deeplinkRouter from '@/routes/deeplink';
 import healthRoutes from '@/routes/health';
 import interestsRouter from '@/routes/interests';
@@ -10,7 +11,6 @@ import mediaRouter from '@/routes/media';
 import profileRouter from '@/routes/profile';
 import { handlePostQueue, handleUserEmbeddingQueue } from '@/routes/queues';
 import seedRouter from '@/routes/seed';
-import testVectorsRouter from '@/routes/test-vectors';
 import type { Bindings, ContextType, Variables } from '@/types';
 import { ApolloServer } from '@apollo/server';
 import { startServerAndCreateCloudflareWorkersHandler } from '@as-integrations/cloudflare-workers';
@@ -79,17 +79,15 @@ app.use('/graphql', authMiddleware, async (c) => {
 // Apple App Site Association for passkeys
 app.get('/.well-known/apple-app-site-association', (c) => {
   const aasa = {
-    "webcredentials": {
-      "apps": [
-        "J2C869U2JJ.com.obscuratechnologies.capture"
-      ]
+    webcredentials: {
+      apps: ['J2C869U2JJ.com.obscuratechnologies.capture'],
     },
-    "applinks": {
-      "apps": [],
-      "details": []
-    }
+    applinks: {
+      apps: [],
+      details: [],
+    },
   };
-  
+
   c.header('Content-Type', 'application/json');
   return c.json(aasa);
 });
@@ -101,11 +99,11 @@ app.route('/seed', seedRouter);
 
 // Protected routes
 app.use('/api/*', authMiddleware);
+app.route('/api/cache', cacheRouter);
 app.route('/api/media', mediaRouter);
 app.route('/api/profile', profileRouter);
 app.route('/api/interests', interestsRouter);
 app.route('/api/deeplink', deeplinkRouter);
-app.route('/api/test-vectors', testVectorsRouter);
 
 app.onError(errorHandler);
 

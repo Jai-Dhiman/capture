@@ -2,6 +2,7 @@ import { blockingResolvers } from './blocking';
 import { commentResolvers } from './comment';
 import { discoveryResolvers } from './discovery';
 import { hashtagResolvers } from './hashtag';
+import { mediaResolvers } from './media';
 import { notificationResolvers } from './notification';
 import { postResolvers } from './post';
 import { profileResolvers } from './profile';
@@ -28,6 +29,7 @@ export const resolvers: ResolverMap = {
   },
   Mutation: {
     ...postResolvers.Mutation,
+    ...mediaResolvers.Mutation,
     ...relationshipResolvers.Mutation,
     ...hashtagResolvers.Mutation,
     ...commentResolvers.Mutation,

@@ -37,6 +37,25 @@ export type AppStackParamList = {
   Search: undefined;
   Settings: NavigatorScreenParams<SettingsStackParamList> | undefined;
   ImageEditScreen: { imageUri: string };
+  PhotoSelectionScreen: {
+    maxSelection?: number;
+    onPhotosSelected: (
+      photos: Array<{
+        uri: string;
+        type: string;
+        name: string;
+        order: number;
+      }>,
+    ) => void;
+  };
+  PostSettingsScreen: {
+    selectedPhotos: Array<{
+      uri: string;
+      type: string;
+      name: string;
+      order: number;
+    }>;
+  };
 };
 
 export type SettingsStackParamList = {
