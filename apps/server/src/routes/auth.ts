@@ -6,9 +6,13 @@ import { nanoid } from 'nanoid';
 import { z } from 'zod';
 import { createD1Client } from '../db';
 import * as schema from '../db/schema';
-import { createEmailService } from '../lib/emailService';
-import { exchangeGoogleCode, validateGoogleAccessToken, verifyAppleToken } from '../lib/oauthUtils';
-import { PasskeyService as PS, PasskeyService } from '../lib/passkeyService';
+import { createEmailService } from '../lib/services/emailService';
+import {
+  exchangeGoogleCode,
+  validateGoogleAccessToken,
+  verifyAppleToken,
+} from '../lib/auth/oauthUtils';
+import { PasskeyService as PS, PasskeyService } from '../lib/auth/passkeyService';
 import { authMiddleware } from '../middleware/auth';
 import { authRateLimiter, otpRateLimiter } from '../middleware/rateLimit';
 import type { Bindings, Variables } from '../types';

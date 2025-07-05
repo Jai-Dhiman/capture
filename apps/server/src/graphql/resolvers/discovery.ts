@@ -1,8 +1,8 @@
 import { and, desc, eq, gt, inArray, lt, notInArray, sql } from 'drizzle-orm';
 import { createD1Client } from '../../db';
 import * as schema from '../../db/schema';
-import { CacheKeys, CacheTTL, createCachingService } from '../../lib/cachingService';
-import { QdrantClient, type QdrantSearchResult } from '../../lib/qdrantClient';
+import { CacheKeys, CacheTTL, createCachingService } from '../../lib/cache/cachingService';
+import { QdrantClient, type QdrantSearchResult } from '../../lib/infrastructure/qdrantClient';
 import {
   calculateDiversityBonus,
   calculateEngagementRate,
@@ -10,8 +10,8 @@ import {
   computeEnhancedScore,
   extractTopicsFromPost,
   type UserContext,
-} from '../../lib/recommendation';
-import { buildUserContext } from '../../lib/userContext';
+} from '../../lib/ai/recommendation';
+import { buildUserContext } from '../../lib/monitoring/userContext';
 import type { ContextType } from '../../types';
 
 type GraphQLPostType = 'post' | 'thread';

@@ -5,7 +5,7 @@ import * as schema from '../../db/schema';
 import {
   createFollowRequestNotification,
   createNewFollowNotification,
-} from '../../lib/notificationService';
+} from '../../lib/services/notificationService';
 import type { ContextType } from '../../types';
 
 export const relationshipResolvers = {

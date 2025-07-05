@@ -8,8 +8,8 @@ import {
   generateEmbedding,
   generatePostEmbedding,
   storePostEmbedding,
-} from '../lib/embeddings';
-import { QdrantClient } from '../lib/qdrantClient';
+} from '../lib/ai/embeddings';
+import { QdrantClient } from '../lib/infrastructure/qdrantClient';
 import { sql } from 'drizzle-orm';
 
 function calculateAverageVector(
@@ -94,7 +94,7 @@ export async function handlePostQueue(
           postId,
           post.content,
           validHashtags,
-          env.AI,
+          env,
           post.userId,
           !!post.authorIsPrivate,
         );
@@ -241,7 +241,7 @@ export async function handleUserEmbeddingQueue(
           for (const hashtag of frequentHashtags) {
             if (hashtag.name) {
               try {
-                const hashtagVector = await generateEmbedding(hashtag.name, env.AI);
+                const hashtagVector = await generateEmbedding(hashtag.name, env);
                 if (hashtagVector && Array.isArray(hashtagVector)) {
                   hashtagVectors.push(hashtagVector);
                 }

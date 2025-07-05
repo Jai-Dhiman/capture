@@ -213,7 +213,7 @@ vi.mock('hono/jwt', () => ({
 // Import after mocking
 import indexModule from '@/index';
 import { createD1Client } from '@/db';
-import { createEmailService } from '@/lib/emailService';
+import { createEmailService } from '@/lib/services/emailService';
 
 // Extract the app - indexModule exports { fetch, queue }, we need the fetch function
 const app = indexModule.fetch;

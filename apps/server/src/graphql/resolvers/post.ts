@@ -2,10 +2,10 @@ import { desc, eq, inArray, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { createD1Client } from '../../db';
 import * as schema from '../../db/schema';
-import { createImageService } from '../../lib/imageService';
-import { createVersionHistoryService } from '../../lib/versionHistoryService';
-import { createCachingService, CacheKeys, CacheTTL } from '../../lib/cachingService';
-import { QdrantClient } from '../../lib/qdrantClient';
+import { createImageService } from '../../lib/images/imageService';
+import { createVersionHistoryService } from '../../lib/database/versionHistoryService';
+import { createCachingService, CacheKeys, CacheTTL } from '../../lib/cache/cachingService';
+import { QdrantClient } from '../../lib/infrastructure/qdrantClient';
 import type { ContextType } from '../../types';
 
 export const postResolvers = {

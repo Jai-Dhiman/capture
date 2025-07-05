@@ -55,7 +55,7 @@ vi.mock('@/db', () => {
 // Import AFTER mocks
 import { ai } from '@/lib/ai';
 import { handlePostQueue } from '../queues';
-import { generatePostEmbedding } from '../../lib/embeddings';
+import { generatePostEmbedding } from '../../lib/ai/embeddings';
 
 describe('Queue Handlers', () => {
   it('should process a post, generate/store embedding, send to user queue, and ack', async () => {

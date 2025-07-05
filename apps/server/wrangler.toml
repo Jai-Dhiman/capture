@@ -48,8 +48,5 @@ queue = "post-queue"
 [[queues.consumers]]
 queue = "user-vector-queue"
 
-[ai]
-binding = "AI"
-
 [observability.logs]
 enabled = true

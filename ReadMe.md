@@ -14,7 +14,7 @@
 Capture is a full-stack mobile application that reimagines social media by prioritizing user privacy, safety, and mental wellbeing. This project demonstrates implementation of modern mobile and backend development practices using React Native, TypeScript, and serverless architecture.
 
 ### Core Technical Challenges Addressed
-
+    
 - Building a responsive, performant cross-platform mobile UI with React Native and Expo
 - Implementing secure user authentication and data encryption
 - Designing an efficient GraphQL API with custom Rust implementation

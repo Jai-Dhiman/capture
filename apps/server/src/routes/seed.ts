@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { createD1Client } from '../db';
-import { seedDatabase } from '../lib/seedDatabase';
+import { seedDatabase } from '../lib/database/seedDatabase';
 import type { Bindings, Variables } from '../types';
 
 const seedRouter = new Hono<{

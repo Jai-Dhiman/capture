@@ -11,6 +11,7 @@ import mediaRouter from '@/routes/media';
 import profileRouter from '@/routes/profile';
 import { handlePostQueue, handleUserEmbeddingQueue } from '@/routes/queues';
 import seedRouter from '@/routes/seed';
+import testRouter from '@/routes/testEndpoints';
 import type { Bindings, ContextType, Variables } from '@/types';
 import { ApolloServer } from '@apollo/server';
 import { startServerAndCreateCloudflareWorkersHandler } from '@as-integrations/cloudflare-workers';
@@ -96,6 +97,7 @@ app.get('/.well-known/apple-app-site-association', (c) => {
 app.route('/', healthRoutes);
 app.route('/auth', authRouter);
 app.route('/seed', seedRouter);
+app.route('/test', testRouter);
 
 // Protected routes
 app.use('/api/*', authMiddleware);
