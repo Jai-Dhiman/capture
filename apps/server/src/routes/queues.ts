@@ -1,6 +1,6 @@
-import { createD1Client } from '@/db';
-import * as schema from '@/db/schema';
-import type { Bindings } from '@/types';
+import { createD1Client } from '../db/index.js';
+import * as schema from '../db/schema.js';
+import type { Bindings } from '../types/index.js';
 import type { MessageBatch } from '@cloudflare/workers-types';
 import { desc, eq, inArray } from 'drizzle-orm';
 import { QdrantClient } from '../lib/infrastructure/qdrantClient';
@@ -16,20 +16,6 @@ const RETRY_CONFIG = {
   maxDelay: 30000,
   backoffMultiplier: 2,
 };
-
-const MONITORING_CONFIG = {
-  slowOperationThreshold: 30000, // 30 seconds
-  deadLetterRetryLimit: 5,
-};
-
-interface QueueMetrics {
-  processed: number;
-  failed: number;
-  retried: number;
-  avgProcessingTime: number;
-  slowOperations: number;
-  deadLetterCount: number;
-}
 
 interface ProcessingResult {
   success: boolean;
@@ -49,14 +35,8 @@ interface BatchGroup {
   }>;
 }
 
-let queueMetrics: QueueMetrics = {
-  processed: 0,
-  failed: 0,
-  retried: 0,
-  avgProcessingTime: 0,
-  slowOperations: 0,
-  deadLetterCount: 0,
-};
+// Simplified metrics for beta
+let processedCount = 0;
 
 function calculateAverageVector(
   savedVectors: number[][],
@@ -104,7 +84,7 @@ export async function handlePostQueue(
   
   try {
     // Group messages by content type for batch processing
-    const batchGroups = await groupMessagesByContentType(batch.messages, env);
+    const batchGroups = await groupMessagesByContentType([...batch.messages], env);
     
     // Process each group using Promise.allSettled for better error handling
     const groupResults = await Promise.allSettled(
@@ -112,23 +92,17 @@ export async function handlePostQueue(
     );
     
     // Process individual results and handle any failures
-    await handleBatchResults(groupResults, batch.messages, env);
+    await handleBatchResults(groupResults);
     
     const processingTime = Date.now() - startTime;
-    updateQueueMetrics(batch.messages.length, processingTime);
+    processedCount += batch.messages.length;
     
     logger.info(`Batch processing completed in ${processingTime}ms`);
-    
-    // Check for slow operations
-    if (processingTime > MONITORING_CONFIG.slowOperationThreshold) {
-      queueMetrics.slowOperations++;
-      logger.warn(`Slow batch processing detected: ${processingTime}ms`);
-    }
     
   } catch (error) {
     logger.error('Critical error in batch processing:', error);
     // Fallback to individual processing
-    await fallbackIndividualProcessing(batch.messages, env);
+    await fallbackIndividualProcessing([...batch.messages], env);
   }
 }
 
@@ -202,7 +176,6 @@ function determineContentType(content: string, hashtags: string[]): string {
 }
 
 async function processBatchGroup(group: BatchGroup, env: Bindings): Promise<ProcessingResult[]> {
-  const logger = createLogger('processBatchGroup');
   const startTime = Date.now();
   
   // Simplified processing for beta - using individual message processing
@@ -213,44 +186,27 @@ async function processBatchGroup(group: BatchGroup, env: Bindings): Promise<Proc
   return results.map((result, index) => {
     if (result.status === 'fulfilled') {
       return result.value;
-    } else {
-      return {
-        success: false,
-        messageId: group.messages[index].message.id,
-        error: result.reason,
-        processingTime: Date.now() - startTime,
-        retryCount: 0
-      };
     }
+    return {
+      success: false,
+      messageId: group.messages[index].message.id,
+      error: result.reason,
+      processingTime: Date.now() - startTime,
+      retryCount: 0
+    };
   });
-}
-
-// Removed batch embedding functions - simplified for beta
-
-function determinePriority(contentType: string): 'high' | 'medium' | 'low' {
-  switch (contentType) {
-    case 'hashtag-heavy':
-      return 'high'; // Hashtag-heavy content needs faster processing
-    case 'long-form':
-      return 'medium'; // Long-form content has moderate priority
-    case 'link-content':
-      return 'low'; // Link content can be processed slower
-    default:
-      return 'medium';
-  }
 }
 
 async function processIndividualMessage(
   msgData: { message: any; postId: string; content: string; hashtags: string[] },
   env: Bindings
 ): Promise<ProcessingResult> {
-  const { message, postId, content, hashtags } = msgData;
+  const { message, postId, hashtags } = msgData;
   const messageId = message.id;
   const startTime = Date.now();
   
   try {
     const db = createD1Client(env);
-    const qdrantClient = new QdrantClient(env);
     
     // Get post details
     const post = await db
@@ -282,7 +238,7 @@ async function processIndividualMessage(
       throw new Error(`Failed to generate valid embedding vector for post ${postId}`);
     }
     
-    await storePostEmbedding(vectorData, env.POST_VECTORS, qdrantClient);
+    await storePostEmbedding(vectorData, env.POST_VECTORS);
     
     try {
       await env.USER_VECTOR_QUEUE.send({ userId: post.userId });
@@ -311,9 +267,7 @@ async function processIndividualMessage(
 }
 
 async function handleBatchResults(
-  results: PromiseSettledResult<ProcessingResult[]>[],
-  messages: any[],
-  env: Bindings
+  results: PromiseSettledResult<ProcessingResult[]>[]
 ): Promise<void> {
   const logger = createLogger('handleBatchResults');
   
@@ -321,7 +275,7 @@ async function handleBatchResults(
     if (result.status === 'fulfilled') {
       for (const processingResult of result.value) {
         if (!processingResult.success) {
-          await handleFailedMessage(processingResult, env);
+          await handleFailedMessage(processingResult);
         }
       }
     } else {
@@ -330,79 +284,32 @@ async function handleBatchResults(
   }
 }
 
-async function handleFailedMessage(result: ProcessingResult, env: Bindings): Promise<void> {
+async function handleFailedMessage(result: ProcessingResult): Promise<void> {
   const logger = createLogger('handleFailedMessage');
   
-  queueMetrics.failed++;
+  logger.error(`Failed to process message ${result.messageId}: ${result.error?.message}`);
   
-  // Implement exponential backoff retry logic
-  const shouldRetry = await shouldRetryMessage(result, env);
-  
-  if (shouldRetry) {
-    queueMetrics.retried++;
+  // Simplified retry logic for beta
+  if (result.retryCount < RETRY_CONFIG.maxRetries) {
     const delay = calculateRetryDelay(result.retryCount);
-    
-    logger.info(`Retrying message ${result.messageId} after ${delay}ms delay`);
-    
-    // Schedule retry (simplified - in production, use proper scheduling)
-    setTimeout(async () => {
-      // Retry logic would go here
-      logger.info(`Retrying message ${result.messageId}`);
-    }, delay);
+    logger.info(`Will retry message ${result.messageId} after ${delay}ms delay`);
+    // In a real implementation, you'd re-queue the message here
   } else {
-    // Send to dead letter queue
-    await sendToDeadLetterQueue(result, env);
+    logger.warn(`Message ${result.messageId} failed after ${RETRY_CONFIG.maxRetries} retries`);
   }
 }
 
-async function shouldRetryMessage(result: ProcessingResult, env: Bindings): Promise<boolean> {
-  if (result.retryCount >= RETRY_CONFIG.maxRetries) {
-    return false;
-  }
-  
-  // Check if error is retryable
-  const isRetryableError = result.error && (
-    result.error.message.includes('timeout') ||
-    result.error.message.includes('network') ||
-    result.error.message.includes('temporary')
-  );
-  
-  return isRetryableError;
-}
+// Simplified for beta - removed complex retry logic
 
 function calculateRetryDelay(retryCount: number): number {
   const delay = Math.min(
-    RETRY_CONFIG.baseDelay * Math.pow(RETRY_CONFIG.backoffMultiplier, retryCount),
+    RETRY_CONFIG.baseDelay * RETRY_CONFIG.backoffMultiplier ** retryCount,
     RETRY_CONFIG.maxDelay
   );
   
   // Add jitter to prevent thundering herd
   const jitter = Math.random() * 0.1 * delay;
   return delay + jitter;
-}
-
-async function sendToDeadLetterQueue(result: ProcessingResult, env: Bindings): Promise<void> {
-  const logger = createLogger('sendToDeadLetterQueue');
-  
-  try {
-    queueMetrics.deadLetterCount++;
-    
-    // Store in dead letter queue (using KV for simplicity)
-    await env.DEAD_LETTER_QUEUE.put(
-      `failed:${result.messageId}:${Date.now()}`,
-      JSON.stringify({
-        messageId: result.messageId,
-        error: result.error?.message || 'Unknown error',
-        retryCount: result.retryCount,
-        timestamp: Date.now(),
-        processingTime: result.processingTime
-      })
-    );
-    
-    logger.warn(`Message ${result.messageId} sent to dead letter queue`);
-  } catch (error) {
-    logger.error(`Failed to send message ${result.messageId} to dead letter queue:`, error);
-  }
 }
 
 async function fallbackIndividualProcessing(messages: any[], env: Bindings): Promise<void> {
@@ -417,7 +324,6 @@ async function fallbackIndividualProcessing(messages: any[], env: Bindings): Pro
       
       try {
         const db = createD1Client(env);
-        const qdrantClient = new QdrantClient(env);
         
         const post = await db
           .select({
@@ -459,7 +365,7 @@ async function fallbackIndividualProcessing(messages: any[], env: Bindings): Pro
           return;
         }
         
-        await storePostEmbedding(vectorData, env.POST_VECTORS, qdrantClient);
+        await storePostEmbedding(vectorData, env.POST_VECTORS);
         
         try {
           await env.USER_VECTOR_QUEUE.send({ userId: post.userId });
@@ -480,12 +386,6 @@ async function fallbackIndividualProcessing(messages: any[], env: Bindings): Pro
   logger.info(`Fallback processing completed. ${failed} messages failed`);
 }
 
-function updateQueueMetrics(processedCount: number, processingTime: number): void {
-  queueMetrics.processed += processedCount;
-  queueMetrics.avgProcessingTime = 
-    (queueMetrics.avgProcessingTime + processingTime) / 2;
-}
-
 // Enhanced User Embedding Queue Handler
 export async function handleUserEmbeddingQueue(
   batch: MessageBatch<{ userId: string }>,
@@ -500,24 +400,23 @@ export async function handleUserEmbeddingQueue(
   try {
     // Process user embeddings with Promise.allSettled for better error handling
     const results = await Promise.allSettled(
-      batch.messages.map(message => processUserEmbedding(message, env, POST_LIMIT))
+      [...batch.messages].map(message => processUserEmbedding(message, env, POST_LIMIT))
     );
     
     // Handle results and any failures
-    await handleUserEmbeddingResults(results, batch.messages, env);
+    await handleUserEmbeddingResults(results, [...batch.messages]);
     
     const processingTime = Date.now() - startTime;
-    updateQueueMetrics(batch.messages.length, processingTime);
+    processedCount += batch.messages.length;
     
     logger.info(`User embedding batch completed in ${processingTime}ms`);
     
-    // Apply batch optimization for user vectors
-    await optimizeUserVectorBatch(batch.messages, env);
+    // Batch optimization removed for beta simplicity
     
   } catch (error) {
     logger.error('Critical error in user embedding batch processing:', error);
     // Fallback to individual processing
-    await fallbackUserEmbeddingProcessing(batch.messages, env, POST_LIMIT);
+    await fallbackUserEmbeddingProcessing([...batch.messages], env, POST_LIMIT);
   }
 }
 
@@ -560,7 +459,8 @@ async function processUserEmbedding(
     
     const savedPostIds = savedPostsResult.map((p) => p.postId).filter(Boolean);
     const createdPostIds = createdPostsResult.map((p) => p.id).filter(Boolean);
-    const allPostIds = [...new Set([...savedPostIds, ...createdPostIds])];
+    const uniquePostIds = new Set([...savedPostIds, ...createdPostIds]);
+    const allPostIds = Array.from(uniquePostIds);
     
     if (allPostIds.length === 0) {
       logger.debug(`No posts found for user ${userId}, storing null vector`);
@@ -576,12 +476,12 @@ async function processUserEmbedding(
     
     // 3. Batch fetch vectors from KV for these posts
     const [savedVectors, createdVectors] = await Promise.all([
-      fetchVectorsBatch(savedPostIds, env.POST_VECTORS, messageId),
-      fetchVectorsBatch(createdPostIds, env.POST_VECTORS, messageId)
+      fetchVectorsBatch(savedPostIds, env.POST_VECTORS),
+      fetchVectorsBatch(createdPostIds, env.POST_VECTORS)
     ]);
     
     // 4. Get hashtag vectors for frequently used hashtags
-    const hashtagVectors = await fetchHashtagVectors(allPostIds, db, env, messageId);
+    const hashtagVectors = await fetchHashtagVectors(allPostIds, db, env);
     
     // 5. Calculate average user vector using optimized WASM functions
     const userVector = await calculateOptimizedUserVector(savedVectors, createdVectors, hashtagVectors);
@@ -600,10 +500,6 @@ async function processUserEmbedding(
     
     // 6. Store user vector in KV
     await env.USER_VECTORS.put(userId, JSON.stringify(Array.from(userVector)));
-    
-    logger.debug(
-      `Successfully updated user vector for ${userId} using ${savedVectors.length} saved, ${createdVectors.length} created, ${hashtagVectors.length} hashtag vectors`
-    );
     
     message.ack();
     
@@ -628,7 +524,6 @@ async function processUserEmbedding(
 async function fetchVectorsBatch(
   postIds: string[],
   vectorStore: any,
-  messageId: string
 ): Promise<number[][]> {
   const vectors: number[][] = [];
   
@@ -639,9 +534,7 @@ async function fetchVectorsBatch(
     
     const batchPromises = batch.map(async (postId) => {
       try {
-        const vectorData = await vectorStore.get<{ vector: number[] }>(`post:${postId}`, {
-          type: 'json',
-        });
+        const vectorData = await vectorStore.get(`post:${postId}`, { type: 'json' }) as { vector: number[] } | null;
         return vectorData?.vector && Array.isArray(vectorData.vector) ? vectorData.vector : null;
       } catch (error) {
         console.warn(`Failed to get vector for post ${postId}:`, error);
@@ -665,7 +558,6 @@ async function fetchHashtagVectors(
   allPostIds: string[],
   db: any,
   env: Bindings,
-  messageId: string
 ): Promise<number[][]> {
   const hashtagVectors: number[][] = [];
   
@@ -683,7 +575,7 @@ async function fetchHashtagVectors(
       .limit(5); // Top 5 hashtags
     
     // Process hashtags in parallel
-    const hashtagPromises = frequentHashtags.map(async (hashtag) => {
+    const hashtagPromises = frequentHashtags.map(async (hashtag: { name: string; }) => {
       if (hashtag.name) {
         try {
           const hashtagVector = await generateEmbedding(hashtag.name, env);
@@ -705,7 +597,7 @@ async function fetchHashtagVectors(
     }
     
   } catch (error) {
-    console.warn(`Failed to process hashtags:`, error);
+    console.warn('Failed to process hashtags:', error);
   }
   
   return hashtagVectors;
@@ -738,8 +630,7 @@ async function calculateOptimizedUserVector(
 
 async function handleUserEmbeddingResults(
   results: PromiseSettledResult<ProcessingResult>[],
-  messages: any[],
-  env: Bindings
+  messages: any[]
 ): Promise<void> {
   const logger = createLogger('handleUserEmbeddingResults');
   
@@ -748,7 +639,7 @@ async function handleUserEmbeddingResults(
     const message = messages[i];
     
     if (result.status === 'fulfilled' && !result.value.success) {
-      await handleFailedMessage(result.value, env);
+      await handleFailedMessage(result.value);
     } else if (result.status === 'rejected') {
       logger.error(`User embedding processing failed for message ${message.id}:`, result.reason);
       
@@ -760,58 +651,8 @@ async function handleUserEmbeddingResults(
         retryCount: 0
       };
       
-      await handleFailedMessage(failedResult, env);
+      await handleFailedMessage(failedResult);
     }
-  }
-}
-
-async function optimizeUserVectorBatch(messages: any[], env: Bindings): Promise<void> {
-  try {
-    if (messages.length <= 1) return;
-    
-    const logger = createLogger('optimizeUserVectorBatch');
-    logger.info(`Optimizing batch of ${messages.length} user vectors`);
-    
-    // Fetch all user vectors for batch processing
-    const userVectors: Float32Array[] = [];
-    const userIds: string[] = [];
-    
-    for (const message of messages) {
-      const userId = message.body.userId;
-      try {
-        const vectorData = await env.USER_VECTORS.get(userId);
-        if (vectorData) {
-          const vector = JSON.parse(vectorData);
-          if (Array.isArray(vector)) {
-            userVectors.push(new Float32Array(vector));
-            userIds.push(userId);
-          }
-        }
-      } catch (error) {
-        console.warn(`Failed to get user vector for ${userId}:`, error);
-      }
-    }
-    
-    if (userVectors.length > 1) {
-      // Apply batch diversity scoring
-      const combinedVectors = new Float32Array(userVectors.length * 1024);
-      userVectors.forEach((vector, index) => {
-        combinedVectors.set(vector, index * 1024);
-      });
-      
-      const diversityScores = await OptimizedVectorOps.computeDiversityScores(combinedVectors);
-      
-      // Store diversity scores for future use
-      for (let i = 0; i < userIds.length; i++) {
-        await env.USER_VECTOR_METRICS.put(
-          `diversity:${userIds[i]}`,
-          JSON.stringify({ score: diversityScores[i], timestamp: Date.now() })
-        );
-      }
-    }
-    
-  } catch (error) {
-    console.warn('User vector batch optimization failed:', error);
   }
 }
 
@@ -827,7 +668,6 @@ async function fallbackUserEmbeddingProcessing(
   const results = await Promise.allSettled(
     messages.map(async (message) => {
       const userId = message.body.userId;
-      const messageId = message.id;
       
       try {
         const db = createD1Client(env);
@@ -855,7 +695,8 @@ async function fallbackUserEmbeddingProcessing(
         
         const savedPostIds = savedPostsResult.map((p) => p.postId).filter(Boolean);
         const createdPostIds = createdPostsResult.map((p) => p.id).filter(Boolean);
-        const allPostIds = [...new Set([...savedPostIds, ...createdPostIds])];
+        const uniquePostIds = new Set([...savedPostIds, ...createdPostIds]);
+        const allPostIds = Array.from(uniquePostIds);
         
         if (allPostIds.length === 0) {
           await env.USER_VECTORS.delete(userId);
@@ -869,9 +710,7 @@ async function fallbackUserEmbeddingProcessing(
         
         for (const postId of savedPostIds) {
           try {
-            const vectorData = await env.POST_VECTORS.get<{ vector: number[] }>(`post:${postId}`, {
-              type: 'json',
-            });
+            const vectorData = await env.POST_VECTORS.get(`post:${postId}`, { type: 'json' }) as { vector: number[] } | null;
             if (vectorData?.vector && Array.isArray(vectorData.vector)) {
               savedVectors.push(vectorData.vector);
             }
@@ -882,9 +721,7 @@ async function fallbackUserEmbeddingProcessing(
         
         for (const postId of createdPostIds) {
           try {
-            const vectorData = await env.POST_VECTORS.get<{ vector: number[] }>(`post:${postId}`, {
-              type: 'json',
-            });
+            const vectorData = await env.POST_VECTORS.get(`post:${postId}`, { type: 'json' }) as { vector: number[] } | null;
             if (vectorData?.vector && Array.isArray(vectorData.vector)) {
               createdVectors.push(vectorData.vector);
             }
@@ -915,60 +752,98 @@ async function fallbackUserEmbeddingProcessing(
   logger.info(`Fallback user embedding processing completed. ${failed} messages failed`);
 }
 
-// Queue Monitoring and Alerting Functions
-export function getQueueMetrics(): QueueMetrics {
-  return { ...queueMetrics };
+// Simplified monitoring for beta
+export function getProcessedCount(): number {
+  return processedCount;
 }
 
-export function resetQueueMetrics(): void {
-  queueMetrics = {
-    processed: 0,
-    failed: 0,
-    retried: 0,
-    avgProcessingTime: 0,
-    slowOperations: 0,
-    deadLetterCount: 0,
-  };
+export function resetProcessedCount(): void {
+  processedCount = 0;
 }
 
-export async function monitorQueueHealth(env: Bindings): Promise<{
-  isHealthy: boolean;
-  metrics: QueueMetrics;
-  alerts: string[];
-}> {
-  const alerts: string[] = [];
-  
-  // Check failure rate
-  const failureRate = queueMetrics.processed > 0 ? 
-    queueMetrics.failed / queueMetrics.processed : 0;
-  
-  if (failureRate > 0.1) { // 10% failure rate threshold
-    alerts.push(`High failure rate: ${(failureRate * 100).toFixed(2)}%`);
-  }
-  
-  // Check processing time
-  if (queueMetrics.avgProcessingTime > MONITORING_CONFIG.slowOperationThreshold) {
-    alerts.push(`Slow processing time: ${queueMetrics.avgProcessingTime}ms`);
-  }
-  
-  // Check dead letter queue
-  if (queueMetrics.deadLetterCount > 100) {
-    alerts.push(`High dead letter count: ${queueMetrics.deadLetterCount}`);
-  }
-  
-  // Check retry rate
-  const retryRate = queueMetrics.processed > 0 ?
-    queueMetrics.retried / queueMetrics.processed : 0;
+/**
+ * Generate embedding for a post using the EmbeddingService
+ */
+async function generatePostEmbedding(
+  postId: string,
+  content: string,
+  hashtags: string[],
+  env: Bindings,
+  userId: string,
+  isPrivate: boolean,
+): Promise<{
+  vector: number[];
+  postId: string;
+  userId: string;
+  isPrivate: boolean;
+  createdAt: string;
+} | null> {
+  try {
+    const cachingService = createCachingService(env);
+    const embeddingService = createEmbeddingService(env, cachingService);
     
-  if (retryRate > 0.2) { // 20% retry rate threshold
-    alerts.push(`High retry rate: ${(retryRate * 100).toFixed(2)}%`);
+    // Generate embedding for post content + hashtags
+    const result = await embeddingService.generatePostEmbedding(
+      postId,
+      content,
+      hashtags,
+      userId,
+      isPrivate,
+    );
+    
+    return {
+      vector: result.embeddingResult.vector,
+      postId,
+      userId,
+      isPrivate,
+      createdAt: new Date().toISOString(),
+    };
+  } catch (error) {
+    console.error(`Failed to generate embedding for post ${postId}:`, error);
+    return null;
   }
-  
-  return {
-    isHealthy: alerts.length === 0,
-    metrics: queueMetrics,
-    alerts
-  };
+}
+
+/**
+ * Store post embedding in KV and optionally Qdrant
+ */
+async function storePostEmbedding(
+  vectorData: {
+    vector: number[];
+    postId: string;
+    userId: string;
+    isPrivate: boolean;
+    createdAt: string;
+  },
+  kvStore: any,
+): Promise<void> {
+  try {
+    // Store in KV store for fast access
+    await kvStore.put(`post:${vectorData.postId}`, JSON.stringify(vectorData));
+    
+    // Optionally store in Qdrant for vector search (simplified for beta)
+    // For now, we'll focus on KV storage only
+    console.debug(`Stored embedding for post ${vectorData.postId} in KV store`);
+  } catch (error) {
+    console.error(`Failed to store embedding for post ${vectorData.postId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Simple wrapper for generating text embeddings
+ */
+async function generateEmbedding(text: string, env: Bindings): Promise<number[] | null> {
+  try {
+    const cachingService = createCachingService(env);
+    const embeddingService = createEmbeddingService(env, cachingService);
+    
+    const result = await embeddingService.generateTextEmbedding(text);
+    return result.vector;
+  } catch (error) {
+    console.error('Failed to generate embedding for text:', error);
+    return null;
+  }
 }
 
 // Enhanced logging utility

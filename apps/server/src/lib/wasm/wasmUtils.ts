@@ -32,10 +32,11 @@ export interface VectorData {
 }
 
 export interface ScoringWeights {
-  relevance: number;
-  recency: number;
-  popularity: number;
+  similarity: number;
+  temporal: number;
   diversity: number;
+  engagement: number;
+  privacy: number;
 }
 
 export interface ContentItem {
@@ -117,10 +118,11 @@ export class ManagedDiscoveryScorer {
     if (this.disposed) {
       throw new Error('Scorer has been disposed');
     }
+    // Map new scoring weights to the old interface for WASM compatibility
     this.scorer.update_weights(
-      weights.relevance,
-      weights.recency,
-      weights.popularity,
+      weights.similarity,
+      weights.temporal,
+      weights.engagement,
       weights.diversity,
     );
   }
@@ -853,7 +855,7 @@ export class WasmInitializationOptimizer {
 /**
  * Auto-initializing WASM utilities that ensure module is ready before use
  */
-export namespace AutoInitializingWasmUtils {
+export namespace AutoInitializingWasmUtilsNamespace {
   const optimizer = WasmInitializationOptimizer.getInstance();
 
   /**
@@ -917,6 +919,148 @@ export namespace AutoInitializingWasmUtils {
 
 // Export the optimized initialization utilities
 export const wasmInitOptimizer = WasmInitializationOptimizer.getInstance();
+
+/**
+ * AutoInitializingWasmUtils Class (Beta Version)
+ * Simplified class wrapper that bridges the namespace methods for discovery resolver
+ */
+export class AutoInitializingWasmUtils {
+  private initializationPromise: Promise<void> | null = null;
+
+  constructor() {
+    // Auto-initialize on construction
+    this.initializationPromise = this.ensureInitialized();
+  }
+
+  /**
+   * Ensure WASM module is initialized
+   */
+  async ensureInitialized(): Promise<void> {
+    if (this.initializationPromise) {
+      return this.initializationPromise;
+    }
+    
+    this.initializationPromise = wasmInitOptimizer.initializeWasmModule();
+    return this.initializationPromise;
+  }
+
+  /**
+   * Check if WASM module is ready
+   */
+  isReady(): boolean {
+    return wasmInitOptimizer.isModuleInitialized();
+  }
+
+  /**
+   * Normalize a vector using WASM operations
+   */
+  normalizeVector(vector: Float32Array): Float32Array {
+    if (!this.isReady()) {
+      // Fallback to simple normalization
+      return this.fallbackNormalizeVector(vector);
+    }
+    
+    try {
+      return batch_normalize_vectors(vector);
+    } catch (error) {
+      console.warn('WASM normalization failed, using fallback:', error);
+      return this.fallbackNormalizeVector(vector);
+    }
+  }
+
+  /**
+   * Compute cosine similarity between two vectors
+   */
+  cosineSimilarity(vectorA: Float32Array, vectorB: Float32Array): number {
+    if (!this.isReady() || vectorA.length !== vectorB.length) {
+      return this.fallbackCosineSimilarity(vectorA, vectorB);
+    }
+
+    try {
+      const managedA = new ManagedVector1024(vectorA);
+      const managedB = new ManagedVector1024(vectorB);
+      
+      try {
+        return managedA.cosineSimilarity(managedB);
+      } finally {
+        managedA.dispose();
+        managedB.dispose();
+      }
+    } catch (error) {
+      console.warn('WASM cosine similarity failed, using fallback:', error);
+      return this.fallbackCosineSimilarity(vectorA, vectorB);
+    }
+  }
+
+  /**
+   * Apply exponential decay to a value
+   */
+  exponentialDecay(value: number, decayRate: number): number {
+    // Simple exponential decay formula
+    return Math.exp(-decayRate * value);
+  }
+
+  /**
+   * Compute adaptive parameters (simplified for beta)
+   */
+  computeAdaptiveParameters(params: {
+    engagementRate: number;
+    diversityPreference: number;
+    recencyPreference: number;
+    sessionDuration: number;
+  }): {
+    contentBasedWeight: number;
+    temporalWeight: number;
+    diversityWeight: number;
+    engagementBoost: number;
+  } {
+    // Simplified adaptive parameters for beta
+    return {
+      contentBasedWeight: Math.max(0.5, Math.min(1.5, 1.0 + (params.engagementRate - 0.1) * 0.5)),
+      temporalWeight: Math.max(0.5, Math.min(1.5, params.recencyPreference)),
+      diversityWeight: Math.max(0.5, Math.min(1.5, params.diversityPreference)),
+      engagementBoost: Math.max(1.0, Math.min(2.0, 1.0 + params.engagementRate)),
+    };
+  }
+
+  /**
+   * Fallback vector normalization (pure JavaScript)
+   */
+  private fallbackNormalizeVector(vector: Float32Array): Float32Array {
+    const magnitude = Math.sqrt(vector.reduce((sum, val) => sum + val * val, 0));
+    if (magnitude === 0) return vector;
+    
+    const normalized = new Float32Array(vector.length);
+    for (let i = 0; i < vector.length; i++) {
+      normalized[i] = vector[i] / magnitude;
+    }
+    return normalized;
+  }
+
+  /**
+   * Fallback cosine similarity (pure JavaScript)
+   */
+  private fallbackCosineSimilarity(vectorA: Float32Array, vectorB: Float32Array): number {
+    if (vectorA.length !== vectorB.length) return 0;
+
+    let dotProduct = 0;
+    let magnitudeA = 0;
+    let magnitudeB = 0;
+
+    for (let i = 0; i < vectorA.length; i++) {
+      dotProduct += vectorA[i] * vectorB[i];
+      magnitudeA += vectorA[i] * vectorA[i];
+      magnitudeB += vectorB[i] * vectorB[i];
+    }
+
+    magnitudeA = Math.sqrt(magnitudeA);
+    magnitudeB = Math.sqrt(magnitudeB);
+
+    if (magnitudeA === 0 || magnitudeB === 0) return 0;
+    
+    return dotProduct / (magnitudeA * magnitudeB);
+  }
+}
 
 // Export additional types for better TypeScript support
 export { 

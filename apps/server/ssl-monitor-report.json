@@ -1,0 +1,83 @@
+{
+  "timestamp": "2025-07-06T18:45:50.925Z",
+  "summary": {
+    "total": 3,
+    "valid": 3,
+    "errors": 0,
+    "expiringSoon": 0
+  },
+  "certificates": [
+    {
+      "domain": "cdn.capture-app.com",
+      "subject": {
+        "CN": "min-sky.no"
+      },
+      "issuer": {
+        "C": "US",
+        "O": "Amazon",
+        "CN": "Amazon RSA 2048 M02"
+      },
+      "validFrom": "2024-09-11T00:00:00.000Z",
+      "validTo": "2025-10-11T23:59:59.000Z",
+      "daysUntilExpiry": 98,
+      "fingerprint": "AF:49:F7:17:88:E9:10:78:42:A6:54:27:35:4A:98:B2:EA:98:A1:E9",
+      "serialNumber": "03C2474E8E588E228628DE8EA66772B9",
+      "protocol": "TLSv1.3",
+      "cipher": {
+        "name": "TLS_AES_128_GCM_SHA256",
+        "standardName": "TLS_AES_128_GCM_SHA256",
+        "version": "TLSv1.3"
+      },
+      "authorized": true,
+      "authorizationError": null
+    },
+    {
+      "domain": "capture-api.jai-d.workers.dev",
+      "subject": {
+        "CN": "jai-d.workers.dev"
+      },
+      "issuer": {
+        "C": "US",
+        "O": "Google Trust Services",
+        "CN": "WE1"
+      },
+      "validFrom": "2025-05-14T10:42:11.000Z",
+      "validTo": "2025-08-12T11:39:51.000Z",
+      "daysUntilExpiry": 37,
+      "fingerprint": "28:DE:48:C0:97:FF:FF:6C:E6:75:F1:F6:1E:DE:9B:7B:94:AE:87:D8",
+      "serialNumber": "5FB52A705F2CDD99131EF41E1B9ED414",
+      "protocol": "TLSv1.3",
+      "cipher": {
+        "name": "TLS_AES_256_GCM_SHA384",
+        "standardName": "TLS_AES_256_GCM_SHA384",
+        "version": "TLSv1.3"
+      },
+      "authorized": true,
+      "authorizationError": null
+    },
+    {
+      "domain": "capture-app.com",
+      "subject": {
+        "CN": "min-sky.no"
+      },
+      "issuer": {
+        "C": "US",
+        "O": "Amazon",
+        "CN": "Amazon RSA 2048 M02"
+      },
+      "validFrom": "2024-09-11T00:00:00.000Z",
+      "validTo": "2025-10-11T23:59:59.000Z",
+      "daysUntilExpiry": 98,
+      "fingerprint": "AF:49:F7:17:88:E9:10:78:42:A6:54:27:35:4A:98:B2:EA:98:A1:E9",
+      "serialNumber": "03C2474E8E588E228628DE8EA66772B9",
+      "protocol": "TLSv1.3",
+      "cipher": {
+        "name": "TLS_AES_128_GCM_SHA256",
+        "standardName": "TLS_AES_128_GCM_SHA256",
+        "version": "TLSv1.3"
+      },
+      "authorized": true,
+      "authorizationError": null
+    }
+  ]
+}

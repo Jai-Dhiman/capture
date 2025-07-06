@@ -1,6 +1,6 @@
 import { blockingResolvers } from './blocking';
 import { commentResolvers } from './comment';
-import { unifiedDiscoveryResolvers as discoveryResolvers } from './discovery';
+import { discoveryResolvers } from './discovery';
 import { hashtagResolvers } from './hashtag';
 import { mediaResolvers } from './media';
 import { notificationResolvers } from './notification';

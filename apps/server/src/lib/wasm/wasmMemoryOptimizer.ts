@@ -40,7 +40,7 @@ export class WasmMemoryOptimizer {
       ...config,
     };
 
-    this.startGarbageCollection();
+    // Don't start GC automatically - only when first used to avoid Cloudflare Workers global scope issues
   }
 
   static getInstance(config?: Partial<MemoryOptimizationConfig>): WasmMemoryOptimizer {
@@ -72,6 +72,9 @@ export class WasmMemoryOptimizer {
    * Cache a vector with automatic memory management
    */
   cacheVector(id: string, vector: Float32Array): void {
+    // Ensure GC is started when we start caching
+    this.ensureGarbageCollectionStarted();
+    
     // Check if we need to clear cache first
     if (this.vectorCache.size >= this.config.maxVectorCacheSize) {
       this.clearOldestVectors(Math.floor(this.config.maxVectorCacheSize * 0.2)); // Clear 20%
@@ -309,10 +312,19 @@ export class WasmMemoryOptimizer {
 
   // Private methods
 
+  private ensureGarbageCollectionStarted(): void {
+    if (!this.gcTimer) {
+      this.startGarbageCollection();
+    }
+  }
+
   private startGarbageCollection(): void {
-    this.gcTimer = setInterval(() => {
-      this.clearExpiredVectors();
-    }, this.config.gcIntervalMs);
+    // Only start GC if we're in a request context, not global scope
+    if (typeof globalThis !== 'undefined') {
+      this.gcTimer = setInterval(() => {
+        this.clearExpiredVectors();
+      }, this.config.gcIntervalMs);
+    }
   }
 
   private stopGarbageCollection(): void {

@@ -2,6 +2,7 @@ import { resolvers } from '@/graphql/resolvers';
 import { typeDefs } from '@/graphql/schema';
 import { authMiddleware } from '@/middleware/auth';
 import { errorHandler } from '@/middleware/errorHandler';
+import { securityHeaders, sslRedirectMiddleware } from '@/middleware/security';
 import authRouter from '@/routes/auth';
 import cacheRouter from '@/routes/cache';
 import deeplinkRouter from '@/routes/deeplink';
@@ -11,7 +12,6 @@ import mediaRouter from '@/routes/media';
 import profileRouter from '@/routes/profile';
 import { handlePostQueue, handleUserEmbeddingQueue } from '@/routes/queues';
 import seedRouter from '@/routes/seed';
-import testRouter from '@/routes/testEndpoints';
 import type { Bindings, ContextType, Variables } from '@/types';
 import { ApolloServer } from '@apollo/server';
 import { startServerAndCreateCloudflareWorkersHandler } from '@as-integrations/cloudflare-workers';
@@ -28,6 +28,8 @@ const app = new Hono<{
 
 app.use('*', logger());
 app.use('*', sentry());
+app.use('*', sslRedirectMiddleware());
+app.use('*', securityHeaders());
 app.use(
   '*',
   cors({
@@ -41,6 +43,7 @@ app.use(
       'exp://*',
       'https://*.exp.direct',
       'https://capture-api.jai-d.workers.dev',
+      'https://cdn.capture-app.com',
     ],
     allowHeaders: ['Content-Type', 'Authorization', 'sentry-trace', 'baggage'],
     allowMethods: ['POST', 'GET', 'OPTIONS', 'DELETE', 'PUT'],
@@ -97,10 +100,10 @@ app.get('/.well-known/apple-app-site-association', (c) => {
 app.route('/', healthRoutes);
 app.route('/auth', authRouter);
 app.route('/seed', seedRouter);
-app.route('/test', testRouter);
 
 // Protected routes
 app.use('/api/*', authMiddleware);
+
 app.route('/api/cache', cacheRouter);
 app.route('/api/media', mediaRouter);
 app.route('/api/profile', profileRouter);

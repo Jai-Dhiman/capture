@@ -1,19 +1,19 @@
+pub mod crypto;
+pub mod image_processing;
 mod utils;
 pub mod vector_math;
-pub mod image_processing;
-pub mod crypto;
 
 use wasm_bindgen::prelude::*;
 
 // Re-export types for easier access
-pub use vector_math::{Vector1024, DiscoveryScorer, BatchProcessor};
-pub use image_processing::{ImageProcessor, ProcessingOptions};
+pub use vector_math::{BatchProcessor, DiscoveryScorer, Vector1024};
+pub use image_processing::ImageProcessor;
 pub use crypto::{CryptoProcessor, JwtPayload};
 
 #[wasm_bindgen]
 extern "C" {
     fn alert(s: &str);
-    
+
     #[wasm_bindgen(js_namespace = console)]
     fn log(s: &str);
 }

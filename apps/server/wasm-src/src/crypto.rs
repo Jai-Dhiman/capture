@@ -1,12 +1,15 @@
 use base64::{engine::general_purpose, Engine as _};
-use ring::rand::SecureRandom;
-use ring::{digest, hmac, rand as ring_rand};
+use hmac::{Hmac, Mac};
+use rand::Rng;
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256, Sha512};
 use wasm_bindgen::prelude::*;
+
+type HmacSha256 = Hmac<Sha256>;
 
 #[wasm_bindgen]
 pub struct CryptoProcessor {
-    rng: ring_rand::SystemRandom,
+    // No need for persistent RNG state in WASM
 }
 
 #[derive(Serialize, Deserialize)]
@@ -21,14 +24,14 @@ pub struct JwtPayload {
 impl CryptoProcessor {
     #[wasm_bindgen(constructor)]
     pub fn new() -> CryptoProcessor {
-        CryptoProcessor {
-            rng: ring_rand::SystemRandom::new(),
-        }
+        CryptoProcessor {}
     }
 
     #[wasm_bindgen]
     pub fn sha256(&self, data: &[u8]) -> Vec<u8> {
-        digest::digest(&digest::SHA256, data).as_ref().to_vec()
+        let mut hasher = Sha256::new();
+        hasher.update(data);
+        hasher.finalize().to_vec()
     }
 
     #[wasm_bindgen]
@@ -39,7 +42,9 @@ impl CryptoProcessor {
 
     #[wasm_bindgen]
     pub fn sha512(&self, data: &[u8]) -> Vec<u8> {
-        digest::digest(&digest::SHA512, data).as_ref().to_vec()
+        let mut hasher = Sha512::new();
+        hasher.update(data);
+        hasher.finalize().to_vec()
     }
 
     #[wasm_bindgen]
@@ -50,9 +55,10 @@ impl CryptoProcessor {
 
     #[wasm_bindgen]
     pub fn hmac_sha256(&self, key: &[u8], data: &[u8]) -> Result<Vec<u8>, JsValue> {
-        let key = hmac::Key::new(hmac::HMAC_SHA256, key);
-        let tag = hmac::sign(&key, data);
-        Ok(tag.as_ref().to_vec())
+        let mut mac = HmacSha256::new_from_slice(key)
+            .map_err(|e| JsValue::from_str(&format!("Invalid key length: {}", e)))?;
+        mac.update(data);
+        Ok(mac.finalize().into_bytes().to_vec())
     }
 
     #[wasm_bindgen]
@@ -69,16 +75,17 @@ impl CryptoProcessor {
 
     #[wasm_bindgen]
     pub fn verify_hmac_sha256(&self, key: &[u8], data: &[u8], signature: &[u8]) -> bool {
-        let key = hmac::Key::new(hmac::HMAC_SHA256, key);
-        hmac::verify(&key, data, signature).is_ok()
+        match self.hmac_sha256(key, data) {
+            Ok(computed) => computed == signature,
+            Err(_) => false,
+        }
     }
 
     #[wasm_bindgen]
     pub fn generate_random_bytes(&self, length: usize) -> Result<Vec<u8>, JsValue> {
+        let mut rng = rand::thread_rng();
         let mut bytes = vec![0u8; length];
-        self.rng
-            .fill(&mut bytes)
-            .map_err(|e| JsValue::from_str(&format!("Failed to generate random bytes: {:?}", e)))?;
+        rng.fill(&mut bytes[..]);
         Ok(bytes)
     }
 

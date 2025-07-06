@@ -18,7 +18,7 @@ export interface CacheEntry<T = any> {
   };
 }
 
-export class UnifiedCachingService implements CachingService {
+export class cachingService implements CachingService {
   private kv: KVNamespace;
   private defaultTtl = 300; // 5 minutes
   private enableMetrics = true;
@@ -56,7 +56,7 @@ export class UnifiedCachingService implements CachingService {
       }
       return cached as T | null;
     } catch (error) {
-      console.error(`[UNIFIED_CACHE] Get error for ${key}:`, error);
+      console.error(`[CACHE] Get error for ${key}:`, error);
       return null;
     }
   }
@@ -79,7 +79,7 @@ export class UnifiedCachingService implements CachingService {
         expirationTtl: ttl,
       });
     } catch (error) {
-      console.error(`[UNIFIED_CACHE] Set error for ${key}:`, error);
+      console.error(`[CACHE] Set error for ${key}:`, error);
       // Don't throw - caching failures shouldn't break the app
     }
   }
@@ -88,7 +88,7 @@ export class UnifiedCachingService implements CachingService {
     try {
       await this.kv.delete(key);
     } catch (error) {
-      console.error(`[UNIFIED_CACHE] Delete error for ${key}:`, error);
+      console.error(`[CACHE] Delete error for ${key}:`, error);
     }
   }
 
@@ -114,7 +114,7 @@ export class UnifiedCachingService implements CachingService {
         await this.kv.delete(pattern);
       }
     } catch (error) {
-      console.error(`[UNIFIED_CACHE] Invalidate pattern error for ${pattern}:`, error);
+      console.error(`[CACHE] Invalidate pattern error for ${pattern}:`, error);
     }
   }
 
@@ -135,12 +135,12 @@ export class UnifiedCachingService implements CachingService {
 
       // Cache the result (fire and forget)
       this.set(key, fresh, ttl).catch((error) => {
-        console.error(`[UNIFIED_CACHE] Background cache set failed for ${key}:`, error);
+        console.error(`[CACHE] Background cache set failed for ${key}:`, error);
       });
 
       return fresh;
     } catch (error) {
-      console.error(`[UNIFIED_CACHE] Fetcher error for ${key}:`, error);
+      console.error(`[CACHE] Fetcher error for ${key}:`, error);
       throw error;
     }
   }
@@ -164,13 +164,13 @@ export class UnifiedCachingService implements CachingService {
             
             // If expires within 10% of original TTL, it's a candidate for warming
             if (timeToExpiry < originalTtl * 0.1) {
-              console.log(`[UNIFIED_CACHE] Key ${key} is about to expire, consider refreshing`);
+              console.log(`[CACHE] Key ${key} is about to expire, consider refreshing`);
             }
           }
         }
       }
     } catch (error) {
-      console.error('[UNIFIED_CACHE] Cache warming error:', error);
+      console.error('[CACHE] Cache warming error:', error);
     }
   }
 
@@ -187,9 +187,9 @@ export class UnifiedCachingService implements CachingService {
         await Promise.all(batch.map(key => this.kv.delete(key)));
       }
       
-      console.log(`[UNIFIED_CACHE] Flushed ${keys.length} cache entries`);
+      console.log(`[CACHE] Flushed ${keys.length} cache entries`);
     } catch (error) {
-      console.error('[UNIFIED_CACHE] Flush error:', error);
+      console.error('[CACHE] Flush error:', error);
     }
   }
 
@@ -208,17 +208,17 @@ export class UnifiedCachingService implements CachingService {
         }
       }
     } catch (error) {
-      console.error(`[UNIFIED_CACHE] Metadata update error for ${key}:`, error);
+      console.error(`[CACHE] Metadata update error for ${key}:`, error);
     }
   }
 }
 
 // Factory function to create the service
-export function createUnifiedCachingService(env: Bindings): CachingService {
+export function createCachingService(env: Bindings): CachingService {
   const kvNamespace = env.CACHE_KV; // Cloudflare KV namespace for caching
   
   if (!kvNamespace) {
-    console.warn('[UNIFIED_CACHE] No KV namespace provided, caching will be disabled');
+    console.warn('[CACHE] No KV namespace provided, caching will be disabled');
     
     // Return a no-op implementation
     return {
@@ -232,7 +232,7 @@ export function createUnifiedCachingService(env: Bindings): CachingService {
     };
   }
 
-  return new UnifiedCachingService(kvNamespace);
+  return new cachingService(kvNamespace);
 }
 
 // Cache key generators for different data types
@@ -244,6 +244,10 @@ export const CacheKeys = {
   userPosts: (userId: string) => `user_posts:${userId}`,
   profile: (userId: string) => `profile:${userId}`,
   media: (mediaId: string) => `media:${mediaId}`,
+  mediaUrl: (storageKey: string, variant?: string, format?: string) => 
+    `media_url:${storageKey}${variant ? `:${variant}` : ''}${format ? `:${format}` : ''}`,
+  cdnUrl: (mediaId: string, variant?: string, format?: string) =>
+    `cdn_url:${mediaId}${variant ? `:${variant}` : ''}${format ? `:${format}` : ''}`,
   feedPage: (userId: string, cursor?: string) => `feed:${userId}:${cursor || 'start'}`,
   hashtag: (hashtagId: string) => `hashtag:${hashtagId}`,
   comment: (commentId: string) => `comment:${commentId}`,
@@ -276,6 +280,9 @@ export const CacheKeys = {
   // Pattern helpers for invalidation
   userPattern: (userId: string) => `*${userId}*`,
   postPattern: (postId: string) => `*post*${postId}*`,
+  mediaPattern: (mediaId: string) => `*${mediaId}*`,
+  mediaUrlPattern: (storageKey: string) => `media_url:${storageKey}*`,
+  cdnUrlPattern: (mediaId: string) => `cdn_url:${mediaId}*`,
   recommendationPattern: (userId: string) => `*rec*${userId}*`,
   discoveryPattern: (userId: string) => `discovery_feed:${userId}:*`,
   clipEmbeddingPattern: (model: string) => `clip_*_embedding:${model}:*`,
@@ -305,6 +312,3 @@ export const CacheTTL = {
   CLIP_IMAGE_EMBEDDING: 7200, // 2 hours - image embeddings (static for same image)
   CLIP_MULTIMODAL_EMBEDDING: 3600, // 1 hour - multimodal embeddings (may change with context)
 } as const;
-
-// Export the legacy cachingService interface for backward compatibility
-export const createCachingService = createUnifiedCachingService;

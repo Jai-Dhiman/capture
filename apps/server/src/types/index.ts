@@ -2,7 +2,7 @@ import type { Queue } from '@cloudflare/workers-types';
 
 export type Bindings = {
   DB: D1Database;
-  BUCKET: R2Bucket;
+  IMAGE_STORAGE: R2Bucket;
   KV: KVNamespace;
   REFRESH_TOKEN_KV: KVNamespace;
   Capture_Rate_Limits: KVNamespace;

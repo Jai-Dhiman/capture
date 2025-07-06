@@ -25,13 +25,18 @@ imageproc = "0.23.0"
 kamadak-exif = "0.5.5"
 base64 = "0.21.0"
 
-# Cryptographic dependencies
-ring = "0.16.20"
+# Concurrency dependencies
+futures = "0.3.28"
+wasm-bindgen-futures = "0.4.37"
+
+# Cryptographic dependencies (Web-compatible)
 sha2 = "0.10.6"
 hmac = "0.12.1"
 hex = "0.4.3"
 rand = { version = "0.8.5", features = ["getrandom"] }
 getrandom = { version = "0.2.8", features = ["js"] }
+# Using Web-compatible crypto instead of Ring
+subtle = "2.5.0"
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires

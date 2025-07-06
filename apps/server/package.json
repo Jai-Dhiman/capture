@@ -13,7 +13,12 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "wrangler d1 migrations apply capture-db",
     "test": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "ssl:setup": "node scripts/setup-cdn-ssl.js",
+    "ssl:monitor": "node scripts/monitor-ssl.js",
+    "ssl:check": "node scripts/monitor-ssl.js",
+    "edge:test": "node scripts/test-edge-cache.js",
+    "edge:test-local": "node scripts/test-edge-cache.js http://localhost:8787"
   },
   "dependencies": {
     "@apollo/server": "^4.11.3",
