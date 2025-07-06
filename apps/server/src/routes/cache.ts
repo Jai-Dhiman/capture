@@ -1,20 +1,6 @@
 import type { Bindings, Variables } from '@/types';
 import { Hono } from 'hono';
-import { createCachingService, CacheKeys } from '../lib/cache/cachingService';
-import {
-  createCacheWarmingService,
-  runRecommendationCacheWarming,
-} from '../lib/cache/cacheWarming';
-import {
-  createAdvancedCachingService,
-  runAdvancedCacheWarming,
-} from '../lib/cache/advancedCachingService';
-import { InvalidationTriggers } from '../lib/cache/patternInvalidation';
-import { extractTransformationOptions } from '../lib/cache/edgeTransformations';
-import {
-  createRealTimeInvalidationService,
-  startInvalidationQueueProcessor,
-} from '../lib/cache/realTimeInvalidation';
+import { createCachingService, CacheKeys } from "@/lib/cache/cachingService";
 import { createD1Client } from '@/db';
 import * as schema from '@/db/schema';
 
@@ -33,32 +19,13 @@ cacheRouter.post('/warm', async (c) => {
   }
 
   try {
-    const warmingService = createCacheWarmingService(c.env);
+    // Cache warming functionality simplified for beta
+    const cachingService = createCachingService(c.env);
+    
+    // Basic cache warming - just clear existing cache to force fresh data
+    await cachingService.invalidatePattern('*');
 
-    // Get active users for recommendation cache warming
-    const db = createD1Client(c.env);
-    const activeUsers = await db
-      .select({ userId: schema.profile.userId })
-      .from(schema.profile)
-      .limit(50)
-      .all();
-
-    const activeUserIds = activeUsers.map((u) => u.userId);
-
-    // Run both traditional and advanced cache warming
-    await Promise.allSettled([
-      warmingService.warmPopularPosts(),
-      warmingService.warmRecentPosts(),
-      warmingService.warmUserFeeds(activeUserIds),
-      warmingService.warmDiscoveryFeeds(activeUserIds),
-      runAdvancedCacheWarming(c.env, {
-        includeTransformations: true,
-        includePersonalization: false,
-        maxItems: 50,
-      }),
-    ]);
-
-    return c.json({ success: true, message: 'Cache warming completed' });
+    return c.json({ success: true, message: 'Cache warming completed (simplified for beta)' });
   } catch (error) {
     console.error('Cache warming error:', error);
     return c.json({ error: 'Cache warming failed' }, 500);
@@ -80,12 +47,13 @@ cacheRouter.post('/warm-recommendations/:userId', async (c) => {
   }
 
   try {
-    const warmingService = createCacheWarmingService(c.env);
-    await warmingService.warmRecommendationData(targetUserId);
+    // Simplified recommendation cache warming for beta
+    const cachingService = createCachingService(c.env);
+    await cachingService.invalidatePattern(CacheKeys.discoveryPattern(targetUserId));
 
     return c.json({
       success: true,
-      message: 'Recommendation cache warmed',
+      message: 'Recommendation cache refreshed (simplified for beta)',
       userId: targetUserId,
     });
   } catch (error) {
@@ -250,8 +218,8 @@ cacheRouter.get('/health', async (c) => {
   }
 });
 
-// Advanced cache transformation endpoint
-cacheRouter.post('/transform', async (c) => {
+// Basic cache operations endpoint
+cacheRouter.post('/operations', async (c) => {
   const user = c.get('user');
 
   if (!user) {
@@ -260,220 +228,53 @@ cacheRouter.post('/transform', async (c) => {
 
   try {
     const body = await c.req.json();
-    const { key, value, transformations, ttl = 300 } = body;
+    const { operation, key, value, ttl = 300 } = body;
 
-    if (!key || !value) {
-      return c.json({ error: 'Key and value are required' }, 400);
+    if (!operation || !key) {
+      return c.json({ error: 'Operation and key are required' }, 400);
     }
 
-    const advancedCachingService = createAdvancedCachingService(c.env);
+    const cachingService = createCachingService(c.env);
     
-    const result = await advancedCachingService.transformAndCache(
-      key,
-      value,
-      transformations || {},
-      ttl
-    );
-
-    return c.json({
-      success: true,
-      key,
-      transformed: result,
-      cacheKey: advancedCachingService.getCacheKey(key, { transformation: transformations }),
-    });
-  } catch (error) {
-    console.error('Cache transformation error:', error);
-    return c.json({ error: 'Cache transformation failed' }, 500);
-  }
-});
-
-// Advanced cache performance report
-cacheRouter.get('/performance', async (c) => {
-  const user = c.get('user');
-
-  if (!user) {
-    return c.json({ error: 'Authentication required' }, 401);
-  }
-
-  try {
-    const hours = parseInt(c.req.query('hours') || '24');
-    const endTime = new Date();
-    const startTime = new Date(endTime.getTime() - hours * 60 * 60 * 1000);
-
-    const advancedCachingService = createAdvancedCachingService(c.env);
+    let result: unknown | { success: boolean; message: string };
     
-    const [report, anomalies] = await Promise.all([
-      advancedCachingService.getPerformanceReport({ start: startTime, end: endTime }),
-      advancedCachingService.detectAnomalies(),
-    ]);
-
-    return c.json({
-      report,
-      anomalies,
-      timeRange: {
-        start: startTime.toISOString(),
-        end: endTime.toISOString(),
-        hours,
-      },
-    });
-  } catch (error) {
-    console.error('Performance report error:', error);
-    return c.json({ error: 'Failed to generate performance report' }, 500);
-  }
-});
-
-// Cache metadata search
-cacheRouter.get('/metadata/search', async (c) => {
-  const user = c.get('user');
-
-  if (!user) {
-    return c.json({ error: 'Authentication required' }, 401);
-  }
-
-  try {
-    const tag = c.req.query('tag');
-    const pattern = c.req.query('pattern');
-
-    if (!tag && !pattern) {
-      return c.json({ error: 'Either tag or pattern parameter is required' }, 400);
-    }
-
-    const advancedCachingService = createAdvancedCachingService(c.env);
-    
-    let results = [];
-    if (tag) {
-      results = await advancedCachingService.findByTag(tag);
-    } else if (pattern) {
-      results = await advancedCachingService.findByPattern(pattern);
-    }
-
-    return c.json({
-      results,
-      count: results.length,
-      searchCriteria: { tag, pattern },
-    });
-  } catch (error) {
-    console.error('Metadata search error:', error);
-    return c.json({ error: 'Metadata search failed' }, 500);
-  }
-});
-
-// Cache optimization endpoint
-cacheRouter.post('/optimize', async (c) => {
-  const user = c.get('user');
-
-  // Only allow admins or system calls
-  if (!user && c.req.header('Authorization') !== `Bearer ${c.env.SEED_SECRET}`) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-
-  try {
-    const advancedCachingService = createAdvancedCachingService(c.env);
-    const result = await advancedCachingService.optimizeCache();
-
-    return c.json({
-      success: true,
-      message: 'Cache optimization completed',
-      cleaned: result.cleaned,
-      optimized: result.optimized,
-    });
-  } catch (error) {
-    console.error('Cache optimization error:', error);
-    return c.json({ error: 'Cache optimization failed' }, 500);
-  }
-});
-
-// Trigger content invalidation by event
-cacheRouter.post('/invalidate/event', async (c) => {
-  const user = c.get('user');
-
-  if (!user) {
-    return c.json({ error: 'Authentication required' }, 401);
-  }
-
-  try {
-    const body = await c.req.json();
-    const { eventType, userId, contentId, action } = body;
-
-    if (!eventType || !action) {
-      return c.json({ error: 'eventType and action are required' }, 400);
-    }
-
-    const advancedCachingService = createAdvancedCachingService(c.env);
-    
-    // Create invalidation event based on type
-    let invalidationEvent;
-    
-    switch (eventType) {
-      case 'post_update':
-        invalidationEvent = InvalidationTriggers.userActions.postUpdate(
-          userId || user.id,
-          contentId
-        );
+    switch (operation) {
+      case 'get':
+        result = await cachingService.get(key);
         break;
-      case 'post_create':
-        invalidationEvent = InvalidationTriggers.userActions.postCreate(
-          userId || user.id,
-          contentId
-        );
+      case 'set':
+        if (value === undefined) {
+          return c.json({ error: 'Value is required for set operation' }, 400);
+        }
+        await cachingService.set(key, value, ttl);
+        result = { success: true, message: 'Value set successfully' };
         break;
-      case 'post_delete':
-        invalidationEvent = InvalidationTriggers.userActions.postDelete(
-          userId || user.id,
-          contentId
-        );
+      case 'delete':
+        await cachingService.delete(key);
+        result = { success: true, message: 'Key deleted successfully' };
         break;
-      case 'profile_update':
-        invalidationEvent = InvalidationTriggers.userActions.profileUpdate(
-          userId || user.id
-        );
+      case 'invalidate':
+        await cachingService.invalidatePattern(key);
+        result = { success: true, message: 'Pattern invalidated successfully' };
         break;
       default:
-        invalidationEvent = InvalidationTriggers.userActions.userInteraction(
-          userId || user.id,
-          action,
-          contentId
-        );
+        return c.json({ error: 'Invalid operation. Supported: get, set, delete, invalidate' }, 400);
     }
 
-    await advancedCachingService.invalidateByEvent(invalidationEvent);
-
     return c.json({
       success: true,
-      message: 'Event-based invalidation completed',
-      event: invalidationEvent,
+      operation,
+      key,
+      result,
     });
   } catch (error) {
-    console.error('Event invalidation error:', error);
-    return c.json({ error: 'Event invalidation failed' }, 500);
+    console.error('Cache operation error:', error);
+    return c.json({ error: 'Cache operation failed' }, 500);
   }
 });
 
-// Real-time invalidation queue management
-cacheRouter.get('/queue/status', async (c) => {
-  const user = c.get('user');
-
-  if (!user) {
-    return c.json({ error: 'Authentication required' }, 401);
-  }
-
-  try {
-    const realTimeService = createRealTimeInvalidationService(c.env);
-    const status = await realTimeService.getQueueStatus();
-
-    return c.json({
-      success: true,
-      status,
-      timestamp: new Date().toISOString(),
-    });
-  } catch (error) {
-    console.error('Queue status error:', error);
-    return c.json({ error: 'Failed to get queue status' }, 500);
-  }
-});
-
-// Enqueue invalidation for later processing
-cacheRouter.post('/queue/enqueue', async (c) => {
+// Simplified cache warming for specific patterns
+cacheRouter.post('/warm-pattern', async (c) => {
   const user = c.get('user');
 
   if (!user) {
@@ -482,120 +283,30 @@ cacheRouter.post('/queue/enqueue', async (c) => {
 
   try {
     const body = await c.req.json();
-    const { pattern, priority = 'medium', delay = 0 } = body;
+    const { pattern } = body;
 
     if (!pattern) {
       return c.json({ error: 'Pattern is required' }, 400);
     }
 
-    const realTimeService = createRealTimeInvalidationService(c.env);
-    const itemId = await realTimeService.enqueueInvalidation(pattern, priority, delay);
-
-    return c.json({
-      success: true,
-      itemId,
-      pattern,
-      priority,
-      delay,
-      scheduledFor: delay > 0 ? new Date(Date.now() + delay).toISOString() : new Date().toISOString(),
-    });
-  } catch (error) {
-    console.error('Enqueue invalidation error:', error);
-    return c.json({ error: 'Failed to enqueue invalidation' }, 500);
-  }
-});
-
-// Process invalidation queue manually
-cacheRouter.post('/queue/process', async (c) => {
-  const user = c.get('user');
-
-  // Only allow admins or system calls
-  if (!user && c.req.header('Authorization') !== `Bearer ${c.env.SEED_SECRET}`) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-
-  try {
-    const realTimeService = createRealTimeInvalidationService(c.env);
-    await realTimeService.processQueue();
-
-    const status = await realTimeService.getQueueStatus();
-
-    return c.json({
-      success: true,
-      message: 'Queue processed successfully',
-      status,
-    });
-  } catch (error) {
-    console.error('Queue processing error:', error);
-    return c.json({ error: 'Failed to process queue' }, 500);
-  }
-});
-
-// Retry failed invalidation items
-cacheRouter.post('/queue/retry', async (c) => {
-  const user = c.get('user');
-
-  // Only allow admins or system calls
-  if (!user && c.req.header('Authorization') !== `Bearer ${c.env.SEED_SECRET}`) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-
-  try {
-    const maxAge = parseInt(c.req.query('maxAge') || '3600000'); // 1 hour default
+    const cachingService = createCachingService(c.env);
     
-    const realTimeService = createRealTimeInvalidationService(c.env);
-    const retriedCount = await realTimeService.retryFailedItems(maxAge);
+    // For now, just invalidate the pattern to force fresh data on next access
+    await cachingService.invalidatePattern(pattern);
 
     return c.json({
       success: true,
-      message: `Retried ${retriedCount} failed items`,
-      retriedCount,
-    });
-  } catch (error) {
-    console.error('Retry failed items error:', error);
-    return c.json({ error: 'Failed to retry items' }, 500);
-  }
-});
-
-// Schedule invalidation for future execution
-cacheRouter.post('/schedule', async (c) => {
-  const user = c.get('user');
-
-  if (!user) {
-    return c.json({ error: 'Authentication required' }, 401);
-  }
-
-  try {
-    const body = await c.req.json();
-    const { pattern, scheduledFor, priority = 'medium' } = body;
-
-    if (!pattern || !scheduledFor) {
-      return c.json({ error: 'Pattern and scheduledFor are required' }, 400);
-    }
-
-    const scheduledDate = new Date(scheduledFor);
-    if (scheduledDate <= new Date()) {
-      return c.json({ error: 'Scheduled time must be in the future' }, 400);
-    }
-
-    const realTimeService = createRealTimeInvalidationService(c.env);
-    const itemId = await realTimeService.scheduleInvalidation(pattern, scheduledDate, priority);
-
-    return c.json({
-      success: true,
-      itemId,
+      message: 'Pattern cache invalidated for warming',
       pattern,
-      scheduledFor: scheduledDate.toISOString(),
-      priority,
     });
   } catch (error) {
-    console.error('Schedule invalidation error:', error);
-    return c.json({ error: 'Failed to schedule invalidation' }, 500);
+    console.error('Pattern cache warming error:', error);
+    return c.json({ error: 'Pattern cache warming failed' }, 500);
   }
 });
 
-// Broadcast invalidation to real-time channels
-cacheRouter.post('/broadcast', async (c) => {
+// Cache key generator helper
+cacheRouter.get('/keys/:type', async (c) => {
   const user = c.get('user');
 
   if (!user) {
@@ -603,92 +314,51 @@ cacheRouter.post('/broadcast', async (c) => {
   }
 
   try {
-    const body = await c.req.json();
-    const { pattern, channels } = body;
+    const type = c.req.param('type');
+    const id = c.req.query('id');
 
-    if (!pattern) {
-      return c.json({ error: 'Pattern is required' }, 400);
+    if (!id && ['post', 'profile', 'user', 'discovery'].includes(type)) {
+      return c.json({ error: 'ID parameter is required for this key type' }, 400);
     }
 
-    const realTimeService = createRealTimeInvalidationService(c.env);
-    await realTimeService.broadcastInvalidation(pattern, channels);
+    let key: string;
+    let pattern: string;
+
+    switch (type) {
+      case 'post':
+        key = CacheKeys.post(id!);
+        pattern = CacheKeys.postPattern(id!);
+        break;
+      case 'profile':
+        key = CacheKeys.profile(id!);
+        pattern = CacheKeys.userPattern(id!);
+        break;
+      case 'user':
+        key = CacheKeys.profile(id!);
+        pattern = CacheKeys.userPattern(id!);
+        break;
+      case 'discovery':
+        key = CacheKeys.discoveryFeed(id!);
+        pattern = CacheKeys.discoveryPattern(id!);
+        break;
+      case 'recommendation':
+        key = id ? CacheKeys.recommendationScores(id, 'sample') : 'recommendation:*';
+        pattern = id ? CacheKeys.recommendationPattern(id) : 'rec:*';
+        break;
+      default:
+        return c.json({ error: 'Invalid key type. Supported: post, profile, user, discovery, recommendation' }, 400);
+    }
 
     return c.json({
       success: true,
-      message: 'Invalidation broadcast sent',
+      type,
+      id,
+      key,
       pattern,
-      channels: channels || 'default',
-      timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Broadcast invalidation error:', error);
-    return c.json({ error: 'Failed to broadcast invalidation' }, 500);
-  }
-});
-
-// Real-time invalidation configuration
-cacheRouter.get('/realtime/config', async (c) => {
-  const user = c.get('user');
-
-  if (!user) {
-    return c.json({ error: 'Authentication required' }, 401);
-  }
-
-  try {
-    const realTimeService = createRealTimeInvalidationService(c.env);
-    const config = await realTimeService.getConfig();
-
-    return c.json({
-      success: true,
-      config,
-    });
-  } catch (error) {
-    console.error('Get real-time config error:', error);
-    return c.json({ error: 'Failed to get configuration' }, 500);
-  }
-});
-
-cacheRouter.post('/realtime/config', async (c) => {
-  const user = c.get('user');
-
-  // Only allow admins
-  if (!user && c.req.header('Authorization') !== `Bearer ${c.env.SEED_SECRET}`) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-
-  try {
-    const body = await c.req.json();
-    
-    const realTimeService = createRealTimeInvalidationService(c.env);
-    await realTimeService.updateConfig(body);
-
-    return c.json({
-      success: true,
-      message: 'Real-time invalidation configuration updated',
-    });
-  } catch (error) {
-    console.error('Update real-time config error:', error);
-    return c.json({ error: 'Failed to update configuration' }, 500);
-  }
-});
-
-// Start queue processor (would typically be called during server startup)
-cacheRouter.post('/queue/start-processor', async (c) => {
-  // Only allow system calls
-  if (c.req.header('Authorization') !== `Bearer ${c.env.SEED_SECRET}`) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-
-  try {
-    await startInvalidationQueueProcessor(c.env);
-
-    return c.json({
-      success: true,
-      message: 'Invalidation queue processor started',
-    });
-  } catch (error) {
-    console.error('Start queue processor error:', error);
-    return c.json({ error: 'Failed to start queue processor' }, 500);
+    console.error('Cache key generation error:', error);
+    return c.json({ error: 'Cache key generation failed' }, 500);
   }
 });
 

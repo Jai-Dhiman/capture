@@ -5,8 +5,6 @@
  * to prevent memory leaks and optimize performance.
  */
 
-import { performanceMonitor } from './performanceMonitor.js';
-
 export interface WasmMemoryStats {
   heapSize: number;
   usedHeapSize: number;
@@ -30,7 +28,7 @@ export class WasmMemoryOptimizer {
   private config: MemoryOptimizationConfig;
   private vectorCache: Map<string, { vector: Float32Array; timestamp: number }> = new Map();
   private gcTimer?: NodeJS.Timeout;
-  private isOptimizing: boolean = false;
+  private isOptimizing = false;
 
   private constructor(config?: Partial<MemoryOptimizationConfig>) {
     this.config = {
@@ -43,7 +41,6 @@ export class WasmMemoryOptimizer {
     };
 
     this.startGarbageCollection();
-    this.setupMemoryMonitoring();
   }
 
   static getInstance(config?: Partial<MemoryOptimizationConfig>): WasmMemoryOptimizer {
@@ -91,10 +88,7 @@ export class WasmMemoryOptimizer {
       timestamp: Date.now(),
     });
 
-    // Record memory usage
-    performanceMonitor.recordMemoryUsage('vector_cache_memory', this.calculateVectorMemoryUsage(), {
-      type: 'vector_cache',
-    });
+    // TODO: Record memory usage (monitoring removed for beta)
   }
 
   /**
@@ -176,7 +170,7 @@ export class WasmMemoryOptimizer {
   /**
    * Perform vector computation with memory optimization
    */
-  async computeWithMemoryCheck<T>(computation: () => T, memoryRequirement: number = 0): Promise<T> {
+  async computeWithMemoryCheck<T>(computation: () => T, memoryRequirement = 0): Promise<T> {
     const memoryStats = this.getMemoryStats();
 
     // Check if we have enough free memory
@@ -187,7 +181,10 @@ export class WasmMemoryOptimizer {
     try {
       return computation();
     } catch (error) {
-      if (error.message?.includes('memory') || error.name === 'RangeError') {
+      const isMemoryError = error instanceof Error && 
+        (error.message?.includes('memory') || error.name === 'RangeError');
+      
+      if (isMemoryError) {
         console.warn('Memory error detected, performing cleanup and retrying');
         await this.performEmergencyCleanup();
         return computation(); // Retry once
@@ -225,11 +222,6 @@ export class WasmMemoryOptimizer {
       const memoryFreed = beforeStats.usedHeapSize - afterStats.usedHeapSize;
       const optimizationTime = Date.now() - startTime;
 
-      performanceMonitor.timing('memory_optimization', optimizationTime, {
-        memory_freed_bytes: memoryFreed.toString(),
-        vectors_cleared: (beforeStats.vectorCount - afterStats.vectorCount).toString(),
-      });
-
       console.log(
         `Memory optimization completed: freed ${Math.round(memoryFreed / 1024 / 1024)}MB in ${optimizationTime}ms`,
       );
@@ -251,9 +243,6 @@ export class WasmMemoryOptimizer {
     if (global.gc) {
       global.gc();
     }
-
-    // Record emergency cleanup
-    performanceMonitor.increment('emergency_memory_cleanup');
 
     await new Promise((resolve) => setTimeout(resolve, 100)); // Brief pause
   }
@@ -335,21 +324,11 @@ export class WasmMemoryOptimizer {
 
   private clearExpiredVectors(): void {
     const now = Date.now();
-    let clearedCount = 0;
 
     for (const [id, cached] of this.vectorCache.entries()) {
       if (now - cached.timestamp > this.config.maxCacheAgeMs) {
         this.vectorCache.delete(id);
-        clearedCount++;
       }
-    }
-
-    if (clearedCount > 0) {
-      performanceMonitor.increment(
-        'vectors_expired',
-        { count: clearedCount.toString() },
-        clearedCount,
-      );
     }
   }
 
@@ -361,11 +340,9 @@ export class WasmMemoryOptimizer {
       .sort(([, a], [, b]) => a.timestamp - b.timestamp)
       .slice(0, count);
 
-    entries.forEach(([id]) => {
+    for (const [id] of entries) {
       this.vectorCache.delete(id);
-    });
-
-    performanceMonitor.increment('vectors_cleared_lru', { count: count.toString() }, count);
+    }
   }
 
   private calculateVectorMemoryUsage(): number {
@@ -377,23 +354,6 @@ export class WasmMemoryOptimizer {
     }
 
     return totalBytes;
-  }
-
-  private setupMemoryMonitoring(): void {
-    // Monitor memory usage periodically
-    setInterval(() => {
-      const stats = this.getMemoryStats();
-
-      performanceMonitor.recordMemoryUsage('wasm_heap_used', stats.usedHeapSize);
-      performanceMonitor.recordMemoryUsage('wasm_vector_memory', stats.vectorMemoryUsage);
-      performanceMonitor.gauge('vector_cache_count', stats.vectorCount);
-
-      // Check for memory pressure
-      const memoryUsagePercent = (stats.usedHeapSize / stats.heapSize) * 100;
-      if (memoryUsagePercent > 85) {
-        performanceMonitor.increment('memory_pressure_warning');
-      }
-    }, 30000); // Every 30 seconds
   }
 
   /**

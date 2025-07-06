@@ -12,20 +12,29 @@ export const users = sqliteTable('users', {
   updatedAt: numeric('updated_at').default(new Date().toISOString()).notNull(),
 });
 
-export const profile = sqliteTable('profile', {
-  id: text('id').primaryKey(),
-  userId: text('user_id')
-    .notNull()
-    .unique()
-    .references(() => users.id),
-  username: text('username').notNull().unique(),
-  profileImage: text('profile_image'),
-  bio: text('bio'),
-  verifiedType: text('verified_type').default('none'),
-  isPrivate: integer('is_private').default(0).notNull(),
-  createdAt: numeric('created_at').default(new Date().toISOString()).notNull(),
-  updatedAt: numeric('updated_at').default(new Date().toISOString()).notNull(),
-});
+export const profile = sqliteTable(
+  'profile',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .unique()
+      .references(() => users.id),
+    username: text('username').notNull().unique(),
+    profileImage: text('profile_image'),
+    bio: text('bio'),
+    verifiedType: text('verified_type').default('none'),
+    isPrivate: integer('is_private').default(0).notNull(),
+    createdAt: numeric('created_at').default(new Date().toISOString()).notNull(),
+    updatedAt: numeric('updated_at').default(new Date().toISOString()).notNull(),
+  },
+  (table) => [
+    // Privacy filtering optimization - compound index for discovery queries
+    index('profile_privacy_idx').on(table.isPrivate, table.userId),
+    // Username search optimization
+    index('profile_username_search_idx').on(table.username),
+  ],
+);
 
 export const emailCodes = sqliteTable(
   'email_codes',
@@ -82,7 +91,16 @@ export const post = sqliteTable(
     _saveCount: integer('_save_count').default(0).notNull(),
     _commentCount: integer('_comment_count').default(0).notNull(),
   },
-  (table) => [index('user_posts_idx').on(table.userId), index('post_time_idx').on(table.createdAt)],
+  (table) => [
+    index('user_posts_idx').on(table.userId), 
+    index('post_time_idx').on(table.createdAt),
+    // Discovery feed optimization - compound index for filtering by draft status, userId, and sorting
+    index('post_discovery_idx').on(table.isDraft, table.userId, table.createdAt),
+    // Post popularity index for sorting by engagement
+    index('post_popularity_idx').on(table._saveCount, table._commentCount, table.createdAt),
+    // User content overview index
+    index('user_posts_time_idx').on(table.userId, table.createdAt),
+  ],
 );
 
 export const postRelations = relations(post, ({ one, many }) => ({
@@ -253,6 +271,10 @@ export const comment = sqliteTable(
     index('user_comments_idx').on(table.userId),
     index('comment_path_idx').on(table.path),
     index('comment_parent_idx').on(table.parentId),
+    // Comment threading optimization - compound index for parent-child relationships
+    index('comment_threading_idx').on(table.postId, table.parentId, table.depth, table.createdAt),
+    // Comment popularity index for sorting by engagement
+    index('comment_popularity_idx').on(table.postId, table._likeCount, table.createdAt),
     foreignKey({
       columns: [table.parentId],
       foreignColumns: [table.id],
@@ -406,6 +428,8 @@ export const seenPostLog = sqliteTable(
     index('seen_post_user_id_idx').on(table.userId),
     index('seen_post_seen_at_idx').on(table.seenAt),
     index('seen_post_composite_idx').on(table.userId, table.postId),
+    // Seen posts optimization - compound index for user timeline queries
+    index('seen_post_user_time_idx').on(table.userId, table.seenAt),
   ],
 );
 
@@ -428,6 +452,10 @@ export const notification = sqliteTable(
     index('user_notifications_idx').on(table.userId),
     index('notification_time_idx').on(table.createdAt),
     index('notification_read_idx').on(table.isRead),
+    // Notification optimization - compound index for user feed queries
+    index('notification_user_read_time_idx').on(table.userId, table.isRead, table.createdAt),
+    // Notification type filtering index
+    index('notification_user_type_idx').on(table.userId, table.type, table.createdAt),
   ],
 );
 

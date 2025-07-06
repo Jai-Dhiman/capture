@@ -1,6 +1,6 @@
 import { blockingResolvers } from './blocking';
 import { commentResolvers } from './comment';
-import { discoveryResolvers } from './discovery';
+import { unifiedDiscoveryResolvers as discoveryResolvers } from './discovery';
 import { hashtagResolvers } from './hashtag';
 import { mediaResolvers } from './media';
 import { notificationResolvers } from './notification';
@@ -35,6 +35,7 @@ export const resolvers: ResolverMap = {
     ...commentResolvers.Mutation,
     ...savedPostResolvers.Mutation,
     ...blockingResolvers.Mutation,
+    ...discoveryResolvers.Mutation,
     ...notificationResolvers.Mutation,
   },
 

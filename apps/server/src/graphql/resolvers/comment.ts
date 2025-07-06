@@ -48,7 +48,34 @@ export const commentResolvers = {
           conditions.push(eq(schema.comment.parentId, parentId));
         }
 
-        const baseQuery = db.select().from(schema.comment);
+        // Use join to fetch comment with user profile in single query
+        const baseQuery = db
+          .select({
+            id: schema.comment.id,
+            postId: schema.comment.postId,
+            userId: schema.comment.userId,
+            parentId: schema.comment.parentId,
+            content: schema.comment.content,
+            path: schema.comment.path,
+            depth: schema.comment.depth,
+            isDeleted: schema.comment.isDeleted,
+            createdAt: schema.comment.createdAt,
+            _likeCount: schema.comment._likeCount,
+            // Include user profile data to eliminate N+1 queries
+            user: {
+              id: schema.profile.id,
+              userId: schema.profile.userId,
+              username: schema.profile.username,
+              profileImage: schema.profile.profileImage,
+              bio: schema.profile.bio,
+              verifiedType: schema.profile.verifiedType,
+              isPrivate: schema.profile.isPrivate,
+              createdAt: schema.profile.createdAt,
+              updatedAt: schema.profile.updatedAt,
+            }
+          })
+          .from(schema.comment)
+          .innerJoin(schema.profile, eq(schema.comment.userId, schema.profile.userId));
 
         if (cursor) {
           const decodedCursor = Buffer.from(cursor, 'base64').toString('utf-8');
@@ -308,9 +335,14 @@ export const commentResolvers = {
   },
 
   Comment: {
-    async user(parent: { userId: string }, _: unknown, context: ContextType) {
-      const db = createD1Client(context.env);
+    async user(parent: { userId: string, user?: any }, _: unknown, context: ContextType) {
+      // If user data is already available from join query, return it
+      if (parent.user) {
+        return parent.user;
+      }
 
+      // Fallback to individual query (for backward compatibility)
+      const db = createD1Client(context.env);
       const profile = await db
         .select()
         .from(schema.profile)

@@ -1,4 +1,4 @@
-import { eq, and, or, inArray, sql, desc, asc } from 'drizzle-orm';
+import { eq, and, or, inArray, sql, desc, asc, type SQL } from 'drizzle-orm';
 import { post, profile, relationship, blockedUser } from '../schema';
 import { createD1Client } from '../index';
 import type { Bindings } from '../../types';
@@ -16,7 +16,7 @@ interface PostWithPrivacy {
   _commentCount: number;
   authorUsername: string;
   authorIsPrivate: number;
-  authorVerifiedType: string;
+  authorVerifiedType: string | null;
   authorProfileImage: string | null;
   authorBio: string | null;
 }
@@ -48,8 +48,57 @@ export async function filterPostsByPrivacyAndFollowing(
     const db = createD1Client(bindings);
     const postIds = posts.map((p) => p.id);
 
-    // Build the query with proper joins
-    let query = db
+    // Build all conditions upfront
+    const conditions = [
+      inArray(post.id, postIds),
+      eq(post.isDraft, 0), // Only published posts
+      // Privacy filtering logic
+      or(
+        // Public posts
+        eq(profile.isPrivate, 0),
+        // Private posts from followed users
+        and(
+          eq(profile.isPrivate, 1),
+          sql`EXISTS (
+            SELECT 1 FROM ${relationship} 
+            WHERE ${relationship.followerId} = ${currentUserId} 
+            AND ${relationship.followedId} = ${post.userId}
+          )`,
+        ),
+        // User's own posts (if enabled)
+        options.includeOwnPosts ? eq(post.userId, currentUserId) : sql`FALSE`,
+      ),
+      // Exclude blocked users
+      sql`NOT EXISTS (
+        SELECT 1 FROM ${blockedUser} 
+        WHERE (
+          (${blockedUser.blockerId} = ${currentUserId} AND ${blockedUser.blockedId} = ${post.userId}) OR
+          (${blockedUser.blockerId} = ${post.userId} AND ${blockedUser.blockedId} = ${currentUserId})
+        )
+      )`,
+    ];
+
+    // Add content type filtering if specified
+    if (options.contentTypes && options.contentTypes.length > 0) {
+      conditions.push(inArray(post.type, options.contentTypes));
+    }
+
+    // Determine ordering
+    const orderByClause: SQL[] = [];
+    switch (options.orderBy) {
+      case 'oldest':
+        orderByClause.push(asc(post.createdAt));
+        break;
+      case 'popular':
+        orderByClause.push(desc(post._saveCount), desc(post._commentCount), desc(post.createdAt));
+        break;
+      default: // 'newest' or undefined
+        orderByClause.push(desc(post.createdAt));
+        break;
+    }
+
+    // Build the base query with ordering
+    const baseQuery = db
       .select({
         id: post.id,
         userId: post.userId,
@@ -69,71 +118,20 @@ export async function filterPostsByPrivacyAndFollowing(
       })
       .from(post)
       .innerJoin(profile, eq(post.userId, profile.userId))
-      .where(
-        and(
-          inArray(post.id, postIds),
-          eq(post.isDraft, 0), // Only published posts
-          // Privacy filtering logic
-          or(
-            // Public posts
-            eq(profile.isPrivate, 0),
-            // Private posts from followed users
-            and(
-              eq(profile.isPrivate, 1),
-              sql`EXISTS (
-                SELECT 1 FROM ${relationship} 
-                WHERE ${relationship.followerId} = ${currentUserId} 
-                AND ${relationship.followedId} = ${post.userId}
-              )`,
-            ),
-            // User's own posts (if enabled)
-            options.includeOwnPosts ? eq(post.userId, currentUserId) : sql`FALSE`,
-          ),
-          // Exclude blocked users
-          sql`NOT EXISTS (
-            SELECT 1 FROM ${blockedUser} 
-            WHERE (
-              (${blockedUser.blockerId} = ${currentUserId} AND ${blockedUser.blockedId} = ${post.userId}) OR
-              (${blockedUser.blockerId} = ${post.userId} AND ${blockedUser.blockedId} = ${currentUserId})
-            )
-          )`,
-        ),
-      );
+      .where(and(...conditions))
+      .orderBy(...orderByClause);
 
-    // Apply content type filtering
-    if (options.contentTypes && options.contentTypes.length > 0) {
-      query = query.where(
-        and((query as any)._config.where, inArray(post.type, options.contentTypes)),
-      );
+    // Apply pagination if needed
+    if (options.offset && options.limit) {
+      return await baseQuery.offset(options.offset).limit(options.limit);
     }
-
-    // Apply ordering
-    switch (options.orderBy) {
-      case 'oldest':
-        query = query.orderBy(asc(post.createdAt));
-        break;
-      case 'popular':
-        query = query.orderBy(
-          desc(post._saveCount),
-          desc(post._commentCount),
-          desc(post.createdAt),
-        );
-        break;
-      case 'newest':
-      default:
-        query = query.orderBy(desc(post.createdAt));
-        break;
-    }
-
-    // Apply pagination
     if (options.offset) {
-      query = query.offset(options.offset);
+      return await baseQuery.offset(options.offset);
     }
     if (options.limit) {
-      query = query.limit(options.limit);
+      return await baseQuery.limit(options.limit);
     }
-
-    return await query;
+      return await baseQuery;
   } catch (error) {
     console.error('Error filtering posts by privacy and following:', error);
     throw new Error('Failed to filter posts by privacy');
@@ -181,54 +179,30 @@ export async function getVisiblePostsForUser(
       ...blocked.filter((b) => b.blockedId === currentUserId).map((b) => b.blockerId),
     ]);
 
-    // Build the main query
-    let query = db
-      .select({
-        id: post.id,
-        userId: post.userId,
-        content: post.content,
-        type: post.type,
-        isDraft: post.isDraft,
-        version: post.version,
-        createdAt: post.createdAt,
-        updatedAt: post.updatedAt,
-        _saveCount: post._saveCount,
-        _commentCount: post._commentCount,
-        authorUsername: profile.username,
-        authorIsPrivate: profile.isPrivate,
-        authorVerifiedType: profile.verifiedType,
-        authorProfileImage: profile.profileImage,
-        authorBio: profile.bio,
-      })
-      .from(post)
-      .innerJoin(profile, eq(post.userId, profile.userId))
-      .where(
+    // Build all conditions upfront
+    const conditions = [
+      eq(post.isDraft, 0), // Only published posts
+      // Privacy filtering
+      or(
+        // Public posts
+        eq(profile.isPrivate, 0),
+        // Private posts from followed users
         and(
-          eq(post.isDraft, 0), // Only published posts
-          // Privacy filtering
-          or(
-            // Public posts
-            eq(profile.isPrivate, 0),
-            // Private posts from followed users
-            and(
-              eq(profile.isPrivate, 1),
-              followingIds.length > 0 ? inArray(post.userId, followingIds) : sql`FALSE`,
-            ),
-            // User's own posts (if enabled)
-            options.includeOwnPosts ? eq(post.userId, currentUserId) : sql`FALSE`,
-          ),
-          // Exclude blocked users
-          blockedUserIds.size > 0
-            ? sql`${post.userId} NOT IN (${Array.from(blockedUserIds)
-                .map((id) => `'${id}'`)
-                .join(',')})`
-            : sql`TRUE`,
+          eq(profile.isPrivate, 1),
+          followingIds.length > 0 ? inArray(post.userId, followingIds) : sql`FALSE`,
         ),
-      );
+        // User's own posts (if enabled)
+        options.includeOwnPosts ? eq(post.userId, currentUserId) : sql`FALSE`,
+      ),
+      // Exclude blocked users
+      blockedUserIds.size > 0
+        ? sql`${post.userId} NOT IN (${Array.from(blockedUserIds)
+            .map((id) => `'${id}'`)
+            .join(',')})`
+        : sql`TRUE`,
+    ];
 
     // Apply additional filters
-    const conditions = [];
-
     if (!options.includeOwnPosts) {
       conditions.push(sql`${post.userId} != ${currentUserId}`);
     }
@@ -257,38 +231,55 @@ export async function getVisiblePostsForUser(
       conditions.push(sql`${post.createdAt} <= ${options.maxCreatedAt}`);
     }
 
-    // Apply all conditions
-    if (conditions.length > 0) {
-      query = query.where(and((query as any)._config.where, ...conditions));
-    }
-
-    // Apply ordering
+    // Determine ordering
+    const orderByClause: SQL[] = [];
     switch (options.orderBy) {
       case 'oldest':
-        query = query.orderBy(asc(post.createdAt));
+        orderByClause.push(asc(post.createdAt));
         break;
       case 'popular':
-        query = query.orderBy(
-          desc(post._saveCount),
-          desc(post._commentCount),
-          desc(post.createdAt),
-        );
+        orderByClause.push(desc(post._saveCount), desc(post._commentCount), desc(post.createdAt));
         break;
-      case 'newest':
-      default:
-        query = query.orderBy(desc(post.createdAt));
+      default: // 'newest' or undefined
+        orderByClause.push(desc(post.createdAt));
         break;
     }
 
-    // Apply pagination
+    // Build the base query with ordering
+    const baseQuery = db
+      .select({
+        id: post.id,
+        userId: post.userId,
+        content: post.content,
+        type: post.type,
+        isDraft: post.isDraft,
+        version: post.version,
+        createdAt: post.createdAt,
+        updatedAt: post.updatedAt,
+        _saveCount: post._saveCount,
+        _commentCount: post._commentCount,
+        authorUsername: profile.username,
+        authorIsPrivate: profile.isPrivate,
+        authorVerifiedType: profile.verifiedType,
+        authorProfileImage: profile.profileImage,
+        authorBio: profile.bio,
+      })
+      .from(post)
+      .innerJoin(profile, eq(post.userId, profile.userId))
+      .where(and(...conditions))
+      .orderBy(...orderByClause);
+
+    // Apply pagination if needed
+    if (options.offset && options.limit) {
+      return await baseQuery.offset(options.offset).limit(options.limit);
+    }
     if (options.offset) {
-      query = query.offset(options.offset);
+      return await baseQuery.offset(options.offset);
     }
     if (options.limit) {
-      query = query.limit(options.limit);
+      return await baseQuery.limit(options.limit);
     }
-
-    return await query;
+      return await baseQuery;
   } catch (error) {
     console.error('Error getting visible posts for user:', error);
     throw new Error('Failed to get visible posts');
@@ -443,7 +434,7 @@ export async function batchCheckPostVisibility(
 
     const visibility: { [postId: string]: boolean } = {};
 
-    results.forEach((postData) => {
+    for (const postData of results) {
       let canSee = false;
 
       // User is blocked
@@ -464,14 +455,14 @@ export async function batchCheckPostVisibility(
       }
 
       visibility[postData.postId] = canSee;
-    });
+    }
 
     // Set false for any missing posts
-    postIds.forEach((postId) => {
+    for (const postId of postIds) {
       if (!(postId in visibility)) {
         visibility[postId] = false;
       }
-    });
+    }
 
     return visibility;
   } catch (error) {

@@ -16,8 +16,9 @@ import {
   users,
 } from '@/db/schema';
 import type { Bindings } from '@/types';
-import { generatePostEmbedding, storePostEmbedding } from '../ai/embeddings';
-import { QdrantClient } from '../infrastructure/qdrantClient';
+// TODO: Re-enable embedding generation after fixing embedding service architecture
+// import { generatePostEmbedding, storePostEmbedding } from '../ai/embeddings';
+// import { QdrantClient } from '../infrastructure/qdrantClient';
 
 const BATCH_SIZE = 10;
 
@@ -224,39 +225,41 @@ export async function seedDatabase(
   await batchInsert(db, postHashtag, postHashtags);
   await batchInsert(db, media, mediaItems);
 
+  // TODO: Re-enable embedding generation after fixing embedding service architecture
   // 5. Generate post embeddings
-  const qdrantClient = new QdrantClient(env);
+  // const qdrantClient = new QdrantClient(env);
   let successCount = 0;
   let failureCount = 0;
 
+  console.log(`⚠️ Embedding generation temporarily disabled during cleanup`);
+
+  // TODO: Restore this embedding generation code:
   // Process embeddings in smaller batches to avoid overwhelming the AI service
-  const EMBEDDING_BATCH_SIZE = 5;
-  for (let i = 0; i < posts.length; i += EMBEDDING_BATCH_SIZE) {
-    const batch = posts.slice(i, i + EMBEDDING_BATCH_SIZE);
+  // const EMBEDDING_BATCH_SIZE = 5;
+  // for (let i = 0; i < posts.length; i += EMBEDDING_BATCH_SIZE) {
+  //   const batch = posts.slice(i, i + EMBEDDING_BATCH_SIZE);
+  //   await Promise.all(
+  //     batch.map(async (p) => {
+  //       try {
+  //         const tagsForPost = postHashtagMap[p.id] || [];
+  //         const vecData = await generatePostEmbedding(p.id, p.content, tagsForPost, env, p.userId, false);
+  //         await storePostEmbedding(vecData, env.POST_VECTORS, qdrantClient);
+  //         successCount++;
+  //       } catch (err) {
+  //         failureCount++;
+  //         console.error(`❌ Embedding failed for post ${p.id}:`, err);
+  //       }
+  //     }),
+  //   );
+  //   // Add a small delay between batches to be gentle on the AI service
+  //   if (i + EMBEDDING_BATCH_SIZE < posts.length) {
+  //     await new Promise((resolve) => setTimeout(resolve, 100));
+  //   }
+  // }
 
-    await Promise.all(
-      batch.map(async (p) => {
-        try {
-          const tagsForPost = postHashtagMap[p.id] || [];
-          const vecData = await generatePostEmbedding(p.id, p.content, tagsForPost, env, p.userId, false);
-          await storePostEmbedding(vecData, env.POST_VECTORS, qdrantClient);
-          successCount++;
-        } catch (err) {
-          failureCount++;
-          console.error(`❌ Embedding failed for post ${p.id}:`, err);
-        }
-      }),
-    );
-
-    // Add a small delay between batches to be gentle on the AI service
-    if (i + EMBEDDING_BATCH_SIZE < posts.length) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-  }
-
-  console.log(
-    `🎯 Embedding generation complete: ${successCount} successful, ${failureCount} failed`,
-  );
+  // console.log(
+  //   `🎯 Embedding generation complete: ${successCount} successful, ${failureCount} failed`,
+  // );
 
   // 6. Create comments
   const comments = [];

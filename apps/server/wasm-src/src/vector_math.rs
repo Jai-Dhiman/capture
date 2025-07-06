@@ -353,3 +353,482 @@ pub fn score_content_batch(
 
     Ok(Float32Array::from(&scores[..]))
 }
+
+// Enhanced vector operations for optimization
+#[wasm_bindgen]
+pub fn batch_normalize_vectors(vectors: &Float32Array) -> Result<Float32Array, JsValue> {
+    let mut data: Vec<f32> = vectors.to_vec();
+    let vector_len = 1024;
+    let num_vectors = data.len() / vector_len;
+
+    if data.len() % vector_len != 0 {
+        return Err(JsValue::from_str(
+            "Vector data length must be divisible by 1024",
+        ));
+    }
+
+    // Process each vector
+    for i in 0..num_vectors {
+        let start_idx = i * vector_len;
+        let end_idx = start_idx + vector_len;
+        let vector_slice = &mut data[start_idx..end_idx];
+
+        // Calculate magnitude
+        let magnitude: f32 = vector_slice.iter().map(|x| x * x).sum::<f32>().sqrt();
+
+        if magnitude > 0.0 {
+            // Normalize in place
+            for element in vector_slice.iter_mut() {
+                *element /= magnitude;
+            }
+        }
+    }
+
+    Ok(Float32Array::from(&data[..]))
+}
+
+#[wasm_bindgen]
+pub fn compute_diversity_scores(vectors: &Float32Array, threshold: f32) -> Float32Array {
+    let data: Vec<f32> = vectors.to_vec();
+    let vector_len = 1024;
+    let num_vectors = data.len() / vector_len;
+    let mut diversity_scores = vec![1.0f32; num_vectors];
+
+    // Compare each vector with all others
+    for i in 0..num_vectors {
+        let mut penalty = 0.0f32;
+        let start_i = i * vector_len;
+        let end_i = start_i + vector_len;
+        let vec_i = &data[start_i..end_i];
+
+        for j in 0..num_vectors {
+            if i != j {
+                let start_j = j * vector_len;
+                let end_j = start_j + vector_len;
+                let vec_j = &data[start_j..end_j];
+
+                // Compute cosine similarity
+                let dot_product: f32 = vec_i.iter().zip(vec_j.iter()).map(|(a, b)| a * b).sum();
+                let norm_i: f32 = vec_i.iter().map(|x| x * x).sum::<f32>().sqrt();
+                let norm_j: f32 = vec_j.iter().map(|x| x * x).sum::<f32>().sqrt();
+
+                if norm_i > 0.0 && norm_j > 0.0 {
+                    let similarity = dot_product / (norm_i * norm_j);
+                    if similarity > threshold {
+                        penalty += similarity - threshold;
+                    }
+                }
+            }
+        }
+
+        // Apply diversity penalty
+        diversity_scores[i] = (1.0 - penalty.min(1.0)).max(0.0);
+    }
+
+    Float32Array::from(&diversity_scores[..])
+}
+
+#[wasm_bindgen]
+pub fn apply_temporal_decay(scores: &Float32Array, timestamps: &[u64]) -> Float32Array {
+    if scores.length() as usize != timestamps.len() {
+        return scores.clone(); // Return original if mismatched lengths
+    }
+
+    let mut decayed_scores: Vec<f32> = scores.to_vec();
+    let current_time = js_sys::Date::now() as u64;
+    let day_ms = 24 * 60 * 60 * 1000; // milliseconds in a day
+
+    for i in 0..timestamps.len() {
+        let age_days = ((current_time - timestamps[i]) / day_ms) as f32;
+
+        // Exponential decay: score * e^(-0.1 * age_days)
+        let decay_factor = (-0.1 * age_days).exp();
+        decayed_scores[i] *= decay_factor;
+    }
+
+    Float32Array::from(&decayed_scores[..])
+}
+
+// Simplified post structure for privacy filtering
+#[wasm_bindgen]
+#[derive(Clone)]
+pub struct PostInfo {
+    id: u32,
+    user_id: u32,
+    is_private: bool,
+    hashtags: Vec<String>,
+}
+
+#[wasm_bindgen]
+impl PostInfo {
+    #[wasm_bindgen(constructor)]
+    pub fn new(id: u32, user_id: u32, is_private: bool) -> PostInfo {
+        PostInfo {
+            id,
+            user_id,
+            is_private,
+            hashtags: Vec::new(),
+        }
+    }
+
+    #[wasm_bindgen]
+    pub fn add_hashtag(&mut self, hashtag: String) {
+        self.hashtags.push(hashtag);
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn id(&self) -> u32 {
+        self.id
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn user_id(&self) -> u32 {
+        self.user_id
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn is_private(&self) -> bool {
+        self.is_private
+    }
+}
+
+#[wasm_bindgen]
+#[derive(Clone)]
+pub struct UserPermission {
+    user_id: u32,
+    blocked_users: Vec<u32>,
+    following: Vec<u32>,
+}
+
+#[wasm_bindgen]
+impl UserPermission {
+    #[wasm_bindgen(constructor)]
+    pub fn new(user_id: u32) -> UserPermission {
+        UserPermission {
+            user_id,
+            blocked_users: Vec::new(),
+            following: Vec::new(),
+        }
+    }
+
+    #[wasm_bindgen]
+    pub fn add_blocked_user(&mut self, blocked_user_id: u32) {
+        self.blocked_users.push(blocked_user_id);
+    }
+
+    #[wasm_bindgen]
+    pub fn add_following(&mut self, following_user_id: u32) {
+        self.following.push(following_user_id);
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn user_id(&self) -> u32 {
+        self.user_id
+    }
+}
+
+#[wasm_bindgen]
+pub fn batch_privacy_filter(
+    post_user_ids: &js_sys::Uint32Array,
+    is_private_flags: &js_sys::Uint8Array,
+    user_permission: &UserPermission,
+) -> js_sys::Uint32Array {
+    let mut filtered_indices = Vec::new();
+
+    let user_ids = post_user_ids.to_vec();
+    let private_flags = is_private_flags.to_vec();
+
+    let min_len = user_ids.len().min(private_flags.len());
+
+    for i in 0..min_len {
+        let post_user_id = user_ids[i];
+        let is_private = private_flags[i] != 0;
+
+        let should_include = if is_private {
+            // Private posts: only if user is following the author or is the author
+            post_user_id == user_permission.user_id()
+                || user_permission.following.contains(&post_user_id)
+        } else {
+            // Public posts: exclude if author is blocked
+            !user_permission.blocked_users.contains(&post_user_id)
+        };
+
+        if should_include {
+            filtered_indices.push(i as u32);
+        }
+    }
+
+    js_sys::Uint32Array::from(&filtered_indices[..])
+}
+
+// VectorPool for efficient memory management
+#[wasm_bindgen]
+pub struct VectorPool {
+    vectors: Vec<Vec<f32>>,
+    available: Vec<usize>,
+    max_size: usize,
+    vector_size: usize,
+}
+
+#[wasm_bindgen]
+impl VectorPool {
+    #[wasm_bindgen(constructor)]
+    pub fn new(max_size: usize, vector_size: usize) -> VectorPool {
+        let mut vectors = Vec::with_capacity(max_size);
+        let mut available = Vec::with_capacity(max_size);
+
+        // Pre-allocate vectors
+        for i in 0..max_size {
+            vectors.push(vec![0.0f32; vector_size]);
+            available.push(i);
+        }
+
+        VectorPool {
+            vectors,
+            available,
+            max_size,
+            vector_size,
+        }
+    }
+
+    #[wasm_bindgen]
+    pub fn get_vector(&mut self) -> Option<usize> {
+        self.available.pop()
+    }
+
+    #[wasm_bindgen]
+    pub fn release_vector(&mut self, index: usize) -> bool {
+        if index < self.vectors.len() && !self.available.contains(&index) {
+            // Clear the vector for reuse
+            for element in &mut self.vectors[index] {
+                *element = 0.0;
+            }
+            self.available.push(index);
+            true
+        } else {
+            false
+        }
+    }
+
+    #[wasm_bindgen]
+    pub fn get_vector_data(&self, index: usize) -> Option<Float32Array> {
+        if index < self.vectors.len() {
+            Some(Float32Array::from(&self.vectors[index][..]))
+        } else {
+            None
+        }
+    }
+
+    #[wasm_bindgen]
+    pub fn set_vector_data(&mut self, index: usize, data: &Float32Array) -> bool {
+        if index < self.vectors.len() && data.length() as usize == self.vector_size {
+            let vec_data: Vec<f32> = data.to_vec();
+            self.vectors[index].copy_from_slice(&vec_data);
+            true
+        } else {
+            false
+        }
+    }
+
+    #[wasm_bindgen]
+    pub fn available_count(&self) -> usize {
+        self.available.len()
+    }
+
+    #[wasm_bindgen]
+    pub fn total_capacity(&self) -> usize {
+        self.max_size
+    }
+
+    #[wasm_bindgen]
+    pub fn in_use_count(&self) -> usize {
+        self.max_size - self.available.len()
+    }
+
+    #[wasm_bindgen]
+    pub fn resize_pool(&mut self, new_size: usize) -> bool {
+        if new_size < self.in_use_count() {
+            // Cannot shrink below currently used vectors
+            return false;
+        }
+
+        if new_size > self.max_size {
+            // Expand the pool
+            let old_size = self.max_size;
+            for i in old_size..new_size {
+                self.vectors.push(vec![0.0f32; self.vector_size]);
+                self.available.push(i);
+            }
+        } else if new_size < self.max_size {
+            // Shrink the pool
+            self.vectors.truncate(new_size);
+            self.available.retain(|&x| x < new_size);
+        }
+
+        self.max_size = new_size;
+        true
+    }
+
+    #[wasm_bindgen]
+    pub fn reset_pool(&mut self) {
+        self.available.clear();
+        for i in 0..self.max_size {
+            for element in &mut self.vectors[i] {
+                *element = 0.0;
+            }
+            self.available.push(i);
+        }
+    }
+}
+
+// Global VectorPool instance for performance
+static mut GLOBAL_VECTOR_POOL: Option<VectorPool> = None;
+
+#[wasm_bindgen]
+pub fn initialize_global_vector_pool(max_size: usize, vector_size: usize) {
+    unsafe {
+        GLOBAL_VECTOR_POOL = Some(VectorPool::new(max_size, vector_size));
+    }
+}
+
+#[wasm_bindgen]
+pub fn get_global_vector() -> Option<usize> {
+    unsafe {
+        if let Some(ref mut pool) = GLOBAL_VECTOR_POOL {
+            pool.get_vector()
+        } else {
+            None
+        }
+    }
+}
+
+#[wasm_bindgen]
+pub fn release_global_vector(index: usize) -> bool {
+    unsafe {
+        if let Some(ref mut pool) = GLOBAL_VECTOR_POOL {
+            pool.release_vector(index)
+        } else {
+            false
+        }
+    }
+}
+
+#[wasm_bindgen]
+pub fn get_global_pool_stats() -> js_sys::Array {
+    let stats = js_sys::Array::new();
+
+    unsafe {
+        if let Some(ref pool) = GLOBAL_VECTOR_POOL {
+            stats.push(&pool.total_capacity().into());
+            stats.push(&pool.available_count().into());
+            stats.push(&pool.in_use_count().into());
+        } else {
+            stats.push(&0u32.into());
+            stats.push(&0u32.into());
+            stats.push(&0u32.into());
+        }
+    }
+
+    stats
+}
+
+// High-performance batch operations using VectorPool
+#[wasm_bindgen]
+pub struct BatchVectorProcessor {
+    pool: VectorPool,
+}
+
+#[wasm_bindgen]
+impl BatchVectorProcessor {
+    #[wasm_bindgen(constructor)]
+    pub fn new(pool_size: usize) -> BatchVectorProcessor {
+        BatchVectorProcessor {
+            pool: VectorPool::new(pool_size, 1024),
+        }
+    }
+
+    #[wasm_bindgen]
+    pub fn process_similarity_batch_pooled(
+        &mut self,
+        query_vector: &Float32Array,
+        vectors_data: &Float32Array,
+    ) -> Option<Float32Array> {
+        let query_index = self.pool.get_vector()?;
+
+        // Set query vector data
+        if !self.pool.set_vector_data(query_index, query_vector) {
+            self.pool.release_vector(query_index);
+            return None;
+        }
+
+        let vectors_len = vectors_data.length() as usize;
+        let num_vectors = vectors_len / 1024;
+        let mut similarities = Vec::with_capacity(num_vectors);
+        let data: Vec<f32> = vectors_data.to_vec();
+
+        // Process each target vector
+        for i in 0..num_vectors {
+            if let Some(target_index) = self.pool.get_vector() {
+                let start_idx = i * 1024;
+                let end_idx = start_idx + 1024;
+
+                if end_idx <= data.len() {
+                    let vector_slice = &data[start_idx..end_idx];
+                    let target_array = Float32Array::from(vector_slice);
+
+                    if self.pool.set_vector_data(target_index, &target_array) {
+                        // Compute similarity using pool vectors
+                        let query_data = self.pool.get_vector_data(query_index)?;
+                        let target_data = self.pool.get_vector_data(target_index)?;
+
+                        let similarity =
+                            compute_cosine_similarity_from_arrays(&query_data, &target_data);
+                        similarities.push(similarity);
+                    } else {
+                        similarities.push(0.0);
+                    }
+                } else {
+                    similarities.push(0.0);
+                }
+
+                self.pool.release_vector(target_index);
+            } else {
+                similarities.push(0.0);
+            }
+        }
+
+        // Release query vector
+        self.pool.release_vector(query_index);
+
+        Some(Float32Array::from(&similarities[..]))
+    }
+
+    #[wasm_bindgen]
+    pub fn get_pool_stats(&self) -> js_sys::Array {
+        let stats = js_sys::Array::new();
+        stats.push(&self.pool.total_capacity().into());
+        stats.push(&self.pool.available_count().into());
+        stats.push(&self.pool.in_use_count().into());
+        stats
+    }
+}
+
+// Helper function for cosine similarity computation
+fn compute_cosine_similarity_from_arrays(vec1: &Float32Array, vec2: &Float32Array) -> f32 {
+    if vec1.length() != vec2.length() {
+        return 0.0;
+    }
+
+    let data1: Vec<f32> = vec1.to_vec();
+    let data2: Vec<f32> = vec2.to_vec();
+
+    let dot_product: f32 = data1.iter().zip(data2.iter()).map(|(a, b)| a * b).sum();
+    let norm1: f32 = data1.iter().map(|x| x * x).sum::<f32>().sqrt();
+    let norm2: f32 = data2.iter().map(|x| x * x).sum::<f32>().sqrt();
+
+    if norm1 > 0.0 && norm2 > 0.0 {
+        dot_product / (norm1 * norm2)
+    } else {
+        0.0
+    }
+}

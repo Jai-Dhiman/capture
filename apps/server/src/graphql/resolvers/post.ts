@@ -3,7 +3,6 @@ import { nanoid } from 'nanoid';
 import { createD1Client } from '../../db';
 import * as schema from '../../db/schema';
 import { createImageService } from '../../lib/images/imageService';
-import { createVersionHistoryService } from '../../lib/database/versionHistoryService';
 import { createCachingService, CacheKeys, CacheTTL } from '../../lib/cache/cachingService';
 import { QdrantClient } from '../../lib/infrastructure/qdrantClient';
 import type { ContextType } from '../../types';
@@ -135,70 +134,9 @@ export const postResolvers = {
       }
     },
 
-    async postVersionHistory(
-      _parent: unknown,
-      { postId, limit = 10, offset = 0 }: { postId: string; limit?: number; offset?: number },
-      context: ContextType,
-    ) {
-      if (!context.user) {
-        throw new Error('Authentication required');
-      }
+    // Removed: postVersionHistory resolver for beta simplification
 
-      try {
-        const versionHistoryService = createVersionHistoryService(context.env);
-        const versions = await versionHistoryService.getVersionHistory(postId, limit, offset);
-
-        // Enrich with user data
-        const enrichedVersions = await Promise.all(
-          versions.map(async (version) => {
-            const user = await createD1Client(context.env)
-              .select()
-              .from(schema.profile)
-              .where(eq(schema.profile.userId, version.userId))
-              .get();
-
-            return {
-              ...version,
-              user,
-            };
-          }),
-        );
-
-        return enrichedVersions;
-      } catch (error) {
-        console.error('Error fetching version history:', error);
-        throw new Error(
-          `Failed to fetch version history: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        );
-      }
-    },
-
-    async postVersion(_parent: unknown, { id }: { id: string }, context: ContextType) {
-      if (!context.user) {
-        throw new Error('Authentication required');
-      }
-
-      try {
-        const versionHistoryService = createVersionHistoryService(context.env);
-        const version = await versionHistoryService.getVersion(id, context.user.id);
-
-        const user = await createD1Client(context.env)
-          .select()
-          .from(schema.profile)
-          .where(eq(schema.profile.userId, version.userId))
-          .get();
-
-        return {
-          ...version,
-          user,
-        };
-      } catch (error) {
-        console.error('Error fetching version:', error);
-        throw new Error(
-          `Failed to fetch version: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        );
-      }
-    },
+    // Removed: postVersion resolver for beta simplification
 
     async post(_parent: unknown, { id }: { id: string }, context: { env: any; user: any }) {
       if (!context.user) {
@@ -426,17 +364,7 @@ export const postResolvers = {
 
         if (!updatedDraft) throw new Error('Failed to update draft post');
 
-        // Create version history entry for draft update
-        const versionHistoryService = createVersionHistoryService(context.env);
-        await versionHistoryService.createVersion({
-          draftPostId: id,
-          version: newVersion,
-          content: updatedDraft.content,
-          editingMetadata: input.editingMetadata,
-          changeType: 'EDITED',
-          changeDescription: 'Draft updated',
-          userId: context.user.id,
-        });
+        // Removed: version history tracking for beta simplification
 
         const user = await db
           .select()
@@ -529,17 +457,7 @@ export const postResolvers = {
           );
         }
 
-        // Create version history entry for publishing
-        const versionHistoryService = createVersionHistoryService(context.env);
-        await versionHistoryService.createVersion({
-          postId,
-          version: draftPost.version,
-          content: draftPost.content,
-          editingMetadata: draftPost.editingMetadata ? JSON.parse(draftPost.editingMetadata) : null,
-          changeType: 'PUBLISHED',
-          changeDescription: `Published from draft ${id}`,
-          userId: context.user.id,
-        });
+        // Removed: version history tracking for beta simplification
 
         // Clean up draft
         await db.delete(schema.draftPostHashtag).where(eq(schema.draftPostHashtag.draftPostId, id));
@@ -631,60 +549,6 @@ export const postResolvers = {
         console.error('Draft delete error:', error);
         throw new Error(
           `Failed to delete draft post: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        );
-      }
-    },
-
-    async revertPostToVersion(
-      _parent: unknown,
-      { postId, versionId }: { postId: string; versionId: string },
-      context: ContextType,
-    ) {
-      if (!context?.user) {
-        throw new Error('Authentication required');
-      }
-
-      try {
-        const versionHistoryService = createVersionHistoryService(context.env);
-        const revertedPost = await versionHistoryService.revertToVersion(
-          postId,
-          versionId,
-          context.user.id,
-        );
-
-        const db = createD1Client(context.env);
-        const user = await db
-          .select()
-          .from(schema.profile)
-          .where(eq(schema.profile.userId, context.user.id))
-          .get();
-
-        const media = await db
-          .select()
-          .from(schema.media)
-          .where(eq(schema.media.postId, postId))
-          .all();
-
-        // Invalidate caches for reverted post
-        const cachingService = createCachingService(context.env);
-        await Promise.all([
-          cachingService.delete(CacheKeys.post(postId)),
-          cachingService.delete(CacheKeys.postVersions(postId)),
-          cachingService.invalidatePattern(CacheKeys.postPattern(postId)),
-        ]);
-
-        return {
-          ...revertedPost,
-          user,
-          media,
-          comments: [],
-          hashtags: [],
-          savedBy: [],
-        };
-      } catch (error) {
-        console.error('Post revert error:', error);
-        throw new Error(
-          `Failed to revert post: ${error instanceof Error ? error.message : 'Unknown error'}`,
         );
       }
     },
@@ -792,18 +656,6 @@ export const postResolvers = {
           userId: context.user.id,
           eventType: 'post',
           createdAt: new Date().toISOString(),
-        });
-
-        // Create initial version history entry
-        const versionHistoryService = createVersionHistoryService(context.env);
-        await versionHistoryService.createVersion({
-          postId,
-          version: 1,
-          content: input.content,
-          editingMetadata: input.editingMetadata,
-          changeType: 'CREATED',
-          changeDescription: 'Initial post creation',
-          userId: context.user.id,
         });
 
         // Invalidate relevant caches

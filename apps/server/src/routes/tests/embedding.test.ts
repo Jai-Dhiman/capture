@@ -6,13 +6,21 @@ import { createCachingService } from '../../lib/cache/cachingService';
 import { QdrantClient } from '../../lib/infrastructure/qdrantClient';
 import { wasmVectorService } from '../../lib/wasm/wasmVectorService';
 
+// Mock KV namespace
+const mockKV = {
+  get: async (key: string) => null,
+  put: async (key: string, value: string, options?: any) => {},
+  delete: async (key: string) => {},
+  list: async () => ({ keys: [] }),
+} as KVNamespace;
+
 // Mock environment for testing
 const mockEnv: Partial<Bindings> = {
   VOYAGE_API_KEY: 'test-key',
   QDRANT_URL: 'http://localhost:6333',
   QDRANT_API_KEY: 'test-key',
   QDRANT_COLLECTION_NAME: 'test_posts',
-  CACHE_KV: {} as KVNamespace,
+  CACHE_KV: mockKV,
 };
 
 describe('Embedding Service Integration', () => {
@@ -29,20 +37,23 @@ describe('Embedding Service Integration', () => {
     const testText = 'This is a test post about machine learning and AI #tech #ai';
     
     try {
-      const result = await embeddingService.generateTextEmbedding(testText, 'voyage');
+      const result = await embeddingService.generateTextEmbedding(testText);
       
       expect(result).toBeDefined();
       expect(result.vector).toBeDefined();
       expect(result.vector.length).toBe(1024);
       expect(result.provider).toBe('voyage');
       expect(result.dimensions).toBe(1024);
+      expect(result.collectionConfig).toBeDefined();
+      expect(result.collectionConfig.dimensions).toBe(1024);
       
       console.log('✅ Generated 1024-dim embedding via Voyage');
       console.log('First 5 values:', result.vector.slice(0, 5));
       
     } catch (error) {
-      console.log('⚠️ Voyage API not available for testing:', error.message);
-      expect(error.message).toContain('Voyage API key');
+      console.log('⚠️ Voyage API test error:', error.message);
+      // With proper mocks, this should not fail
+      expect(error).toBeUndefined();
     }
   });
 
@@ -61,8 +72,7 @@ describe('Embedding Service Integration', () => {
         postData.content,
         postData.hashtags,
         postData.userId,
-        postData.isPrivate,
-        'voyage'
+        postData.isPrivate
       );
 
       expect(result.embeddingResult.vector.length).toBe(1024);
@@ -145,6 +155,83 @@ describe('Embedding Service Integration', () => {
     } catch (error) {
       console.log('⚠️ Batch processing test failed:', error.message);
     }
+  });
+
+  it('should test the unified generateEmbedding method', async () => {
+    const testText = 'Unified embedding service test';
+    
+    try {
+      // Test string input
+      const textResult = await embeddingService.generateEmbedding(testText);
+      expect(textResult.vector.length).toBe(1024);
+      expect(textResult.provider).toBe('voyage');
+      
+      // Test multimodal input
+      const multimodalInput = [
+        { type: 'text' as const, content: 'Test text content' },
+        { type: 'image' as const, content: 'base64encodedimage' }
+      ];
+      
+      const multimodalResult = await embeddingService.generateEmbedding(multimodalInput);
+      expect(multimodalResult.vector.length).toBe(1024);
+      expect(multimodalResult.provider).toBe('voyage');
+      
+      console.log('✅ Unified generateEmbedding method works correctly');
+      
+    } catch (error) {
+      console.log('⚠️ Unified embedding test error:', error.message);
+      expect(error).toBeUndefined();
+    }
+  });
+
+  it('should test cache functionality', async () => {
+    const testText = 'Cache test content';
+    
+    try {
+      // First call should make API request
+      const result1 = await embeddingService.generateTextEmbedding(testText);
+      
+      // Second call should use cache (same results)
+      const result2 = await embeddingService.generateTextEmbedding(testText);
+      
+      expect(result1.vector).toEqual(result2.vector);
+      expect(result1.dimensions).toBe(result2.dimensions);
+      
+      console.log('✅ Caching functionality working');
+      
+    } catch (error) {
+      console.log('⚠️ Cache test error:', error.message);
+    }
+  });
+
+  it('should test error handling with invalid API key', async () => {
+    const invalidEnv = { ...mockEnv, VOYAGE_API_KEY: '' };
+    const cache = createCachingService(invalidEnv as Bindings);
+    
+    try {
+      const invalidService = createEmbeddingService(invalidEnv as Bindings, cache);
+      expect(() => invalidService).toThrow('Voyage API key is required');
+      console.log('✅ Error handling for missing API key works');
+    } catch (error) {
+      expect(error.message).toContain('Voyage API key is required');
+    }
+  });
+
+  it('should test service configuration options', async () => {
+    const cache = createCachingService(mockEnv as Bindings);
+    const customConfig = {
+      model: 'custom-model',
+      dimensions: 512,
+      maxRetries: 5,
+    };
+    
+    const customService = createEmbeddingService(mockEnv as Bindings, cache, customConfig);
+    
+    expect(customService.getModel()).toBe('custom-model');
+    expect(customService.getDimensions()).toBe(512);
+    expect(customService.getAvailableProviders()).toEqual(['voyage']);
+    
+    console.log('✅ Service configuration options work correctly');
   });
 });
 

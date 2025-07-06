@@ -8,114 +8,231 @@ export interface CachingService {
   getOrSet: <T>(key: string, fetcher: () => Promise<T>, ttl?: number) => Promise<T>;
 }
 
-export function createCachingService(env: Bindings): CachingService {
-  const kv = env.CACHE_KV; // Cloudflare KV namespace for caching
-  const defaultTtl = 300; // 5 minutes default TTL
-
-  return {
-    async get<T>(key: string): Promise<T | null> {
-      try {
-        const cached = await kv.get(key, 'json');
-
-        if (cached && typeof cached === 'object' && 'data' in cached && 'expires' in cached) {
-          const { data, expires } = cached as { data: T; expires: number };
-
-          if (Date.now() < expires) {
-            return data;
-          }
-          // Expired, delete it
-          await kv.delete(key);
-          return null;
-        }
-        return cached as T | null;
-      } catch (error) {
-        console.error(`[CACHE] Cache get error for ${key}:`, error);
-        return null;
-      }
-    },
-
-    async set<T>(key: string, value: T, ttl: number = defaultTtl): Promise<void> {
-      try {
-        const expires = Date.now() + ttl * 1000;
-        const cacheData = {
-          data: value,
-          expires,
-        };
-
-        // Use KV with TTL for automatic expiration
-        await kv.put(key, JSON.stringify(cacheData), {
-          expirationTtl: ttl,
-        });
-      } catch (error) {
-        console.error(`[CACHE] Cache set error for ${key}:`, error);
-        // Don't throw - caching failures shouldn't break the app
-      }
-    },
-
-    async delete(key: string): Promise<void> {
-      try {
-        await kv.delete(key);
-      } catch (error) {
-        console.error('Cache delete error:', error);
-      }
-    },
-
-    async invalidatePattern(pattern: string): Promise<void> {
-      try {
-        // KV doesn't support pattern deletion, so we'll need to track keys
-        // For now, we'll implement basic pattern matching for common patterns
-
-        if (pattern.includes('*')) {
-          // Get list of keys and filter by pattern
-          const list = await kv.list();
-          const regex = new RegExp(pattern.replace(/\*/g, '.*'));
-
-          const keysToDelete = list.keys
-            .filter((item) => regex.test(item.name))
-            .map((item) => item.name);
-
-          // Delete in batches to avoid rate limits
-          const batchSize = 10;
-          for (let i = 0; i < keysToDelete.length; i += batchSize) {
-            const batch = keysToDelete.slice(i, i + batchSize);
-            await Promise.all(batch.map((key) => kv.delete(key)));
-          }
-        } else {
-          // Direct key deletion
-          await kv.delete(pattern);
-        }
-      } catch (error) {
-        console.error('Cache invalidate pattern error:', error);
-      }
-    },
-
-    async getOrSet<T>(
-      key: string,
-      fetcher: () => Promise<T>,
-      ttl: number = defaultTtl,
-    ): Promise<T> {
-      // Try to get from cache first
-      const cached = await this.get<T>(key);
-      if (cached !== null) {
-        return cached;
-      }
-
-      // Fetch fresh data
-      try {
-        const fresh = await fetcher();
-
-        // Cache the result (fire and forget)
-        this.set(key, fresh, ttl).catch((error) => {
-          console.error('Background cache set failed:', error);
-        });
-
-        return fresh;
-      } catch (error) {
-        console.error('Fetcher error in getOrSet:', error);
-        throw error;
-      }
-    },
+export interface CacheEntry<T = any> {
+  data: T;
+  expires: number;
+  metadata: {
+    createdAt: number;
+    lastAccessed: number;
+    hitCount: number;
   };
+}
+
+export class UnifiedCachingService implements CachingService {
+  private kv: KVNamespace;
+  private defaultTtl = 300; // 5 minutes
+  private enableMetrics = true;
+
+  constructor(kvNamespace: KVNamespace, options: {
+    defaultTtl?: number;
+    enableMetrics?: boolean;
+  } = {}) {
+    this.kv = kvNamespace;
+    this.defaultTtl = options.defaultTtl || this.defaultTtl;
+    this.enableMetrics = options.enableMetrics !== false;
+  }
+
+  async get<T>(key: string): Promise<T | null> {
+    try {
+      const cached = await this.kv.get(key, 'json');
+
+      if (cached && typeof cached === 'object' && 'data' in cached && 'expires' in cached) {
+        const entry = cached as CacheEntry<T>;
+
+        if (Date.now() < entry.expires) {
+          // Update access metrics
+          if (this.enableMetrics) {
+            entry.metadata.lastAccessed = Date.now();
+            entry.metadata.hitCount++;
+            
+            // Background update of metadata
+            this.updateEntryMetadata(key, entry).catch(console.error);
+          }
+
+          return entry.data;
+        } 
+          await this.kv.delete(key);
+          return null;
+      }
+      return cached as T | null;
+    } catch (error) {
+      console.error(`[UNIFIED_CACHE] Get error for ${key}:`, error);
+      return null;
+    }
+  }
+
+  async set<T>(key: string, value: T, ttl: number = this.defaultTtl): Promise<void> {
+    try {
+      const expires = Date.now() + ttl * 1000;
+      const entry: CacheEntry<T> = {
+        data: value,
+        expires,
+        metadata: {
+          createdAt: Date.now(),
+          lastAccessed: Date.now(),
+          hitCount: 0,
+        }
+      };
+
+      // Use KV with TTL for automatic expiration
+      await this.kv.put(key, JSON.stringify(entry), {
+        expirationTtl: ttl,
+      });
+    } catch (error) {
+      console.error(`[UNIFIED_CACHE] Set error for ${key}:`, error);
+      // Don't throw - caching failures shouldn't break the app
+    }
+  }
+
+  async delete(key: string): Promise<void> {
+    try {
+      await this.kv.delete(key);
+    } catch (error) {
+      console.error(`[UNIFIED_CACHE] Delete error for ${key}:`, error);
+    }
+  }
+
+  async invalidatePattern(pattern: string): Promise<void> {
+    try {
+      if (pattern.includes('*')) {
+        // Get list of keys and filter by pattern
+        const list = await this.kv.list();
+        const regex = new RegExp(pattern.replace(/\*/g, '.*'));
+
+        const keysToDelete = list.keys
+          .filter((item) => regex.test(item.name))
+          .map((item) => item.name);
+
+        // Delete in batches to avoid rate limits
+        const batchSize = 10;
+        for (let i = 0; i < keysToDelete.length; i += batchSize) {
+          const batch = keysToDelete.slice(i, i + batchSize);
+          await Promise.all(batch.map((key) => this.kv.delete(key)));
+        }
+      } else {
+        // Direct key deletion
+        await this.kv.delete(pattern);
+      }
+    } catch (error) {
+      console.error(`[UNIFIED_CACHE] Invalidate pattern error for ${pattern}:`, error);
+    }
+  }
+
+  async getOrSet<T>(
+    key: string,
+    fetcher: () => Promise<T>,
+    ttl: number = this.defaultTtl,
+  ): Promise<T> {
+    // Try to get from cache first
+    const cached = await this.get<T>(key);
+    if (cached !== null) {
+      return cached;
+    }
+
+    // Fetch fresh data
+    try {
+      const fresh = await fetcher();
+
+      // Cache the result (fire and forget)
+      this.set(key, fresh, ttl).catch((error) => {
+        console.error(`[UNIFIED_CACHE] Background cache set failed for ${key}:`, error);
+      });
+
+      return fresh;
+    } catch (error) {
+      console.error(`[UNIFIED_CACHE] Fetcher error for ${key}:`, error);
+      throw error;
+    }
+  }
+
+  // Helper method to warm cache for frequently accessed items
+  async warmCache(patterns: string[]): Promise<void> {
+    try {
+      for (const pattern of patterns) {
+        const list = await this.kv.list();
+        const matchingKeys = list.keys
+          .filter(item => new RegExp(pattern.replace(/\*/g, '.*')).test(item.name))
+          .map(item => item.name);
+
+        // Check and refresh items that are about to expire
+        for (const key of matchingKeys.slice(0, 100)) { // Limit to 100 to avoid overwhelming
+          const cached = await this.kv.get(key, 'json');
+          if (cached && typeof cached === 'object' && 'expires' in cached) {
+            const entry = cached as CacheEntry;
+            const timeToExpiry = entry.expires - Date.now();
+            const originalTtl = entry.expires - entry.metadata.createdAt;
+            
+            // If expires within 10% of original TTL, it's a candidate for warming
+            if (timeToExpiry < originalTtl * 0.1) {
+              console.log(`[UNIFIED_CACHE] Key ${key} is about to expire, consider refreshing`);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[UNIFIED_CACHE] Cache warming error:', error);
+    }
+  }
+
+  // Clear all cache entries
+  async flush(): Promise<void> {
+    try {
+      const list = await this.kv.list();
+      const keys = list.keys.map(item => item.name);
+      
+      // Delete in batches
+      const batchSize = 10;
+      for (let i = 0; i < keys.length; i += batchSize) {
+        const batch = keys.slice(i, i + batchSize);
+        await Promise.all(batch.map(key => this.kv.delete(key)));
+      }
+      
+      console.log(`[UNIFIED_CACHE] Flushed ${keys.length} cache entries`);
+    } catch (error) {
+      console.error('[UNIFIED_CACHE] Flush error:', error);
+    }
+  }
+
+  // Private helper method
+  private async updateEntryMetadata<T>(key: string, entry: CacheEntry<T>): Promise<void> {
+    try {
+      // Get remaining TTL
+      const metadata = await this.kv.getWithMetadata(key);
+      if (metadata.metadata) {
+        // Calculate remaining TTL and update entry
+        const remainingTtl = Math.max(0, Math.floor((entry.expires - Date.now()) / 1000));
+        if (remainingTtl > 0) {
+          await this.kv.put(key, JSON.stringify(entry), {
+            expirationTtl: remainingTtl,
+          });
+        }
+      }
+    } catch (error) {
+      console.error(`[UNIFIED_CACHE] Metadata update error for ${key}:`, error);
+    }
+  }
+}
+
+// Factory function to create the service
+export function createUnifiedCachingService(env: Bindings): CachingService {
+  const kvNamespace = env.CACHE_KV; // Cloudflare KV namespace for caching
+  
+  if (!kvNamespace) {
+    console.warn('[UNIFIED_CACHE] No KV namespace provided, caching will be disabled');
+    
+    // Return a no-op implementation
+    return {
+      async get<T>(): Promise<T | null> { return null; },
+      async set(): Promise<void> { },
+      async delete(): Promise<void> { },
+      async invalidatePattern(): Promise<void> { },
+      async getOrSet<T>(_key: string, fetcher: () => Promise<T>): Promise<T> {
+        return fetcher();
+      }
+    };
+  }
+
+  return new UnifiedCachingService(kvNamespace);
 }
 
 // Cache key generators for different data types
@@ -188,3 +305,6 @@ export const CacheTTL = {
   CLIP_IMAGE_EMBEDDING: 7200, // 2 hours - image embeddings (static for same image)
   CLIP_MULTIMODAL_EMBEDDING: 3600, // 1 hour - multimodal embeddings (may change with context)
 } as const;
+
+// Export the legacy cachingService interface for backward compatibility
+export const createCachingService = createUnifiedCachingService;

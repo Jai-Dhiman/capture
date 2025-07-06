@@ -93,7 +93,7 @@ async function testPostEmbedding() {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                postId: 'test-post-' + Date.now(),
+                postId: `test-post-${Date.now()}`,
                 content: 'This is a test post about technology and innovation',
                 hashtags: ['tech', 'innovation', 'ai'],
                 userId: 'test-user-123'

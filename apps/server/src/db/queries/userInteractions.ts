@@ -184,42 +184,42 @@ export async function batchGetUserInteractions(
     const result: { [userId: string]: any } = {};
 
     // Initialize empty arrays for each user
-    userIds.forEach((userId) => {
+    for (const userId of userIds) {
       result[userId] = {
         seenPosts: [],
         blockedUsers: [],
         following: [],
         followers: [],
       };
-    });
+    }
 
     // Group seen posts by user
-    seenPostsResults.forEach((row) => {
+    for (const row of seenPostsResults) {
       if (result[row.userId]) {
         result[row.userId].seenPosts.push(row.postId);
       }
-    });
+    }
 
     // Group blocked users by blocker
-    blockedUsersResults.forEach((row) => {
+    for (const row of blockedUsersResults) {
       if (result[row.blockerId]) {
         result[row.blockerId].blockedUsers.push(row.blockedId);
       }
-    });
+    }
 
     // Group following relationships by follower
-    followingResults.forEach((row) => {
+    for (const row of followingResults) {
       if (result[row.followerId]) {
         result[row.followerId].following.push(row.followedId);
       }
-    });
+    }
 
     // Group followers by followed user
-    followersResults.forEach((row) => {
+    for (const row of followersResults) {
       if (result[row.followedId]) {
         result[row.followedId].followers.push(row.followerId);
       }
-    });
+    }
 
     return result;
   } catch (error) {

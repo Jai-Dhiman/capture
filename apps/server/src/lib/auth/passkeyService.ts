@@ -11,7 +11,7 @@ import type {
   AuthenticatorTransportFuture,
   RegistrationResponseJSON,
 } from '@simplewebauthn/types';
-import type { Bindings } from '../types';
+import type { Bindings } from '@/types';
 
 const RP_NAME = 'Capture';
 const RP_ID = 'capture-api.jai-d.workers.dev';
