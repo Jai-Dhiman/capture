@@ -35,6 +35,7 @@ export const resolvers: ResolverMap = {
     ...commentResolvers.Mutation,
     ...savedPostResolvers.Mutation,
     ...blockingResolvers.Mutation,
+    ...discoveryResolvers.Mutation,
     ...notificationResolvers.Mutation,
   },
 

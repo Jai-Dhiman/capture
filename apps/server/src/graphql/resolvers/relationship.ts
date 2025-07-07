@@ -1,11 +1,11 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, sql, inArray } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { createD1Client } from '../../db';
 import * as schema from '../../db/schema';
 import {
   createFollowRequestNotification,
   createNewFollowNotification,
-} from '../../lib/notificationService';
+} from '../../lib/services/notificationService';
 import type { ContextType } from '../../types';
 
 export const relationshipResolvers = {
@@ -30,40 +30,42 @@ export const relationshipResolvers = {
           return [];
         }
 
-        const followers = await Promise.all(
-          followerIds.map(async (followerId) => {
-            if (!followerId) return null;
+        // Batch query for all profiles to eliminate N+1 queries
+        const profiles = await db
+          .select()
+          .from(schema.profile)
+          .where(inArray(schema.profile.userId, followerIds))
+          .all();
 
-            const profile = await db
-              .select()
-              .from(schema.profile)
-              .where(eq(schema.profile.userId, followerId))
-              .get();
+        // Create a map for O(1) profile lookups
+        const profileMap = new Map(profiles.map(p => [p.userId, p]));
 
-            if (profile) {
-              if (context.user?.id) {
-                const isFollowing = await db
-                  .select()
-                  .from(schema.relationship)
-                  .where(
-                    and(
-                      eq(schema.relationship.followerId, context.user.id),
-                      eq(schema.relationship.followedId, followerId),
-                    ),
-                  )
-                  .get();
+        let followers = followerIds
+          .map(followerId => profileMap.get(followerId))
+          .filter(Boolean);
 
-                return {
-                  ...profile,
-                  isFollowing: !!isFollowing,
-                };
-              }
-              return profile;
-            }
+        // If user is authenticated, batch check following relationships
+        if (context.user?.id && followers.length > 0) {
+          const currentUserFollowing = await db
+            .select({
+              followedId: schema.relationship.followedId
+            })
+            .from(schema.relationship)
+            .where(
+              and(
+                eq(schema.relationship.followerId, context.user.id),
+                inArray(schema.relationship.followedId, followerIds)
+              )
+            )
+            .all();
 
-            return null;
-          }),
-        );
+          const followingSet = new Set(currentUserFollowing.map(r => r.followedId));
+
+          followers = followers.map(profile => ({
+            ...profile,
+            isFollowing: followingSet.has(profile.userId),
+          }));
+        }
 
         return followers.filter(Boolean);
       } catch (error) {
@@ -92,26 +94,18 @@ export const relationshipResolvers = {
           return [];
         }
 
-        const following = await Promise.all(
-          followedIds.map(async (followedId) => {
-            if (!followedId) return null;
+        // Batch query for all profiles to eliminate N+1 queries
+        const profiles = await db
+          .select()
+          .from(schema.profile)
+          .where(inArray(schema.profile.userId, followedIds))
+          .all();
 
-            const profile = await db
-              .select()
-              .from(schema.profile)
-              .where(eq(schema.profile.userId, followedId))
-              .get();
-
-            if (profile) {
-              return {
-                ...profile,
-                isFollowing: true,
-              };
-            }
-
-            return null;
-          }),
-        );
+        // Create following list with isFollowing: true for all since these are confirmed follows
+        const following = profiles.map(profile => ({
+          ...profile,
+          isFollowing: true,
+        }));
 
         return following.filter(Boolean);
       } catch (error) {

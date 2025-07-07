@@ -23,7 +23,7 @@ export function createMockBindings(): Bindings {
       dump: vi.fn(),
       _name: 'test-db',
     } as unknown as D1Database,
-    BUCKET: {
+    IMAGE_STORAGE: {
       put: vi.fn().mockResolvedValue(undefined),
       get: vi.fn().mockResolvedValue({
         arrayBuffer: async () => new ArrayBuffer(0),
@@ -48,6 +48,7 @@ export function createMockBindings(): Bindings {
         uploadId: 'test-upload-id',
         key: 'test-key',
       }),
+      createPresignedUrl: vi.fn().mockResolvedValue('https://example.com/presigned-url'),
     } as unknown as R2Bucket,
     KV: {
       get: vi.fn(),

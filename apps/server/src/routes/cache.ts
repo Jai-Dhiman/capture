@@ -1,7 +1,6 @@
 import type { Bindings, Variables } from '@/types';
 import { Hono } from 'hono';
-import { createCachingService, CacheKeys } from '../lib/cachingService';
-import { createCacheWarmingService, runRecommendationCacheWarming } from '../lib/cacheWarming';
+import { createCachingService, CacheKeys } from "@/lib/cache/cachingService";
 import { createD1Client } from '@/db';
 import * as schema from '@/db/schema';
 
@@ -20,27 +19,13 @@ cacheRouter.post('/warm', async (c) => {
   }
 
   try {
-    const warmingService = createCacheWarmingService(c.env);
+    // Cache warming functionality simplified for beta
+    const cachingService = createCachingService(c.env);
+    
+    // Basic cache warming - just clear existing cache to force fresh data
+    await cachingService.invalidatePattern('*');
 
-    // Get active users for recommendation cache warming
-    const db = createD1Client(c.env);
-    const activeUsers = await db
-      .select({ userId: schema.profile.userId })
-      .from(schema.profile)
-      .limit(50)
-      .all();
-
-    const activeUserIds = activeUsers.map((u) => u.userId);
-
-    // Run cache warming including recommendation system
-    await Promise.allSettled([
-      warmingService.warmPopularPosts(),
-      warmingService.warmRecentPosts(),
-      warmingService.warmUserFeeds(activeUserIds),
-      warmingService.warmDiscoveryFeeds(activeUserIds),
-    ]);
-
-    return c.json({ success: true, message: 'Cache warming completed' });
+    return c.json({ success: true, message: 'Cache warming completed (simplified for beta)' });
   } catch (error) {
     console.error('Cache warming error:', error);
     return c.json({ error: 'Cache warming failed' }, 500);
@@ -62,12 +47,13 @@ cacheRouter.post('/warm-recommendations/:userId', async (c) => {
   }
 
   try {
-    const warmingService = createCacheWarmingService(c.env);
-    await warmingService.warmRecommendationData(targetUserId);
+    // Simplified recommendation cache warming for beta
+    const cachingService = createCachingService(c.env);
+    await cachingService.invalidatePattern(CacheKeys.discoveryPattern(targetUserId));
 
     return c.json({
       success: true,
-      message: 'Recommendation cache warmed',
+      message: 'Recommendation cache refreshed (simplified for beta)',
       userId: targetUserId,
     });
   } catch (error) {
@@ -229,6 +215,150 @@ cacheRouter.get('/health', async (c) => {
       },
       500,
     );
+  }
+});
+
+// Basic cache operations endpoint
+cacheRouter.post('/operations', async (c) => {
+  const user = c.get('user');
+
+  if (!user) {
+    return c.json({ error: 'Authentication required' }, 401);
+  }
+
+  try {
+    const body = await c.req.json();
+    const { operation, key, value, ttl = 300 } = body;
+
+    if (!operation || !key) {
+      return c.json({ error: 'Operation and key are required' }, 400);
+    }
+
+    const cachingService = createCachingService(c.env);
+    
+    let result: unknown | { success: boolean; message: string };
+    
+    switch (operation) {
+      case 'get':
+        result = await cachingService.get(key);
+        break;
+      case 'set':
+        if (value === undefined) {
+          return c.json({ error: 'Value is required for set operation' }, 400);
+        }
+        await cachingService.set(key, value, ttl);
+        result = { success: true, message: 'Value set successfully' };
+        break;
+      case 'delete':
+        await cachingService.delete(key);
+        result = { success: true, message: 'Key deleted successfully' };
+        break;
+      case 'invalidate':
+        await cachingService.invalidatePattern(key);
+        result = { success: true, message: 'Pattern invalidated successfully' };
+        break;
+      default:
+        return c.json({ error: 'Invalid operation. Supported: get, set, delete, invalidate' }, 400);
+    }
+
+    return c.json({
+      success: true,
+      operation,
+      key,
+      result,
+    });
+  } catch (error) {
+    console.error('Cache operation error:', error);
+    return c.json({ error: 'Cache operation failed' }, 500);
+  }
+});
+
+// Simplified cache warming for specific patterns
+cacheRouter.post('/warm-pattern', async (c) => {
+  const user = c.get('user');
+
+  if (!user) {
+    return c.json({ error: 'Authentication required' }, 401);
+  }
+
+  try {
+    const body = await c.req.json();
+    const { pattern } = body;
+
+    if (!pattern) {
+      return c.json({ error: 'Pattern is required' }, 400);
+    }
+
+    const cachingService = createCachingService(c.env);
+    
+    // For now, just invalidate the pattern to force fresh data on next access
+    await cachingService.invalidatePattern(pattern);
+
+    return c.json({
+      success: true,
+      message: 'Pattern cache invalidated for warming',
+      pattern,
+    });
+  } catch (error) {
+    console.error('Pattern cache warming error:', error);
+    return c.json({ error: 'Pattern cache warming failed' }, 500);
+  }
+});
+
+// Cache key generator helper
+cacheRouter.get('/keys/:type', async (c) => {
+  const user = c.get('user');
+
+  if (!user) {
+    return c.json({ error: 'Authentication required' }, 401);
+  }
+
+  try {
+    const type = c.req.param('type');
+    const id = c.req.query('id');
+
+    if (!id && ['post', 'profile', 'user', 'discovery'].includes(type)) {
+      return c.json({ error: 'ID parameter is required for this key type' }, 400);
+    }
+
+    let key: string;
+    let pattern: string;
+
+    switch (type) {
+      case 'post':
+        key = CacheKeys.post(id!);
+        pattern = CacheKeys.postPattern(id!);
+        break;
+      case 'profile':
+        key = CacheKeys.profile(id!);
+        pattern = CacheKeys.userPattern(id!);
+        break;
+      case 'user':
+        key = CacheKeys.profile(id!);
+        pattern = CacheKeys.userPattern(id!);
+        break;
+      case 'discovery':
+        key = CacheKeys.discoveryFeed(id!);
+        pattern = CacheKeys.discoveryPattern(id!);
+        break;
+      case 'recommendation':
+        key = id ? CacheKeys.recommendationScores(id, 'sample') : 'recommendation:*';
+        pattern = id ? CacheKeys.recommendationPattern(id) : 'rec:*';
+        break;
+      default:
+        return c.json({ error: 'Invalid key type. Supported: post, profile, user, discovery, recommendation' }, 400);
+    }
+
+    return c.json({
+      success: true,
+      type,
+      id,
+      key,
+      pattern,
+    });
+  } catch (error) {
+    console.error('Cache key generation error:', error);
+    return c.json({ error: 'Cache key generation failed' }, 500);
   }
 });
 

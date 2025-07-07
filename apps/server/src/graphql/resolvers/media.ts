@@ -1,4 +1,4 @@
-import { createImageService } from '../../lib/imageService';
+import { createImageService } from '../../lib/images/imageService';
 import type { ContextType } from '../../types';
 
 export const mediaResolvers = {

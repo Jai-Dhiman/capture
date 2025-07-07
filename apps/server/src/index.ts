@@ -2,6 +2,7 @@ import { resolvers } from '@/graphql/resolvers';
 import { typeDefs } from '@/graphql/schema';
 import { authMiddleware } from '@/middleware/auth';
 import { errorHandler } from '@/middleware/errorHandler';
+import { securityHeaders, sslRedirectMiddleware } from '@/middleware/security';
 import authRouter from '@/routes/auth';
 import cacheRouter from '@/routes/cache';
 import deeplinkRouter from '@/routes/deeplink';
@@ -27,10 +28,13 @@ const app = new Hono<{
 
 app.use('*', logger());
 app.use('*', sentry());
+app.use('*', sslRedirectMiddleware());
+app.use('*', securityHeaders());
 app.use(
   '*',
   cors({
     origin: [
+      'http://localhost:5173',
       'http://localhost:8081',
       'http://localhost:8787',
       'http://localhost:19000',
@@ -40,6 +44,7 @@ app.use(
       'exp://*',
       'https://*.exp.direct',
       'https://capture-api.jai-d.workers.dev',
+      'https://cdn.capture-app.com',
     ],
     allowHeaders: ['Content-Type', 'Authorization', 'sentry-trace', 'baggage'],
     allowMethods: ['POST', 'GET', 'OPTIONS', 'DELETE', 'PUT'],
@@ -99,6 +104,7 @@ app.route('/seed', seedRouter);
 
 // Protected routes
 app.use('/api/*', authMiddleware);
+
 app.route('/api/cache', cacheRouter);
 app.route('/api/media', mediaRouter);
 app.route('/api/profile', profileRouter);

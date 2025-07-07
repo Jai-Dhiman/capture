@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, sql, inArray } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { createD1Client } from '../../db';
 import * as schema from '../../db/schema';
@@ -27,42 +27,78 @@ export const savedPostResolvers = {
           return [];
         }
 
-        const savedPosts = await Promise.all(
-          savedPostsIds.map(async ({ postId }) => {
-            if (!postId) {
-              return null;
-            }
+        // Extract post IDs for batch queries
+        const postIds = savedPostsIds.map(({ postId }) => postId).filter(Boolean);
 
-            const post = await db
-              .select()
-              .from(schema.post)
-              .where(eq(schema.post.id, postId))
-              .get();
+        if (postIds.length === 0) {
+          return [];
+        }
 
+        // Batch query for posts, users, and media to eliminate N+1 queries
+        const [posts, profiles, media] = await Promise.all([
+          // Get all posts in one query
+          db.select()
+            .from(schema.post)
+            .where(inArray(schema.post.id, postIds))
+            .all(),
+          
+          // Get all users in one query by joining with posts
+          db.select({
+            userId: schema.profile.userId,
+            id: schema.profile.id,
+            username: schema.profile.username,
+            profileImage: schema.profile.profileImage,
+            bio: schema.profile.bio,
+            verifiedType: schema.profile.verifiedType,
+            isPrivate: schema.profile.isPrivate,
+            createdAt: schema.profile.createdAt,
+            updatedAt: schema.profile.updatedAt,
+            postUserId: schema.post.userId
+          })
+            .from(schema.profile)
+            .innerJoin(schema.post, eq(schema.profile.userId, schema.post.userId))
+            .where(inArray(schema.post.id, postIds))
+            .all(),
+          
+          // Get all media in one query
+          db.select()
+            .from(schema.media)
+            .where(inArray(schema.media.postId, postIds))
+            .all()
+        ]);
+
+        // Create lookup maps for O(1) access
+        const postMap = new Map(posts.map(p => [p.id, p]));
+        const userMap = new Map(profiles.map(p => [p.postUserId, p]));
+        const mediaMap = new Map<string, typeof media>();
+        
+        // Group media by post ID
+        media.forEach(m => {
+          if (!mediaMap.has(m.postId!)) {
+            mediaMap.set(m.postId!, []);
+          }
+          mediaMap.get(m.postId!)!.push(m);
+        });
+
+        // Build final result maintaining order of saved posts
+        const savedPosts = savedPostsIds
+          .map(({ postId }) => {
+            const post = postMap.get(postId);
             if (!post) return null;
 
-            const user = await db
-              .select()
-              .from(schema.profile)
-              .where(post.userId !== null ? eq(schema.profile.userId, post.userId) : sql`FALSE`)
-              .get();
-
-            const media = await db
-              .select()
-              .from(schema.media)
-              .where(eq(schema.media.postId, post.id))
-              .all();
+            const user = userMap.get(post.userId);
+            const postMedia = mediaMap.get(post.id) || [];
 
             return {
               ...post,
               user,
-              media,
+              media: postMedia,
               comments: [],
               hashtags: [],
               savedBy: [],
             };
-          }),
-        );
+          })
+          .filter(Boolean);
 
         return savedPosts.filter(Boolean);
       } catch (error) {

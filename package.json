@@ -18,9 +18,13 @@
     "typescript": "5.5.4"
   },
   "packageManager": "pnpm@9.0.0",
-  "workspaces": ["apps/*"],
+  "workspaces": [
+    "apps/*"
+  ],
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild"],
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ],
     "overrides": {
       "esbuild": "^0.25.3"
     }

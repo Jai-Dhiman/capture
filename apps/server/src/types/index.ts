@@ -1,8 +1,8 @@
-import type { Ai, Queue } from '@cloudflare/workers-types';
+import type { Queue } from '@cloudflare/workers-types';
 
 export type Bindings = {
   DB: D1Database;
-  BUCKET: R2Bucket;
+  IMAGE_STORAGE: R2Bucket;
   KV: KVNamespace;
   REFRESH_TOKEN_KV: KVNamespace;
   Capture_Rate_Limits: KVNamespace;
@@ -24,7 +24,7 @@ export type Bindings = {
   QDRANT_URL: string;
   QDRANT_API_KEY: string;
   QDRANT_COLLECTION_NAME: string;
-  AI: Ai;
+  VOYAGE_API_KEY: string;
   POST_QUEUE: Queue<{ postId: string }>;
   USER_VECTOR_QUEUE: Queue<{ userId: string }>;
 };

@@ -1,5 +1,5 @@
 import { useAuthStore } from '@/features/auth/stores/authStore';
-import { ProfileImage } from '@/features/post/components/ProfileImage';
+import { MediaImage } from '@/features/post/components/MediaImage';
 import { useProfileStore } from '@/features/profile/stores/profileStore';
 import type { SettingsStackParamList } from '@/navigation/types';
 import AlgorithmIcon from '@assets/icons/AlgorithmIcon.svg';
@@ -125,7 +125,7 @@ export default function AccountSettingsScreen() {
         <View className="items-center my-8">
           <View className="w-20 h-20 rounded-full overflow-hidden shadow-sm mb-4">
             {profile?.profileImage ? (
-              <ProfileImage cloudflareId={profile.profileImage} />
+              <MediaImage media={profile.profileImage} width={80} circle />
             ) : (
               <View className="w-full h-full bg-stone-300" />
             )}

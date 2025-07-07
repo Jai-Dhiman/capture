@@ -4,12 +4,21 @@
   "version": "0.0.0",
   "scripts": {
     "lint": "pnpm biome check --config-path ../../biome.json .",
-    "dev": "wrangler dev src/index.ts",
-    "deploy": "wrangler deploy src/index.ts",
+    "dev": "pnpm run build:wasm && wrangler dev src/index.ts",
+    "deploy": "pnpm run build:wasm && wrangler deploy src/index.ts",
+    "build": "pnpm run build:wasm",
+    "build:wasm": "cd wasm-src && wasm-pack build --target web --out-dir ../wasm && node fix-wasm-imports.js",
+    "build:wasm:dev": "cd wasm-src && wasm-pack build --target web --dev --out-dir ../wasm && node fix-wasm-imports.js",
+    "test:wasm": "cd wasm-src && cargo test",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "wrangler d1 migrations apply capture-db",
     "test": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "ssl:setup": "node scripts/setup-cdn-ssl.js",
+    "ssl:monitor": "node scripts/monitor-ssl.js",
+    "ssl:check": "node scripts/monitor-ssl.js",
+    "edge:test": "node scripts/test-edge-cache.js",
+    "edge:test-local": "node scripts/test-edge-cache.js http://localhost:8787"
   },
   "dependencies": {
     "@apollo/server": "^4.11.3",
@@ -34,6 +43,7 @@
     "@hono/node-server": "^1.13.8",
     "drizzle-kit": "^0.30.4",
     "msw": "^2.7.0",
+    "tsx": "^4.19.2",
     "typescript": "5.5.4",
     "undici": "^7.11.0",
     "vitest": "^3.2.2",

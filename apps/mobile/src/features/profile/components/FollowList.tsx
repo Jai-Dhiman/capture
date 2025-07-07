@@ -1,4 +1,4 @@
-import { ProfileImage } from '@/features/post/components/ProfileImage';
+import { MediaImage } from '@/features/post/components/MediaImage';
 import { useSyncFollowingState } from '@/features/profile/hooks/useRelationships';
 import type { AppStackParamList } from '@/navigation/types';
 import Header from '@/shared/components/Header';
@@ -45,7 +45,7 @@ export const FollowList = ({ data, loading, onClose, currentUserId }: FollowList
         >
           {item.profileImage ? (
             <View className="w-12 h-12 rounded-full overflow-hidden">
-              <ProfileImage cloudflareId={item.profileImage} />
+              <MediaImage media={item.profileImage} width={48} circle />
             </View>
           ) : (
             <View className="w-12 h-12 rounded-full bg-gray-200" />

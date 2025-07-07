@@ -1,5 +1,5 @@
 import { EmptyState } from '@/features/feed/components/EmptyState';
-import { ProfileImage } from '@/features/post/components/ProfileImage';
+import { MediaImage } from '@/features/post/components/MediaImage';
 import { useBlockedUsers, useUnblockUser } from '@/features/profile/hooks/useBlocking';
 import type { SettingsStackParamList } from '@/navigation/types';
 import { SkeletonElement, SkeletonLoader } from '@/shared/components/SkeletonLoader';
@@ -38,7 +38,7 @@ export default function BlockedUsersScreen() {
       <View className="w-full h-16 bg-[#DCDCDE] flex-row items-center px-2 mb-2">
         <View className="w-12 h-12 rounded-full overflow-hidden bg-stone-400 shadow-sm">
           {item.profileImage ? (
-            <ProfileImage cloudflareId={item.profileImage} />
+            <MediaImage media={item.profileImage} width={48} circle />
           ) : (
             <View className="w-full h-full bg-stone-400" />
           )}

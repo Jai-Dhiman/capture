@@ -4,12 +4,12 @@ import { MotiView } from 'moti';
 import React, { useState, useEffect, memo } from 'react';
 import { Dimensions, Image, Modal, Pressable, Text, View } from 'react-native';
 import { State as GestureState, LongPressGestureHandler } from 'react-native-gesture-handler';
-import { useMediaSource } from '../hooks/useMedia';
+import { useResponsiveMediaUrl } from '../hooks/useResponsiveMedia';
 
 interface MediaImageProps {
   media: any;
   style?: any;
-  expirySeconds?: number;
+  width?: number; // For variant selection
   priority?: boolean;
   circle?: boolean;
 }
@@ -17,32 +17,30 @@ interface MediaImageProps {
 const MediaImageComponent = ({
   media,
   style = {},
-  expirySeconds = 1800,
+  width,
   circle = false,
 }: MediaImageProps) => {
   const queryClient = useQueryClient();
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const { data: imageUrl, isLoading, error, isStale } = useMediaSource(media, expirySeconds);
+  // Extract media ID from media object or string
+  const mediaId = typeof media === 'string' ? media : media?.id;
+  const { data: imageUrl, isLoading, error, isStale } = useResponsiveMediaUrl(mediaId, width);
 
   useEffect(() => {
     if (imageUrl && !isStale) {
-      const refreshTime = expirySeconds * 0.8 * 1000;
+      // R2 CDN URLs are cached for 1 hour, refresh at 45 minutes
+      const refreshTime = 45 * 60 * 1000;
       const timer = setTimeout(() => {
-        const queryKey =
-          typeof media === 'string'
-            ? ['cloudflareImageUrl', media, expirySeconds]
-            : media.storageKey
-              ? ['cloudflareImageUrl', media.storageKey, expirySeconds]
-              : ['imageUrl', media.id, expirySeconds];
-
-        queryClient.invalidateQueries({ queryKey });
+        queryClient.invalidateQueries({ 
+          queryKey: ['imageUrl', mediaId, 'medium', 'webp'] // Match the new query key format
+        });
       }, refreshTime);
 
       return () => clearTimeout(timer);
     }
-  }, [imageUrl, media, expirySeconds, isStale, queryClient]);
+  }, [imageUrl, mediaId, isStale, queryClient]);
 
   if (isLoading) {
     const containerClass = circle

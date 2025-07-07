@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "00d2d6c4-cb22-4941-9caf-97f29fc55124",
+  "id": "58884675-ee37-4123-b845-d0e6e74f5288",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "blocked_user": {
@@ -34,7 +34,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-02T23:16:36.835Z'"
+          "default": "'2025-07-07T04:36:01.069Z'"
         }
       },
       "indexes": {
@@ -160,7 +160,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-02T23:16:36.835Z'"
+          "default": "'2025-07-07T04:36:01.068Z'"
         },
         "_like_count": {
           "name": "_like_count",
@@ -197,6 +197,25 @@
           "name": "comment_parent_idx",
           "columns": [
             "parent_id"
+          ],
+          "isUnique": false
+        },
+        "comment_threading_idx": {
+          "name": "comment_threading_idx",
+          "columns": [
+            "post_id",
+            "parent_id",
+            "depth",
+            "created_at"
+          ],
+          "isUnique": false
+        },
+        "comment_popularity_idx": {
+          "name": "comment_popularity_idx",
+          "columns": [
+            "post_id",
+            "_like_count",
+            "created_at"
           ],
           "isUnique": false
         }
@@ -276,7 +295,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-02T23:16:36.835Z'"
+          "default": "'2025-07-07T04:36:01.069Z'"
         }
       },
       "indexes": {
@@ -388,7 +407,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-02T23:16:36.834Z'"
+          "default": "'2025-07-07T04:36:01.068Z'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -396,7 +415,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-02T23:16:36.834Z'"
+          "default": "'2025-07-07T04:36:01.068Z'"
         }
       },
       "indexes": {
@@ -457,7 +476,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-02T23:16:36.834Z'"
+          "default": "'2025-07-07T04:36:01.068Z'"
         }
       },
       "indexes": {
@@ -552,7 +571,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-02T23:16:36.834Z'"
+          "default": "'2025-07-07T04:36:01.067Z'"
         },
         "used_at": {
           "name": "used_at",
@@ -613,7 +632,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-02T23:16:36.835Z'"
+          "default": "'2025-07-07T04:36:01.068Z'"
         }
       },
       "indexes": {
@@ -695,7 +714,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-02T23:16:36.834Z'"
+          "default": "'2025-07-07T04:36:01.068Z'"
         }
       },
       "indexes": {
@@ -832,7 +851,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-02T23:16:36.835Z'"
+          "default": "'2025-07-07T04:36:01.069Z'"
         }
       },
       "indexes": {
@@ -854,6 +873,24 @@
           "name": "notification_read_idx",
           "columns": [
             "is_read"
+          ],
+          "isUnique": false
+        },
+        "notification_user_read_time_idx": {
+          "name": "notification_user_read_time_idx",
+          "columns": [
+            "user_id",
+            "is_read",
+            "created_at"
+          ],
+          "isUnique": false
+        },
+        "notification_user_type_idx": {
+          "name": "notification_user_type_idx",
+          "columns": [
+            "user_id",
+            "type",
+            "created_at"
           ],
           "isUnique": false
         }
@@ -937,7 +974,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-02T23:16:36.835Z'"
+          "default": "'2025-07-07T04:36:01.069Z'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -945,7 +982,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-02T23:16:36.835Z'"
+          "default": "'2025-07-07T04:36:01.069Z'"
         }
       },
       "indexes": {
@@ -1028,7 +1065,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-02T23:16:36.834Z'"
+          "default": "'2025-07-07T04:36:01.067Z'"
         },
         "last_used_at": {
           "name": "last_used_at",
@@ -1141,7 +1178,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-02T23:16:36.834Z'"
+          "default": "'2025-07-07T04:36:01.067Z'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -1149,7 +1186,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-02T23:16:36.834Z'"
+          "default": "'2025-07-07T04:36:01.067Z'"
         },
         "_save_count": {
           "name": "_save_count",
@@ -1179,6 +1216,32 @@
         "post_time_idx": {
           "name": "post_time_idx",
           "columns": [
+            "created_at"
+          ],
+          "isUnique": false
+        },
+        "post_discovery_idx": {
+          "name": "post_discovery_idx",
+          "columns": [
+            "is_draft",
+            "user_id",
+            "created_at"
+          ],
+          "isUnique": false
+        },
+        "post_popularity_idx": {
+          "name": "post_popularity_idx",
+          "columns": [
+            "_save_count",
+            "_comment_count",
+            "created_at"
+          ],
+          "isUnique": false
+        },
+        "user_posts_time_idx": {
+          "name": "user_posts_time_idx",
+          "columns": [
+            "user_id",
             "created_at"
           ],
           "isUnique": false
@@ -1226,7 +1289,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-02T23:16:36.835Z'"
+          "default": "'2025-07-07T04:36:01.069Z'"
         }
       },
       "indexes": {
@@ -1315,7 +1378,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-02T23:16:36.835Z'"
+          "default": "'2025-07-07T04:36:01.069Z'"
         }
       },
       "indexes": {
@@ -1446,7 +1509,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-02T23:16:36.834Z'"
+          "default": "'2025-07-07T04:36:01.068Z'"
         }
       },
       "indexes": {
@@ -1584,7 +1647,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-02T23:16:36.833Z'"
+          "default": "'2025-07-07T04:36:01.066Z'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -1592,7 +1655,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-02T23:16:36.833Z'"
+          "default": "'2025-07-07T04:36:01.066Z'"
         }
       },
       "indexes": {
@@ -1609,6 +1672,21 @@
             "username"
           ],
           "isUnique": true
+        },
+        "profile_privacy_idx": {
+          "name": "profile_privacy_idx",
+          "columns": [
+            "is_private",
+            "user_id"
+          ],
+          "isUnique": false
+        },
+        "profile_username_search_idx": {
+          "name": "profile_username_search_idx",
+          "columns": [
+            "username"
+          ],
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -1660,7 +1738,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-02T23:16:36.835Z'"
+          "default": "'2025-07-07T04:36:01.069Z'"
         }
       },
       "indexes": {
@@ -1749,7 +1827,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-02T23:16:36.835Z'"
+          "default": "'2025-07-07T04:36:01.068Z'"
         }
       },
       "indexes": {
@@ -1823,7 +1901,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-02T23:16:36.835Z'"
+          "default": "'2025-07-07T04:36:01.069Z'"
         }
       },
       "indexes": {
@@ -1846,6 +1924,14 @@
           "columns": [
             "user_id",
             "post_id"
+          ],
+          "isUnique": false
+        },
+        "seen_post_user_time_idx": {
+          "name": "seen_post_user_time_idx",
+          "columns": [
+            "user_id",
+            "seen_at"
           ],
           "isUnique": false
         }
@@ -1912,7 +1998,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-02T23:16:36.835Z'"
+          "default": "'2025-07-07T04:36:01.069Z'"
         }
       },
       "indexes": {
@@ -2003,7 +2089,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-02T23:16:36.827Z'"
+          "default": "'2025-07-07T04:36:01.064Z'"
         },
         "updated_at": {
           "name": "updated_at",
@@ -2011,7 +2097,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'2025-07-02T23:16:36.832Z'"
+          "default": "'2025-07-07T04:36:01.065Z'"
         }
       },
       "indexes": {
