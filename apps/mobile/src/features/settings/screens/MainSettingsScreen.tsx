@@ -1,5 +1,5 @@
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { ProfileImage } from '@/features/post/components/ProfileImage';
+import { MediaImage } from '@/features/post/components/MediaImage';
 import { useProfileStore } from '@/features/profile/stores/profileStore';
 import type { SettingsStackParamList } from '@/navigation/types';
 import AccountIcon from '@assets/icons/AccountIcon.svg';
@@ -56,7 +56,7 @@ export default function MainSettingsScreen() {
         >
           <View className="w-14 h-14 rounded-full overflow-hidden shadow-sm">
             {profile?.profileImage ? (
-              <ProfileImage cloudflareId={profile.profileImage} />
+              <MediaImage media={profile.profileImage} width={60} circle />
             ) : (
               <View className="w-full h-full bg-stone-300" />
             )}

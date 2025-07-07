@@ -27,7 +27,7 @@ import {
 import { useDeletePost } from '../hooks/usePosts';
 import { useSavePost, useUnsavePost } from '../hooks/useSavesPosts';
 import { PostMenu } from './PostMenu';
-import { ProfileImage } from './ProfileImage';
+import { MediaImage } from './MediaImage';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 
@@ -133,7 +133,12 @@ export const ThreadItem = ({ thread: initialThread, isLoading = false }: ThreadI
             className="w-12 h-12 mr-3 drop-shadow-md"
           >
             {thread.user?.profileImage ? (
-              <ProfileImage cloudflareId={thread.user.profileImage} style={{ borderRadius: 24 }} />
+              <MediaImage 
+                media={thread.user.profileImage} 
+                style={{ borderRadius: 24 }} 
+                width={48} 
+                circle 
+              />
             ) : (
               <View className="w-10 h-10 bg-stone-300 rounded-full" />
             )}

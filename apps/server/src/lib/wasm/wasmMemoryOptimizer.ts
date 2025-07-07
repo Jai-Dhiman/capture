@@ -34,7 +34,7 @@ export class WasmMemoryOptimizer {
     this.config = {
       maxVectorCacheSize: 10000, // 10K vectors max
       maxCacheAgeMs: 30 * 60 * 1000, // 30 minutes
-      gcIntervalMs: 5 * 60 * 1000, // 5 minutes
+      gcIntervalMs: 2 * 60 * 1000, // 2 minutes
       memoryThresholdBytes: 500 * 1024 * 1024, // 500MB
       batchSize: 100,
       ...config,

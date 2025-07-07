@@ -119,12 +119,10 @@ export class ImageUrlService {
           id,
           transformations,
           signature: signature || undefined,
-          timestamp: timestamp ? parseInt(timestamp) : undefined
+          timestamp: timestamp ? Number.parseInt(timestamp) : undefined
         };
-      } else {
-        // Fallback for environments without URLPattern (like Node.js tests)
-        return this.fallbackParseUrl(url);
       }
+      return this.fallbackParseUrl(url);
     } catch (error) {
       console.error('Error parsing URL:', error);
       return this.fallbackParseUrl(url);
@@ -161,7 +159,7 @@ export class ImageUrlService {
       id,
       transformations,
       signature: signature || undefined,
-      timestamp: timestamp ? parseInt(timestamp) : undefined
+      timestamp: timestamp ? Number.parseInt(timestamp) : undefined
     };
   }
 
@@ -183,13 +181,13 @@ export class ImageUrlService {
 
       switch (key) {
         case 'w':
-          transformations.width = parseInt(value);
+          transformations.width = Number.parseInt(value);
           break;
         case 'h':
-          transformations.height = parseInt(value);
+          transformations.height = Number.parseInt(value);
           break;
         case 'q':
-          transformations.quality = parseInt(value);
+          transformations.quality = Number.parseInt(value);
           break;
         case 'f':
           transformations.format = value as TransformationOptions['format'];
@@ -198,19 +196,19 @@ export class ImageUrlService {
           transformations.fit = value as TransformationOptions['fit'];
           break;
         case 'blur':
-          transformations.blur = parseFloat(value);
+          transformations.blur = Number.parseFloat(value);
           break;
         case 'brightness':
-          transformations.brightness = parseFloat(value);
+          transformations.brightness = Number.parseFloat(value);
           break;
         case 'contrast':
-          transformations.contrast = parseFloat(value);
+          transformations.contrast = Number.parseFloat(value);
           break;
         case 'saturation':
-          transformations.saturation = parseFloat(value);
+          transformations.saturation = Number.parseFloat(value);
           break;
         case 'rotate':
-          transformations.rotate = parseFloat(value);
+          transformations.rotate = Number.parseFloat(value);
           break;
         case 'flip_h':
           transformations.flip_horizontal = value === '1';

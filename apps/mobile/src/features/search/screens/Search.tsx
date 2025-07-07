@@ -1,5 +1,5 @@
 import { useAuthStore } from '@/features/auth/stores/authStore';
-import { ProfileImage } from '@/features/post/components/ProfileImage';
+import { MediaImage } from '@/features/post/components/MediaImage';
 import { useSearchHashtags } from '@/features/post/hooks/useHashtags';
 import type { AppStackParamList } from '@/navigation/types';
 import { SkeletonElement, SkeletonLoader } from '@/shared/components/SkeletonLoader';
@@ -193,7 +193,7 @@ export default function UserSearch() {
         >
           <View className="w-12 h-12 rounded-full overflow-hidden mr-4">
             {item.profileImage ? (
-              <ProfileImage cloudflareId={item.profileImage} />
+              <MediaImage media={item.profileImage} width={48} circle />
             ) : (
               <View className="w-full h-full bg-gray-200 justify-center items-center">
                 <Text className="text-gray-500 font-bold">

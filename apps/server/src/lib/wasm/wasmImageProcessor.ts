@@ -134,7 +134,7 @@ export class WasmImageProcessor {
   private isProcessing = false;
   private maxMemoryMB: number;
 
-  constructor(maxMemoryMB = 512) {
+  constructor(maxMemoryMB = 256) {
     this.maxMemoryMB = maxMemoryMB;
   }
 
@@ -385,7 +385,7 @@ export class WasmImageProcessor {
       // Memory cleanup between queue items
       if (this.processor) {
         const memoryUsage = this.processor.get_memory_usage();
-        const threshold = this.maxMemoryMB * 1024 * 1024 * 0.8;
+        const threshold = this.maxMemoryMB * 1024 * 1024 * 0.7;
         
         if (memoryUsage > threshold) {
           this.processor.clear_memory();
@@ -432,7 +432,7 @@ export class WasmImageProcessor {
     const memoryUsage = this.processor.get_memory_usage();
     const threshold = this.maxMemoryMB * 1024 * 1024 * 0.9; // 90% threshold
     
-    return memoryUsage < threshold && this.processingQueue.length < 50;
+    return memoryUsage < threshold && this.processingQueue.length < 3;
   }
 
   /**
@@ -473,7 +473,7 @@ let globalProcessor: WasmImageProcessor | null = null;
  * Get or create the global WASM image processor instance
  */
 export async function getGlobalImageProcessor(
-  maxMemoryMB = 512
+  maxMemoryMB = 256
 ): Promise<WasmImageProcessor> {
   if (!globalProcessor || globalProcessor.isDisposed()) {
     globalProcessor = new WasmImageProcessor(maxMemoryMB);
@@ -500,7 +500,7 @@ export async function processImage(
   imageData: Uint8Array,
   params: ImageTransformParams
 ): Promise<ImageProcessingResult> {
-  const processor = await getGlobalImageProcessor(512);
+  const processor = await getGlobalImageProcessor(256);
   return processor.processImage(imageData, params);
 }
 
@@ -511,6 +511,6 @@ export async function createImageVariants(
   imageData: Uint8Array,
   variants: { [key: string]: ImageTransformParams }
 ): Promise<{ [key: string]: ImageProcessingResult }> {
-  const processor = await getGlobalImageProcessor(512);
+  const processor = await getGlobalImageProcessor(256);
   return processor.createVariants(imageData, variants);
 }

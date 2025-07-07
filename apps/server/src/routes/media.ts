@@ -2,7 +2,6 @@ import type { Bindings, Variables } from '@/types';
 import { Hono } from 'hono';
 import { createImageService } from '../lib/images/imageService';
 import { createCachingService, CacheKeys, CacheTTL } from '../lib/cache/cachingService';
-import { cors } from 'hono/cors';
 import { cdnSecurityHeaders } from '../middleware/security';
 
 const mediaRouter = new Hono<{

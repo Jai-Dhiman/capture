@@ -1,5 +1,5 @@
 import { useAuthStore } from '@/features/auth/stores/authStore';
-import { ProfileImage } from '@/features/post/components/ProfileImage';
+import { MediaImage } from '@/features/post/components/MediaImage';
 import { errorService } from '@/shared/services/errorService';
 import XIcon from '@assets/icons/XIcon.svg';
 import { API_URL } from '@env';
@@ -199,8 +199,10 @@ export const CommentItem = ({ comment }: { comment: Comment }) => {
 
             <View className="w-11 h-11">
               {comment.user?.profileImage ? (
-                <ProfileImage
-                  cloudflareId={comment.user.profileImage}
+                <MediaImage
+                  media={comment.user.profileImage}
+                  width={44}
+                  circle
                   style={{ width: 44, height: 44, borderRadius: 99 }}
                 />
               ) : (

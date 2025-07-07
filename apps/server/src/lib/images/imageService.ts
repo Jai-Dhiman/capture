@@ -5,22 +5,19 @@ import { media } from '../../db/schema';
 import { nanoid } from 'nanoid';
 import { R2_CONFIG } from './r2Config';
 import { 
-  R2AuthenticationMiddleware, 
-  R2RateLimiter, 
+  type R2AuthenticationMiddleware, 
+  type R2RateLimiter, 
   createR2AuthMiddleware,
   createR2RateLimiter 
 } from './accessPolicies';
 import { createCachingService, CacheKeys, CacheTTL, type CachingService } from '../cache/cachingService';
 import { 
   WasmImageProcessor, 
-  processImage, 
-  createImageVariants,
   type ImageTransformParams,
-  type ImageProcessingResult 
 } from '../wasm/wasmImageProcessor';
-import { MetadataService, createMetadataService } from './metadataService';
-import { ImageMetadata, ImageVariant, ImageTransformation } from './metadata';
-import { CascadeDeletionService, CascadeDeletionOptions } from './cascadeDeletionService';
+import { type MetadataService, createMetadataService } from './metadataService';
+import type { ImageMetadata, ImageVariant, ImageTransformation } from './metadata';
+import { CascadeDeletionService, type CascadeDeletionOptions } from './cascadeDeletionService';
 
 function generateId(): string {
   return nanoid();
@@ -158,7 +155,7 @@ export class ImageService {
 
   async getBatchUploadUrls(
     userId: string,
-    userRole: string = 'user',
+    userRole = 'user',
     count: number,
     contentType?: string
   ): Promise<ImageUploadResult[]> {
@@ -269,12 +266,10 @@ export class ImageService {
       throw new Error(`Rate limit exceeded. Try again after ${new Date(rateLimit.resetTime).toISOString()}`);
     }
 
-    // Use the cascade deletion service for comprehensive deletion
+    // Use the simplified cascade deletion service
     const cascadeOptions: CascadeDeletionOptions = {
       permanent: options?.permanent ?? true,
-      softDelete: options?.softDelete ?? false,
-      preserveReferences: false,
-      dryRun: false
+      softDelete: options?.softDelete ?? false
     };
 
     const result = await this.cascadeDeletionService.executeCascadeDeletion(mediaId, userId, cascadeOptions);
@@ -384,12 +379,10 @@ export class ImageService {
       throw new Error(`Rate limit exceeded. Try again after ${new Date(rateLimit.resetTime).toISOString()}`);
     }
     
-    // Use the cascade deletion service for batch operations
+    // Use the simplified cascade deletion service for batch operations
     const cascadeOptions: CascadeDeletionOptions = {
       permanent: options?.permanent ?? true,
-      softDelete: options?.softDelete ?? false,
-      preserveReferences: false,
-      dryRun: false
+      softDelete: options?.softDelete ?? false
     };
 
     const batchResult = await this.cascadeDeletionService.executeBatchCascadeDeletion(mediaIds, userId, cascadeOptions);

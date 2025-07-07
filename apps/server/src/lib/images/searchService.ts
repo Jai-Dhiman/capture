@@ -1,6 +1,6 @@
 import type { Bindings } from '../../types';
 import { createCachingService, CacheKeys, CacheTTL, type CachingService } from '../cache/cachingService';
-import { 
+import type { 
   ImageMetadata, 
   MetadataSearchQuery,
   MetadataSearchResult
@@ -43,7 +43,9 @@ export class ImageSearchService {
       
       if (tagData) {
         const imageIds = JSON.parse(tagData) as string[];
-        imageIds.forEach(id => allImageIds.add(id));
+        for (const id of imageIds) {
+          allImageIds.add(id);
+        }
       }
     }
 

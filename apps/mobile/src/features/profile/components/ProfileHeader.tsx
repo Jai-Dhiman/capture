@@ -1,5 +1,5 @@
 import { NotificationButton } from '@/features/notification/components/NotificationButton';
-import { ProfileImage } from '@/features/post/components/ProfileImage';
+import { MediaImage } from '@/features/post/components/MediaImage';
 import { SkeletonElement } from '@/shared/components/SkeletonLoader';
 import BackIcon from '@assets/icons/CustomBackIcon.svg';
 import MenuDots from '@assets/icons/CustomMenuIcon.svg';
@@ -167,7 +167,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         <View className="flex-row mb-0 px-6 pt-4 bg-[#DCDCDE] pb-4">
           <View className="w-28 h-28 rounded-full bg-[#DCDCDE] drop-shadow-md">
             {profileData?.profileImage ? (
-              <ProfileImage cloudflareId={profileData.profileImage} />
+              <MediaImage media={profileData.profileImage} width={120} circle />
             ) : (
               <View className="w-full h-full bg-stone-300" />
             )}

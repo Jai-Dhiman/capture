@@ -2,12 +2,12 @@ import { useAuthStore } from '@/features/auth/stores/authStore';
 import { API_URL } from '@env';
 import { useMutation, useQuery } from '@tanstack/react-query';
 
-export const useImageUrl = (mediaId?: string, expirySeconds = 1800) => {
-  const staleTime = Math.min(expirySeconds * 1000 * 0.8, 20 * 60 * 1000);
-  const isCloudflareId = mediaId?.includes('-');
+export const useImageUrl = (mediaId?: string, variant = 'medium', format = 'webp') => {
+  // Use long cache for CDN URLs
+  const staleTime = 60 * 60 * 1000; // 1 hour
 
   return useQuery({
-    queryKey: ['imageUrl', mediaId, expirySeconds],
+    queryKey: ['imageUrl', mediaId, variant, format],
     queryFn: async () => {
       const { session } = useAuthStore.getState();
 
@@ -15,11 +15,8 @@ export const useImageUrl = (mediaId?: string, expirySeconds = 1800) => {
         throw new Error('No auth token available');
       }
 
-      const endpoint = isCloudflareId
-        ? `${API_URL}/api/media/cloudflare/${mediaId}/url?expiry=${expirySeconds}`
-        : `${API_URL}/api/media/${mediaId}/url?expiry=${expirySeconds}`;
-
-      const response = await fetch(endpoint, {
+      // Use CDN endpoint for optimized delivery
+      const response = await fetch(`${API_URL}/api/media/cdn/${mediaId}?variant=${variant}&format=${format}`, {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
@@ -34,7 +31,7 @@ export const useImageUrl = (mediaId?: string, expirySeconds = 1800) => {
     },
     enabled: !!mediaId,
     staleTime: staleTime,
-    gcTime: staleTime + 5 * 60 * 1000,
+    gcTime: staleTime + 30 * 60 * 1000, // 30 min grace
   });
 };
 
@@ -54,39 +51,40 @@ export const useUploadMedia = () => {
               Authorization: `Bearer ${session?.access_token}`,
               'Content-Type': 'application/json',
             },
+            body: JSON.stringify({
+              contentType: file.type || 'image/jpeg',
+              fileSize: file.size
+            }),
           });
 
           if (!uploadUrlResponse.ok) {
             throw new Error('Failed to get upload URL');
           }
 
-          const { uploadURL } = await uploadUrlResponse.json();
+          const { uploadURL, id } = await uploadUrlResponse.json();
 
-          const formData = new FormData();
-
+          // R2 expects direct file upload via PUT with binary data
+          let fileData;
           if (file.uri.startsWith('data:')) {
             const response = await fetch(file.uri);
-            const blob = await response.blob();
-            formData.append('file', blob, file.name);
+            fileData = await response.arrayBuffer();
           } else {
-            formData.append('file', {
-              uri: file.uri,
-              type: file.type || 'image/jpeg',
-              name: file.name || 'upload.jpg',
-            } as any);
+            // For React Native file URIs, we need to read the file
+            const response = await fetch(file.uri);
+            fileData = await response.arrayBuffer();
           }
 
           const uploadResponse = await fetch(uploadURL, {
-            method: 'POST',
-            body: formData,
+            method: 'PUT',
+            body: fileData,
+            headers: {
+              'Content-Type': file.type || 'image/jpeg',
+            },
           });
 
           if (!uploadResponse.ok) {
-            throw new Error('Failed to upload image to Cloudflare');
+            throw new Error('Failed to upload image to R2');
           }
-
-          const uploadResponseData = await uploadResponse.json();
-          const cloudflareImageId = uploadResponseData.result.id;
 
           const createRecordResponse = await fetch(`${API_URL}/api/media/image-record`, {
             method: 'POST',
@@ -95,7 +93,7 @@ export const useUploadMedia = () => {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              imageId: cloudflareImageId,
+              imageId: id, // Use the R2 ID instead of Cloudflare ID
               order: file.order,
             }),
           });
@@ -151,17 +149,21 @@ export const useCloudflareImageUrl = (cloudflareId?: string, expirySeconds = 180
   });
 };
 
-export const useMediaSource = (mediaItem: any, expirySeconds = 1800) => {
+export const useMediaSource = (mediaItem: any, variant = 'medium', format = 'webp') => {
+  // For R2 system, always use media ID
+  if (mediaItem?.id) {
+    return useImageUrl(mediaItem.id, variant, format);
+  }
+  
+  // Legacy support for storageKey or string IDs
   if (typeof mediaItem === 'string') {
-    return useCloudflareImageUrl(mediaItem, expirySeconds);
+    return useImageUrl(mediaItem, variant, format);
   }
 
   if (mediaItem?.storageKey) {
-    return useCloudflareImageUrl(mediaItem.storageKey, expirySeconds);
-  }
-
-  if (mediaItem?.id) {
-    return useImageUrl(mediaItem.id, expirySeconds);
+    // Extract ID from storageKey if needed
+    const mediaId = mediaItem.storageKey.split('/').pop()?.split('_')[0];
+    return useImageUrl(mediaId, variant, format);
   }
 
   return {

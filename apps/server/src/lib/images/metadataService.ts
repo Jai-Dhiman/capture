@@ -4,11 +4,6 @@ import {
   ImageMetadata, 
   ImageVariant, 
   ImageTransformation, 
-  ExifData,
-  MetadataSearchQuery,
-  MetadataSearchResult,
-  BulkMetadataOperation,
-  BulkOperationResult,
   MetadataValidationResult,
   MetadataStorageConfig
 } from './metadata';
@@ -30,8 +25,8 @@ export class MetadataService {
       useWorkersKV: true,
       kvNamespace: 'metadata',
       cacheTTL: 3600,
-      enableSearch: true,
-      enableAnalytics: true,
+      enableSearch: false, // Disable for beta - simple tagging only
+      enableAnalytics: false, // Disable for beta - add later for recommendations
       ...config
     };
   }

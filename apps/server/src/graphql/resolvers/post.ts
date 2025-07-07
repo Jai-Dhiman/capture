@@ -133,11 +133,6 @@ export const postResolvers = {
         );
       }
     },
-
-    // Removed: postVersionHistory resolver for beta simplification
-
-    // Removed: postVersion resolver for beta simplification
-
     async post(_parent: unknown, { id }: { id: string }, context: { env: any; user: any }) {
       if (!context.user) {
         throw new Error('Authentication required');
@@ -364,8 +359,6 @@ export const postResolvers = {
 
         if (!updatedDraft) throw new Error('Failed to update draft post');
 
-        // Removed: version history tracking for beta simplification
-
         const user = await db
           .select()
           .from(schema.profile)
@@ -456,8 +449,6 @@ export const postResolvers = {
             ),
           );
         }
-
-        // Removed: version history tracking for beta simplification
 
         // Clean up draft
         await db.delete(schema.draftPostHashtag).where(eq(schema.draftPostHashtag.draftPostId, id));
