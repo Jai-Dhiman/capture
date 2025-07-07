@@ -1,5 +1,3 @@
-import { faker } from '@faker-js/faker';
-import { nanoid } from 'nanoid';
 import type { createD1Client } from '@/db';
 import {
   blockedUser,
@@ -16,9 +14,11 @@ import {
   users,
 } from '@/db/schema';
 import type { Bindings } from '@/types';
-// TODO: Re-enable embedding generation after fixing embedding service architecture
-// import { generatePostEmbedding, storePostEmbedding } from '../ai/embeddings';
-// import { QdrantClient } from '../infrastructure/qdrantClient';
+import { faker } from '@faker-js/faker';
+import { nanoid } from 'nanoid';
+import { createEmbeddingService } from '../ai/embeddingService';
+import { createCachingService } from '../cache/cachingService';
+import { createQdrantClient } from '../infrastructure/qdrantClient';
 
 const BATCH_SIZE = 10;
 
@@ -75,38 +75,39 @@ const postCaptions = [
   'Soaking up the last bit of sunshine. ☀️',
 ];
 
-const cloudflareImageIds = [
-  'fd614351-7bdb-4898-7b99-9ee4f79e3700',
-  'ebeaae49-5880-4e07-0b3a-33660a9d5e00',
-  'b6943add-002e-467a-11f0-eb04f2894a00',
-  'eb0b1ba1-95b2-4607-5278-deefb44f4e00',
-  'ec3456eb-e0ef-40ca-870e-c3cf89793600',
-  '354bf58b-880a-418d-d1b5-b2ef3e7d0900',
-  '558fc1fa-e0ca-4a24-cc80-33f7041a3e00',
-  '86d4a478-fa99-4a45-1702-256c5199b600',
-  'acf35897-2084-4092-6717-2abf8c38a200',
-  '313f8ec1-5363-4da8-701e-1e9a4e45ce00',
-  'c6508313-0548-43e4-da5c-71ed969ed400',
-  '6b69a72c-4cf0-4584-9cf1-82374f738f00',
-  '82ac1696-e0e3-40f8-3c32-00932cbd1b00',
-  '6beaa687-0d02-4ff1-7877-baea7bdb4a00',
-  '7d907593-c14f-47c4-dc9d-6ea908ced900',
-  '6e391c56-c1f3-4748-c639-39880d900600',
-  'c544b406-3f08-43ce-7f0e-a79cbde13c00',
-  '32a15ecb-14c0-4bef-7049-147d9c3b2100',
-  '3285d359-adc0-4ccb-39e4-be0ac2a0e900',
-  'b6b02750-6198-4ce6-47a6-ddc7ffad3d00',
-  '00f5d0dd-1225-46c7-41db-c4bfa9b16200',
-  '9c3c5f57-ed3b-4e28-5304-27a4c828ed00',
-  '38a5032e-75e2-4e39-9f60-ba4f86f59100',
-  'ce6bd285-33e3-4374-f717-8c95d54b4500',
-  '05742317-255a-486a-b8c3-0892fd604a00',
-  'ac4e0814-f3ca-482f-d1c6-801f8ed95c00',
-  '34241a14-35e7-4ff3-8bdc-cefbfe8b9e00',
-  '64595be6-8a60-4a81-0be1-713c1d1eb600',
+// R2 storage keys for seeded images (these should be pre-uploaded to R2)
+const r2StorageKeys = [
+  'seed-images/photo-1.jpg',
+  'seed-images/photo-2.jpg',
+  'seed-images/photo-3.jpg',
+  'seed-images/photo-4.jpg',
+  'seed-images/photo-5.jpg',
+  'seed-images/photo-6.jpg',
+  'seed-images/photo-7.jpg',
+  'seed-images/photo-8.jpg',
+  'seed-images/photo-9.jpg',
+  'seed-images/photo-10.jpg',
+  'seed-images/photo-11.jpg',
+  'seed-images/photo-12.jpg',
+  'seed-images/photo-13.jpg',
+  'seed-images/photo-14.jpg',
+  'seed-images/photo-15.jpg',
+  'seed-images/photo-16.jpg',
+  'seed-images/photo-17.jpg',
+  'seed-images/photo-18.jpg',
+  'seed-images/photo-19.jpg',
+  'seed-images/photo-20.jpg',
+  'seed-images/photo-21.jpg',
+  'seed-images/photo-22.jpg',
+  'seed-images/photo-23.jpg',
+  'seed-images/photo-24.jpg',
+  'seed-images/photo-25.jpg',
+  'seed-images/photo-26.jpg',
+  'seed-images/photo-27.jpg',
+  'seed-images/photo-28.jpg',
 ];
 
-async function batchInsert(db: any, table: any, rows: any[]) {
+async function batchInsert(db: ReturnType<typeof createD1Client>, table: any, rows: unknown[]) {
   for (let i = 0; i < rows.length; i += BATCH_SIZE) {
     const batch = rows.slice(i, i + BATCH_SIZE);
     await db.insert(table).values(batch);
@@ -142,7 +143,7 @@ export async function seedDatabase(
       .username()
       .toLowerCase()
       .replace(/[^a-z0-9]/g, ''),
-    profileImage: cloudflareImageIds[Math.floor(Math.random() * cloudflareImageIds.length)],
+    profileImage: r2StorageKeys[Math.floor(Math.random() * r2StorageKeys.length)],
     bio: faker.lorem.sentence(),
     verifiedType: faker.helpers.arrayElement(['none', 'verified']),
     isPrivate: faker.datatype.boolean() ? 1 : 0,
@@ -213,7 +214,7 @@ export async function seedDatabase(
           userId: user.id, // Reference users.id
           postId,
           type: 'image',
-          storageKey: cloudflareImageIds[Math.floor(Math.random() * cloudflareImageIds.length)],
+          storageKey: r2StorageKeys[Math.floor(Math.random() * r2StorageKeys.length)],
           order: k,
           createdAt: new Date().toISOString(),
         });
@@ -225,41 +226,107 @@ export async function seedDatabase(
   await batchInsert(db, postHashtag, postHashtags);
   await batchInsert(db, media, mediaItems);
 
-  // TODO: Re-enable embedding generation after fixing embedding service architecture
-  // 5. Generate post embeddings
-  // const qdrantClient = new QdrantClient(env);
+  // 5. Generate post embeddings with enhanced post type detection and optimized model selection
+  // Uses voyage-3.5-lite for text-only posts and voyage-multimodal-3 for image/multimodal posts
   let successCount = 0;
   let failureCount = 0;
+  const postTypeStats = {
+    text: 0,
+    image: 0,
+    multimodal: 0,
+  };
 
-  console.log(`⚠️ Embedding generation temporarily disabled during cleanup`);
+  // Only generate embeddings if VOYAGE_API_KEY is available
+  if (env.VOYAGE_API_KEY) {
+    console.log(`🚀 Starting enhanced embedding generation for ${posts.length} posts...`);
 
-  // TODO: Restore this embedding generation code:
-  // Process embeddings in smaller batches to avoid overwhelming the AI service
-  // const EMBEDDING_BATCH_SIZE = 5;
-  // for (let i = 0; i < posts.length; i += EMBEDDING_BATCH_SIZE) {
-  //   const batch = posts.slice(i, i + EMBEDDING_BATCH_SIZE);
-  //   await Promise.all(
-  //     batch.map(async (p) => {
-  //       try {
-  //         const tagsForPost = postHashtagMap[p.id] || [];
-  //         const vecData = await generatePostEmbedding(p.id, p.content, tagsForPost, env, p.userId, false);
-  //         await storePostEmbedding(vecData, env.POST_VECTORS, qdrantClient);
-  //         successCount++;
-  //       } catch (err) {
-  //         failureCount++;
-  //         console.error(`❌ Embedding failed for post ${p.id}:`, err);
-  //       }
-  //     }),
-  //   );
-  //   // Add a small delay between batches to be gentle on the AI service
-  //   if (i + EMBEDDING_BATCH_SIZE < posts.length) {
-  //     await new Promise((resolve) => setTimeout(resolve, 100));
-  //   }
-  // }
+    try {
+      const cachingService = createCachingService(env);
+      const embeddingService = createEmbeddingService(env, cachingService);
+      const qdrantClient = createQdrantClient(env);
 
-  // console.log(
-  //   `🎯 Embedding generation complete: ${successCount} successful, ${failureCount} failed`,
-  // );
+      // Process embeddings in smaller batches to avoid overwhelming the AI service
+      const EMBEDDING_BATCH_SIZE = 5;
+      for (let i = 0; i < posts.length; i += EMBEDDING_BATCH_SIZE) {
+        const batch = posts.slice(i, i + EMBEDDING_BATCH_SIZE);
+        await Promise.all(
+          batch.map(async (p) => {
+            try {
+              const tagsForPost = postHashtagMap[p.id] || [];
+              
+              // Determine post type based on media content
+              const postMediaItems = mediaItems.filter(m => m.postId === p.id);
+              const hasMedia = postMediaItems.length > 0;
+              const hasImageMedia = postMediaItems.some(m => m.type === 'image');
+              
+              let postType: 'text' | 'image' | 'multimodal';
+              if (!hasMedia) {
+                postType = 'text';
+              } else if (hasImageMedia && p.content.trim().length > 0) {
+                postType = 'multimodal';
+              } else if (hasImageMedia) {
+                postType = 'image';
+              } else {
+                postType = 'multimodal'; // Other media types
+              }
+              
+              // Track post type statistics
+              postTypeStats[postType]++;
+              
+              // Prepare media data for future enhancement (matching queue processing structure)
+              let mediaData = null;
+              if (postType === 'image' || postType === 'multimodal') {
+                mediaData = {
+                  totalItems: postMediaItems.length,
+                  imageItems: postMediaItems.filter(m => m.type === 'image'),
+                  hasImages: hasImageMedia,
+                  storageKeys: postMediaItems.map(m => m.storageKey),
+                };
+              }
+              
+              // Generate embedding with enhanced parameters for optimal model selection
+              const { embeddingResult, metadata } = await embeddingService.generatePostEmbedding(
+                p.id,
+                p.content,
+                tagsForPost,
+                p.userId,
+                false, // isPrivate
+                'voyage', // provider
+                postType, // Enhanced: pass post type for optimal model selection
+              );
+
+              await embeddingService.storeEmbedding(p.id, embeddingResult, metadata, qdrantClient);
+              successCount++;
+              
+              // Log post type and media data for monitoring
+              if (postType !== 'text' && mediaData) {
+                console.log(`📸 ${postType} post ${p.id}: ${mediaData.totalItems} media items (${mediaData.imageItems.length} images)`);
+              }
+            } catch (err) {
+              failureCount++;
+              console.error(`❌ Embedding failed for post ${p.id}:`, err);
+            }
+          }),
+        );
+        // Add a small delay between batches to be gentle on the AI service
+        if (i + EMBEDDING_BATCH_SIZE < posts.length) {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+      }
+
+      console.log(
+        `🎯 Enhanced embedding generation complete: ${successCount} successful, ${failureCount} failed`,
+      );
+      console.log(`📊 Post type breakdown:`, postTypeStats);
+      console.log(`🔤 Text posts using voyage-3.5-lite: ${postTypeStats.text}`);
+      console.log(`🖼️ Image/multimodal posts using voyage-multimodal-3: ${postTypeStats.image + postTypeStats.multimodal}`);
+    } catch (err) {
+      console.error('❌ Failed to initialize embedding services:', err);
+      console.log('⚠️ Continuing without embeddings...');
+    }
+  } else {
+    console.log('⚠️ VOYAGE_API_KEY not found - skipping embedding generation');
+  }
 
   // 6. Create comments
   const comments = [];
@@ -334,11 +401,13 @@ export async function seedDatabase(
     profiles: seedProfiles.length,
     hashtags: hashtags.length,
     posts: posts.length,
+    media: mediaItems.length,
     comments: comments.length,
     relationships: relationships.length,
     embeddings: {
       successful: successCount,
       failed: failureCount,
+      postTypes: postTypeStats,
     },
   };
 }

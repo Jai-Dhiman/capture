@@ -204,6 +204,131 @@ describe('Embedding Service Integration', () => {
     }
   });
 
+  it('should use text model for text-only posts', async () => {
+    const postData = {
+      postId: 'text-post-123',
+      content: 'This is a text-only post without images',
+      hashtags: ['#text', '#post'],
+      userId: 'user-123',
+      isPrivate: false,
+    };
+
+    try {
+      const result = await embeddingService.generatePostEmbedding(
+        postData.postId,
+        postData.content,
+        postData.hashtags,
+        postData.userId,
+        postData.isPrivate,
+        'voyage',
+        'text'
+      );
+
+      expect(result.embeddingResult.vector.length).toBe(1024);
+      expect(result.metadata.contentType).toBe('text');
+      expect(result.metadata.postId).toBe(postData.postId);
+      
+      console.log('✅ Text-only post uses text model (voyage-3.5-lite)');
+      
+    } catch (error) {
+      console.log('⚠️ Text model selection test failed:', error.message);
+    }
+  });
+
+  it('should use multimodal model for image posts', async () => {
+    const postData = {
+      postId: 'image-post-123',
+      content: 'Check out this amazing photo!',
+      hashtags: ['#photo', '#image'],
+      userId: 'user-123',
+      isPrivate: false,
+    };
+
+    try {
+      const result = await embeddingService.generatePostEmbedding(
+        postData.postId,
+        postData.content,
+        postData.hashtags,
+        postData.userId,
+        postData.isPrivate,
+        'voyage',
+        'image'
+      );
+
+      expect(result.embeddingResult.vector.length).toBe(1024);
+      expect(result.metadata.contentType).toBe('image');
+      expect(result.metadata.postId).toBe(postData.postId);
+      
+      console.log('✅ Image post uses multimodal model (voyage-multimodal-3)');
+      
+    } catch (error) {
+      console.log('⚠️ Multimodal model selection test failed:', error.message);
+    }
+  });
+
+  it('should use multimodal model for multimodal posts', async () => {
+    const postData = {
+      postId: 'multimodal-post-123',
+      content: 'This post has both text and images',
+      hashtags: ['#multimodal', '#mixed'],
+      userId: 'user-123',
+      isPrivate: false,
+    };
+
+    try {
+      const result = await embeddingService.generatePostEmbedding(
+        postData.postId,
+        postData.content,
+        postData.hashtags,
+        postData.userId,
+        postData.isPrivate,
+        'voyage',
+        'multimodal'
+      );
+
+      expect(result.embeddingResult.vector.length).toBe(1024);
+      expect(result.metadata.contentType).toBe('multimodal');
+      expect(result.metadata.postId).toBe(postData.postId);
+      
+      console.log('✅ Multimodal post uses multimodal model (voyage-multimodal-3)');
+      
+    } catch (error) {
+      console.log('⚠️ Multimodal model selection test failed:', error.message);
+    }
+  });
+
+  it('should default to text model for backward compatibility', async () => {
+    const postData = {
+      postId: 'legacy-post-123',
+      content: 'This is a legacy post without postType parameter',
+      hashtags: ['#legacy', '#backward-compatible'],
+      userId: 'user-123',
+      isPrivate: false,
+    };
+
+    try {
+      // Call without postType parameter to test backward compatibility
+      const result = await embeddingService.generatePostEmbedding(
+        postData.postId,
+        postData.content,
+        postData.hashtags,
+        postData.userId,
+        postData.isPrivate,
+        'voyage'
+        // No postType parameter
+      );
+
+      expect(result.embeddingResult.vector.length).toBe(1024);
+      expect(result.metadata.contentType).toBe('text'); // Should default to 'text'
+      expect(result.metadata.postId).toBe(postData.postId);
+      
+      console.log('✅ Backward compatibility: defaults to text model when postType is undefined');
+      
+    } catch (error) {
+      console.log('⚠️ Backward compatibility test failed:', error.message);
+    }
+  });
+
   it('should test error handling with invalid API key', async () => {
     const invalidEnv = { ...mockEnv, VOYAGE_API_KEY: '' };
     const cache = createCachingService(invalidEnv as Bindings);

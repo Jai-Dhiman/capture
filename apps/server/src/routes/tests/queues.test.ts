@@ -164,6 +164,148 @@ describe('Queue Handlers', () => {
       expect(mockSend).toHaveBeenCalledWith({ userId: 'test-user-id' });
     });
 
+    it('should determine content type for text-only posts', async () => {
+      const mockAck = vi.fn();
+      const mockRetry = vi.fn();
+      const mockSend = vi.fn();
+
+      // Mock successful post lookup
+      mockGet.mockResolvedValueOnce({
+        id: 'text-post-id',
+        content: 'This is a text-only post',
+        userId: 'test-user-id',
+        authorIsPrivate: false,
+      });
+
+      // Mock hashtags lookup  
+      mockAll
+        .mockResolvedValueOnce([{ name: 'text' }]) // Hashtags
+        .mockResolvedValueOnce([]); // No media records
+
+      // Mock successful embedding generation with postType
+      mockGeneratePostEmbedding.mockResolvedValueOnce({
+        embeddingResult: {
+          vector: [0.1, 0.2, 0.3],
+          dimensions: 3,
+          provider: 'voyage',
+          collectionConfig: {
+            name: 'test-collection',
+            dimensions: 3,
+            distance: 'Cosine',
+          },
+        },
+        metadata: {
+          postId: 'text-post-id',
+          userId: 'test-user-id',
+          text: 'This is a text-only post #text',
+          createdAt: '2023-01-01T00:00:00.000Z',
+          isPrivate: false,
+          contentType: 'text',
+          embeddingProvider: 'voyage',
+        },
+      });
+
+      mockEnv.USER_VECTOR_QUEUE.send = mockSend;
+
+      const batch: MessageBatch<{ postId: string }> = {
+        messages: [
+          {
+            body: { postId: 'text-post-id' },
+            id: 'msg-text',
+            ack: mockAck,
+            retry: mockRetry,
+          } as any,
+        ],
+        queue: 'test-queue',
+        retryAll: vi.fn(),
+        ackAll: vi.fn(),
+      } as any;
+
+      await handlePostQueue(batch, mockEnv);
+
+      expect(mockAck).toHaveBeenCalled();
+      expect(mockGeneratePostEmbedding).toHaveBeenCalledWith(
+        'text-post-id',
+        'This is a text-only post',
+        ['text'],
+        'test-user-id',
+        false,
+        'voyage',
+        'text'
+      );
+    });
+
+    it('should determine content type for image posts', async () => {
+      const mockAck = vi.fn();
+      const mockRetry = vi.fn();
+      const mockSend = vi.fn();
+
+      // Mock successful post lookup
+      mockGet.mockResolvedValueOnce({
+        id: 'image-post-id',
+        content: 'Check out this photo!',
+        userId: 'test-user-id',
+        authorIsPrivate: false,
+      });
+
+      // Mock hashtags and media lookup
+      mockAll
+        .mockResolvedValueOnce([{ name: 'photo' }]) // Hashtags
+        .mockResolvedValueOnce([{ type: 'image', id: 'img-1', storageKey: 'images/img-1', order: 0 }]); // Media records
+
+      // Mock successful embedding generation with postType
+      mockGeneratePostEmbedding.mockResolvedValueOnce({
+        embeddingResult: {
+          vector: [0.1, 0.2, 0.3],
+          dimensions: 3,
+          provider: 'voyage',
+          collectionConfig: {
+            name: 'test-collection',
+            dimensions: 3,
+            distance: 'Cosine',
+          },
+        },
+        metadata: {
+          postId: 'image-post-id',
+          userId: 'test-user-id',
+          text: 'Check out this photo! #photo',
+          createdAt: '2023-01-01T00:00:00.000Z',
+          isPrivate: false,
+          contentType: 'multimodal',
+          embeddingProvider: 'voyage',
+        },
+      });
+
+      mockEnv.USER_VECTOR_QUEUE.send = mockSend;
+
+      const batch: MessageBatch<{ postId: string }> = {
+        messages: [
+          {
+            body: { postId: 'image-post-id' },
+            id: 'msg-image',
+            ack: mockAck,
+            retry: mockRetry,
+          } as any,
+        ],
+        queue: 'test-queue',
+        retryAll: vi.fn(),
+        ackAll: vi.fn(),
+      } as any;
+
+      await handlePostQueue(batch, mockEnv);
+
+      expect(mockAck).toHaveBeenCalled();
+      expect(mockGeneratePostEmbedding).toHaveBeenCalledWith(
+        'image-post-id',
+        'Check out this photo!',
+        ['photo'],
+        'test-user-id',
+        false,
+        'voyage',
+        'multimodal' // Has both image and text content
+      );
+    });
+
     it('should retry if post is not found', async () => {
       const mockAck = vi.fn();
       const mockRetry = vi.fn();

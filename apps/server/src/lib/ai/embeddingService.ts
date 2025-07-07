@@ -393,6 +393,21 @@ export class EmbeddingService {
     });
   }
 
+  /**
+   * Generates embeddings for post content with optimized model selection based on post type.
+   * 
+   * @param postId - Unique identifier for the post
+   * @param content - The post content text
+   * @param hashtags - Array of hashtags associated with the post
+   * @param userId - ID of the user who created the post
+   * @param isPrivate - Whether the post is private
+   * @param provider - Embedding provider to use (default: 'voyage')
+   * @param postType - Type of post content for optimal model selection:
+   *   - 'text': Uses voyage-3.5-lite for text-only content (default for backward compatibility)
+   *   - 'image': Uses voyage-multimodal-3 for image posts
+   *   - 'multimodal': Uses voyage-multimodal-3 for mixed content
+   * @returns Promise resolving to embedding result and metadata
+   */
   async generatePostEmbedding(
     postId: string,
     content: string,
@@ -400,6 +415,7 @@ export class EmbeddingService {
     userId: string,
     isPrivate: boolean,
     provider: EmbeddingProvider = 'voyage',
+    postType?: 'text' | 'image' | 'multimodal',
   ): Promise<{
     embeddingResult: EmbeddingResult;
     metadata: {
@@ -413,7 +429,27 @@ export class EmbeddingService {
     };
   }> {
     const text = content + (hashtags.length > 0 ? ` ${hashtags.join(' ')}` : '');
-    const embeddingResult = await this.generateTextEmbedding(text);
+    
+    // Model selection logic based on post type
+    // Default to text-only for backward compatibility
+    const effectivePostType = postType || 'text';
+    
+    let embeddingResult: EmbeddingResult;
+    
+    if (effectivePostType === 'text') {
+      // Use text-only model (voyage-3.5-lite) for better performance on text-only content
+      embeddingResult = await this.generateTextEmbedding(text);
+    } else {
+      // Use multimodal model (voyage-multimodal-3) for image or multimodal content
+      // Create multimodal input format for the text content
+      const multimodalInput: MultimodalInput[] = [
+        {
+          type: 'text',
+          content: text,
+        },
+      ];
+      embeddingResult = await this.generateMultimodalEmbedding(multimodalInput);
+    }
 
     const metadata = {
       postId,
@@ -421,7 +457,7 @@ export class EmbeddingService {
       text,
       createdAt: new Date().toISOString(),
       isPrivate,
-      contentType: 'text',
+      contentType: effectivePostType,
       embeddingProvider: provider,
     };
 
