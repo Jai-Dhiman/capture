@@ -244,6 +244,7 @@ export const CacheKeys = {
   userPosts: (userId: string) => `user_posts:${userId}`,
   profile: (userId: string) => `profile:${userId}`,
   media: (mediaId: string) => `media:${mediaId}`,
+  metadata: (imageId: string) => `metadata:${imageId}`,
   mediaUrl: (storageKey: string, variant?: string, format?: string) => 
     `media_url:${storageKey}${variant ? `:${variant}` : ''}${format ? `:${format}` : ''}`,
   cdnUrl: (mediaId: string, variant?: string, format?: string) =>
@@ -277,12 +278,17 @@ export const CacheKeys = {
   voyageMultimodalEmbedding: (inputHash: string, model: string, dimensions: number) =>
     `voyage_multimodal_embedding:${model}:${dimensions}:${inputHash}`,
 
+  // Image transformation cache keys
+  transformedImage: (imageId: string, transformations: any) => 
+    `transformed_image:${imageId}:${JSON.stringify(transformations)}`,
+  
   // Pattern helpers for invalidation
   userPattern: (userId: string) => `*${userId}*`,
   postPattern: (postId: string) => `*post*${postId}*`,
   mediaPattern: (mediaId: string) => `*${mediaId}*`,
   mediaUrlPattern: (storageKey: string) => `media_url:${storageKey}*`,
   cdnUrlPattern: (mediaId: string) => `cdn_url:${mediaId}*`,
+  transformedImagePattern: (imageId: string) => `transformed_image:${imageId}:*`,
   recommendationPattern: (userId: string) => `*rec*${userId}*`,
   discoveryPattern: (userId: string) => `discovery_feed:${userId}:*`,
   clipEmbeddingPattern: (model: string) => `clip_*_embedding:${model}:*`,
@@ -298,6 +304,7 @@ export const CacheTTL = {
   FEED: 120, // 2 minutes - for feeds
   PROFILE: 600, // 10 minutes - for profiles
   MEDIA: 3600, // 1 hour - for media metadata
+  METADATA: 3600, // 1 hour - for image metadata
 
   // Recommendation system TTLs
   USER_VECTOR: 1800, // 30 minutes - user interest vectors

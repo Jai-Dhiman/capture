@@ -5,23 +5,114 @@
  * including memory management, error handling, and performance optimization.
  */
 
-import { 
-  Vector1024, 
-  DiscoveryScorer, 
-  BatchProcessor,
-  VectorPool,
-  BatchVectorProcessor,
-  PostInfo,
-  UserPermission,
-  batch_normalize_vectors,
-  compute_diversity_scores,
-  apply_temporal_decay,
-  batch_privacy_filter,
-  initialize_global_vector_pool,
-  get_global_vector,
-  release_global_vector,
-  get_global_pool_stats
-} from '../../../wasm/capture_wasm.js';
+// Dynamic imports for WASM module to handle Cloudflare Workers properly
+let wasmModule: any = null;
+let wasmInitialized = false;
+let wasmInitPromise: Promise<any> | null = null;
+
+// WASM function references - populated after initialization
+let initialize_global_vector_pool: (max_size: number, vector_size: number) => void;
+let get_global_vector: () => number | undefined;
+let release_global_vector: (index: number) => boolean;
+let get_global_pool_stats: () => any[];
+let batch_normalize_vectors: (vectors: Float32Array) => Float32Array;
+let compute_diversity_scores: (vectors: Float32Array, threshold: number) => Float32Array;
+let apply_temporal_decay: (scores: Float32Array, timestamps: BigUint64Array) => Float32Array;
+let batch_privacy_filter: (post_user_ids: Uint32Array, is_private_flags: Uint8Array, user_permission: any) => Uint32Array;
+let Vector1024: any;
+let DiscoveryScorer: any;
+let BatchProcessor: any;
+let VectorPool: any;
+let BatchVectorProcessor: any;
+let PostInfo: any;
+let UserPermission: any;
+
+/**
+ * Initialize WASM module dynamically
+ */
+async function initializeWasmModule(): Promise<void> {
+  if (wasmInitialized) return;
+  
+  if (wasmInitPromise) {
+    return wasmInitPromise;
+  }
+
+  wasmInitPromise = (async () => {
+    try {
+      console.log('Initializing WASM module...');
+      
+      // Dynamic import for Cloudflare Workers compatibility
+      wasmModule = await import('../../../wasm/capture_wasm.js');
+      
+      // For Cloudflare Workers, we need to initialize with the WASM binary
+      try {
+        const wasmBinary = await import('../../../wasm/capture_wasm_bg.wasm');
+        
+        // Initialize with the WASM binary
+        if (wasmModule.initSync && wasmBinary.default) {
+          wasmModule.initSync({ module: wasmBinary.default });
+        } else if (wasmModule.default) {
+          await wasmModule.default({ module: wasmBinary.default });
+        }
+      } catch (error) {
+        console.warn('Failed to initialize with binary, trying default init:', error);
+        // Fallback to default initialization
+        if (wasmModule.default) {
+          await wasmModule.default();
+        }
+      }
+
+      // Call init_wasm if available
+      if (wasmModule.init_wasm) {
+        wasmModule.init_wasm();
+      }
+
+      // Assign function references
+      initialize_global_vector_pool = wasmModule.initialize_global_vector_pool;
+      get_global_vector = wasmModule.get_global_vector;
+      release_global_vector = wasmModule.release_global_vector;
+      get_global_pool_stats = wasmModule.get_global_pool_stats;
+      batch_normalize_vectors = wasmModule.batch_normalize_vectors;
+      compute_diversity_scores = wasmModule.compute_diversity_scores;
+      apply_temporal_decay = wasmModule.apply_temporal_decay;
+      batch_privacy_filter = wasmModule.batch_privacy_filter;
+      Vector1024 = wasmModule.Vector1024;
+      DiscoveryScorer = wasmModule.DiscoveryScorer;
+      BatchProcessor = wasmModule.BatchProcessor;
+      VectorPool = wasmModule.VectorPool;
+      BatchVectorProcessor = wasmModule.BatchVectorProcessor;
+      PostInfo = wasmModule.PostInfo;
+      UserPermission = wasmModule.UserPermission;
+
+      // Verify critical functions are available
+      if (!initialize_global_vector_pool) {
+        throw new Error('initialize_global_vector_pool function not available after WASM initialization');
+      }
+
+      wasmInitialized = true;
+      console.log('WASM module initialized successfully');
+    } catch (error) {
+      wasmInitPromise = null;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to initalize WASM module: ${errorMessage}`);
+    }
+  })();
+
+  return wasmInitPromise;
+}
+
+/**
+ * Ensure WASM is initialized before use
+ */
+async function ensureWasmInitialized(): Promise<void> {
+  if (!wasmInitialized) {
+    await initializeWasmModule();
+  }
+  
+  if (!wasmInitialized) {
+    throw new Error('WASM module failed to initialize');
+  }
+}
 
 import { wasmMemoryOptimizer } from './wasmMemoryOptimizer.js';
 
@@ -51,20 +142,20 @@ export interface ScoredContent extends ContentItem {
 }
 
 /**
- * Helper class for managing Vector1024 instances with automatic cleanup
+ * Managed Vector class for automatic memory management
  */
 export class ManagedVector1024 {
-  private vector: Vector1024;
+  private vector: any; // Use any instead of Vector1024 type
   private disposed = false;
 
   constructor(data: Float32Array) {
-    if (data.length !== 1024) {
-      throw new Error('Vector data must be exactly 1024 dimensions');
+    if (!Vector1024) {
+      throw new Error('WASM not initialized. Call ensureWasmInitialized() first.');
     }
     this.vector = new Vector1024(data);
   }
 
-  get instance(): Vector1024 {
+  get instance(): any { // Use any instead of Vector1024 type
     if (this.disposed) {
       throw new Error('Vector has been disposed');
     }
@@ -72,7 +163,7 @@ export class ManagedVector1024 {
   }
 
   dispose(): void {
-    if (!this.disposed) {
+    if (!this.disposed && this.vector) {
       this.vector.free();
       this.disposed = true;
     }
@@ -98,17 +189,21 @@ export class ManagedVector1024 {
 }
 
 /**
- * Helper class for managing DiscoveryScorer with automatic cleanup
+ * Managed DiscoveryScorer with automatic cleanup
  */
 export class ManagedDiscoveryScorer {
-  private scorer: DiscoveryScorer;
+  private scorer: any; // Use any instead of DiscoveryScorer type
   private userVector: ManagedVector1024;
   private disposed = false;
 
   constructor(userPreferences: Float32Array, weights?: ScoringWeights) {
+    if (!DiscoveryScorer || !Vector1024) {
+      throw new Error('WASM not initialized. Call ensureWasmInitialized() first.');
+    }
+    
     this.userVector = new ManagedVector1024(userPreferences);
     this.scorer = new DiscoveryScorer(this.userVector.instance);
-
+    
     if (weights) {
       this.updateWeights(weights);
     }
@@ -141,7 +236,7 @@ export class ManagedDiscoveryScorer {
   }
 
   dispose(): void {
-    if (!this.disposed) {
+    if (!this.disposed && this.scorer) {
       this.scorer.free();
       this.userVector.dispose();
       this.disposed = true;
@@ -150,13 +245,16 @@ export class ManagedDiscoveryScorer {
 }
 
 /**
- * Helper class for batch processing with automatic cleanup
+ * Managed BatchProcessor for batch operations
  */
 export class ManagedBatchProcessor {
-  private processor: BatchProcessor;
+  private processor: any; // Use any instead of BatchProcessor type
   private disposed = false;
 
   constructor(batchSize = 100) {
+    if (!BatchProcessor) {
+      throw new Error('WASM not initialized. Call ensureWasmInitialized() first.');
+    }
     this.processor = new BatchProcessor(batchSize);
   }
 
@@ -203,7 +301,7 @@ export class ManagedBatchProcessor {
   }
 
   dispose(): void {
-    if (!this.disposed) {
+    if (!this.disposed && this.processor) {
       this.processor.free();
       this.disposed = true;
     }
@@ -398,14 +496,17 @@ export interface PrivacyFilterOptions {
  * Managed VectorPool for efficient memory management
  */
 export class ManagedVectorPool {
-  private pool: VectorPool;
+  private pool: any; // Use any instead of VectorPool type
   private disposed = false;
 
   constructor(maxSize: number, vectorSize = 1024) {
+    if (!VectorPool) {
+      throw new Error('WASM not initialized. Call ensureWasmInitialized() first.');
+    }
     this.pool = new VectorPool(maxSize, vectorSize);
   }
 
-  get instance(): VectorPool {
+  get instance(): any { // Use any instead of VectorPool type
     if (this.disposed) {
       throw new Error('VectorPool has been disposed');
     }
@@ -455,7 +556,7 @@ export class ManagedVectorPool {
   }
 
   dispose(): void {
-    if (!this.disposed) {
+    if (!this.disposed && this.pool) {
       this.pool.free();
       this.disposed = true;
     }
@@ -463,17 +564,20 @@ export class ManagedVectorPool {
 }
 
 /**
- * Enhanced Batch Vector Processor with VectorPool
+ * Managed BatchVectorProcessor for batch operations
  */
 export class ManagedBatchVectorProcessor {
-  private processor: BatchVectorProcessor;
+  private processor: any; // Use any instead of BatchVectorProcessor type
   private disposed = false;
 
   constructor(poolSize: number) {
+    if (!BatchVectorProcessor) {
+      throw new Error('WASM not initialized. Call ensureWasmInitialized() first.');
+    }
     this.processor = new BatchVectorProcessor(poolSize);
   }
 
-  get instance(): BatchVectorProcessor {
+  get instance(): any { // Use any instead of BatchVectorProcessor type
     if (this.disposed) {
       throw new Error('BatchVectorProcessor has been disposed');
     }
@@ -501,7 +605,7 @@ export class ManagedBatchVectorProcessor {
   }
 
   dispose(): void {
-    if (!this.disposed) {
+    if (!this.disposed && this.processor) {
       this.processor.free();
       this.disposed = true;
     }
@@ -512,67 +616,66 @@ export class ManagedBatchVectorProcessor {
  * Optimized Vector Operations
  */
 export namespace OptimizedVectorOps {
-  const performanceMonitor = WasmPerformanceMonitor.getInstance();
 
   /**
-   * Batch normalize vectors in place (returns new normalized vectors)
+   * Batch normalize vectors using WASM
    */
   export async function batchNormalizeVectors(vectors: Float32Array): Promise<Float32Array> {
-    return performanceMonitor.measureOperation('batch-normalize', () => {
-      return batch_normalize_vectors(vectors);
-    });
+    await ensureWasmInitialized();
+    if (!batch_normalize_vectors) {
+      throw new Error('batch_normalize_vectors not available');
+    }
+    return batch_normalize_vectors(vectors);
   }
 
   /**
-   * Compute diversity scores for a batch of vectors
+   * Compute diversity scores using WASM
    */
-  export async function computeDiversityScores(
-    vectors: Float32Array,
-    threshold = 0.8,
-  ): Promise<Float32Array> {
-    return performanceMonitor.measureOperation('diversity-scores', () => {
-      return compute_diversity_scores(vectors, threshold);
-    });
+  export async function computeDiversityScores(vectors: Float32Array, threshold: number): Promise<Float32Array> {
+    await ensureWasmInitialized();
+    if (!compute_diversity_scores) {
+      throw new Error('compute_diversity_scores not available');
+    }
+    return compute_diversity_scores(vectors, threshold);
   }
 
   /**
-   * Apply temporal decay to scores based on timestamps
+   * Apply temporal decay using WASM
    */
-  export async function applyTemporalDecay(
-    scores: Float32Array,
-    timestamps: BigUint64Array,
-  ): Promise<Float32Array> {
-    return performanceMonitor.measureOperation('temporal-decay', () => {
-      return apply_temporal_decay(scores, timestamps);
-    });
+  export async function applyTemporalDecay(scores: Float32Array, timestamps: BigUint64Array): Promise<Float32Array> {
+    await ensureWasmInitialized();
+    if (!apply_temporal_decay) {
+      throw new Error('apply_temporal_decay not available');
+    }
+    return apply_temporal_decay(scores, timestamps);
   }
 
   /**
-   * Filter posts based on privacy settings and user permissions
+   * Apply privacy filter using WASM
    */
   export async function batchPrivacyFilter(
-    postUserIds: Uint32Array,
-    isPrivateFlags: Uint8Array,
-    options: PrivacyFilterOptions,
+    userIds: Uint32Array,
+    privateFlags: Uint8Array,
+    userPermission: { userId: number; blockedUsers: number[]; following: number[] }
   ): Promise<Uint32Array> {
-    return performanceMonitor.measureOperation('privacy-filter', () => {
-      const userPermission = new UserPermission(options.userId);
-      
-      // Add blocked users
-      for (const blockedUserId of options.blockedUsers) {
-        userPermission.add_blocked_user(blockedUserId);
-      }
-      
-      // Add following
-      for (const followingUserId of options.following) {
-        userPermission.add_following(followingUserId);
-      }
-
-      const result = batch_privacy_filter(postUserIds, isPrivateFlags, userPermission);
-      userPermission.free();
-      
-      return result;
-    });
+    await ensureWasmInitialized();
+    if (!batch_privacy_filter || !UserPermission) {
+      throw new Error('Privacy filter functions not available');
+    }
+    
+    const permission = new UserPermission(userPermission.userId);
+    for (const id of userPermission.blockedUsers) {
+      permission.add_blocked_user(id);
+    }
+    for (const id of userPermission.following) {
+      permission.add_following(id);
+    }
+    
+    try {
+      return batch_privacy_filter(userIds, privateFlags, permission);
+    } finally {
+      permission.free();
+    }
   }
 }
 
@@ -585,7 +688,8 @@ export namespace GlobalVectorPoolManager {
   /**
    * Initialize the global vector pool
    */
-  export function initializeGlobalPool(maxSize: number, vectorSize = 1024): void {
+  export async function initializeGlobalPool(maxSize: number, vectorSize = 1024): Promise<void> {
+    await ensureWasmInitialized();
     initialize_global_vector_pool(maxSize, vectorSize);
     initialized = true;
   }
@@ -593,30 +697,33 @@ export namespace GlobalVectorPoolManager {
   /**
    * Get a vector from the global pool
    */
-  export function getGlobalVector(): number | null {
+  export async function getGlobalVector(): Promise<number | null> {
     if (!initialized) {
       throw new Error('Global vector pool not initialized. Call initializeGlobalPool() first.');
     }
+    await ensureWasmInitialized();
     return get_global_vector() ?? null;
   }
 
   /**
    * Release a vector back to the global pool
    */
-  export function releaseGlobalVector(index: number): boolean {
+  export async function releaseGlobalVector(index: number): Promise<boolean> {
     if (!initialized) {
       return false;
     }
+    await ensureWasmInitialized();
     return release_global_vector(index);
   }
 
   /**
    * Get global pool statistics
    */
-  export function getGlobalPoolStats(): VectorPoolStats {
+  export async function getGlobalPoolStats(): Promise<VectorPoolStats> {
     if (!initialized) {
       return { totalCapacity: 0, available: 0, inUse: 0 };
     }
+    await ensureWasmInitialized();
     const stats = get_global_pool_stats();
     return {
       totalCapacity: stats[0] as number,
@@ -840,7 +947,28 @@ export class WasmInitializationOptimizer {
     memoryUsage: number;
   } {
     const poolStats = GlobalVectorPoolManager.isInitialized() 
-      ? GlobalVectorPoolManager.getGlobalPoolStats()
+      ? { totalCapacity: 0, available: 0, inUse: 0 } // Use default values since async call not allowed here
+      : { totalCapacity: 0, available: 0, inUse: 0 };
+
+    return {
+      isInitialized: this.isInitialized,
+      cachedComponents: this.moduleCache.size,
+      poolSize: poolStats.totalCapacity,
+      memoryUsage: wasmMemoryOptimizer.getMemoryStats().vectorMemoryUsage,
+    };
+  }
+
+  /**
+   * Get performance metrics for the initialization (async version)
+   */
+  async getInitializationMetricsAsync(): Promise<{
+    isInitialized: boolean;
+    cachedComponents: number;
+    poolSize: number;
+    memoryUsage: number;
+  }> {
+    const poolStats = GlobalVectorPoolManager.isInitialized() 
+      ? await GlobalVectorPoolManager.getGlobalPoolStats()
       : { totalCapacity: 0, available: 0, inUse: 0 };
 
     return {
@@ -940,7 +1068,7 @@ export class AutoInitializingWasmUtils {
       return this.initializationPromise;
     }
     
-    this.initializationPromise = wasmInitOptimizer.initializeWasmModule();
+    this.initializationPromise = ensureWasmInitialized();
     return this.initializationPromise;
   }
 
@@ -948,14 +1076,14 @@ export class AutoInitializingWasmUtils {
    * Check if WASM module is ready
    */
   isReady(): boolean {
-    return wasmInitOptimizer.isModuleInitialized();
+    return wasmInitialized;
   }
 
   /**
    * Normalize a vector using WASM operations
    */
   normalizeVector(vector: Float32Array): Float32Array {
-    if (!this.isReady()) {
+    if (!this.isReady() || !batch_normalize_vectors) {
       // Fallback to simple normalization
       return this.fallbackNormalizeVector(vector);
     }
@@ -972,7 +1100,7 @@ export class AutoInitializingWasmUtils {
    * Compute cosine similarity between two vectors
    */
   cosineSimilarity(vectorA: Float32Array, vectorB: Float32Array): number {
-    if (!this.isReady() || vectorA.length !== vectorB.length) {
+    if (!this.isReady() || vectorA.length !== vectorB.length || !Vector1024) {
       return this.fallbackCosineSimilarity(vectorA, vectorB);
     }
 
@@ -993,15 +1121,15 @@ export class AutoInitializingWasmUtils {
   }
 
   /**
-   * Apply exponential decay to a value
+   * Compute exponential decay for temporal scoring
    */
-  exponentialDecay(value: number, decayRate: number): number {
-    // Simple exponential decay formula
-    return Math.exp(-decayRate * value);
+  exponentialDecay(ageHours: number, decayRate: number): number {
+    // Simple exponential decay calculation
+    return Math.exp(-decayRate * ageHours);
   }
 
   /**
-   * Compute adaptive parameters (simplified for beta)
+   * Compute adaptive parameters (simplified implementation)
    */
   computeAdaptiveParameters(params: {
     engagementRate: number;
@@ -1014,12 +1142,12 @@ export class AutoInitializingWasmUtils {
     diversityWeight: number;
     engagementBoost: number;
   } {
-    // Simplified adaptive parameters for beta
+    // Simple adaptive parameter computation
     return {
-      contentBasedWeight: Math.max(0.5, Math.min(1.5, 1.0 + (params.engagementRate - 0.1) * 0.5)),
-      temporalWeight: Math.max(0.5, Math.min(1.5, params.recencyPreference)),
-      diversityWeight: Math.max(0.5, Math.min(1.5, params.diversityPreference)),
-      engagementBoost: Math.max(1.0, Math.min(2.0, 1.0 + params.engagementRate)),
+      contentBasedWeight: 0.8 + params.engagementRate * 0.2,
+      temporalWeight: 0.5 + params.recencyPreference * 0.5,
+      diversityWeight: 0.5 + params.diversityPreference * 0.5,
+      engagementBoost: 1.0 + params.sessionDuration / 600, // Boost based on session length
     };
   }
 

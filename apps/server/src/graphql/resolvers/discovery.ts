@@ -5,7 +5,7 @@
  * Integrates the UnifiedEmbeddingService with optimized discovery algorithms.
  */
 
-import type { Bindings } from '../../types/index.js';
+import type { Bindings, ContextType } from '../../types/index.js';
 import { EmbeddingService } from '../../lib/ai/embeddingService.js';
 import { createCachingService } from '../../lib/cache/cachingService.js';
 import { QdrantClient } from '../../lib/infrastructure/qdrantClient.js';
@@ -15,6 +15,9 @@ import {
   type PrivacyFilterOptions,
   type ScoringWeights,
 } from '../../lib/wasm/wasmUtils.js';
+import { createD1Client } from '../../db/index.js';
+import * as schema from '../../db/schema.js';
+import { desc, eq, inArray, sql } from 'drizzle-orm';
 
 // Database imports
 import {
@@ -52,7 +55,7 @@ export interface DiscoveryOptions {
 }
 
 export interface DiscoveryResult {
-  posts: DiscoveredPost[];
+  posts: any[]; // Complete Post objects with user, media, hashtags, etc.
   hasMore: boolean;
   nextCursor?: string;
   metrics?: DiscoveryMetrics;
@@ -202,6 +205,9 @@ export class UnifiedDiscoveryResolver {
         .sort((a, b) => b.scores.final - a.scores.final)
         .slice(0, limit);
 
+      // Convert to complete Post objects
+      const completePosts = await this.convertToCompletePosts(sortedCandidates);
+
       const hasMore = candidates.length >= limit * 3;
       const nextCursor =
         hasMore && sortedCandidates.length > 0
@@ -209,7 +215,7 @@ export class UnifiedDiscoveryResolver {
           : undefined;
 
       return {
-        posts: sortedCandidates,
+        posts: completePosts,
         hasMore,
         nextCursor,
         metrics: this.createMetrics(startTime, candidates.length, [
@@ -588,14 +594,14 @@ export class UnifiedDiscoveryResolver {
       return cached;
     }
 
-    // Get user interactions
-    const interactions = await batchGetUserInteractions([userId], this.bindings);
-    const userInteractionData = interactions[userId] || {
-      seenPosts: [],
-      blockedUsers: [],
-      following: [],
-      followers: [],
-    };
+    // Get user interactions - placeholder for production implementation
+    // const interactions = await batchGetUserInteractions([userId], this.bindings);
+    // const userInteractionData = interactions[userId] || {
+    //   seenPosts: [],
+    //   blockedUsers: [],
+    //   following: [],
+    //   followers: [],
+    // };
 
     // Compute engagement metrics (simplified for beta)
     const profile: UserEngagementProfile = {
@@ -717,6 +723,124 @@ export class UnifiedDiscoveryResolver {
       algorithmVersion: '2.0.0-wasm-only',
     };
   }
+
+  /**
+   * Convert discovered posts to complete Post objects with user, media, hashtags
+   */
+  private async convertToCompletePosts(discoveredPosts: DiscoveredPost[]): Promise<any[]> {
+    if (discoveredPosts.length === 0) {
+      return [];
+    }
+
+    const db = createD1Client(this.bindings);
+    const postIds = discoveredPosts.map(p => p.id);
+
+    // Batch query for posts, users, and media to eliminate N+1 queries
+    const [posts, profiles, media, postHashtags] = await Promise.all([
+      // Get all posts in one query
+      db.select()
+        .from(schema.post)
+        .where(inArray(schema.post.id, postIds))
+        .all(),
+      
+      // Get all users in one query by joining with posts
+      db.select({
+        userId: schema.profile.userId,
+        id: schema.profile.id,
+        username: schema.profile.username,
+        profileImage: schema.profile.profileImage,
+        bio: schema.profile.bio,
+        verifiedType: schema.profile.verifiedType,
+        isPrivate: schema.profile.isPrivate,
+        createdAt: schema.profile.createdAt,
+        updatedAt: schema.profile.updatedAt,
+        postUserId: schema.post.userId
+      })
+        .from(schema.profile)
+        .innerJoin(schema.post, eq(schema.profile.userId, schema.post.userId))
+        .where(inArray(schema.post.id, postIds))
+        .all(),
+      
+      // Get all media in one query
+      db.select()
+        .from(schema.media)
+        .where(inArray(schema.media.postId, postIds))
+        .all(),
+
+      // Get hashtag associations
+      db.select()
+        .from(schema.postHashtag)
+        .where(inArray(schema.postHashtag.postId, postIds))
+        .all()
+    ]);
+
+    // Get hashtag details if we have associations
+    let hashtags: any[] = [];
+    if (postHashtags.length > 0) {
+      const hashtagIds = postHashtags.map(ph => ph.hashtagId).filter(Boolean);
+      const validHashtagIds = hashtagIds.filter((id): id is string => id !== null);
+      
+      if (validHashtagIds.length > 0) {
+        hashtags = await db
+          .select()
+          .from(schema.hashtag)
+          .where(inArray(schema.hashtag.id, validHashtagIds))
+          .all();
+      }
+    }
+
+    // Create lookup maps for O(1) access
+    const postMap = new Map(posts.map(p => [p.id, p]));
+    const userMap = new Map(profiles.map(p => [p.postUserId, p]));
+    const mediaMap = new Map<string, typeof media>();
+    const hashtagMap = new Map(hashtags.map(h => [h.id, h]));
+    
+    // Group media by post ID
+    for (const m of media) {
+      if (!mediaMap.has(m.postId!)) {
+        mediaMap.set(m.postId!, []);
+      }
+      mediaMap.get(m.postId!)!.push(m);
+    }
+
+    // Group hashtags by post ID
+    const postHashtagMap = new Map<string, any[]>();
+    for (const ph of postHashtags) {
+      if (!postHashtagMap.has(ph.postId!)) {
+        postHashtagMap.set(ph.postId!, []);
+      }
+      const hashtag = hashtagMap.get(ph.hashtagId!);
+      if (hashtag) {
+        postHashtagMap.get(ph.postId!)!.push(hashtag);
+      }
+    }
+
+    // Build final result maintaining order of discovered posts
+    const completePosts = discoveredPosts
+      .map((discoveredPost) => {
+        const post = postMap.get(discoveredPost.id);
+        if (!post) return null;
+
+        const user = userMap.get(post.userId);
+        const postMedia = mediaMap.get(post.id) || [];
+        const postHashtagList = postHashtagMap.get(post.id) || [];
+
+        return {
+          ...post,
+          user,
+          media: postMedia,
+          hashtags: postHashtagList,
+          comments: [], // Empty for discovery feed
+          savedBy: [], // Empty for discovery feed
+          isSaved: false, // Default for discovery
+          _commentCount: discoveredPost.metadata.commentCount,
+          _saveCount: discoveredPost.metadata.saveCount,
+        };
+      })
+      .filter(Boolean);
+
+    return completePosts;
+  }
 }
 
 /**
@@ -731,10 +855,14 @@ export const discoveryResolvers = {
         cursor?: string;
         experimentalFeatures?: boolean;
       },
-      context: { bindings: Bindings; userId: string },
+      context: ContextType,
     ) => {
-      const resolver = new UnifiedDiscoveryResolver(context.bindings);
-      return resolver.discoverPosts(context.userId, args);
+      if (!context?.user) {
+        throw new Error('Authentication required');
+      }
+      
+      const resolver = new UnifiedDiscoveryResolver(context.env);
+      return resolver.discoverPosts(context.user.id, args);
     },
   },
   Mutation: {

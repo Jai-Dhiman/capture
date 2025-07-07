@@ -1,17 +1,26 @@
-import type { Post } from '@/features/post/types/postTypes';
 import { graphqlFetch } from '@/shared/lib/graphqlClient';
 import { type QueryFunctionContext, useInfiniteQuery } from '@tanstack/react-query';
+import type { Post } from '@/features/post/types/postTypes';
 
-interface DiscoverFeedResponse {
+interface DiscoveryResult {
   posts: Post[];
-  nextCursor: string | null;
+  hasMore: boolean;
+  nextCursor?: string;
+  metrics?: {
+    processingTimeMs: number;
+    candidatesEvaluated: number;
+    wasmOperationsUsed: string[];
+    fallbacksUsed: string[];
+    cacheHitRate: number;
+    algorithmVersion: string;
+  };
 }
 
 export const useDiscoverFeed = (limit = 10) => {
-  return useInfiniteQuery<DiscoverFeedResponse, Error>({
+  return useInfiniteQuery<DiscoveryResult, Error>({
     queryKey: ['discoverFeed'],
     queryFn: async ({ pageParam: cursor }: QueryFunctionContext) => {
-      const data = await graphqlFetch<{ discoverFeed: DiscoverFeedResponse }>({
+      const data = await graphqlFetch<{ discoverFeed: DiscoveryResult }>({
         query: `
           query GetDiscoverFeed($limit: Int, $cursor: String) {
             discoverFeed(limit: $limit, cursor: $cursor) {
@@ -22,28 +31,45 @@ export const useDiscoverFeed = (limit = 10) => {
                 type
                 createdAt
                 updatedAt
+                isSaved
                 user {
                   id
                   userId
                   username
                   profileImage
-                  isBlocked
+                  bio
+                  verifiedType
+                  followersCount
+                  followingCount
+                  isFollowing
+                  createdAt
+                  updatedAt
                 }
                 media {
                   id
-                  storageKey
                   type
+                  storageKey
                   order
+                  createdAt
                 }
                 hashtags {
                   id
                   name
+                  createdAt
                 }
-                isSaved
                 _commentCount
                 _saveCount
               }
+              hasMore
               nextCursor
+              metrics {
+                processingTimeMs
+                candidatesEvaluated
+                wasmOperationsUsed
+                fallbacksUsed
+                cacheHitRate
+                algorithmVersion
+              }
             }
           }
         `,

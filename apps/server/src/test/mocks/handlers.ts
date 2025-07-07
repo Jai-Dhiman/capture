@@ -43,9 +43,37 @@ export const handlers = [
           index: 0,
         },
       ],
-      model: 'voyage-multimodal-3',
+      model: body.model || 'voyage-3.5-lite', // Use text model for text embeddings
       usage: {
-        total_tokens: 10,
+        total_tokens: inputText.length,
+      },
+    });
+  }),
+
+  // Mock Voyage AI Multimodal API
+  http.post('https://api.voyageai.com/v1/multimodalembeddings', async ({ request }) => {
+    const body = await request.json() as any;
+    const inputString = JSON.stringify(body.input);
+    
+    // Generate deterministic embeddings based on input hash for consistent cache testing
+    const hash = simpleHash(inputString);
+    const seed = hash % 1000000;
+    
+    return HttpResponse.json({
+      data: [
+        {
+          embedding: new Array(1024).fill(0).map((_, i) => {
+            // Deterministic random based on seed and index
+            const pseudoRandom = Math.sin((seed + i) * 12345) * 10000;
+            return (pseudoRandom - Math.floor(pseudoRandom)) * 2 - 1;
+          }),
+          index: 0,
+        },
+      ],
+      model: body.model || 'voyage-multimodal-3', // Use multimodal model for multimodal content
+      usage: {
+        total_tokens: 100,
+        image_pixels: body.input[0]?.content?.some((c: any) => c.type === 'image') ? 50000 : undefined,
       },
     });
   }),

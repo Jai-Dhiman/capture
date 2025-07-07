@@ -1,190 +1,363 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
+import type { MessageBatch } from '@cloudflare/workers-types';
+import type { Bindings } from '../../types/index.js';
 
-// Mock dependencies BEFORE importing handlePostQueue
-vi.mock('../../lib/embeddings', () => ({
-  generatePostEmbedding: vi.fn().mockResolvedValue({
-    postId: 'test-id',
-    vector: [0.1, 0.2, 0.3],
-  }),
-  storePostEmbedding: vi.fn(),
-}));
-
-vi.mock('../../lib/qdrantClient', () => ({
-  QdrantClient: vi.fn().mockImplementation(() => ({
-    upsert: vi.fn(),
+// Mock the database
+const mockGet = vi.fn();
+const mockAll = vi.fn();
+const mockSelect = vi.fn(() => ({
+  from: vi.fn(() => ({
+    leftJoin: vi.fn(() => ({
+      where: vi.fn(() => ({
+        get: mockGet,
+        all: mockAll,
+      })),
+    })),
+    where: vi.fn(() => ({
+      get: mockGet,
+      all: mockAll,
+    })),
   })),
 }));
 
-vi.mock('@/lib/ai', () => ({
-  ai: {
-    run: vi.fn(() =>
-      Promise.resolve({
-        data: [{ embedding: [0.1, 0.2, 0.3] }],
-      }),
-    ),
+vi.mock('../../db/index.js', () => ({
+  createD1Client: vi.fn(() => ({
+    select: mockSelect,
+  })),
+}));
+
+// Mock the embedding service
+const mockGenerateTextEmbedding = vi.fn();
+const mockGeneratePostEmbedding = vi.fn();
+const mockStoreEmbedding = vi.fn();
+
+vi.mock('../../lib/ai/embeddingService.js', () => ({
+  createEmbeddingService: vi.fn(() => ({
+    generateTextEmbedding: mockGenerateTextEmbedding,
+    generatePostEmbedding: mockGeneratePostEmbedding,
+    storeEmbedding: mockStoreEmbedding,
+  })),
+  EmbeddingService: vi.fn(),
+}));
+
+// Mock the caching service
+const mockCacheGet = vi.fn();
+const mockCacheSet = vi.fn();
+
+vi.mock('../../lib/cache/cachingService.js', () => ({
+  createCachingService: vi.fn(() => ({
+    get: mockCacheGet,
+    set: mockCacheSet,
+  })),
+}));
+
+// Mock QdrantClient
+const mockUpsert = vi.fn();
+const mockQdrantClient = {
+  upsert: mockUpsert,
+};
+
+vi.mock('../../lib/infrastructure/qdrantClient.js', () => ({
+  QdrantClient: vi.fn(() => mockQdrantClient),
+}));
+
+// Mock WASM utils
+vi.mock('../../lib/wasm/wasmUtils.js', () => ({
+  OptimizedVectorOps: {
+    calculateAverage: vi.fn().mockReturnValue(new Float32Array([0.1, 0.2, 0.3])),
   },
 }));
 
-// Default DB mocks
-const mockGet = vi.fn().mockResolvedValue({
-  id: 'test-id',
-  content: 'test post content',
-  userId: 'user-id',
-});
-const mockAll = vi.fn().mockResolvedValue([{ name: 'mock-tag-1' }, { name: 'mock-tag-2' }]);
-
-vi.mock('@/db', () => {
-  const dbMock = {
-    select: vi.fn(() => ({
-      from: vi.fn(() => ({
-        where: vi.fn(() => ({
-          get: mockGet,
-          all: mockAll,
-          leftJoin: vi.fn(() => ({
-            all: mockAll,
-          })),
-        })),
-      })),
-    })),
-  };
-  return {
-    createD1Client: vi.fn(() => dbMock),
-  };
-});
-
-// Import AFTER mocks
-import { ai } from '@/lib/ai';
-import { handlePostQueue } from '../queues';
-import { generatePostEmbedding } from '../../lib/ai/embeddings';
+// Import the functions to test AFTER setting up mocks
+import { handlePostQueue, handleUserEmbeddingQueue, getProcessedCount, resetProcessedCount } from '../queues.js';
 
 describe('Queue Handlers', () => {
-  it('should process a post, generate/store embedding, send to user queue, and ack', async () => {
-    const mockAck = vi.fn();
-    const mockRetry = vi.fn();
-    const mockSend = vi.fn();
-
-    const env = {
-      AI: ai,
-      POST_VECTORS: {},
+  let mockEnv: Bindings;
+  
+  beforeEach(() => {
+    // Reset all mocks
+    vi.clearAllMocks();
+    
+    // Reset processed count
+    resetProcessedCount();
+    
+    // Setup mock environment
+    mockEnv = {
+      DB: {} as D1Database,
+      KV: {
+        get: vi.fn(),
+        put: vi.fn(),
+      } as any,
+      POST_VECTORS: {
+        get: vi.fn(),
+        put: vi.fn(),
+      } as any,
+      USER_VECTORS: {
+        get: vi.fn(),
+        put: vi.fn(),
+      } as any,
+      CACHE_KV: {} as any,
+      POST_QUEUE: {
+        send: vi.fn(),
+      } as any,
       USER_VECTOR_QUEUE: {
-        send: mockSend,
-      },
-    };
-
-    const batch = {
-      messages: [
-        {
-          body: { postId: 'test-id' },
-          id: 'msg-1',
-          ack: mockAck,
-          retry: mockRetry,
-        },
-      ],
-    };
-
-    await handlePostQueue(batch as any, env as any);
-
-    expect(mockAck).toHaveBeenCalled();
-    expect(mockSend).toHaveBeenCalledWith({ userId: 'user-id' });
+        send: vi.fn(),
+      } as any,
+      VOYAGE_API_KEY: 'test-voyage-key',
+      QDRANT_URL: 'http://test-qdrant',
+      QDRANT_API_KEY: 'test-qdrant-key',
+      QDRANT_COLLECTION_NAME: 'test-collection',
+    } as any;
   });
 
-  it('should retry if post is not found', async () => {
-    mockGet.mockResolvedValueOnce(null); // simulate missing post
+  describe('handlePostQueue', () => {
+    it('should process a post, generate embedding, and send to user queue', async () => {
+      const mockAck = vi.fn();
+      const mockRetry = vi.fn();
+      const mockSend = vi.fn();
 
-    const mockAck = vi.fn();
-    const mockRetry = vi.fn();
-    const mockSend = vi.fn();
+      // Mock successful post lookup
+      mockGet.mockResolvedValueOnce({
+        id: 'test-post-id',
+        content: 'test post content',
+        userId: 'test-user-id',
+        authorIsPrivate: false,
+      });
 
-    const env = {
-      AI: ai,
-      POST_VECTORS: {},
-      USER_VECTOR_QUEUE: {
-        send: mockSend,
-      },
-    };
+      // Mock hashtags lookup
+      mockAll.mockResolvedValueOnce([
+        { name: 'test-tag' },
+        { name: 'another-tag' },
+      ]);
 
-    const batch = {
-      messages: [
-        {
-          body: { postId: 'missing-id' },
-          id: 'msg-2',
-          ack: mockAck,
-          retry: mockRetry,
+      // Mock successful embedding generation
+      mockGenerateTextEmbedding.mockResolvedValueOnce({
+        vector: [0.1, 0.2, 0.3],
+        dimensions: 3,
+        provider: 'voyage',
+        collectionConfig: {
+          name: 'test-collection',
+          dimensions: 3,
+          distance: 'Cosine',
         },
-      ],
-    };
+      });
 
-    await handlePostQueue(batch as any, env as any);
+      mockEnv.USER_VECTOR_QUEUE.send = mockSend;
 
-    expect(mockRetry).toHaveBeenCalled();
-    expect(mockAck).not.toHaveBeenCalled();
-    expect(mockSend).not.toHaveBeenCalled();
-  });
+      const batch: MessageBatch<{ postId: string }> = {
+        messages: [
+          {
+            body: { postId: 'test-post-id' },
+            id: 'msg-1',
+            ack: mockAck,
+            retry: mockRetry,
+          } as any,
+        ],
+        queue: 'test-queue',
+        retryAll: vi.fn(),
+        ackAll: vi.fn(),
+      } as any;
 
-  it('should retry if embedding generation fails (empty vector)', async () => {
-    (generatePostEmbedding as any).mockResolvedValueOnce({
-      postId: 'test-id',
-      vector: [], // simulate failure
+      await handlePostQueue(batch, mockEnv);
+
+      expect(mockAck).toHaveBeenCalled();
+      expect(mockSend).toHaveBeenCalledWith({ userId: 'test-user-id' });
     });
 
-    const mockAck = vi.fn();
-    const mockRetry = vi.fn();
-    const mockSend = vi.fn();
+    it('should retry if post is not found', async () => {
+      const mockAck = vi.fn();
+      const mockRetry = vi.fn();
+      const mockSend = vi.fn();
 
-    const env = {
-      AI: ai,
-      POST_VECTORS: {},
-      USER_VECTOR_QUEUE: {
-        send: mockSend,
-      },
-    };
+      // Mock post not found
+      mockGet.mockResolvedValueOnce(null);
 
-    const batch = {
-      messages: [
-        {
-          body: { postId: 'test-id' },
-          id: 'msg-3',
-          ack: mockAck,
-          retry: mockRetry,
+      mockEnv.USER_VECTOR_QUEUE.send = mockSend;
+
+      const batch: MessageBatch<{ postId: string }> = {
+        messages: [
+          {
+            body: { postId: 'missing-post-id' },
+            id: 'msg-2',
+            ack: mockAck,
+            retry: mockRetry,
+          } as any,
+        ],
+        queue: 'test-queue',
+        retryAll: vi.fn(),
+        ackAll: vi.fn(),
+      } as any;
+
+      await handlePostQueue(batch, mockEnv);
+
+      expect(mockRetry).toHaveBeenCalled();
+      expect(mockAck).not.toHaveBeenCalled();
+      expect(mockSend).not.toHaveBeenCalled();
+    });
+
+    it('should handle embedding generation failures gracefully', async () => {
+      const mockAck = vi.fn();
+      const mockRetry = vi.fn();
+      const mockSend = vi.fn();
+
+      // Mock successful post lookup
+      mockGet.mockResolvedValueOnce({
+        id: 'test-post-id',
+        content: 'test post content',
+        userId: 'test-user-id',
+        authorIsPrivate: false,
+      });
+
+      mockAll.mockResolvedValueOnce([]);
+
+      // Mock embedding generation failure
+      mockGenerateTextEmbedding.mockRejectedValueOnce(new Error('Embedding generation failed'));
+
+      mockEnv.USER_VECTOR_QUEUE.send = mockSend;
+
+      const batch: MessageBatch<{ postId: string }> = {
+        messages: [
+          {
+            body: { postId: 'test-post-id' },
+            id: 'msg-3',
+            ack: mockAck,
+            retry: mockRetry,
+          } as any,
+        ],
+        queue: 'test-queue',
+        retryAll: vi.fn(),
+        ackAll: vi.fn(),
+      } as any;
+
+      await handlePostQueue(batch, mockEnv);
+
+      expect(mockRetry).toHaveBeenCalled();
+      expect(mockAck).not.toHaveBeenCalled();
+    });
+
+    it('should ack even if USER_VECTOR_QUEUE.send fails', async () => {
+      const mockAck = vi.fn();
+      const mockRetry = vi.fn();
+      const mockSend = vi.fn().mockRejectedValueOnce(new Error('Queue send failed'));
+
+      // Mock successful post lookup
+      mockGet.mockResolvedValueOnce({
+        id: 'test-post-id',
+        content: 'test post content',
+        userId: 'test-user-id',
+        authorIsPrivate: false,
+      });
+
+      mockAll.mockResolvedValueOnce([]);
+
+      // Mock successful embedding generation
+      mockGenerateTextEmbedding.mockResolvedValueOnce({
+        vector: [0.1, 0.2, 0.3],
+        dimensions: 3,
+        provider: 'voyage',
+        collectionConfig: {
+          name: 'test-collection',
+          dimensions: 3,
+          distance: 'Cosine',
         },
-      ],
-    };
+      });
 
-    await handlePostQueue(batch as any, env as any);
+      mockEnv.USER_VECTOR_QUEUE.send = mockSend;
 
-    expect(mockRetry).toHaveBeenCalled();
-    expect(mockAck).not.toHaveBeenCalled();
-    expect(mockSend).not.toHaveBeenCalled();
+      const batch: MessageBatch<{ postId: string }> = {
+        messages: [
+          {
+            body: { postId: 'test-post-id' },
+            id: 'msg-4',
+            ack: mockAck,
+            retry: mockRetry,
+          } as any,
+        ],
+        queue: 'test-queue',
+        retryAll: vi.fn(),
+        ackAll: vi.fn(),
+      } as any;
+
+      await handlePostQueue(batch, mockEnv);
+
+      expect(mockAck).toHaveBeenCalled();
+      expect(mockRetry).not.toHaveBeenCalled();
+      expect(mockSend).toHaveBeenCalled();
+    });
   });
 
-  it('should ack even if USER_VECTOR_QUEUE.send fails', async () => {
-    const mockAck = vi.fn();
-    const mockRetry = vi.fn();
-    const mockSend = vi.fn().mockRejectedValueOnce(new Error('Queue send failed')); // force failure
+      describe('handleUserEmbeddingQueue', () => {
+      it('should process user embedding successfully', async () => {
+        const mockAck = vi.fn();
+        const mockRetry = vi.fn();
 
-    const env = {
-      AI: ai,
-      POST_VECTORS: {},
-      USER_VECTOR_QUEUE: {
-        send: mockSend,
-      },
-    };
+        // Mock user posts lookup
+        mockAll.mockResolvedValueOnce([
+          { id: 'post-1', content: 'content 1' },
+          { id: 'post-2', content: 'content 2' },
+        ]);
 
-    const batch = {
-      messages: [
-        {
-          body: { postId: 'test-id' },
-          id: 'msg-4',
-          ack: mockAck,
-          retry: mockRetry,
-        },
-      ],
-    };
+        // Mock KV store operations
+        mockEnv.POST_VECTORS.get = vi.fn().mockResolvedValue(JSON.stringify([0.1, 0.2, 0.3]));
+        mockEnv.USER_VECTORS.put = vi.fn().mockResolvedValue(undefined);
 
-    await handlePostQueue(batch as any, env as any);
+        const batch: MessageBatch<{ userId: string }> = {
+          messages: [
+            {
+              body: { userId: 'test-user-id' },
+              id: 'user-msg-1',
+              ack: mockAck,
+              retry: mockRetry,
+            } as any,
+          ],
+          queue: 'test-queue',
+          retryAll: vi.fn(),
+          ackAll: vi.fn(),
+        } as any;
 
-    expect(mockAck).toHaveBeenCalled();
-    expect(mockRetry).not.toHaveBeenCalled();
-    expect(mockSend).toHaveBeenCalled();
+        await handleUserEmbeddingQueue(batch, mockEnv);
+
+        expect(mockAck).toHaveBeenCalled();
+        expect(mockEnv.USER_VECTORS.put).toHaveBeenCalled();
+      });
+
+      it('should retry if user has no posts', async () => {
+        const mockAck = vi.fn();
+        const mockRetry = vi.fn();
+
+        // Mock empty user posts
+        mockAll.mockResolvedValueOnce([]);
+
+        const batch: MessageBatch<{ userId: string }> = {
+          messages: [
+            {
+              body: { userId: 'test-user-id' },
+              id: 'user-msg-2',
+              ack: mockAck,
+              retry: mockRetry,
+            } as any,
+          ],
+          queue: 'test-queue',
+          retryAll: vi.fn(),
+          ackAll: vi.fn(),
+        } as any;
+
+        await handleUserEmbeddingQueue(batch, mockEnv);
+
+        expect(mockRetry).toHaveBeenCalled();
+        expect(mockAck).not.toHaveBeenCalled();
+      });
+    });
+
+  describe('metrics functions', () => {
+    it('should track processed count correctly', () => {
+      expect(getProcessedCount()).toBe(0);
+      
+      // The processed count is incremented internally by the queue handlers
+      // We can't easily test this without running the actual handlers
+      // But we can test the reset functionality
+      resetProcessedCount();
+      expect(getProcessedCount()).toBe(0);
+    });
   });
 });

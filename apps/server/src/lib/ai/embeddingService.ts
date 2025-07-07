@@ -1,7 +1,7 @@
 import type { Bindings } from '@/types';
 import type { CachingService } from '../cache/cachingService';
 import { CacheTTL } from '../cache/cachingService';
-import type { QdrantClient, CollectionConfig } from '../infrastructure/qdrantClient';
+import type { CollectionConfig, QdrantClient } from '../infrastructure/qdrantClient';
 
 export type EmbeddingProvider = 'voyage';
 
@@ -31,9 +31,11 @@ export interface VoyageTextRequest {
 
 export interface VoyageMultimodalRequest {
   input: Array<{
-    type: 'text' | 'image';
-    text?: string;
-    image?: string;
+    content: Array<{
+      type: 'text' | 'image';
+      text?: string;
+      image?: string;
+    }>;
   }>;
   model?: string;
 }
@@ -46,11 +48,14 @@ export interface VoyageEmbeddingResponse {
   model: string;
   usage: {
     total_tokens: number;
+    text_tokens?: number;
+    image_pixels?: number;
   };
 }
 
 export interface EmbeddingServiceConfig {
-  model: string;
+  textModel: string;
+  multimodalModel: string;
   dimensions: number;
   maxRetries: number;
   retryDelay: number;
@@ -64,16 +69,21 @@ export class EmbeddingService {
 
   private static readonly VOYAGE_CONFIG: EmbeddingConfig = {
     provider: 'voyage',
-    collectionName: 'voyage_embeddings',
+    collectionName: 'posts',
     dimensions: 1024,
     distance: 'Cosine',
   };
 
-  constructor(voyageApiKey: string, cache: CachingService, config?: Partial<EmbeddingServiceConfig>) {
+  constructor(
+    voyageApiKey: string,
+    cache: CachingService,
+    config?: Partial<EmbeddingServiceConfig>,
+  ) {
     this.apiKey = voyageApiKey;
     this.cache = cache;
     this.config = {
-      model: 'voyage-multimodal-3',
+      textModel: 'voyage-3.5-lite',
+      multimodalModel: 'voyage-multimodal-3',
       dimensions: 1024,
       maxRetries: 3,
       retryDelay: 1000,
@@ -90,10 +100,13 @@ export class EmbeddingService {
     if (typeof content === 'string') {
       return this.generateTextEmbedding(content);
     }
-      return this.generateMultimodalEmbedding(content);
+    return this.generateMultimodalEmbedding(content);
   }
 
-  async generateTextEmbedding(text: string, retries: number = this.config.maxRetries): Promise<EmbeddingResult> {
+  async generateTextEmbedding(
+    text: string,
+    retries: number = this.config.maxRetries,
+  ): Promise<EmbeddingResult> {
     const cacheKey = this.createTextEmbeddingCacheKey(text);
 
     const cached = await this.cache.get<number[]>(cacheKey);
@@ -114,12 +127,12 @@ export class EmbeddingService {
       const response = await fetch(`${this.config.baseUrl}/embeddings`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
+          Authorization: `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           input: text,
-          model: this.config.model,
+          model: this.config.textModel,
         }),
       });
 
@@ -170,7 +183,10 @@ export class EmbeddingService {
     }
   }
 
-  async generateImageEmbedding(imageBase64: string, retries: number = this.config.maxRetries): Promise<EmbeddingResult> {
+  async generateImageEmbedding(
+    imageBase64: string,
+    retries: number = this.config.maxRetries,
+  ): Promise<EmbeddingResult> {
     const cacheKey = this.createImageEmbeddingCacheKey(imageBase64);
 
     const cached = await this.cache.get<number[]>(cacheKey);
@@ -188,20 +204,24 @@ export class EmbeddingService {
     }
 
     try {
-      const response = await fetch(`${this.config.baseUrl}/embeddings`, {
+      const response = await fetch(`${this.config.baseUrl}/multimodalembeddings`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
+          Authorization: `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           input: [
             {
-              type: 'image',
-              image: imageBase64,
+              content: [
+                {
+                  type: 'image',
+                  image: imageBase64,
+                },
+              ],
             },
           ],
-          model: this.config.model,
+          model: this.config.multimodalModel,
         }),
       });
 
@@ -275,27 +295,30 @@ export class EmbeddingService {
 
     try {
       const voyageInputs = inputs.map((input) => {
+        const content = [];
         if (input.type === 'text') {
-          return {
+          content.push({
             type: 'text' as const,
             text: input.content,
-          };
+          });
+        } else {
+          content.push({
+            type: 'image' as const,
+            image: input.content,
+          });
         }
-        return {
-          type: 'image' as const,
-          image: input.content,
-        };
+        return { content };
       });
 
-      const response = await fetch(`${this.config.baseUrl}/embeddings`, {
+      const response = await fetch(`${this.config.baseUrl}/multimodalembeddings`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
+          Authorization: `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           input: voyageInputs,
-          model: this.config.model,
+          model: this.config.multimodalModel,
         }),
       });
 
@@ -340,7 +363,10 @@ export class EmbeddingService {
         return this.generateMultimodalEmbedding(inputs, retries - 1);
       }
 
-      console.error('[EmbeddingService] Multimodal embedding generation failed after retries', error);
+      console.error(
+        '[EmbeddingService] Multimodal embedding generation failed after retries',
+        error,
+      );
       let errorMessage = 'An unknown error occurred during multimodal embedding generation';
       if (error instanceof Error) {
         errorMessage = error.message;
@@ -438,7 +464,7 @@ export class EmbeddingService {
   }
 
   getModel(): string {
-    return this.config.model;
+    return this.config.multimodalModel;
   }
 
   getAvailableProviders(): EmbeddingProvider[] {
@@ -456,17 +482,17 @@ export class EmbeddingService {
 
   private createTextEmbeddingCacheKey(text: string): string {
     const textHash = this.hashString(text);
-    return `voyage_text_embedding:${this.config.model}:${this.config.dimensions}:${textHash}`;
+    return `voyage_text_embedding:${this.config.textModel}:${this.config.dimensions}:${textHash}`;
   }
 
   private createImageEmbeddingCacheKey(imageBase64: string): string {
     const imageHash = this.hashString(imageBase64);
-    return `voyage_image_embedding:${this.config.model}:${this.config.dimensions}:${imageHash}`;
+    return `voyage_image_embedding:${this.config.multimodalModel}:${this.config.dimensions}:${imageHash}`;
   }
 
   private createMultimodalEmbeddingCacheKey(inputString: string): string {
     const inputHash = this.hashString(inputString);
-    return `voyage_multimodal_embedding:${this.config.model}:${this.config.dimensions}:${inputHash}`;
+    return `voyage_multimodal_embedding:${this.config.multimodalModel}:${this.config.dimensions}:${inputHash}`;
   }
 
   private hashString(str: string): string {
