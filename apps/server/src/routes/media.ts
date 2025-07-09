@@ -309,14 +309,14 @@ mediaRouter.delete('/', async (c) => {
 });
 
 // CDN-optimized image serving endpoint with cache control headers
-mediaRouter.get('/cdn/:mediaId', cdnSecurityHeaders(), async (c) => {
-  const mediaId = c.req.param('mediaId');
-  const user = c.get('user');
+mediaRouter.get('/cdn/*', cdnSecurityHeaders(), async (c) => {
+  const mediaId = c.req.param('*'); // Use wildcard to capture full path including slashes
   const variant = c.req.query('variant') || 'original';
   const format = c.req.query('format') || 'webp';
 
+  console.log(`[CDN] Request for mediaId: ${mediaId}, variant: ${variant}, format: ${format}`);
+
   try {
-    
     const imageService = createImageService(c.env);
     const cachingService = createCachingService(c.env);
     
@@ -325,6 +325,7 @@ mediaRouter.get('/cdn/:mediaId', cdnSecurityHeaders(), async (c) => {
     
     const cachedResponse = await cachingService.get(cacheKey);
     if (cachedResponse) {
+      console.log(`[CDN] Cache hit for ${mediaId}`);
       // Set CDN headers for cached response
       c.header('Cache-Control', 'public, max-age=31536000, stale-while-revalidate=86400');
       c.header('ETag', `"${mediaId}-${variant}-${format}"`);
@@ -336,6 +337,7 @@ mediaRouter.get('/cdn/:mediaId', cdnSecurityHeaders(), async (c) => {
 
     // Check if this is a seed image path (profile images from seeding)
     if (mediaId.includes('seed-images/')) {
+      console.log(`[CDN] Detected seed image: ${mediaId}`);
       // Handle seed images directly as storage keys
       const storageKey = mediaId; // seed-images/photo-27.jpg
       
@@ -348,12 +350,15 @@ mediaRouter.get('/cdn/:mediaId', cdnSecurityHeaders(), async (c) => {
       // Support conditional requests
       const ifNoneMatch = c.req.header('if-none-match');
       if (ifNoneMatch === `"${mediaId}-${variant}-${format}"`) {
+        console.log(`[CDN] Returning 304 for ${mediaId}`);
         return c.newResponse(null, 304);
       }
 
       try {
+        console.log(`[CDN] Attempting to get image URL for storage key: ${storageKey}`);
         const url = await imageService.getImageUrl(storageKey, 'public', 604800); // 1 week expiry (max for R2)
         
+        console.log(`[CDN] Successfully got URL for seed image: ${mediaId}`);
         const response = { 
           url,
           variant,
@@ -369,7 +374,7 @@ mediaRouter.get('/cdn/:mediaId', cdnSecurityHeaders(), async (c) => {
       } catch (error) {
         // Seed image doesn't exist - return null/empty response instead of error
         // This allows the client to handle the missing image gracefully
-        console.warn(`Seed image not found: ${storageKey}`, error);
+        console.warn(`[CDN] Seed image not found: ${storageKey}`, error);
         
         const fallbackResponse = { 
           url: null,
@@ -380,6 +385,7 @@ mediaRouter.get('/cdn/:mediaId', cdnSecurityHeaders(), async (c) => {
           isMissing: true
         };
         
+        console.log(`[CDN] Returning fallback response for missing seed image: ${mediaId}`);
         // Cache the fallback response to avoid repeated lookups
         await cachingService.set(cacheKey, fallbackResponse, CacheTTL.MEDIA);
         
@@ -387,10 +393,12 @@ mediaRouter.get('/cdn/:mediaId', cdnSecurityHeaders(), async (c) => {
       }
     }
 
+    console.log(`[CDN] Looking up regular media record for: ${mediaId}`);
     // Use public access since media access control is handled by the GraphQL layer
     const media = await imageService.findByIdPublic(mediaId);
 
     if (!media) {
+      console.log(`[CDN] Media not found: ${mediaId}`);
       return c.json({ error: 'Media not found' }, 404);
     }
 
@@ -421,7 +429,7 @@ mediaRouter.get('/cdn/:mediaId', cdnSecurityHeaders(), async (c) => {
     
     return c.json(response);
   } catch (error) {
-    console.error('Error getting CDN image URL:', error);
+    console.error(`[CDN] Error getting CDN image URL for ${mediaId}:`, error);
     return c.json({ error: 'Failed to get image URL' }, 500);
   }
 });

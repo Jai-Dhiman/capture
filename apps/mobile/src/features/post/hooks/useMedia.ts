@@ -245,7 +245,12 @@ export const useMediaSource = (
   }
 
   if (mediaItem?.storageKey) {
-    // Extract ID from storageKey if needed
+    // Check if this is a seed image path - use the full storageKey
+    if (mediaItem.storageKey.includes('seed-images/')) {
+      return useImageUrl({ id: mediaItem.storageKey }, variant, true);
+    }
+    
+    // For non-seed images, extract ID from storageKey if needed
     const mediaId = mediaItem.storageKey.split('/').pop()?.split('_')[0];
     return useImageUrl({ id: mediaId || mediaItem.storageKey }, variant, true);
   }

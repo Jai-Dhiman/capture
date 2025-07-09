@@ -135,15 +135,29 @@ export async function seedDatabase(
 
   await batchInsert(db, users, seedUsers);
 
-  // 2. Create profiles (one per user)
-  const seedProfiles = seedUsers.map((user) => ({
+  // 2. Create profile images as proper media records (one per user)
+  const profileImageMedia = seedUsers.map((user) => ({
+    id: nanoid(),
+    userId: user.id,
+    postId: null, // Profile images don't belong to posts
+    draftPostId: null,
+    type: 'image',
+    storageKey: r2StorageKeys[Math.floor(Math.random() * r2StorageKeys.length)],
+    order: 0,
+    createdAt: new Date().toISOString(),
+  }));
+
+  await batchInsert(db, media, profileImageMedia);
+
+  // 3. Create profiles (one per user) - now referencing media IDs
+  const seedProfiles = seedUsers.map((user, index) => ({
     id: nanoid(),
     userId: user.id, // Reference to users.id
     username: faker.internet
       .username()
       .toLowerCase()
       .replace(/[^a-z0-9]/g, ''),
-    profileImage: r2StorageKeys[Math.floor(Math.random() * r2StorageKeys.length)],
+    profileImage: profileImageMedia[index].id, // Reference to media record ID
     bio: faker.lorem.sentence(),
     verifiedType: faker.helpers.arrayElement(['none', 'verified']),
     isPrivate: faker.datatype.boolean() ? 1 : 0,
@@ -153,7 +167,7 @@ export async function seedDatabase(
 
   await batchInsert(db, profile, seedProfiles);
 
-  // 3. Create hashtags
+  // 4. Create hashtags
   const hashtagNames: string[] = [];
   while (hashtagNames.length < 20) {
     const tag = `#${faker.word.sample().toLowerCase()}`;
@@ -170,10 +184,10 @@ export async function seedDatabase(
 
   await batchInsert(db, hashtag, hashtags);
 
-  // 4. Create posts
+  // 5. Create posts
   const posts = [];
   const postHashtags = [];
-  const mediaItems = [];
+  const postMediaItems: any[] = [];
   const postHashtagMap: Record<string, string[]> = {};
 
   for (const user of seedUsers) {
@@ -209,7 +223,7 @@ export async function seedDatabase(
       }
 
       for (let k = 0; k < mediaCount; k++) {
-        mediaItems.push({
+        postMediaItems.push({
           id: nanoid(),
           userId: user.id, // Reference users.id
           postId,
@@ -224,7 +238,7 @@ export async function seedDatabase(
 
   await batchInsert(db, post, posts);
   await batchInsert(db, postHashtag, postHashtags);
-  await batchInsert(db, media, mediaItems);
+  await batchInsert(db, media, postMediaItems);
 
   // 5. Generate post embeddings with enhanced post type detection and optimized model selection
   // Uses voyage-3.5-lite for text-only posts and voyage-multimodal-3 for image/multimodal posts
@@ -255,9 +269,9 @@ export async function seedDatabase(
               const tagsForPost = postHashtagMap[p.id] || [];
               
               // Determine post type based on media content
-              const postMediaItems = mediaItems.filter(m => m.postId === p.id);
-              const hasMedia = postMediaItems.length > 0;
-              const hasImageMedia = postMediaItems.some(m => m.type === 'image');
+              const postMediaForPost = postMediaItems.filter((m: any) => m.postId === p.id);
+              const hasMedia = postMediaForPost.length > 0;
+              const hasImageMedia = postMediaForPost.some((m: any) => m.type === 'image');
               
               let postType: 'text' | 'image' | 'multimodal';
               if (!hasMedia) {
@@ -277,10 +291,10 @@ export async function seedDatabase(
               let mediaData = null;
               if (postType === 'image' || postType === 'multimodal') {
                 mediaData = {
-                  totalItems: postMediaItems.length,
-                  imageItems: postMediaItems.filter(m => m.type === 'image'),
+                  totalItems: postMediaForPost.length,
+                  imageItems: postMediaForPost.filter((m: any) => m.type === 'image'),
                   hasImages: hasImageMedia,
-                  storageKeys: postMediaItems.map(m => m.storageKey),
+                  storageKeys: postMediaForPost.map((m: any) => m.storageKey),
                 };
               }
               
@@ -317,7 +331,7 @@ export async function seedDatabase(
       console.log(
         `🎯 Enhanced embedding generation complete: ${successCount} successful, ${failureCount} failed`,
       );
-      console.log(`📊 Post type breakdown:`, postTypeStats);
+      console.log('📊 Post type breakdown:', postTypeStats);
       console.log(`🔤 Text posts using voyage-3.5-lite: ${postTypeStats.text}`);
       console.log(`🖼️ Image/multimodal posts using voyage-multimodal-3: ${postTypeStats.image + postTypeStats.multimodal}`);
     } catch (err) {
@@ -401,7 +415,7 @@ export async function seedDatabase(
     profiles: seedProfiles.length,
     hashtags: hashtags.length,
     posts: posts.length,
-    media: mediaItems.length,
+    media: profileImageMedia.length + postMediaItems.length,
     comments: comments.length,
     relationships: relationships.length,
     embeddings: {
