@@ -95,7 +95,7 @@ imageTransformRouter.get('/:id/:params?', cdnSecurityHeaders(), async (c) => {
       return c.json({ error: 'Processed image not found' }, 500);
     }
 
-    const imageUrl = await imageService.getImageUrl(finalMedia.storageKey, 'public', 31536000);
+    const imageUrl = await imageService.getImageUrl(finalMedia.storageKey, 'public', 604800); // 1 week expiry (max for R2)
 
     const response = {
       url: imageUrl,

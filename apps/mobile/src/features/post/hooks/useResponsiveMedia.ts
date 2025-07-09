@@ -22,19 +22,19 @@ export const useResponsiveMediaUrl = (mediaId?: string, targetWidth?: number) =>
   const variant = getOptimalVariant();
   const format = 'webp'; // Always use WebP for best compression
   
-  return useImageUrl(mediaId, variant, format);
+  return useImageUrl(mediaId ? { id: mediaId } : null, variant, true);
 };
 
 /**
  * Hook specifically for thumbnails (always small variant)
  */
 export const useThumbnailUrl = (mediaId?: string) => {
-  return useImageUrl(mediaId, 'small', 'webp');
+  return useImageUrl(mediaId ? { id: mediaId } : null, 'small', true);
 };
 
 /**
  * Hook for high-quality images (always large variant)
  */
 export const useHighQualityUrl = (mediaId?: string) => {
-  return useImageUrl(mediaId, 'large', 'webp');
+  return useImageUrl(mediaId ? { id: mediaId } : null, 'large', true);
 };

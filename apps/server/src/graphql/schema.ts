@@ -23,6 +23,7 @@ export const typeDefs = `
     blockedUsers: [Profile!]!
     isUserBlocked(userId: ID!): Boolean!
     discoverFeed(limit: Int = 10, cursor: String): DiscoveryResult
+    followingFeed(limit: Int = 10, cursor: String): FeedResult
     notifications(limit: Int = 20, offset: Int = 0, includeRead: Boolean = false): [Notification!]!
     unreadNotificationCount: Int!
   }
@@ -295,6 +296,12 @@ type SeenPostsResponse {
 
 type FeedPayload {
   posts: [Post!]!
+  nextCursor: String
+}
+
+type FeedResult {
+  posts: [Post!]!
+  hasMore: Boolean!
   nextCursor: String
 }
 

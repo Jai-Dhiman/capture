@@ -41,7 +41,6 @@ export class WasmVectorService implements IWasmVectorService {
       }
       
       this.isInitialized = true;
-      console.log('WASM vector service initialized successfully');
     } catch (error) {
       console.error('Failed to initialize WASM module:', error);
       this.isInitialized = false;

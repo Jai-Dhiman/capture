@@ -23,8 +23,6 @@ async function initializeWasmModule(): Promise<void> {
 
   wasmInitPromise = (async () => {
     try {
-      console.log('Initializing WASM image processing module...');
-      
       // Dynamic import for Cloudflare Workers compatibility
       wasmModule = await import('../../../wasm/capture_wasm.js');
       
@@ -60,7 +58,6 @@ async function initializeWasmModule(): Promise<void> {
       }
 
       wasmInitialized = true;
-      console.log('WASM image processing module initialized successfully');
     } catch (error) {
       wasmInitPromise = null;
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -155,8 +152,7 @@ export class WasmImageProcessor {
       
       this.processor = new ImageProcessor(this.maxMemoryMB);
       this.initialized = true;
-      
-      console.log(`WASM Image Processor initialized with ${this.maxMemoryMB}MB memory limit`);
+    
     } catch (error) {
       console.error('Failed to initialize WASM processor:', error);
       throw new Error(`WASM initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -389,7 +385,6 @@ export class WasmImageProcessor {
         
         if (memoryUsage > threshold) {
           this.processor.clear_memory();
-          console.log(`Cleared WASM memory: ${memoryUsage} -> ${this.processor.get_memory_usage()} bytes`);
         }
       }
     }

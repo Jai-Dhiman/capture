@@ -122,3 +122,47 @@ export const apiClient = {
     }
   },
 };
+
+/**
+ * Generate image URL from media ID using the media API
+ * @param mediaId - The media ID
+ * @param expirySeconds - URL expiry time in seconds (default: 30 minutes)
+ * @returns Promise with the image URL
+ */
+export const getImageUrl = async (mediaId: string, expirySeconds = 1800) => {
+  try {
+    const response = await apiClient.get(`/api/media/${mediaId}/url?expiry=${expirySeconds}`);
+    return response.url;
+  } catch (error) {
+    console.error('Failed to get image URL:', error);
+    throw new Error('Failed to load image');
+  }
+};
+
+/**
+ * Generate CDN-optimized image URL
+ * @param mediaId - The media ID
+ * @param variant - Image variant (thumbnail, small, medium, large, original)
+ * @param format - Image format (webp, jpeg, png)
+ * @returns Promise with the CDN image URL, or null if image is missing
+ */
+export const getCDNImageUrl = async (
+  mediaId: string, 
+  variant: 'thumbnail' | 'small' | 'medium' | 'large' | 'original' = 'medium',
+  format: 'webp' | 'jpeg' | 'png' = 'webp'
+) => {
+  try {
+    const response = await apiClient.get(`/api/media/cdn/${mediaId}?variant=${variant}&format=${format}`);
+    
+    // Handle missing seed images gracefully - server returns { url: null, isMissing: true }
+    if (response.url === null || response.isMissing) {
+      return null;
+    }
+    
+    return response.url;
+  } catch (error) {
+    console.error('Failed to get CDN image URL:', error);
+    // Return null instead of throwing for missing images, let the UI handle fallbacks
+    return null;
+  }
+};

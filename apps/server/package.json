@@ -23,6 +23,8 @@
   "dependencies": {
     "@apollo/server": "^4.11.3",
     "@as-integrations/cloudflare-workers": "^1.0.2",
+    "@aws-sdk/client-s3": "^3.842.0",
+    "@aws-sdk/s3-request-presigner": "^3.842.0",
     "@faker-js/faker": "^9.7.0",
     "@hono/sentry": "^1.2.1",
     "@hono/zod-validator": "^0.4.2",

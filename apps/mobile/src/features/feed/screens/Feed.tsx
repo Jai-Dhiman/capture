@@ -5,7 +5,7 @@ import Header from '@/shared/components/Header';
 import { SkeletonElement } from '@/shared/components/SkeletonLoader';
 import { FlashList } from '@shopify/flash-list';
 import { MotiView } from 'moti';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   ActivityIndicator,
   type NativeScrollEvent,
@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { EmptyState } from '../components/EmptyState';
 import { useDiscoverFeed } from '../hooks/useDiscoverFeed';
+import { useFollowingFeed } from '../hooks/useFollowingFeed';
 import { useMarkPostsAsSeen } from '@/features/post/hooks/usePosts';
 
 const HEADER_HEIGHT = 150;
@@ -24,26 +25,65 @@ export default function Feed() {
   const [refreshing, setRefreshing] = useState(false);
   const [hideHeader, setHideHeader] = useState(false);
   const prevScrollY = useRef(0);
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-    refetch,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useDiscoverFeed();
+
+  // Use both feeds directly
+  const followingFeed = useFollowingFeed(10);
+  const discoveryFeed = useDiscoverFeed(10);
   const { mutate: markAsSeen } = useMarkPostsAsSeen();
   const seenPostIdsRef = useRef(new Set<string>());
 
+  // Create seamless unified feed: following posts first, then discovery
+  const { posts, isLoading, isError, error, hasNextPage, isFetchingNextPage } = useMemo(() => {
+    const followingPosts = followingFeed.data?.pages.flatMap((page) => page.posts) || [];
+    const discoveryPosts = discoveryFeed.data?.pages.flatMap((page) => page.posts) || [];
+
+    // Following posts first, then discovery posts (remove duplicates)
+    const seenIds = new Set(followingPosts.map(p => p.id));
+    const uniqueDiscoveryPosts = discoveryPosts.filter(p => !seenIds.has(p.id));
+    const allPosts = [...followingPosts, ...uniqueDiscoveryPosts];
+
+    // Smart loading state - show loading if either feed is loading and we have no posts
+    const isLoading = (followingFeed.isLoading || discoveryFeed.isLoading) && allPosts.length === 0;
+
+    // Error handling - show error only if both feeds fail
+    const isError = followingFeed.isError && discoveryFeed.isError;
+    const error = followingFeed.error || discoveryFeed.error;
+
+    // Pagination - has more if either feed has more
+    const hasNextPage = followingFeed.hasNextPage || discoveryFeed.hasNextPage || false;
+    const isFetchingNextPage = followingFeed.isFetchingNextPage || discoveryFeed.isFetchingNextPage;
+
+    return {
+      posts: allPosts,
+      isLoading,
+      isError,
+      error,
+      hasNextPage,
+      isFetchingNextPage,
+    };
+  }, [
+    followingFeed.data,
+    followingFeed.isLoading,
+    followingFeed.isError,
+    followingFeed.error,
+    followingFeed.hasNextPage,
+    followingFeed.isFetchingNextPage,
+    discoveryFeed.data,
+    discoveryFeed.isLoading,
+    discoveryFeed.isError,
+    discoveryFeed.error,
+    discoveryFeed.hasNextPage,
+    discoveryFeed.isFetchingNextPage,
+  ]);
+
   const handleRefresh = async () => {
     setRefreshing(true);
-    await refetch();
+    await Promise.allSettled([
+      followingFeed.refetch(),
+      discoveryFeed.refetch()
+    ]);
     setRefreshing(false);
   };
-
-  const posts = data?.pages.flatMap((page) => page.posts) || [];
 
   useEffect(() => {
     if (posts.length > 0) {
@@ -67,7 +107,12 @@ export default function Feed() {
 
   const loadMore = () => {
     if (hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
+      if (followingFeed.hasNextPage) {
+        followingFeed.fetchNextPage();
+      }
+      if (discoveryFeed.hasNextPage) {
+        discoveryFeed.fetchNextPage();
+      }
     }
   };
 
@@ -89,6 +134,14 @@ export default function Feed() {
       setHideHeader(false);
     }
     prevScrollY.current = currentY;
+  };
+
+  const getEmptyStateContent = () => {
+    return {
+      title: "Your Feed is Empty",
+      message: "Start following other users to see their posts here, or check back later for personalized content recommendations.",
+      icon: "inbox" as const,
+    };
   };
 
   if (isLoading && !refreshing) {
@@ -123,7 +176,7 @@ export default function Feed() {
           <Text className="text-red-500 text-center mb-4">
             {error instanceof Error ? error.message : 'An error occurred loading your feed'}
           </Text>
-          <TouchableOpacity className="bg-black py-3 px-6 rounded-full" onPress={() => refetch()}>
+          <TouchableOpacity className="bg-black py-3 px-6 rounded-full" onPress={handleRefresh}>
             <Text className="text-white font-medium">Try Again</Text>
           </TouchableOpacity>
         </View>
@@ -155,11 +208,16 @@ export default function Feed() {
           onScroll={handleScroll}
           scrollEventThrottle={16}
           ListEmptyComponent={
-            <EmptyState
-              title="Your Feed is Empty"
-              message="Start following other users to see their posts here."
-              icon="people"
-            />
+            (() => {
+              const emptyContent = getEmptyStateContent();
+              return (
+                <EmptyState
+                  title={emptyContent.title}
+                  message={emptyContent.message}
+                  icon={emptyContent.icon}
+                />
+              );
+            })()
           }
         />
       </View>

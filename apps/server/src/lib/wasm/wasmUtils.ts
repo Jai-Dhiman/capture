@@ -39,8 +39,6 @@ async function initializeWasmModule(): Promise<void> {
 
   wasmInitPromise = (async () => {
     try {
-      console.log('Initializing WASM module...');
-      
       // Dynamic import for Cloudflare Workers compatibility
       wasmModule = await import('../../../wasm/capture_wasm.js');
       
@@ -90,7 +88,6 @@ async function initializeWasmModule(): Promise<void> {
       }
 
       wasmInitialized = true;
-      console.log('WASM module initialized successfully');
     } catch (error) {
       wasmInitPromise = null;
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -869,7 +866,6 @@ export class WasmInitializationOptimizer {
         { userId: 1, blockedUsers: [], following: [] }
       );
 
-      console.log('WASM functions preloaded successfully');
     } catch (error) {
       console.warn('Failed to preload WASM functions:', error);
     }

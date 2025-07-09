@@ -33,7 +33,7 @@ const MediaImageComponent = ({
       // R2 CDN URLs are cached for 1 hour, refresh at 45 minutes
       const refreshTime = 45 * 60 * 1000;
       const timer = setTimeout(() => {
-        queryClient.invalidateQueries({ 
+        queryClient.invalidateQueries({
           queryKey: ['imageUrl', mediaId, 'medium', 'webp'] // Match the new query key format
         });
       }, refreshTime);
@@ -55,9 +55,16 @@ const MediaImageComponent = ({
   }
 
   if (error || !imageUrl) {
+    // For missing profile images (like seed images), show a neutral background instead of error
+    const containerClass = circle
+      ? 'bg-stone-300 flex-1 rounded-full'
+      : 'bg-gray-200 flex-1 rounded-lg';
+
     return (
-      <View className="bg-gray-200 flex-1 rounded-lg">
-        <Text className="text-center p-2">Failed to load</Text>
+      <View className={containerClass}>
+        {error && !circle ? (
+          <Text className="text-center p-2">Failed to load</Text>
+        ) : null}
       </View>
     );
   }
@@ -122,9 +129,8 @@ const MediaImageComponent = ({
         <View style={{ flex: 1 }}>
           {!imageLoaded && (
             <View
-              className={`absolute top-0 left-0 right-0 bottom-0 bg-gray-200 flex-1 ${
-                circle ? 'rounded-full' : 'rounded-lg'
-              }`}
+              className={`absolute top-0 left-0 right-0 bottom-0 bg-gray-200 flex-1 ${circle ? 'rounded-full' : 'rounded-lg'
+                }`}
             >
               <SkeletonElement width="100%" height="100%" radius={circle ? 'round' : 8} />
             </View>
