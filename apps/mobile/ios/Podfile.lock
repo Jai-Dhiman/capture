@@ -242,6 +242,16 @@ PODS:
     - ExpoModulesCore
   - ExpoFont (13.0.4):
     - ExpoModulesCore
+  - ExpoImage (2.0.7):
+    - ExpoModulesCore
+    - libavif/libdav1d
+    - SDWebImage (~> 5.19.1)
+    - SDWebImageAVIFCoder (~> 0.11.0)
+    - SDWebImageSVGCoder (~> 1.7.0)
+  - ExpoImageManipulator (13.0.6):
+    - EXImageLoader
+    - ExpoModulesCore
+    - SDWebImageWebPCoder
   - ExpoImagePicker (16.0.6):
     - ExpoModulesCore
   - ExpoKeepAwake (14.0.3):
@@ -252,6 +262,9 @@ PODS:
     - ExpoModulesCore
   - ExpoLocalAuthentication (15.0.2):
     - ExpoModulesCore
+  - ExpoMediaLibrary (17.0.6):
+    - ExpoModulesCore
+    - React-Core
   - ExpoModulesCore (2.2.3):
     - DoubleConversion
     - glog
@@ -296,6 +309,23 @@ PODS:
   - hermes-engine (0.76.9):
     - hermes-engine/Pre-built (= 0.76.9)
   - hermes-engine/Pre-built (0.76.9)
+  - libavif/core (0.11.1)
+  - libavif/libdav1d (0.11.1):
+    - libavif/core
+    - libdav1d (>= 0.6.0)
+  - libdav1d (1.2.0)
+  - libwebp (1.5.0):
+    - libwebp/demux (= 1.5.0)
+    - libwebp/mux (= 1.5.0)
+    - libwebp/sharpyuv (= 1.5.0)
+    - libwebp/webp (= 1.5.0)
+  - libwebp/demux (1.5.0):
+    - libwebp/webp
+  - libwebp/mux (1.5.0):
+    - libwebp/demux
+  - libwebp/sharpyuv (1.5.0)
+  - libwebp/webp (1.5.0):
+    - libwebp/sharpyuv
   - lottie-ios (4.5.0)
   - lottie-react-native (7.1.0):
     - DoubleConversion
@@ -1739,6 +1769,49 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
+  - react-native-slider (4.5.5):
+    - DoubleConversion
+    - glog
+    - hermes-engine
+    - RCT-Folly (= 2024.10.14.00)
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - react-native-slider/common (= 4.5.5)
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - Yoga
+  - react-native-slider/common (4.5.5):
+    - DoubleConversion
+    - glog
+    - hermes-engine
+    - RCT-Folly (= 2024.10.14.00)
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - Yoga
   - react-native-video (6.15.0):
     - DoubleConversion
     - glog
@@ -2316,7 +2389,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - Sentry/HybridSDK (= 8.48.0)
     - Yoga
-  - RNSVG (15.2.0):
+  - RNSVG (15.8.0):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -2336,9 +2409,9 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
-    - RNSVG/common (= 15.2.0)
+    - RNSVG/common (= 15.8.0)
     - Yoga
-  - RNSVG/common (15.2.0):
+  - RNSVG/common (15.8.0):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -2359,6 +2432,17 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
+  - SDWebImage (5.19.7):
+    - SDWebImage/Core (= 5.19.7)
+  - SDWebImage/Core (5.19.7)
+  - SDWebImageAVIFCoder (0.11.0):
+    - libavif/core (>= 0.11.0)
+    - SDWebImage (~> 5.10)
+  - SDWebImageSVGCoder (1.7.0):
+    - SDWebImage/Core (~> 5.6)
+  - SDWebImageWebPCoder (0.14.6):
+    - libwebp (~> 1.0)
+    - SDWebImage/Core (~> 5.17)
   - Sentry/HybridSDK (8.48.0)
   - SocketRocket (0.7.1)
   - Yoga (0.0.0)
@@ -2381,13 +2465,16 @@ DEPENDENCIES:
   - "ExpoAsset (from `../../../node_modules/.pnpm/expo-asset@11.0.5_expo@52.0.47_@babel+core@7.27.4_@babel+preset-env@7.22.20_@babel+core@7.27._7c24cz4uk4r5rkxjcrf3hguhde/node_modules/expo-asset/ios`)"
   - "ExpoClipboard (from `../../../node_modules/.pnpm/expo-clipboard@7.0.1_expo@52.0.47_@babel+core@7.27.4_@babel+preset-env@7.22.20_@babel+core@7._f5petbtpbxo7gztqmdrfdrhh5m/node_modules/expo-clipboard/ios`)"
   - "ExpoCrypto (from `../../../node_modules/.pnpm/expo-crypto@14.0.2_expo@52.0.47_@babel+core@7.27.4_@babel+preset-env@7.22.20_@babel+core@7.27_hplllkhnskcvuhbjmgyvj7u4ym/node_modules/expo-crypto/ios`)"
-  - ExpoFileSystem (from `../../../node_modules/expo-file-system/ios`)
+  - "ExpoFileSystem (from `../../../node_modules/.pnpm/expo-file-system@18.0.12_expo@52.0.47_@babel+core@7.27.4_@babel+preset-env@7.22.20_@babel+cor_qphtf42q5qdma7otwka7jxd5aq/node_modules/expo-file-system/ios`)"
   - ExpoFont (from `../../../node_modules/expo-font/ios`)
+  - "ExpoImage (from `../../../node_modules/.pnpm/expo-image@2.0.7_expo@52.0.47_@babel+core@7.27.4_@babel+preset-env@7.22.20_@babel+core@7.27.4_slypvaovezzfenxfi76f6cqgmm/node_modules/expo-image/ios`)"
+  - "ExpoImageManipulator (from `../../../node_modules/.pnpm/expo-image-manipulator@13.0.6_expo@52.0.47_@babel+core@7.27.4_@babel+preset-env@7.22.20_@babe_mymxhd2q2qgmot3iny3sbxv2ly/node_modules/expo-image-manipulator/ios`)"
   - "ExpoImagePicker (from `../../../node_modules/.pnpm/expo-image-picker@16.0.6_expo@52.0.47_@babel+core@7.27.4_@babel+preset-env@7.22.20_@babel+cor_zw4vfkbgljtr2gwxntfue5clnq/node_modules/expo-image-picker/ios`)"
   - ExpoKeepAwake (from `../../../node_modules/expo-keep-awake/ios`)
   - "ExpoLinearGradient (from `../../../node_modules/.pnpm/expo-linear-gradient@14.0.2_expo@52.0.47_@babel+core@7.27.4_@babel+preset-env@7.22.20_@babel+_72wbr5td3ezgupy6rfamlase3e/node_modules/expo-linear-gradient/ios`)"
   - "ExpoLinking (from `../../../node_modules/.pnpm/expo-linking@7.0.5_expo@52.0.47_@babel+core@7.27.4_@babel+preset-env@7.22.20_@babel+core@7.27_uzz2bnlbyrjxi2735zr3bidcia/node_modules/expo-linking/ios`)"
   - "ExpoLocalAuthentication (from `../../../node_modules/.pnpm/expo-local-authentication@15.0.2_expo@52.0.47_@babel+core@7.27.4_@babel+preset-env@7.22.20_@b_4j2qhtqfp5meibjtycvbltuo6e/node_modules/expo-local-authentication/ios`)"
+  - "ExpoMediaLibrary (from `../../../node_modules/.pnpm/expo-media-library@17.0.6_expo@52.0.47_@babel+core@7.27.4_@babel+preset-env@7.22.20_@babel+co_5ugxorppj72k6vcaiccvy2ag5i/node_modules/expo-media-library/ios`)"
   - ExpoModulesCore (from `../../../node_modules/expo-modules-core`)
   - "ExpoSecureStore (from `../../../node_modules/.pnpm/expo-secure-store@14.0.1_expo@52.0.47_@babel+core@7.27.4_@babel+preset-env@7.22.20_@babel+cor_3rclqrmm5z7on6hgfx4nrvea5e/node_modules/expo-secure-store/ios`)"
   - "ExpoWebBrowser (from `../../../node_modules/.pnpm/expo-web-browser@14.0.2_expo@52.0.47_@babel+core@7.27.4_@babel+preset-env@7.22.20_@babel+core_s2zaxjkbpfhijpdie6lxignrby/node_modules/expo-web-browser/ios`)"
@@ -2434,6 +2521,7 @@ DEPENDENCIES:
   - react-native-passkey (from `../node_modules/react-native-passkey`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - "react-native-skia (from `../node_modules/@shopify/react-native-skia`)"
+  - "react-native-slider (from `../node_modules/@react-native-community/slider`)"
   - react-native-video (from `../node_modules/react-native-video`)
   - "React-nativeconfig (from `../../../node_modules/.pnpm/react-native@0.76.9_@babel+core@7.27.4_@babel+preset-env@7.22.20_@babel+core@7.27.4__@types+react@18.3.23_react@18.3.1/node_modules/react-native/ReactCommon`)"
   - "React-NativeModulesApple (from `../../../node_modules/.pnpm/react-native@0.76.9_@babel+core@7.27.4_@babel+preset-env@7.22.20_@babel+core@7.27.4__@types+react@18.3.23_react@18.3.1/node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios`)"
@@ -2478,8 +2566,15 @@ SPEC REPOS:
     - GoogleSignIn
     - GTMAppAuth
     - GTMSessionFetcher
+    - libavif
+    - libdav1d
+    - libwebp
     - lottie-ios
     - React-Codegen
+    - SDWebImage
+    - SDWebImageAVIFCoder
+    - SDWebImageSVGCoder
+    - SDWebImageWebPCoder
     - Sentry
     - SocketRocket
 
@@ -2519,9 +2614,13 @@ EXTERNAL SOURCES:
   ExpoCrypto:
     :path: "../../../node_modules/.pnpm/expo-crypto@14.0.2_expo@52.0.47_@babel+core@7.27.4_@babel+preset-env@7.22.20_@babel+core@7.27_hplllkhnskcvuhbjmgyvj7u4ym/node_modules/expo-crypto/ios"
   ExpoFileSystem:
-    :path: "../../../node_modules/expo-file-system/ios"
+    :path: "../../../node_modules/.pnpm/expo-file-system@18.0.12_expo@52.0.47_@babel+core@7.27.4_@babel+preset-env@7.22.20_@babel+cor_qphtf42q5qdma7otwka7jxd5aq/node_modules/expo-file-system/ios"
   ExpoFont:
     :path: "../../../node_modules/expo-font/ios"
+  ExpoImage:
+    :path: "../../../node_modules/.pnpm/expo-image@2.0.7_expo@52.0.47_@babel+core@7.27.4_@babel+preset-env@7.22.20_@babel+core@7.27.4_slypvaovezzfenxfi76f6cqgmm/node_modules/expo-image/ios"
+  ExpoImageManipulator:
+    :path: "../../../node_modules/.pnpm/expo-image-manipulator@13.0.6_expo@52.0.47_@babel+core@7.27.4_@babel+preset-env@7.22.20_@babe_mymxhd2q2qgmot3iny3sbxv2ly/node_modules/expo-image-manipulator/ios"
   ExpoImagePicker:
     :path: "../../../node_modules/.pnpm/expo-image-picker@16.0.6_expo@52.0.47_@babel+core@7.27.4_@babel+preset-env@7.22.20_@babel+cor_zw4vfkbgljtr2gwxntfue5clnq/node_modules/expo-image-picker/ios"
   ExpoKeepAwake:
@@ -2532,6 +2631,8 @@ EXTERNAL SOURCES:
     :path: "../../../node_modules/.pnpm/expo-linking@7.0.5_expo@52.0.47_@babel+core@7.27.4_@babel+preset-env@7.22.20_@babel+core@7.27_uzz2bnlbyrjxi2735zr3bidcia/node_modules/expo-linking/ios"
   ExpoLocalAuthentication:
     :path: "../../../node_modules/.pnpm/expo-local-authentication@15.0.2_expo@52.0.47_@babel+core@7.27.4_@babel+preset-env@7.22.20_@b_4j2qhtqfp5meibjtycvbltuo6e/node_modules/expo-local-authentication/ios"
+  ExpoMediaLibrary:
+    :path: "../../../node_modules/.pnpm/expo-media-library@17.0.6_expo@52.0.47_@babel+core@7.27.4_@babel+preset-env@7.22.20_@babel+co_5ugxorppj72k6vcaiccvy2ag5i/node_modules/expo-media-library/ios"
   ExpoModulesCore:
     :path: "../../../node_modules/expo-modules-core"
   ExpoSecureStore:
@@ -2621,6 +2722,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-safe-area-context"
   react-native-skia:
     :path: "../node_modules/@shopify/react-native-skia"
+  react-native-slider:
+    :path: "../node_modules/@react-native-community/slider"
   react-native-video:
     :path: "../node_modules/react-native-video"
   React-nativeconfig:
@@ -2717,11 +2820,14 @@ SPEC CHECKSUMS:
   ExpoCrypto: e97e864c8d7b9ce4a000bca45dddb93544a1b2b4
   ExpoFileSystem: 42d363d3b96f9afab980dcef60d5657a4443c655
   ExpoFont: f354e926f8feae5e831ec8087f36652b44a0b188
+  ExpoImage: d840b256050f4428d2942bc2b6e9251f9e0d7021
+  ExpoImageManipulator: 4aca9cc1d84e31f62a7e8075c19026d3ad62f852
   ExpoImagePicker: 24e5ba8da111f74519b1e6dc556e0b438b2b8464
   ExpoKeepAwake: b0171a73665bfcefcfcc311742a72a956e6aa680
   ExpoLinearGradient: 35ebd83b16f80b3add053a2fd68cc328ed927f60
   ExpoLinking: 8d12bee174ba0cdf31239706578e29e74a417402
   ExpoLocalAuthentication: eb2be9c7bcdc68e9434d4be4bb5aa5cf7943e816
+  ExpoMediaLibrary: 2709fc2e4fcf87d28767714abcc603c4bec228c6
   ExpoModulesCore: c25d77625038b1968ea1afefc719862c0d8dd993
   ExpoSecureStore: 9a3665d7161dd1031be386e278bffd623658f316
   ExpoWebBrowser: a212e6b480d8857d3e441fba51e0c968333803b3
@@ -2734,6 +2840,9 @@ SPEC CHECKSUMS:
   GTMAppAuth: f69bd07d68cd3b766125f7e072c45d7340dea0de
   GTMSessionFetcher: 5aea5ba6bd522a239e236100971f10cb71b96ab6
   hermes-engine: 9e868dc7be781364296d6ee2f56d0c1a9ef0bb11
+  libavif: 84bbb62fb232c3018d6f1bab79beea87e35de7b7
+  libdav1d: 23581a4d8ec811ff171ed5e2e05cd27bad64c39f
+  libwebp: 02b23773aedb6ff1fd38cec7a77b81414c6842a8
   lottie-ios: a881093fab623c467d3bce374367755c272bdd59
   lottie-react-native: 4ba06e2e4985c53dda6595a880f780e7ff551df1
   RCT-Folly: ea9d9256ba7f9322ef911169a9f696e5857b9e17
@@ -2771,6 +2880,7 @@ SPEC CHECKSUMS:
   react-native-passkey: 3aac247c18127443ef4a002b59d8e12dc7e99f2e
   react-native-safe-area-context: cd916088cac5300c3266876218377518987b995e
   react-native-skia: 9b4e1185bdc0d4e7e6488c5419b5643cc456dd2e
+  react-native-slider: d8c35cc0162af73c9448f4b18c34d09e841cc1ab
   react-native-video: eae250f36f196913fdfacd3f502030d6d396fc5c
   React-nativeconfig: 8efdb1ef1e9158c77098a93085438f7e7b463678
   React-NativeModulesApple: cebca2e5320a3d66e123cade23bd90a167ffce5e
@@ -2806,7 +2916,11 @@ SPEC CHECKSUMS:
   RNReanimated: 56b0a59d4a8c97f52a47cadbbf787851e66db9db
   RNScreens: 362f4c861dd155f898908d5035d97b07a3f1a9d1
   RNSentry: ac7beae04304d95491a512b5abf6926d4501c73c
-  RNSVG: 7ed66af2b6e90ccd53ce11822a6863f3514a1e40
+  RNSVG: b889dc9c1948eeea0576a16cc405c91c37a12c19
+  SDWebImage: 8a6b7b160b4d710e2a22b6900e25301075c34cb3
+  SDWebImageAVIFCoder: 00310d246aab3232ce77f1d8f0076f8c4b021d90
+  SDWebImageSVGCoder: 15a300a97ec1c8ac958f009c02220ac0402e936c
+  SDWebImageWebPCoder: e38c0a70396191361d60c092933e22c20d5b1380
   Sentry: 1ca8405451040482877dcd344dfa3ef80b646631
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: feb4910aba9742cfedc059e2b2902e22ffe9954a

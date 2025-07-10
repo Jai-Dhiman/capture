@@ -310,13 +310,20 @@ mediaRouter.delete('/', async (c) => {
 
 // CDN-optimized image serving endpoint with cache control headers
 mediaRouter.get('/cdn/*', cdnSecurityHeaders(), async (c) => {
-  const mediaId = c.req.param('*'); // Use wildcard to capture full path including slashes
+  const fullPath = c.req.path;
+  const mediaId = fullPath.replace('/api/media/cdn/', ''); // Extract the media ID from the full path
   const variant = c.req.query('variant') || 'original';
   const format = c.req.query('format') || 'webp';
 
   console.log(`[CDN] Request for mediaId: ${mediaId}, variant: ${variant}, format: ${format}`);
 
   try {
+    // Validate that mediaId is not null or undefined
+    if (!mediaId || typeof mediaId !== 'string') {
+      console.error(`[CDN] Invalid mediaId: ${mediaId}`);
+      return c.json({ error: 'Invalid media ID' }, 400);
+    }
+
     const imageService = createImageService(c.env);
     const cachingService = createCachingService(c.env);
     
