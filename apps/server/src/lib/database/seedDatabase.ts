@@ -105,6 +105,8 @@ const r2StorageKeys = [
   'seed-images/photo-26.jpg',
   'seed-images/photo-27.jpg',
   'seed-images/photo-28.jpg',
+  'seed-images/photo-29.jpg',
+  'seed-images/photo-30.jpg',
 ];
 
 async function batchInsert(db: ReturnType<typeof createD1Client>, table: any, rows: unknown[]) {
@@ -261,6 +263,7 @@ export async function seedDatabase(
 
       // Process embeddings in smaller batches to avoid overwhelming the AI service
       const EMBEDDING_BATCH_SIZE = 5;
+      
       for (let i = 0; i < posts.length; i += EMBEDDING_BATCH_SIZE) {
         const batch = posts.slice(i, i + EMBEDDING_BATCH_SIZE);
         await Promise.all(
@@ -309,7 +312,13 @@ export async function seedDatabase(
                 postType, // Enhanced: pass post type for optimal model selection
               );
 
-              await embeddingService.storeEmbedding(p.id, embeddingResult, metadata, qdrantClient);
+              // Try to store embedding in Qdrant (optional for seeding)
+              try {
+                await embeddingService.storeEmbedding(p.id, embeddingResult, metadata, qdrantClient);
+              } catch (qdrantErr) {
+                console.warn(`⚠️ Qdrant storage failed for post ${p.id}, but embedding generated successfully:`, qdrantErr);
+              }
+              
               successCount++;
               
               // Log post type and media data for monitoring

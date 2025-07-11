@@ -202,8 +202,15 @@ export class UnifiedDiscoveryResolver {
         privacySettings,
       );
 
-      // Sort and limit results
-      const sortedCandidates = processedCandidates
+      // Sort and limit results with deduplication
+      const uniqueProcessedCandidates = new Map();
+      for (const candidate of processedCandidates) {
+        if (!uniqueProcessedCandidates.has(candidate.id)) {
+          uniqueProcessedCandidates.set(candidate.id, candidate);
+        }
+      }
+      
+      const sortedCandidates = Array.from(uniqueProcessedCandidates.values())
         .sort((a, b) => b.scores.final - a.scores.final)
         .slice(0, limit);
 
@@ -213,7 +220,7 @@ export class UnifiedDiscoveryResolver {
       const hasMore = candidates.length >= limit * 3;
       const nextCursor =
         hasMore && sortedCandidates.length > 0
-          ? sortedCandidates[sortedCandidates.length - 1].id
+          ? sortedCandidates[sortedCandidates.length - 1].createdAt
           : undefined;
 
       return {
@@ -533,8 +540,11 @@ export class UnifiedDiscoveryResolver {
       return cached;
     }
 
-    // Get visible posts for user
-    const posts = await getVisiblePostsForUser(userId, this.bindings, { limit });
+    // Get visible posts for user with cursor-based pagination
+    const posts = await getVisiblePostsForUser(userId, this.bindings, { 
+      limit,
+      maxCreatedAt: cursor // Use cursor for pagination
+    });
 
     // Get seen posts with timestamps for devaluation
     const seenPostsData = await getSeenPostsForUser(userId, this.bindings);
@@ -543,23 +553,29 @@ export class UnifiedDiscoveryResolver {
     // Include all posts (seen and unseen) for graduated devaluation
     const allPosts = posts;
 
-    // Convert to candidate format with seen metadata
-    const candidates: CandidatePost[] = allPosts.map((post) => {
-      const seenAt = seenPostMap.get(post.id);
-      return {
-        id: post.id,
-        userId: post.userId,
-        content: post.content,
-        createdAt: post.createdAt,
-        hashtags: [], // No hashtags in PostWithPrivacy interface - will need to be fetched separately if needed
-        isPrivate: Boolean(post.authorIsPrivate),
-        saveCount: post._saveCount || 0,
-        commentCount: post._commentCount || 0,
-        viewCount: 0, // No viewCount in PostWithPrivacy interface
-        seenAt: seenAt,
-        isSeen: !!seenAt,
-      };
-    });
+    // Convert to candidate format with seen metadata and ensure uniqueness
+    const candidateMap = new Map<string, CandidatePost>();
+    
+    for (const post of allPosts) {
+      if (!candidateMap.has(post.id)) {
+        const seenAt = seenPostMap.get(post.id);
+        candidateMap.set(post.id, {
+          id: post.id,
+          userId: post.userId,
+          content: post.content,
+          createdAt: post.createdAt,
+          hashtags: [], // No hashtags in PostWithPrivacy interface - will need to be fetched separately if needed
+          isPrivate: Boolean(post.authorIsPrivate),
+          saveCount: post._saveCount || 0,
+          commentCount: post._commentCount || 0,
+          viewCount: 0, // No viewCount in PostWithPrivacy interface
+          seenAt: seenAt,
+          isSeen: !!seenAt,
+        });
+      }
+    }
+    
+    const candidates: CandidatePost[] = Array.from(candidateMap.values());
 
     // Cache for 5 minutes
     await this.cachingService.set(cacheKey, candidates, 300);

@@ -40,7 +40,23 @@ export default function Feed() {
     // Following posts first, then discovery posts (remove duplicates)
     const seenIds = new Set(followingPosts.map(p => p.id));
     const uniqueDiscoveryPosts = discoveryPosts.filter(p => !seenIds.has(p.id));
-    const allPosts = [...followingPosts, ...uniqueDiscoveryPosts];
+    
+    // Additional deduplication to prevent same posts appearing multiple times
+    const allPostsMap = new Map();
+    
+    // Add following posts first
+    for (const post of followingPosts) {
+      allPostsMap.set(post.id, post);
+    }
+    
+    // Add unique discovery posts
+    for (const post of uniqueDiscoveryPosts) {
+      if (!allPostsMap.has(post.id)) {
+        allPostsMap.set(post.id, post);
+      }
+    }
+    
+    const allPosts = Array.from(allPostsMap.values());
 
     // Smart loading state - show loading if either feed is loading and we have no posts
     const isLoading = (followingFeed.isLoading || discoveryFeed.isLoading) && allPosts.length === 0;
