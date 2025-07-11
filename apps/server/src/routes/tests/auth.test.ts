@@ -1,203 +1,20 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { serve } from '@hono/node-server';
 import { fetch } from 'undici';
+import {
+  createEmailService,
+  mockSendVerificationCode,
+} from '../../test/mocks/emailService.mock';
+import { mockCreateD1Client, initializeMockData } from '../../test/mocks/db-mock';
 
 // Mock the email service
-vi.mock('@/lib/emailService', () => ({
-  createEmailService: vi.fn().mockReturnValue({
-    sendVerificationCode: vi.fn().mockResolvedValue(undefined),
-  }),
+vi.mock('@/lib/services/emailService', () => ({
+  createEmailService,
 }));
 
-// Mock the database - use factory function to avoid hoisting issues
-const dbState = {
-  users: [] as any[],
-  emailCodes: [] as any[],
-  profile: [] as any[],
-  userActivity: [] as any[],
-  passkeys: [] as any[],
-};
-
-// Shared state for the mock database
-const mockDBState = {
-  currentOperation: '',
-  currentTable: '',
-  whereConditions: {} as any,
-  insertValues: {} as any,
-  updateValues: {} as any,
-  limitValue: 10,
-};
-
-function createMockDB() {
-  return {
-    select: (_fields?: any) => {
-      mockDBState.currentOperation = 'select';
-      return createMockDB();
-    },
-    from: (table: any) => {
-      mockDBState.currentTable = table[Symbol.for('drizzle:Name')] || table?.name || 'unknown';
-      return createMockDB();
-    },
-    where: (condition: any) => {
-      // Handle different types of conditions
-      if (typeof condition === 'function') {
-        // This is the and() function - extract conditions from it
-        const conditions = condition();
-        for (const c of conditions) {
-          if (c?.left?.name) {
-            mockDBState.whereConditions[c.left.name] = c.right;
-          }
-        }
-      } else if (condition?.left?.name) {
-        mockDBState.whereConditions[condition.left.name] = condition.right;
-      }
-      return createMockDB();
-    },
-    limit: (limit: number) => {
-      mockDBState.limitValue = limit;
-      if (mockDBState.currentOperation === 'select') {
-        if (mockDBState.currentTable === 'emailCodes') {
-          let filteredCodes = [...dbState.emailCodes];
-          if (mockDBState.whereConditions.email) {
-            filteredCodes = filteredCodes.filter(
-              (c) => c.email === mockDBState.whereConditions.email,
-            );
-          }
-          if (mockDBState.whereConditions.code) {
-            filteredCodes = filteredCodes.filter(
-              (c) => c.code === mockDBState.whereConditions.code,
-            );
-          }
-          if (mockDBState.whereConditions.type) {
-            filteredCodes = filteredCodes.filter(
-              (c) => c.type === mockDBState.whereConditions.type,
-            );
-          }
-          return Promise.resolve(filteredCodes.slice(0, mockDBState.limitValue));
-        }
-        if (mockDBState.currentTable === 'passkeys') {
-          const passkeys = dbState.passkeys.filter((p) => {
-            if (mockDBState.whereConditions.userId)
-              return p.userId === mockDBState.whereConditions.userId;
-            return false;
-          });
-          return Promise.resolve(passkeys);
-        }
-      }
-      // Always return an array
-      return Promise.resolve([]);
-    },
-    get: () => {
-      if (mockDBState.currentOperation === 'select') {
-        if (mockDBState.currentTable === 'users') {
-          const user = dbState.users.find((u: any) => {
-            if (mockDBState.whereConditions.email)
-              return u.email === mockDBState.whereConditions.email;
-            if (mockDBState.whereConditions.id) return u.id === mockDBState.whereConditions.id;
-            return false;
-          });
-          return Promise.resolve(user || null);
-        }
-        if (mockDBState.currentTable === 'profile') {
-          const profile = dbState.profile.find((p: any) => {
-            if (mockDBState.whereConditions.userId)
-              return p.userId === mockDBState.whereConditions.userId;
-            return false;
-          });
-          return Promise.resolve(profile || null);
-        }
-        if (mockDBState.currentTable === 'emailCodes') {
-          const code = dbState.emailCodes.find((c: any) => {
-            if (mockDBState.whereConditions.id) return c.id === mockDBState.whereConditions.id;
-            return false;
-          });
-          return Promise.resolve(code || null);
-        }
-      }
-      return Promise.resolve(null);
-    },
-    insert: (table: any) => {
-      mockDBState.currentOperation = 'insert';
-      mockDBState.currentTable = table[Symbol.for('drizzle:Name')] || table?.name || 'unknown';
-      return createMockDB();
-    },
-    update: (table: any) => {
-      mockDBState.currentOperation = 'update';
-      mockDBState.currentTable = table[Symbol.for('drizzle:Name')] || table?.name || 'unknown';
-      return createMockDB();
-    },
-    delete: (table: any) => {
-      mockDBState.currentOperation = 'delete';
-      mockDBState.currentTable = table[Symbol.for('drizzle:Name')] || table?.name || 'unknown';
-      return createMockDB();
-    },
-    values: (values: any) => {
-      mockDBState.insertValues = values;
-      return createMockDB();
-    },
-    set: (values: any) => {
-      mockDBState.updateValues = values;
-      return createMockDB();
-    },
-    execute: () => {
-      if (mockDBState.currentOperation === 'insert') {
-        if (mockDBState.currentTable === 'users') {
-          const newUser = { ...mockDBState.insertValues };
-          dbState.users.push(newUser);
-        } else if (mockDBState.currentTable === 'emailCodes') {
-          const newCode = { ...mockDBState.insertValues };
-          dbState.emailCodes.push(newCode);
-        } else if (mockDBState.currentTable === 'userActivity') {
-          const newActivity = { ...mockDBState.insertValues };
-          dbState.userActivity.push(newActivity);
-        }
-      } else if (mockDBState.currentOperation === 'update') {
-        if (mockDBState.currentTable === 'users') {
-          const userIndex = dbState.users.findIndex((u: any) => {
-            if (mockDBState.whereConditions.id) return u.id === mockDBState.whereConditions.id;
-            return false;
-          });
-          if (userIndex !== -1) {
-            dbState.users[userIndex] = { ...dbState.users[userIndex], ...mockDBState.updateValues };
-          }
-        } else if (mockDBState.currentTable === 'emailCodes') {
-          const codeIndex = dbState.emailCodes.findIndex((c: any) => {
-            if (mockDBState.whereConditions.id) return c.id === mockDBState.whereConditions.id;
-            return false;
-          });
-          if (codeIndex !== -1) {
-            dbState.emailCodes[codeIndex] = {
-              ...dbState.emailCodes[codeIndex],
-              ...mockDBState.updateValues,
-            };
-          }
-        }
-      } else if (mockDBState.currentOperation === 'delete') {
-        if (mockDBState.currentTable === 'emailCodes') {
-          dbState.emailCodes = dbState.emailCodes.filter((c: any) => {
-            if (mockDBState.whereConditions.expiresAt) {
-              return Number(c.expiresAt) >= Number(mockDBState.whereConditions.expiresAt);
-            }
-            return true;
-          });
-        }
-      }
-
-      // Reset state
-      mockDBState.currentOperation = '';
-      mockDBState.currentTable = '';
-      mockDBState.whereConditions = {};
-      mockDBState.insertValues = {};
-      mockDBState.updateValues = {};
-      mockDBState.limitValue = 10;
-
-      return Promise.resolve({ success: true });
-    },
-  };
-}
-
+// Mock the database using the shared mock
 vi.mock('@/db', () => ({
-  createD1Client: vi.fn().mockImplementation(() => createMockDB()),
+  createD1Client: mockCreateD1Client,
 }));
 
 // Mock nanoid
@@ -213,14 +30,9 @@ vi.mock('hono/jwt', () => ({
 // Import after mocking
 import indexModule from '@/index';
 import { createD1Client } from '@/db';
-import { createEmailService } from '@/lib/services/emailService';
 
 // Extract the app - indexModule exports { fetch, queue }, we need the fetch function
 const app = indexModule.fetch;
-
-// Get the mocked functions
-const mockEmailService = createEmailService({} as any) as any;
-const mockSendVerificationCode = mockEmailService.sendVerificationCode;
 
 // Mock KV stores
 const mockRefreshTokenKVPut = vi.fn().mockResolvedValue(undefined);
@@ -306,20 +118,8 @@ describe('Auth Endpoints', () => {
     mockRateLimitKVPut.mockResolvedValue(undefined);
     mockRateLimitKVGet.mockResolvedValue(JSON.stringify({ count: 10, resetTime: Date.now() }));
 
-    // Reset database state
-    dbState.users = [];
-    dbState.emailCodes = [];
-    dbState.profile = [];
-    dbState.userActivity = [];
-    dbState.passkeys = [];
-
-    // Reset mock database state
-    mockDBState.currentOperation = '';
-    mockDBState.currentTable = '';
-    mockDBState.whereConditions = {};
-    mockDBState.insertValues = {};
-    mockDBState.updateValues = {};
-    mockDBState.limitValue = 10;
+    // Reset database state using the shared mock helper
+    initializeMockData();
 
     server = await setupTestServer();
   });
@@ -330,9 +130,7 @@ describe('Auth Endpoints', () => {
 
   describe('/auth/send-code', () => {
     it('should send a verification code for valid email', async () => {
-      dbState.users = [];
-      dbState.emailCodes = [];
-
+      // No initial data needed, initializeMockData in beforeEach handles it
       const response = await fetch(`${server.url}/auth/send-code`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -360,8 +158,7 @@ describe('Auth Endpoints', () => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      dbState.users = [existingUser];
-      dbState.emailCodes = [];
+      initializeMockData({ users: [existingUser] });
 
       const response = await fetch(`${server.url}/auth/send-code`, {
         method: 'POST',
@@ -412,8 +209,6 @@ describe('Auth Endpoints', () => {
 
     it('should handle email service errors gracefully', async () => {
       mockSendVerificationCode.mockRejectedValueOnce(new Error('Email service error'));
-      dbState.users = [];
-      dbState.emailCodes = [];
 
       const response = await fetch(`${server.url}/auth/send-code`, {
         method: 'POST',
@@ -432,8 +227,6 @@ describe('Auth Endpoints', () => {
 
     it('should handle missing email service configuration', async () => {
       mockSendVerificationCode.mockRejectedValueOnce(new Error('RESEND_API_KEY is not configured'));
-      dbState.users = [];
-      dbState.emailCodes = [];
 
       const response = await fetch(`${server.url}/auth/send-code`, {
         method: 'POST',
@@ -453,18 +246,18 @@ describe('Auth Endpoints', () => {
     it('should verify code and create new user', async () => {
       const testCode = '123456';
       const testEmail = 'newuser@example.com';
-      dbState.users = [];
-      dbState.emailCodes = [
-        {
-          id: 'code-id',
-          email: testEmail,
-          code: testCode,
-          type: 'login_register',
-          expiresAt: (Date.now() + 600000).toString(),
-          usedAt: null,
-        },
-      ];
-      dbState.profile = [];
+      initializeMockData({
+        emailCodes: [
+          {
+            id: 'code-id',
+            email: testEmail,
+            code: testCode,
+            type: 'login_register',
+            expiresAt: (Date.now() + 600000).toString(),
+            usedAt: null,
+          },
+        ],
+      });
 
       const response = await fetch(`${server.url}/auth/verify-code`, {
         method: 'POST',
@@ -502,18 +295,19 @@ describe('Auth Endpoints', () => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      dbState.users = [existingUser];
-      dbState.emailCodes = [
-        {
-          id: 'code-id',
-          email: testEmail,
-          code: testCode,
-          type: 'login_register',
-          expiresAt: (Date.now() + 600000).toString(),
-          usedAt: null,
-        },
-      ];
-      dbState.profile = [];
+      initializeMockData({
+        users: [existingUser],
+        emailCodes: [
+          {
+            id: 'code-id',
+            email: testEmail,
+            code: testCode,
+            type: 'login_register',
+            expiresAt: (Date.now() + 600000).toString(),
+            usedAt: null,
+          },
+        ],
+      });
 
       const response = await fetch(`${server.url}/auth/verify-code`, {
         method: 'POST',
@@ -559,9 +353,7 @@ describe('Auth Endpoints', () => {
     });
 
     it('should return 401 for invalid code', async () => {
-      dbState.users = [];
-      dbState.emailCodes = [];
-
+      // No codes in DB
       const response = await fetch(`${server.url}/auth/verify-code`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -579,17 +371,18 @@ describe('Auth Endpoints', () => {
     });
 
     it('should return 401 for expired code', async () => {
-      dbState.users = [];
-      dbState.emailCodes = [
-        {
-          id: 'code-id',
-          email: 'user@example.com',
-          code: '123456',
-          type: 'login_register',
-          expiresAt: (Date.now() - 600000).toString(),
-          usedAt: null,
-        },
-      ];
+      initializeMockData({
+        emailCodes: [
+          {
+            id: 'code-id',
+            email: 'user@example.com',
+            code: '123456',
+            type: 'login_register',
+            expiresAt: (Date.now() - 600000).toString(),
+            usedAt: null,
+          },
+        ],
+      });
 
       const response = await fetch(`${server.url}/auth/verify-code`, {
         method: 'POST',
@@ -608,17 +401,18 @@ describe('Auth Endpoints', () => {
     });
 
     it('should return 401 for already used code', async () => {
-      dbState.users = [];
-      dbState.emailCodes = [
-        {
-          id: 'code-id',
-          email: 'user@example.com',
-          code: '123456',
-          type: 'login_register',
-          expiresAt: (Date.now() + 600000).toString(),
-          usedAt: new Date().toISOString(),
-        },
-      ];
+      initializeMockData({
+        emailCodes: [
+          {
+            id: 'code-id',
+            email: 'user@example.com',
+            code: '123456',
+            type: 'login_register',
+            expiresAt: (Date.now() + 600000).toString(),
+            usedAt: new Date().toISOString(),
+          },
+        ],
+      });
 
       const response = await fetch(`${server.url}/auth/verify-code`, {
         method: 'POST',
@@ -640,18 +434,18 @@ describe('Auth Endpoints', () => {
       const testCode = '123456';
       const testEmail = 'newuser@example.com';
       const testPhone = '+1234567890';
-      dbState.users = [];
-      dbState.emailCodes = [
-        {
-          id: 'code-id',
-          email: testEmail,
-          code: testCode,
-          type: 'login_register',
-          expiresAt: (Date.now() + 600000).toString(),
-          usedAt: null,
-        },
-      ];
-      dbState.profile = [];
+      initializeMockData({
+        emailCodes: [
+          {
+            id: 'code-id',
+            email: testEmail,
+            code: testCode,
+            type: 'login_register',
+            expiresAt: (Date.now() + 600000).toString(),
+            usedAt: null,
+          },
+        ],
+      });
 
       const response = await fetch(`${server.url}/auth/verify-code`, {
         method: 'POST',
@@ -675,16 +469,17 @@ describe('Auth Endpoints', () => {
     it('should refresh token successfully', async () => {
       const testUserId = 'test-user-id';
       const testRefreshToken = 'test-refresh-token';
-      dbState.users = [
-        {
-          id: testUserId,
-          email: 'user@example.com',
-          emailVerified: 1,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ];
-      dbState.profile = [];
+      initializeMockData({
+        users: [
+          {
+            id: testUserId,
+            email: 'user@example.com',
+            emailVerified: 1,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+        ],
+      });
       mockRefreshTokenKVGet.mockResolvedValueOnce(testUserId);
 
       const response = await fetch(`${server.url}/auth/refresh`, {
@@ -739,8 +534,7 @@ describe('Auth Endpoints', () => {
     it('should return 401 for non-existent user', async () => {
       const testUserId = 'non-existent-user-id';
       const testRefreshToken = 'test-refresh-token';
-      dbState.users = [];
-      dbState.profile = [];
+      // No users in DB
       mockRefreshTokenKVGet.mockResolvedValueOnce(testUserId);
 
       const response = await fetch(`${server.url}/auth/refresh`, {

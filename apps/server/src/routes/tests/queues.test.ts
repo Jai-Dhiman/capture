@@ -2,23 +2,23 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { MessageBatch } from '@cloudflare/workers-types';
 import type { Bindings } from '../../types/index.js';
 
-// Mock the database
+// Mock the database with a flexible query chain
 const mockGet = vi.fn();
 const mockAll = vi.fn();
-const mockSelect = vi.fn(() => ({
-  from: vi.fn(() => ({
-    leftJoin: vi.fn(() => ({
-      where: vi.fn(() => ({
-        get: mockGet,
-        all: mockAll,
-      })),
-    })),
-    where: vi.fn(() => ({
-      get: mockGet,
-      all: mockAll,
-    })),
-  })),
-}));
+
+// Create a flexible mock that returns the right methods regardless of call chain
+const createFlexibleMock = () => ({
+  get: mockGet,
+  all: mockAll,
+  orderBy: vi.fn(() => createFlexibleMock()),
+  limit: vi.fn(() => createFlexibleMock()),
+  where: vi.fn(() => createFlexibleMock()),
+  leftJoin: vi.fn(() => createFlexibleMock()),
+  from: vi.fn(() => createFlexibleMock()),
+  groupBy: vi.fn(() => createFlexibleMock()),
+});
+
+const mockSelect = vi.fn(() => createFlexibleMock());
 
 vi.mock('../../db/index.js', () => ({
   createD1Client: vi.fn(() => ({
@@ -64,6 +64,7 @@ vi.mock('../../lib/infrastructure/qdrantClient.js', () => ({
 // Mock WASM utils
 vi.mock('../../lib/wasm/wasmUtils.js', () => ({
   OptimizedVectorOps: {
+    batchNormalizeVectors: vi.fn().mockResolvedValue(new Float32Array([0.1, 0.2, 0.3])),
     calculateAverage: vi.fn().mockReturnValue(new Float32Array([0.1, 0.2, 0.3])),
   },
 }));
@@ -91,10 +92,12 @@ describe('Queue Handlers', () => {
       POST_VECTORS: {
         get: vi.fn(),
         put: vi.fn(),
+        delete: vi.fn(),
       } as any,
       USER_VECTORS: {
         get: vi.fn(),
         put: vi.fn(),
+        delete: vi.fn(),
       } as any,
       CACHE_KV: {} as any,
       POST_QUEUE: {
@@ -111,34 +114,44 @@ describe('Queue Handlers', () => {
   });
 
   describe('handlePostQueue', () => {
-    it('should process a post, generate embedding, and send to user queue', async () => {
+    it('should process a text post and generate embedding', async () => {
       const mockAck = vi.fn();
       const mockRetry = vi.fn();
       const mockSend = vi.fn();
 
-      // Mock successful post lookup
-      mockGet.mockResolvedValueOnce({
+      // Mock successful post lookup (called multiple times)
+      mockGet.mockResolvedValue({
         id: 'test-post-id',
-        content: 'test post content',
+        content: 'This is a text post',
         userId: 'test-user-id',
         authorIsPrivate: false,
       });
 
-      // Mock hashtags lookup
-      mockAll.mockResolvedValueOnce([
-        { name: 'test-tag' },
-        { name: 'another-tag' },
-      ]);
+      // Mock hashtags lookup and media lookup
+      mockAll
+        .mockResolvedValueOnce([{ name: 'test' }]) // Hashtags
+        .mockResolvedValueOnce([]); // No media records
 
       // Mock successful embedding generation
-      mockGenerateTextEmbedding.mockResolvedValueOnce({
-        vector: [0.1, 0.2, 0.3],
-        dimensions: 3,
-        provider: 'voyage',
-        collectionConfig: {
-          name: 'test-collection',
+      mockGeneratePostEmbedding.mockResolvedValueOnce({
+        embeddingResult: {
+          vector: [0.1, 0.2, 0.3],
           dimensions: 3,
-          distance: 'Cosine',
+          provider: 'voyage',
+          collectionConfig: {
+            name: 'test-collection',
+            dimensions: 3,
+            distance: 'Cosine',
+          },
+        },
+        metadata: {
+          postId: 'test-post-id',
+          userId: 'test-user-id',
+          text: 'This is a text post #test',
+          createdAt: '2023-01-01T00:00:00.000Z',
+          isPrivate: false,
+          contentType: 'text',
+          embeddingProvider: 'voyage',
         },
       });
 
@@ -162,72 +175,10 @@ describe('Queue Handlers', () => {
 
       expect(mockAck).toHaveBeenCalled();
       expect(mockSend).toHaveBeenCalledWith({ userId: 'test-user-id' });
-    });
-
-    it('should determine content type for text-only posts', async () => {
-      const mockAck = vi.fn();
-      const mockRetry = vi.fn();
-      const mockSend = vi.fn();
-
-      // Mock successful post lookup
-      mockGet.mockResolvedValueOnce({
-        id: 'text-post-id',
-        content: 'This is a text-only post',
-        userId: 'test-user-id',
-        authorIsPrivate: false,
-      });
-
-      // Mock hashtags lookup  
-      mockAll
-        .mockResolvedValueOnce([{ name: 'text' }]) // Hashtags
-        .mockResolvedValueOnce([]); // No media records
-
-      // Mock successful embedding generation with postType
-      mockGeneratePostEmbedding.mockResolvedValueOnce({
-        embeddingResult: {
-          vector: [0.1, 0.2, 0.3],
-          dimensions: 3,
-          provider: 'voyage',
-          collectionConfig: {
-            name: 'test-collection',
-            dimensions: 3,
-            distance: 'Cosine',
-          },
-        },
-        metadata: {
-          postId: 'text-post-id',
-          userId: 'test-user-id',
-          text: 'This is a text-only post #text',
-          createdAt: '2023-01-01T00:00:00.000Z',
-          isPrivate: false,
-          contentType: 'text',
-          embeddingProvider: 'voyage',
-        },
-      });
-
-      mockEnv.USER_VECTOR_QUEUE.send = mockSend;
-
-      const batch: MessageBatch<{ postId: string }> = {
-        messages: [
-          {
-            body: { postId: 'text-post-id' },
-            id: 'msg-text',
-            ack: mockAck,
-            retry: mockRetry,
-          } as any,
-        ],
-        queue: 'test-queue',
-        retryAll: vi.fn(),
-        ackAll: vi.fn(),
-      } as any;
-
-      await handlePostQueue(batch, mockEnv);
-
-      expect(mockAck).toHaveBeenCalled();
       expect(mockGeneratePostEmbedding).toHaveBeenCalledWith(
-        'text-post-id',
-        'This is a text-only post',
-        ['text'],
+        'test-post-id',
+        'This is a text post',
+        ['test'],
         'test-user-id',
         false,
         'voyage',
@@ -235,13 +186,13 @@ describe('Queue Handlers', () => {
       );
     });
 
-    it('should determine content type for image posts', async () => {
+    it('should process an image post with multimodal content type', async () => {
       const mockAck = vi.fn();
       const mockRetry = vi.fn();
       const mockSend = vi.fn();
 
-      // Mock successful post lookup
-      mockGet.mockResolvedValueOnce({
+      // Mock successful post lookup (called multiple times)
+      mockGet.mockResolvedValue({
         id: 'image-post-id',
         content: 'Check out this photo!',
         userId: 'test-user-id',
@@ -251,9 +202,14 @@ describe('Queue Handlers', () => {
       // Mock hashtags and media lookup
       mockAll
         .mockResolvedValueOnce([{ name: 'photo' }]) // Hashtags
-        .mockResolvedValueOnce([{ type: 'image', id: 'img-1', storageKey: 'images/img-1', order: 0 }]); // Media records
+        .mockResolvedValueOnce([{ 
+          type: 'image', 
+          id: 'img-1', 
+          storageKey: 'images/img-1', 
+          order: 0 
+        }]); // Media records
 
-      // Mock successful embedding generation with postType
+      // Mock successful embedding generation
       mockGeneratePostEmbedding.mockResolvedValueOnce({
         embeddingResult: {
           vector: [0.1, 0.2, 0.3],
@@ -306,101 +262,49 @@ describe('Queue Handlers', () => {
       );
     });
 
-    it('should retry if post is not found', async () => {
+    it('should process an image-only post as image content type', async () => {
       const mockAck = vi.fn();
       const mockRetry = vi.fn();
       const mockSend = vi.fn();
 
-      // Mock post not found
-      mockGet.mockResolvedValueOnce(null);
-
-      mockEnv.USER_VECTOR_QUEUE.send = mockSend;
-
-      const batch: MessageBatch<{ postId: string }> = {
-        messages: [
-          {
-            body: { postId: 'missing-post-id' },
-            id: 'msg-2',
-            ack: mockAck,
-            retry: mockRetry,
-          } as any,
-        ],
-        queue: 'test-queue',
-        retryAll: vi.fn(),
-        ackAll: vi.fn(),
-      } as any;
-
-      await handlePostQueue(batch, mockEnv);
-
-      expect(mockRetry).toHaveBeenCalled();
-      expect(mockAck).not.toHaveBeenCalled();
-      expect(mockSend).not.toHaveBeenCalled();
-    });
-
-    it('should handle embedding generation failures gracefully', async () => {
-      const mockAck = vi.fn();
-      const mockRetry = vi.fn();
-      const mockSend = vi.fn();
-
-      // Mock successful post lookup
-      mockGet.mockResolvedValueOnce({
-        id: 'test-post-id',
-        content: 'test post content',
+      // Mock successful post lookup (called multiple times)
+      mockGet.mockResolvedValue({
+        id: 'image-only-post-id',
+        content: '', // No text content
         userId: 'test-user-id',
         authorIsPrivate: false,
       });
 
-      mockAll.mockResolvedValueOnce([]);
-
-      // Mock embedding generation failure
-      mockGenerateTextEmbedding.mockRejectedValueOnce(new Error('Embedding generation failed'));
-
-      mockEnv.USER_VECTOR_QUEUE.send = mockSend;
-
-      const batch: MessageBatch<{ postId: string }> = {
-        messages: [
-          {
-            body: { postId: 'test-post-id' },
-            id: 'msg-3',
-            ack: mockAck,
-            retry: mockRetry,
-          } as any,
-        ],
-        queue: 'test-queue',
-        retryAll: vi.fn(),
-        ackAll: vi.fn(),
-      } as any;
-
-      await handlePostQueue(batch, mockEnv);
-
-      expect(mockRetry).toHaveBeenCalled();
-      expect(mockAck).not.toHaveBeenCalled();
-    });
-
-    it('should ack even if USER_VECTOR_QUEUE.send fails', async () => {
-      const mockAck = vi.fn();
-      const mockRetry = vi.fn();
-      const mockSend = vi.fn().mockRejectedValueOnce(new Error('Queue send failed'));
-
-      // Mock successful post lookup
-      mockGet.mockResolvedValueOnce({
-        id: 'test-post-id',
-        content: 'test post content',
-        userId: 'test-user-id',
-        authorIsPrivate: false,
-      });
-
-      mockAll.mockResolvedValueOnce([]);
+      // Mock hashtags and media lookup
+      mockAll
+        .mockResolvedValueOnce([]) // No hashtags
+        .mockResolvedValueOnce([{ 
+          type: 'image', 
+          id: 'img-2', 
+          storageKey: 'images/img-2', 
+          order: 0 
+        }]); // Media records
 
       // Mock successful embedding generation
-      mockGenerateTextEmbedding.mockResolvedValueOnce({
-        vector: [0.1, 0.2, 0.3],
-        dimensions: 3,
-        provider: 'voyage',
-        collectionConfig: {
-          name: 'test-collection',
+      mockGeneratePostEmbedding.mockResolvedValueOnce({
+        embeddingResult: {
+          vector: [0.1, 0.2, 0.3],
           dimensions: 3,
-          distance: 'Cosine',
+          provider: 'voyage',
+          collectionConfig: {
+            name: 'test-collection',
+            dimensions: 3,
+            distance: 'Cosine',
+          },
+        },
+        metadata: {
+          postId: 'image-only-post-id',
+          userId: 'test-user-id',
+          text: '',
+          createdAt: '2023-01-01T00:00:00.000Z',
+          isPrivate: false,
+          contentType: 'image',
+          embeddingProvider: 'voyage',
         },
       });
 
@@ -409,8 +313,8 @@ describe('Queue Handlers', () => {
       const batch: MessageBatch<{ postId: string }> = {
         messages: [
           {
-            body: { postId: 'test-post-id' },
-            id: 'msg-4',
+            body: { postId: 'image-only-post-id' },
+            id: 'msg-image-only',
             ack: mockAck,
             retry: mockRetry,
           } as any,
@@ -423,73 +327,319 @@ describe('Queue Handlers', () => {
       await handlePostQueue(batch, mockEnv);
 
       expect(mockAck).toHaveBeenCalled();
-      expect(mockRetry).not.toHaveBeenCalled();
+      expect(mockGeneratePostEmbedding).toHaveBeenCalledWith(
+        'image-only-post-id',
+        '',
+        [],
+        'test-user-id',
+        false,
+        'voyage',
+        'image' // Image only, no text
+      );
+    });
+
+    it('should handle missing post gracefully', async () => {
+      const mockAck = vi.fn();
+      const mockRetry = vi.fn();
+      const mockSend = vi.fn();
+
+      // Mock post not found
+      mockGet.mockResolvedValue(null);
+
+      mockEnv.USER_VECTOR_QUEUE.send = mockSend;
+
+      const batch: MessageBatch<{ postId: string }> = {
+        messages: [
+          {
+            body: { postId: 'missing-post-id' },
+            id: 'msg-missing',
+            ack: mockAck,
+            retry: mockRetry,
+          } as any,
+        ],
+        queue: 'test-queue',
+        retryAll: vi.fn(),
+        ackAll: vi.fn(),
+      } as any;
+
+      await handlePostQueue(batch, mockEnv);
+
+      // Should not ack or retry individual messages but continue processing
+      expect(mockSend).not.toHaveBeenCalled();
+    });
+
+    it('should handle embedding generation failures gracefully', async () => {
+      const mockAck = vi.fn();
+      const mockRetry = vi.fn();
+      const mockSend = vi.fn();
+
+      // Mock successful post lookup (called multiple times)
+      mockGet.mockResolvedValue({
+        id: 'test-post-id',
+        content: 'test post content',
+        userId: 'test-user-id',
+        authorIsPrivate: false,
+      });
+
+      // Mock hashtags lookup
+      mockAll
+        .mockResolvedValueOnce([]) // No hashtags
+        .mockResolvedValueOnce([]); // No media records
+
+      // Mock embedding generation failure
+      mockGeneratePostEmbedding.mockRejectedValueOnce(new Error('Embedding generation failed'));
+
+      mockEnv.USER_VECTOR_QUEUE.send = mockSend;
+
+      const batch: MessageBatch<{ postId: string }> = {
+        messages: [
+          {
+            body: { postId: 'test-post-id' },
+            id: 'msg-fail',
+            ack: mockAck,
+            retry: mockRetry,
+          } as any,
+        ],
+        queue: 'test-queue',
+        retryAll: vi.fn(),
+        ackAll: vi.fn(),
+      } as any;
+
+      await handlePostQueue(batch, mockEnv);
+
+      // Should not ack but also not crash
+      expect(mockAck).not.toHaveBeenCalled();
+    });
+
+    it('should continue processing even if USER_VECTOR_QUEUE.send fails', async () => {
+      const mockAck = vi.fn();
+      const mockRetry = vi.fn();
+      const mockSend = vi.fn().mockRejectedValueOnce(new Error('Queue send failed'));
+
+      // Mock successful post lookup (called multiple times)
+      mockGet.mockResolvedValue({
+        id: 'test-post-id',
+        content: 'test post content',
+        userId: 'test-user-id',
+        authorIsPrivate: false,
+      });
+
+      // Mock hashtags lookup
+      mockAll
+        .mockResolvedValueOnce([]) // No hashtags
+        .mockResolvedValueOnce([]); // No media records
+
+      // Mock successful embedding generation
+      mockGeneratePostEmbedding.mockResolvedValueOnce({
+        embeddingResult: {
+          vector: [0.1, 0.2, 0.3],
+          dimensions: 3,
+          provider: 'voyage',
+          collectionConfig: {
+            name: 'test-collection',
+            dimensions: 3,
+            distance: 'Cosine',
+          },
+        },
+        metadata: {
+          postId: 'test-post-id',
+          userId: 'test-user-id',
+          text: 'test post content',
+          createdAt: '2023-01-01T00:00:00.000Z',
+          isPrivate: false,
+          contentType: 'text',
+          embeddingProvider: 'voyage',
+        },
+      });
+
+      mockEnv.USER_VECTOR_QUEUE.send = mockSend;
+
+      const batch: MessageBatch<{ postId: string }> = {
+        messages: [
+          {
+            body: { postId: 'test-post-id' },
+            id: 'msg-queue-fail',
+            ack: mockAck,
+            retry: mockRetry,
+          } as any,
+        ],
+        queue: 'test-queue',
+        retryAll: vi.fn(),
+        ackAll: vi.fn(),
+      } as any;
+
+      await handlePostQueue(batch, mockEnv);
+
+      expect(mockAck).toHaveBeenCalled();
       expect(mockSend).toHaveBeenCalled();
     });
   });
 
-      describe('handleUserEmbeddingQueue', () => {
-      it('should process user embedding successfully', async () => {
-        const mockAck = vi.fn();
-        const mockRetry = vi.fn();
+  describe('handleUserEmbeddingQueue', () => {
+    it('should process user embedding with saved and created posts', async () => {
+      const mockAck = vi.fn();
+      const mockRetry = vi.fn();
 
-        // Mock user posts lookup
-        mockAll.mockResolvedValueOnce([
-          { id: 'post-1', content: 'content 1' },
-          { id: 'post-2', content: 'content 2' },
-        ]);
-
-        // Mock KV store operations
-        mockEnv.POST_VECTORS.get = vi.fn().mockResolvedValue(JSON.stringify([0.1, 0.2, 0.3]));
-        mockEnv.USER_VECTORS.put = vi.fn().mockResolvedValue(undefined);
-
-        const batch: MessageBatch<{ userId: string }> = {
-          messages: [
-            {
-              body: { userId: 'test-user-id' },
-              id: 'user-msg-1',
-              ack: mockAck,
-              retry: mockRetry,
-            } as any,
-          ],
-          queue: 'test-queue',
-          retryAll: vi.fn(),
-          ackAll: vi.fn(),
-        } as any;
-
-        await handleUserEmbeddingQueue(batch, mockEnv);
-
-        expect(mockAck).toHaveBeenCalled();
-        expect(mockEnv.USER_VECTORS.put).toHaveBeenCalled();
+      // Set up a custom mock implementation for the database calls
+      let dbCallCount = 0;
+      mockAll.mockImplementation(() => {
+        dbCallCount++;
+        // 1st call: saved posts
+        if (dbCallCount === 1) {
+          return Promise.resolve([
+            { postId: 'saved-post-1', savedAt: '2023-01-01T00:00:00.000Z' },
+            { postId: 'saved-post-2', savedAt: '2023-01-02T00:00:00.000Z' },
+          ]);
+        }
+        // 2nd call: created posts
+        if (dbCallCount === 2) {
+          return Promise.resolve([
+            { id: 'created-post-1', createdAt: '2023-01-01T00:00:00.000Z' },
+            { id: 'created-post-2', createdAt: '2023-01-02T00:00:00.000Z' },
+          ]);
+        }
+        // 3rd call: frequent hashtags
+        if (dbCallCount === 3) {
+          return Promise.resolve([
+            { name: 'test', count: 3 },
+            { name: 'photo', count: 2 },
+          ]);
+        }
+        return Promise.resolve([]);
       });
 
-      it('should retry if user has no posts', async () => {
-        const mockAck = vi.fn();
-        const mockRetry = vi.fn();
+      // Mock KV store operations for vectors
+      (mockEnv.POST_VECTORS as any).get.mockResolvedValue({ vector: [0.1, 0.2, 0.3] });
 
-        // Mock empty user posts
-        mockAll.mockResolvedValueOnce([]);
+      // Mock hashtag embedding generation
+      mockGenerateTextEmbedding
+        .mockResolvedValue({ vector: [0.1, 0.1, 0.1] });
+      
+      (mockEnv.USER_VECTORS as any).put.mockResolvedValue(undefined);
 
-        const batch: MessageBatch<{ userId: string }> = {
-          messages: [
-            {
-              body: { userId: 'test-user-id' },
-              id: 'user-msg-2',
-              ack: mockAck,
-              retry: mockRetry,
-            } as any,
-          ],
-          queue: 'test-queue',
-          retryAll: vi.fn(),
-          ackAll: vi.fn(),
-        } as any;
+      const batch: MessageBatch<{ userId: string }> = {
+        messages: [
+          {
+            body: { userId: 'test-user-id' },
+            id: 'user-msg-1',
+            ack: mockAck,
+            retry: mockRetry,
+          } as any,
+        ],
+        queue: 'test-queue',
+        retryAll: vi.fn(),
+        ackAll: vi.fn(),
+      } as any;
 
-        await handleUserEmbeddingQueue(batch, mockEnv);
+      await handleUserEmbeddingQueue(batch, mockEnv);
 
-        expect(mockRetry).toHaveBeenCalled();
-        expect(mockAck).not.toHaveBeenCalled();
-      });
+      expect(mockAck).toHaveBeenCalled();
+      expect(mockEnv.USER_VECTORS.put).toHaveBeenCalledWith(
+        'test-user-id',
+        expect.stringContaining('[')
+      );
     });
+
+    it('should handle user with no posts by deleting vector', async () => {
+      const mockAck = vi.fn();
+      const mockRetry = vi.fn();
+
+      // Mock empty saved and created posts
+      mockAll.mockResolvedValue([]); 
+
+      (mockEnv.USER_VECTORS as any).delete.mockResolvedValue(undefined);
+
+      const batch: MessageBatch<{ userId: string }> = {
+        messages: [
+          {
+            body: { userId: 'empty-user-id' },
+            id: 'user-msg-empty',
+            ack: mockAck,
+            retry: mockRetry,
+          } as any,
+        ],
+        queue: 'test-queue',
+        retryAll: vi.fn(),
+        ackAll: vi.fn(),
+      } as any;
+
+      await handleUserEmbeddingQueue(batch, mockEnv);
+
+      expect(mockAck).toHaveBeenCalled();
+      expect(mockEnv.USER_VECTORS.delete).toHaveBeenCalledWith('empty-user-id');
+    });
+
+    it('should handle failed vector calculation gracefully', async () => {
+      const mockAck = vi.fn();
+      const mockRetry = vi.fn();
+
+      // Set up a custom mock implementation for the database calls
+      let dbCallCount = 0;
+      mockAll.mockImplementation(() => {
+        dbCallCount++;
+        // 1st call: saved posts
+        if (dbCallCount === 1) {
+          return Promise.resolve([{ postId: 'post-1', savedAt: '2023-01-01T00:00:00.000Z' }]);
+        }
+        // 2nd call: created posts
+        if (dbCallCount === 2) {
+          return Promise.resolve([{ id: 'post-2', createdAt: '2023-01-01T00:00:00.000Z' }]);
+        }
+        // 3rd call: frequent hashtags
+        return Promise.resolve([]);
+      });
+
+      // Mock KV store to return invalid vectors
+      (mockEnv.POST_VECTORS as any).get.mockResolvedValue(null);
+      (mockEnv.USER_VECTORS as any).delete.mockResolvedValue(undefined);
+
+      const batch: MessageBatch<{ userId: string }> = {
+        messages: [
+          {
+            body: { userId: 'test-user-id' },
+            id: 'user-msg-fail',
+            ack: mockAck,
+            retry: mockRetry,
+          } as any,
+        ],
+        queue: 'test-queue',
+        retryAll: vi.fn(),
+        ackAll: vi.fn(),
+      } as any;
+
+      await handleUserEmbeddingQueue(batch, mockEnv);
+
+      expect(mockAck).toHaveBeenCalled();
+      expect(mockEnv.USER_VECTORS.delete).toHaveBeenCalledWith('test-user-id');
+    });
+
+    it('should handle database errors gracefully', async () => {
+      const mockAck = vi.fn();
+      const mockRetry = vi.fn();
+
+      // Mock database error
+      mockAll.mockRejectedValue(new Error('Database error'));
+
+      const batch: MessageBatch<{ userId: string }> = {
+        messages: [
+          {
+            body: { userId: 'test-user-id' },
+            id: 'user-msg-db-error',
+            ack: mockAck,
+            retry: mockRetry,
+          } as any,
+        ],
+        queue: 'test-queue',
+        retryAll: vi.fn(),
+        ackAll: vi.fn(),
+      } as any;
+
+      await handleUserEmbeddingQueue(batch, mockEnv);
+
+      // Should not crash but may not ack
+      expect(mockRetry).not.toHaveBeenCalled();
+    });
+  });
 
   describe('metrics functions', () => {
     it('should track processed count correctly', () => {

@@ -54,20 +54,23 @@ const mockDataStores: Record<string, Map<string, any>> = {
   savedPost: new Map<string, any>(),
   blocked_user: new Map<string, any>(),
   media: new Map<string, any>(),
+  emailCodes: new Map<string, any>(),
 };
 
 // Helper to initialize mock data
 export function initializeMockData(initialData: Record<string, any[]> = {}) {
   // Clear existing data
-  for (const key of Object.keys(mockDataStores)) {
-    mockDataStores[key as keyof typeof mockDataStores].clear();
+  for (const store of Object.values(mockDataStores)) {
+    store.clear();
   }
 
-  // Load initial data
-  for (const [table, records] of Object.entries(initialData)) {
-    if (mockDataStores[table as keyof typeof mockDataStores]) {
-      for (const record of records) {
-        mockDataStores[table as keyof typeof mockDataStores].set(record.id, record);
+  // Load initial data if provided
+  if (initialData && Object.keys(initialData).length > 0) {
+    for (const [table, records] of Object.entries(initialData)) {
+      if (mockDataStores[table]) {
+        for (const record of records) {
+          mockDataStores[table].set(record.id, { ...record });
+        }
       }
     }
   }
@@ -113,81 +116,45 @@ function createD1ClientMock(): MockD1ClientAndQueryBuilder {
 
   // helper to evaluate a single where condition on an item
   function evaluateCondition(item: any, condition: any): boolean {
-    // Handle Drizzle ORM condition objects
+    if (!condition) return true;
 
-    // Handle 'and' conditions (typically from and() function)
-    if (
-      condition &&
-      condition.operator === 'and' &&
-      Array.isArray(condition.left) &&
-      Array.isArray(condition.right)
-    ) {
-      // Drizzle 'and' has left and right arrays of conditions
-      const leftResults = condition.left.every((cond: any) => evaluateCondition(item, cond));
-      const rightResults = condition.right.every((cond: any) => evaluateCondition(item, cond));
-      return leftResults && rightResults;
+    // Handle Drizzle operators
+    const op = condition.operator || condition.op;
+    const values =
+      condition.values || condition.expressions || condition.conditions || condition.queryChunks;
+
+    if (op === 'and') {
+      return Array.isArray(values) && values.every((c: any) => evaluateCondition(item, c));
+    }
+    if (op === 'or') {
+      return Array.isArray(values) && values.some((c: any) => evaluateCondition(item, c));
+    }
+    if (op === '=') {
+      const columnName = condition.left?.name || condition.leftOperand?._?.name;
+      const value = condition.right ?? condition.rightOperand;
+      return columnName && value !== undefined && item[columnName] === value;
+    }
+    if (op === 'is null') {
+      const columnName = condition.left?.name || condition.leftOperand?._?.name;
+      return columnName && (item[columnName] === null || item[columnName] === undefined);
+    }
+    if (op === 'is not null') {
+      const columnName = condition.left?.name || condition.leftOperand?._?.name;
+      return columnName && item[columnName] !== null && item[columnName] !== undefined;
     }
 
-    // Handle 'and' conditions with different structure
-    if (condition && (condition.operator === 'and' || condition.kind === 'and')) {
-      const conditions = condition.conditions || condition.expressions || condition.values || [];
-      return (
-        Array.isArray(conditions) && conditions.every((cond: any) => evaluateCondition(item, cond))
-      );
-    }
-
-    // Handle equality conditions (typically from eq() function)
-    if (
-      condition &&
-      condition.operator === '=' &&
-      condition.left &&
-      condition.right !== undefined
-    ) {
-      // Extract column name from Drizzle column object
-      const columnName =
-        condition.left.name || condition.left.column?.name || condition.left._?.name;
-      return columnName && item[columnName] === condition.right;
-    }
-
-    // Handle legacy condition formats for backward compatibility
+    // Fallback for older or different structures
     if (condition && Array.isArray(condition.queryChunks)) {
-      // extract only real sub-conditions (objects with operator or op)
       const subConds = condition.queryChunks.filter(
-        (c: any) =>
-          c &&
-          typeof c === 'object' &&
-          (c.operator === '=' || c.operator === 'LIKE' || c.op === 'and' || c.op === 'or'),
+        (c: any) => c && typeof c === 'object' && c.operator,
       );
       if (subConds.length > 0) {
-        // treat composite SQL fragments as AND of sub-conditions
         return subConds.every((c: any) => evaluateCondition(item, c));
       }
     }
-    if (condition.operator === '=') {
-      const key = condition.leftOperand?._?.name || condition.leftOperand?.name;
-      return key != null && item[key] === condition.rightOperand;
-    }
-    if (condition.operator === 'LIKE') {
-      const key = condition.leftOperand?._?.name || condition.leftOperand?.name;
-      const val = condition.rightOperand;
-      if (key == null) return false;
-      const pattern = String(val).replace(/%/g, '.*');
-      return new RegExp(pattern).test(item[key]);
-    }
-    if (condition.op === 'and' || condition.operator === 'and') {
-      const exprs = condition.expressions || condition.values || condition.config?.values;
-      return Array.isArray(exprs) && exprs.every((e: any) => evaluateCondition(item, e));
-    }
-    if (condition.op === 'or' || condition.operator === 'or') {
-      const exprs = condition.expressions || condition.values || condition.config?.values;
-      return Array.isArray(exprs) && exprs.some((e: any) => evaluateCondition(item, e));
-    }
-    if (condition.operator === 'is null') {
-      const key = condition.leftOperand?._?.name || condition.leftOperand?.name;
-      return key != null && (item[key] === null || item[key] === undefined);
-    }
 
-    // For unhandled conditions, return false (this was the main fix)
+    // For unhandled conditions, log and return false
+    // console.warn('Unhandled Drizzle condition in mock:', condition);
     return false;
   }
 

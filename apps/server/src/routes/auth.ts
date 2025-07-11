@@ -290,11 +290,9 @@ router.post('/verify-code', authRateLimiter, async (c) => {
     const { email, code, phone } = validation.data;
     const db = createD1Client(c.env);
 
-    // Clean up expired codes
-    await cleanupExpiredCodes(db);
-
-    // Verify code - first get all matching codes, then filter in JavaScript
-    const allMatchingCodes = await db
+    // Find a valid, unexpired, and unused code.
+    const now = Date.now();
+    const storedCode = await db
       .select()
       .from(schema.emailCodes)
       .where(
@@ -302,22 +300,36 @@ router.post('/verify-code', authRateLimiter, async (c) => {
           eq(schema.emailCodes.email, email),
           eq(schema.emailCodes.code, code),
           eq(schema.emailCodes.type, 'login_register'),
+          isNull(schema.emailCodes.usedAt),
         ),
       )
-      .limit(10);
-
-    // Filter for unused codes in JavaScript
-    const storedCode = allMatchingCodes.find((c) => c.usedAt === null);
+      .get();
 
     if (!storedCode) {
+      // Check if an expired code exists.
+      const expiredCodeCheck = await db
+        .select()
+        .from(schema.emailCodes)
+        .where(
+          and(
+            eq(schema.emailCodes.email, email),
+            eq(schema.emailCodes.code, code),
+            eq(schema.emailCodes.type, 'login_register'),
+          ),
+        )
+        .get();
+
+      if (expiredCodeCheck && now > Number.parseInt(expiredCodeCheck.expiresAt)) {
+        return c.json({ error: 'Verification code has expired', code: 'auth/code-expired' }, 401);
+      }
+
       return c.json(
         { error: 'Invalid or expired verification code', code: 'auth/invalid-code' },
         401,
       );
     }
 
-    // Check if code is expired
-    if (Date.now() > Number.parseInt(storedCode.expiresAt)) {
+    if (now > Number.parseInt(storedCode.expiresAt)) {
       return c.json({ error: 'Verification code has expired', code: 'auth/code-expired' }, 401);
     }
 
@@ -326,6 +338,9 @@ router.post('/verify-code', authRateLimiter, async (c) => {
       .update(schema.emailCodes)
       .set({ usedAt: new Date().toISOString() })
       .where(eq(schema.emailCodes.id, storedCode.id));
+
+    // Clean up expired codes after verification logic
+    await cleanupExpiredCodes(db);
 
     // Check if user exists or create new user
     let user = await db.select().from(schema.users).where(eq(schema.users.email, email)).get();
