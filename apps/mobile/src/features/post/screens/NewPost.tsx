@@ -54,10 +54,9 @@ export default function NewPost() {
   const [content, setContent] = useState('');
   const [selectedHashtags, setSelectedHashtags] = useState<Array<{ id: string; name: string }>>([]);
   const [postType, setPostType] = useState<PostType>('post');
-  const uploadMediaMutation = useUploadMedia();
   const createPostMutation = useCreatePost();
   const { showAlert } = useAlert();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
 
   // Photo selection state (for post mode)
   const [photos, setPhotos] = useState<PhotoAsset[]>([]);
@@ -71,9 +70,9 @@ export default function NewPost() {
 
   // Constants for photo grid
   const GRID_COLUMNS = 3;
-  const GRID_SPACING = 2;
-  const PHOTO_SIZE = (width - GRID_SPACING * (GRID_COLUMNS + 1)) / GRID_COLUMNS;
-  const PREVIEW_HEIGHT = 80;
+  const PHOTO_SIZE = width / GRID_COLUMNS; // Edge to edge
+  const PREVIEW_SECTION_HEIGHT = height * 0.4; // 40% of screen height
+  const PREVIEW_PHOTO_SIZE = (width - 60) / 2; // Larger preview photos
   const MAX_PHOTOS = 4;
 
   // Load photos when switching to post mode
@@ -124,11 +123,17 @@ export default function NewPost() {
 
       setAlbums(albumsWithCount.filter((album) => album.assetCount > 0) as Album[]);
 
-      // Load photos from "Recent" album (first album is usually recent)
+      // Find and load "Recents" album specifically
       if (albumsWithCount.length > 0) {
-        const recentAlbum = albumsWithCount[0];
-        setCurrentAlbum(recentAlbum as Album);
-        await loadPhotosFromAlbum(recentAlbum.id);
+        const recentsAlbum = albumsWithCount.find((album) =>
+          album.title.toLowerCase() === 'recents' ||
+          album.title.toLowerCase() === 'recent' ||
+          album.title.toLowerCase() === 'camera roll' ||
+          album.title.toLowerCase() === 'all photos'
+        ) || albumsWithCount[0]; // Fallback to first album
+
+        setCurrentAlbum(recentsAlbum as Album);
+        await loadPhotosFromAlbum(recentsAlbum.id);
       }
     } catch (error) {
       console.error('Failed to load albums:', error);
@@ -220,7 +225,9 @@ export default function NewPost() {
 
   // Navigate to image edit screen
   const handleSelectedPhotoPress = (photo: SelectedPhoto) => {
-    navigation.navigate('ImageEditScreen', { imageUri: photo.uri });
+    if (navigation?.navigate) {
+      navigation.navigate('ImageEditScreen', { imageUri: photo.uri });
+    }
   };
 
   // Handle next button for photo posts (navigate to PostSettingsScreen)
@@ -230,7 +237,9 @@ export default function NewPost() {
       return;
     }
 
-    navigation.navigate('PostSettingsScreen', { selectedPhotos });
+    if (navigation?.navigate) {
+      navigation.navigate('PostSettingsScreen', { selectedPhotos });
+    }
   };
 
   // Thread post creation logic (simplified - only for threads now)
@@ -251,7 +260,9 @@ export default function NewPost() {
       });
 
       showAlert('Thread created successfully!', { type: 'success' });
-      navigation.goBack();
+      if (navigation?.goBack) {
+        navigation.goBack();
+      }
     } catch (error: any) {
       console.error('Thread creation error:', {
         message: error.message,
@@ -272,8 +283,6 @@ export default function NewPost() {
         style={{
           width: PHOTO_SIZE,
           height: PHOTO_SIZE,
-          marginRight: index % GRID_COLUMNS === GRID_COLUMNS - 1 ? 0 : GRID_SPACING,
-          marginBottom: GRID_SPACING,
         }}
       >
         <Image
@@ -328,214 +337,246 @@ export default function NewPost() {
     );
   };
 
-  // Render selected photo in preview row
-  const renderSelectedPhoto = ({ item, index, drag }: any) => (
-    <View style={{ marginRight: 8 }}>
-      <Pressable
-        onPress={() => handleSelectedPhotoPress(item)}
-        onLongPress={drag}
-        style={{
-          width: PREVIEW_HEIGHT,
-          height: PREVIEW_HEIGHT,
-          borderRadius: 8,
-          overflow: 'hidden',
-        }}
-      >
-        <Image
-          source={{ uri: item.uri }}
-          style={{ width: '100%', height: '100%' }}
-          contentFit="cover"
-          cachePolicy="memory-disk"
-        />
+  // Render selected photo in preview (larger)
+  const renderSelectedPhoto = ({ item, index, drag }: any) => {
+    const photoHeight = (PREVIEW_SECTION_HEIGHT - 60) / 2; // Fill the preview section height
 
-        {/* Remove button */}
-        <TouchableOpacity
-          onPress={() => handleRemoveFromSelection(index)}
+    return (
+      <View style={{ marginRight: 12, marginBottom: 12 }}>
+        <Pressable
+          onPress={() => handleSelectedPhotoPress(item)}
+          onLongPress={drag}
           style={{
-            position: 'absolute',
-            top: -4,
-            right: -4,
-            width: 20,
-            height: 20,
-            borderRadius: 10,
-            backgroundColor: 'rgba(0,0,0,0.7)',
-            justifyContent: 'center',
-            alignItems: 'center',
+            width: PREVIEW_PHOTO_SIZE,
+            height: photoHeight,
+            borderRadius: 12,
+            overflow: 'hidden',
           }}
         >
-          <Text style={{ color: 'white', fontSize: 12, fontWeight: 'bold' }}>×</Text>
-        </TouchableOpacity>
-      </Pressable>
-    </View>
-  );
+          <Image
+            source={{ uri: item.uri }}
+            style={{ width: '100%', height: '100%' }}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+          />
+
+          {/* Remove button */}
+          <TouchableOpacity
+            onPress={() => handleRemoveFromSelection(index)}
+            style={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              width: 28,
+              height: 28,
+              borderRadius: 14,
+              backgroundColor: 'rgba(0,0,0,0.7)',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>×</Text>
+          </TouchableOpacity>
+
+          {/* Selection order indicator */}
+          <View
+            style={{
+              position: 'absolute',
+              top: 8,
+              left: 8,
+              width: 28,
+              height: 28,
+              borderRadius: 14,
+              backgroundColor: '#e4cac7',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{ color: 'white', fontSize: 14, fontWeight: 'bold' }}>
+              {index + 1}
+            </Text>
+          </View>
+        </Pressable>
+      </View>
+    );
+  };
 
   return (
     <View className="flex-1 bg-[#DCDCDE] rounded-[30px]">
-      <Header height={120} showBackButton={true} onBackPress={() => navigation.goBack()} />
+      <Header height={120} showBackButton={true} onBackPress={() => navigation?.goBack?.()} />
 
-      <ScrollView className="flex-1">
-        <View className="flex-1 p-5">
-          {/* Type Selector */}
-          <View className="w-full h-10 mb-5 rounded-lg flex-row justify-center items-center overflow-hidden bg-white/10 shadow">
-            <TouchableOpacity
-              className={`flex-1 mx-1 h-8 rounded-md flex justify-center items-center ${postType === 'post' ? 'bg-[#a99ca3]' : 'bg-[#dcdcde]'}`}
-              onPress={() => setPostType('post')}
+      <View className="flex-1 p-5">
+        {/* Type Selector */}
+        <View className="w-full h-10 mb-5 rounded-lg flex-row justify-center items-center overflow-hidden bg-white/10 shadow">
+          <TouchableOpacity
+            className={`flex-1 mx-1 h-8 rounded-md flex justify-center items-center ${postType === 'post' ? 'bg-[#a99ca3]' : 'bg-[#dcdcde]'}`}
+            onPress={() => setPostType('post')}
+          >
+            <Text
+              className={`text-center text-xs ${postType === 'post' ? 'text-white font-semibold' : 'text-black font-normal'}`}
             >
-              <Text
-                className={`text-center text-xs ${postType === 'post' ? 'text-white font-semibold' : 'text-black font-normal'}`}
-              >
-                Photo/Video
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className={`flex-1 mx-1 h-8 rounded-md flex justify-center items-center ${postType === 'thread' ? 'bg-[#a99ca3]' : 'bg-[#dcdcde]'}`}
-              onPress={() => setPostType('thread')}
+              Photo/Video
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            className={`flex-1 mx-1 h-8 rounded-md flex justify-center items-center ${postType === 'thread' ? 'bg-[#a99ca3]' : 'bg-[#dcdcde]'}`}
+            onPress={() => setPostType('thread')}
+          >
+            <Text
+              className={`text-center text-xs ${postType === 'thread' ? 'text-white font-semibold' : 'text-black font-normal'}`}
             >
-              <Text
-                className={`text-center text-xs ${postType === 'thread' ? 'text-white font-semibold' : 'text-black font-normal'}`}
+              Thread
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Dynamic Content Based on Post Type */}
+        {postType === 'post' ? (
+          /* Photo Grid Mode */
+          <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
+            {/* Selected Photos Preview - FIRST (40% of screen) */}
+            <View
+              style={{
+                height: PREVIEW_SECTION_HEIGHT,
+                backgroundColor: '#DCDCDE',
+                borderRadius: 12,
+                marginBottom: 16,
+                padding: 12
+              }}
+            >
+              {selectedPhotos.length > 0 ? (
+                <DraggableFlatList
+                  data={selectedPhotos}
+                  renderItem={renderSelectedPhoto}
+                  keyExtractor={(item) => item.uri}
+                  onDragEnd={({ data }) => setSelectedPhotos(data)}
+                  numColumns={2}
+                  showsVerticalScrollIndicator={false}
+                />
+              ) : (
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                  <Text style={{ fontSize: 16, color: '#666', textAlign: 'center' }}>
+                    Select photos from below{'\n'}They will appear here
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {/* Album Selector - SECOND */}
+            {hasPermission && currentAlbum && (
+              <View style={{ backgroundColor: '#DCDCDE', borderRadius: 12, padding: 12, marginBottom: 16 }}>
+                <TouchableOpacity
+                  onPress={() => setShowAlbums(!showAlbums)}
+                  className="flex-row justify-between items-center"
+                >
+                  <View>
+                    <Text className="font-semibold text-base">{currentAlbum.title}</Text>
+                    <Text className="text-gray-500 text-sm">
+                      {currentAlbum.assetCount} photos
+                    </Text>
+                  </View>
+                  <Text className="text-[#e4cac7] text-lg">{showAlbums ? '▲' : '▼'}</Text>
+                </TouchableOpacity>
+
+                {/* Albums List */}
+                {showAlbums && (
+                  <View className="mt-3 max-h-40">
+                    <FlatList
+                      data={albums}
+                      keyExtractor={(item) => item.id}
+                      renderItem={({ item }) => (
+                        <TouchableOpacity
+                          onPress={() => handleAlbumSelect(item)}
+                          style={{ backgroundColor: '#DCDCDE', paddingVertical: 8, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: '#E5E5E5' }}
+                        >
+                          <Text className="font-medium">{item.title}</Text>
+                          <Text className="text-gray-500 text-xs">{item.assetCount} photos</Text>
+                        </TouchableOpacity>
+                      )}
+                      showsVerticalScrollIndicator={false}
+                    />
+                  </View>
+                )}
+              </View>
+            )}
+
+            {/* Photo Grid */}
+            {hasPermission === null ? (
+              <View className="flex-1 justify-center items-center p-8">
+                <Text className="text-gray-600">Requesting permissions...</Text>
+              </View>
+            ) : hasPermission === false ? (
+              <View className="flex-1 justify-center items-center p-8">
+                <Text className="text-lg font-semibold mb-4">Photo Access Required</Text>
+                <Text className="text-gray-600 text-center mb-6">
+                  Please allow access to your photos to select images for your post.
+                </Text>
+                <TouchableOpacity
+                  onPress={requestPermissionsAndLoadPhotos}
+                  className="bg-blue-600 rounded-lg px-6 py-3"
+                >
+                  <Text className="text-white font-semibold">Grant Permission</Text>
+                </TouchableOpacity>
+              </View>
+            ) : loading ? (
+              <View className="flex-1 justify-center items-center p-8">
+                <Text className="text-gray-600">Loading photos...</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={photos}
+                renderItem={renderPhotoItem}
+                keyExtractor={(item) => item.id}
+                numColumns={GRID_COLUMNS}
+                contentContainerStyle={{}}
+                style={{ marginHorizontal: -25 }}
+                showsVerticalScrollIndicator={false}
+              />
+            )}
+
+            {/* Next Button */}
+            {selectedPhotos.length > 0 && (
+              <TouchableOpacity
+                className="bg-[#e4cac7] rounded-[30px] shadow px-6 py-3 mt-4"
+                onPress={handleNext}
               >
-                Thread
+                <Text className="text-black text-center font-bold text-base">Next</Text>
+              </TouchableOpacity>
+            )}
+          </ScrollView>
+        ) : (
+          /* Thread Content Mode */
+          <View className="mt-2 bg-[#dcdcde] p-4 rounded-lg shadow">
+            <TextInput
+              className="border border-gray-300 rounded-lg p-3 mb-3 bg-[#dcdcde]"
+              placeholder="What's on your mind?"
+              value={content}
+              onChangeText={setContent}
+              multiline
+              maxLength={800}
+            />
+            <Text className="text-right text-gray-500 mb-2">{content.length}/800</Text>
+
+            {/* Hashtags */}
+            <HashtagInput
+              selectedHashtags={selectedHashtags}
+              onHashtagsChange={setSelectedHashtags}
+              maxHashtags={5}
+            />
+
+            {/* Post Button */}
+            <TouchableOpacity
+              className="bg-[#e4cac7] rounded-[30px] shadow px-6 py-3 mt-2"
+              onPress={handleCreateThread}
+              disabled={createPostMutation.isPending}
+            >
+              <Text className="text-black text-center font-bold text-base">
+                {createPostMutation.isPending ? 'Creating...' : 'Post'}
               </Text>
             </TouchableOpacity>
           </View>
-
-          {/* Dynamic Content Based on Post Type */}
-          {postType === 'post' ? (
-            /* Photo Grid Mode */
-            <View>
-              {/* Album Selector */}
-              {hasPermission && currentAlbum && (
-                <View className="bg-white rounded-lg p-3 mb-4 shadow">
-                  <TouchableOpacity
-                    onPress={() => setShowAlbums(!showAlbums)}
-                    className="flex-row justify-between items-center"
-                  >
-                    <View>
-                      <Text className="font-semibold text-base">{currentAlbum.title}</Text>
-                      <Text className="text-gray-500 text-sm">
-                        {currentAlbum.assetCount} photos
-                      </Text>
-                    </View>
-                    <Text className="text-blue-600 text-lg">{showAlbums ? '▲' : '▼'}</Text>
-                  </TouchableOpacity>
-
-                  {/* Albums List */}
-                  {showAlbums && (
-                    <View className="mt-3 max-h-40">
-                      <FlatList
-                        data={albums}
-                        keyExtractor={(item) => item.id}
-                        renderItem={({ item }) => (
-                          <TouchableOpacity
-                            onPress={() => handleAlbumSelect(item)}
-                            className="py-2 px-3 border-b border-gray-200"
-                          >
-                            <Text className="font-medium">{item.title}</Text>
-                            <Text className="text-gray-500 text-xs">{item.assetCount} photos</Text>
-                          </TouchableOpacity>
-                        )}
-                        showsVerticalScrollIndicator={false}
-                      />
-                    </View>
-                  )}
-                </View>
-              )}
-
-              {/* Selected Photos Preview */}
-              {selectedPhotos.length > 0 && (
-                <View className="bg-white rounded-lg p-3 mb-4 shadow">
-                  <Text className="font-semibold text-base mb-2">
-                    Selected ({selectedPhotos.length}/{MAX_PHOTOS})
-                  </Text>
-                  <DraggableFlatList
-                    data={selectedPhotos}
-                    renderItem={renderSelectedPhoto}
-                    keyExtractor={(item) => item.uri}
-                    onDragEnd={({ data }) => setSelectedPhotos(data)}
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                  />
-                </View>
-              )}
-
-              {/* Photo Grid */}
-              {hasPermission === null ? (
-                <View className="flex-1 justify-center items-center p-8">
-                  <Text className="text-gray-600">Requesting permissions...</Text>
-                </View>
-              ) : hasPermission === false ? (
-                <View className="flex-1 justify-center items-center p-8">
-                  <Text className="text-lg font-semibold mb-4">Photo Access Required</Text>
-                  <Text className="text-gray-600 text-center mb-6">
-                    Please allow access to your photos to select images for your post.
-                  </Text>
-                  <TouchableOpacity
-                    onPress={requestPermissionsAndLoadPhotos}
-                    className="bg-blue-600 rounded-lg px-6 py-3"
-                  >
-                    <Text className="text-white font-semibold">Grant Permission</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : loading ? (
-                <View className="flex-1 justify-center items-center p-8">
-                  <Text className="text-gray-600">Loading photos...</Text>
-                </View>
-              ) : (
-                <FlatList
-                  data={photos}
-                  renderItem={renderPhotoItem}
-                  keyExtractor={(item) => item.id}
-                  numColumns={GRID_COLUMNS}
-                  contentContainerStyle={{ padding: GRID_SPACING }}
-                  showsVerticalScrollIndicator={false}
-                  style={{ maxHeight: 400 }}
-                />
-              )}
-
-              {/* Next Button */}
-              {selectedPhotos.length > 0 && (
-                <TouchableOpacity
-                  className="bg-[#e4cac7] rounded-[30px] shadow px-6 py-3 mt-4"
-                  onPress={handleNext}
-                >
-                  <Text className="text-black text-center font-bold text-base">Next</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          ) : (
-            /* Thread Content Mode */
-            <View className="mt-2 bg-[#dcdcde] p-4 rounded-lg shadow">
-              <TextInput
-                className="border border-gray-300 rounded-lg p-3 mb-3 bg-[#dcdcde]"
-                placeholder="What's on your mind?"
-                value={content}
-                onChangeText={setContent}
-                multiline
-                maxLength={800}
-              />
-              <Text className="text-right text-gray-500 mb-2">{content.length}/800</Text>
-
-              {/* Hashtags */}
-              <HashtagInput
-                selectedHashtags={selectedHashtags}
-                onHashtagsChange={setSelectedHashtags}
-                maxHashtags={5}
-              />
-
-              {/* Post Button */}
-              <TouchableOpacity
-                className="bg-[#e4cac7] rounded-[30px] shadow px-6 py-3 mt-2"
-                onPress={handleCreateThread}
-                disabled={createPostMutation.isPending}
-              >
-                <Text className="text-black text-center font-bold text-base">
-                  {createPostMutation.isPending ? 'Creating...' : 'Post'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-      </ScrollView>
+        )}
+      </View>
     </View>
   );
 }
