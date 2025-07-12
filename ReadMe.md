@@ -155,23 +155,35 @@ This project employs modern development practices including:
 3. Transparent data policies with minimal collection
 4. Built with modern, scalable technologies
 
-## Development Priorities
+## Current Status
 
-1. MVP with core social features (profiles, posts, following)
-2. Privacy and security infrastructure
-3. User control features (feed customization, filtering)
-4. Performance optimization for smooth experience
+The app is in active development with the following components implemented:
+
+### Mobile App (React Native + Expo)
+- **Authentication**: Complete passkey, Apple, and Google Sign-In
+- **Core Features**: Feed, posts, profiles, comments, search
+- **UI/UX**: Modern design with animations and smooth interactions
+- **Biometric Security**: Face ID/Touch ID integration
+- **Performance**: Optimized with React Query caching and Flash List
+
+### Server Infrastructure (Cloudflare Workers)
+- **API**: GraphQL and REST endpoints fully operational
+- **Database**: SQLite D1 with Drizzle ORM for relational data
+- **Storage**: R2 object storage with CDN for media files
+- **Authentication**: JWT + passkey system with session management
+- **Performance**: Edge computing with WASM modules for image processing
+- **AI**: Vector embeddings for content discovery and search
 
 ## Running the Project
 
 ### Prerequisites
 
 - Node.js v20+
-- pnpm 9.0.0+
-- Expo CLI
-- Rust (latest stable)
-- wasm-pack
-- Wrangler CLI (for Cloudflare Workers)
+- pnpm 9.0.0+ (Package manager)
+- Expo CLI (Mobile development)
+- Rust (latest stable) + wasm-pack (WebAssembly compilation)
+- Wrangler CLI (Cloudflare Workers deployment)
+- Cloudflare account with D1, R2, and KV storage
 
 ### Setup and Installation
 
@@ -183,18 +195,40 @@ cd capture
 # Install dependencies
 pnpm install
 
-# Build the Rust WebAssembly modules
+# Build WASM modules (required for server)
 cd apps/server
 pnpm run build:wasm
 cd ../..
 
-# Start the development environment
-pnpm dev
+# Development commands
+pnpm dev              # Start both mobile and server in development
+# OR individually:
+cd apps/mobile && pnpm dev     # Mobile app only (Expo dev server)
+cd apps/server && pnpm dev     # Server only (Wrangler dev)
 ```
+
+### Environment Setup
+
+**Mobile App:**
+- Copy `apps/mobile/.env.example` to `apps/mobile/.env`
+- Configure Google Sign-In and Apple authentication keys
+
+**Server:**
+- Set up Cloudflare Workers environment variables
+- Configure D1 database with `pnpm db:migrate`
+- Set up R2 bucket for image storage
 
 ## Project Status
 
-This project is in active development. It is currently a portfolio demonstration and may eventually evolve into a closed-source product. The codebase represents my approach to tackling the technical challenges of modern application development.
+**Current State:** Functional MVP with core social media features implemented across both mobile and server components.
+
+**Deployment:**
+- **Mobile**: Expo development builds for iOS and Android
+- **Server**: Live on Cloudflare Workers at `capture-api.jai-d.workers.dev`
+- **Database**: Production SQLite D1 database with migrations
+- **Storage**: R2 object storage with CDN integration
+
+This project demonstrates modern full-stack development practices and serves as a portfolio showcase. It may evolve into a closed-source product in the future.
 
 ---
 
