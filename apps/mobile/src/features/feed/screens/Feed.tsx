@@ -2,14 +2,13 @@ import { PostItem } from '@/features/post/components/PostItem';
 import { ThreadItem } from '@/features/post/components/ThreadItem';
 import type { Post, Thread } from '@/features/post/types/postTypes';
 import Header from '@/shared/components/Header';
+import { HeaderSpacer } from '@/shared/components/HeaderSpacer';
 import { SkeletonElement } from '@/shared/components/SkeletonLoader';
+import { useHeaderAnimation } from '@/shared/hooks/useHeaderAnimation';
 import { FlashList } from '@shopify/flash-list';
-import { MotiView } from 'moti';
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import {
   ActivityIndicator,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
   Text,
   TouchableOpacity,
   View,
@@ -23,14 +22,19 @@ const HEADER_HEIGHT = 150;
 
 export default function Feed() {
   const [refreshing, setRefreshing] = useState(false);
-  const [hideHeader, setHideHeader] = useState(false);
-  const prevScrollY = useRef(0);
+  const seenPostIdsRef = useRef(new Set<string>());
+
+  // Header animation hook - only show header on fast upward scrolls
+  const { hideHeader, handleScroll, resetHeader } = useHeaderAnimation({
+    hideThreshold: 40,
+    showThreshold: 0,
+    fastScrollVelocity: 3.0, // Require 3.0 pixels/ms upward velocity to show header
+  });
 
   // Use both feeds directly
   const followingFeed = useFollowingFeed(10);
   const discoveryFeed = useDiscoverFeed(10);
   const { mutate: markAsSeen } = useMarkPostsAsSeen();
-  const seenPostIdsRef = useRef(new Set<string>());
 
   // Create seamless unified feed: following posts first, then discovery
   const { posts, isLoading, isError, error, hasNextPage, isFetchingNextPage } = useMemo(() => {
@@ -40,22 +44,22 @@ export default function Feed() {
     // Following posts first, then discovery posts (remove duplicates)
     const seenIds = new Set(followingPosts.map(p => p.id));
     const uniqueDiscoveryPosts = discoveryPosts.filter(p => !seenIds.has(p.id));
-    
+
     // Additional deduplication to prevent same posts appearing multiple times
     const allPostsMap = new Map();
-    
+
     // Add following posts first
     for (const post of followingPosts) {
       allPostsMap.set(post.id, post);
     }
-    
+
     // Add unique discovery posts
     for (const post of uniqueDiscoveryPosts) {
       if (!allPostsMap.has(post.id)) {
         allPostsMap.set(post.id, post);
       }
     }
-    
+
     const allPosts = Array.from(allPostsMap.values());
 
     // Smart loading state - show loading if either feed is loading and we have no posts
@@ -92,14 +96,15 @@ export default function Feed() {
     discoveryFeed.isFetchingNextPage,
   ]);
 
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     setRefreshing(true);
+    resetHeader(); // Reset header when refreshing
     await Promise.allSettled([
       followingFeed.refetch(),
       discoveryFeed.refetch()
     ]);
     setRefreshing(false);
-  };
+  }, [followingFeed.refetch, discoveryFeed.refetch, resetHeader]);
 
   useEffect(() => {
     if (posts.length > 0) {
@@ -114,14 +119,16 @@ export default function Feed() {
     }
   }, [posts, markAsSeen]);
 
-  const renderItem = ({ item }: { item: Post | Thread }) => {
+  const renderItem = useCallback(({ item }: { item: Post | Thread }) => {
     if (item.type === 'thread') {
       return <ThreadItem thread={item} />;
     }
     return <PostItem post={item} />;
-  };
+  }, []);
 
-  const loadMore = () => {
+  const keyExtractor = useCallback((item: Post | Thread) => item.id, []);
+
+  const loadMore = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {
       if (followingFeed.hasNextPage) {
         followingFeed.fetchNextPage();
@@ -130,9 +137,9 @@ export default function Feed() {
         discoveryFeed.fetchNextPage();
       }
     }
-  };
+  }, [hasNextPage, isFetchingNextPage, followingFeed, discoveryFeed]);
 
-  const renderFooter = () => {
+  const renderFooter = useCallback(() => {
     if (!isFetchingNextPage) return null;
 
     return (
@@ -140,36 +147,18 @@ export default function Feed() {
         <ActivityIndicator size="small" color="#000" />
       </View>
     );
-  };
+  }, [isFetchingNextPage]);
 
-  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const currentY = event.nativeEvent.contentOffset.y;
-    if (currentY > prevScrollY.current && currentY > 40) {
-      setHideHeader(true);
-    } else if (currentY < prevScrollY.current) {
-      setHideHeader(false);
-    }
-    prevScrollY.current = currentY;
-  };
-
-  const getEmptyStateContent = () => {
-    return {
-      title: "Your Feed is Empty",
-      message: "Start following other users to see their posts here, or check back later for personalized content recommendations.",
-      icon: "inbox" as const,
-    };
-  };
+  // Reset header when switching between states
+  useEffect(() => {
+    resetHeader();
+  }, [resetHeader]);
 
   if (isLoading && !refreshing) {
     return (
       <View className="flex-1 bg-[#DCDCDE]">
         <Header hideHeader={hideHeader} height={HEADER_HEIGHT} addSpacer={false} />
-        <MotiView
-          from={{ height: HEADER_HEIGHT }}
-          animate={{ height: hideHeader ? 0 : HEADER_HEIGHT }}
-          transition={{ type: 'timing', duration: 300 }}
-          className="w-full bg-[#DCDCDE]"
-        />
+        <HeaderSpacer hideHeader={hideHeader} height={HEADER_HEIGHT} />
         <View className="p-4 space-y-4">
           <PostSkeleton />
           <ThreadSkeleton />
@@ -181,13 +170,8 @@ export default function Feed() {
   if (isError) {
     return (
       <View className="flex-1 bg-[#DCDCDE]">
-        <Header hideHeader={hideHeader} height={HEADER_HEIGHT} />
-        <MotiView
-          from={{ height: HEADER_HEIGHT }}
-          animate={{ height: hideHeader ? 0 : HEADER_HEIGHT }}
-          transition={{ type: 'timing', duration: 300 }}
-          className="w-full bg-[#DCDCDE]"
-        />
+        <Header hideHeader={hideHeader} height={HEADER_HEIGHT} addSpacer={false} />
+        <HeaderSpacer hideHeader={hideHeader} height={HEADER_HEIGHT} />
         <View className="flex-1 justify-center items-center p-4">
           <Text className="text-red-500 text-center mb-4">
             {error instanceof Error ? error.message : 'An error occurred loading your feed'}
@@ -203,17 +187,12 @@ export default function Feed() {
   return (
     <View className="flex-1 bg-[#DCDCDE]">
       <Header hideHeader={hideHeader} height={HEADER_HEIGHT} addSpacer={false} />
-      <MotiView
-        from={{ height: HEADER_HEIGHT }}
-        animate={{ height: hideHeader ? 0 : HEADER_HEIGHT }}
-        transition={{ type: 'timing', duration: 300 }}
-        className="w-full bg-[#DCDCDE]"
-      />
+      <HeaderSpacer hideHeader={hideHeader} height={HEADER_HEIGHT} />
       <View className="flex-1">
         <FlashList
           data={posts}
           renderItem={renderItem}
-          keyExtractor={(item) => item.id}
+          keyExtractor={keyExtractor}
           estimatedItemSize={400}
           refreshing={refreshing}
           onRefresh={handleRefresh}
@@ -223,17 +202,13 @@ export default function Feed() {
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, paddingTop: 8 }}
           onScroll={handleScroll}
           scrollEventThrottle={16}
+          removeClippedSubviews={true}
           ListEmptyComponent={
-            (() => {
-              const emptyContent = getEmptyStateContent();
-              return (
-                <EmptyState
-                  title={emptyContent.title}
-                  message={emptyContent.message}
-                  icon={emptyContent.icon}
-                />
-              );
-            })()
+            <EmptyState
+              title="Your Feed is Empty"
+              message="Start following other users to see their posts here, or check back later for personalized content recommendations."
+              icon="inbox"
+            />
           }
         />
       </View>
@@ -241,7 +216,7 @@ export default function Feed() {
   );
 }
 
-const PostSkeleton = () => (
+const PostSkeleton = React.memo(() => (
   <View className="bg-[#DCDCDE] rounded-lg overflow-hidden mb-4">
     <View className="flex-row items-center p-3">
       <View className="w-12 h-12 mr-3 drop-shadow-md">
@@ -303,9 +278,9 @@ const PostSkeleton = () => (
       </View>
     </View>
   </View>
-);
+));
 
-const ThreadSkeleton = () => (
+const ThreadSkeleton = React.memo(() => (
   <View className="bg-[#DCDCDE] rounded-lg overflow-hidden mb-4">
     <View className="flex-row items-center p-3">
       <View className="w-12 h-12 mr-3 drop-shadow-md">
@@ -346,4 +321,4 @@ const ThreadSkeleton = () => (
       </View>
     </View>
   </View>
-);
+));
