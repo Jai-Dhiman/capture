@@ -2,18 +2,16 @@ import { useAuthStore } from '@/features/auth/stores/authStore';
 import { MediaImage } from '@/features/post/components/MediaImage';
 import { useProfileStore } from '@/features/profile/stores/profileStore';
 import type { SettingsStackParamList } from '@/navigation/types';
-import AlgorithmIcon from '@assets/icons/AlgorithmIcon.svg';
-import BlockIcon from '@assets/icons/BlockIcon.svg';
-import CustomBackIcon from '@assets/icons/CustomBackIcon.svg';
-import EmailIcon from '@assets/icons/EmailIcon.svg';
-import EmptyIcon from '@assets/icons/EmptyIcon.svg';
-import LockIcon2 from '@assets/icons/LockIcon2.svg';
 import { API_URL } from '@env';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import React, { useState, useEffect } from 'react';
 import { ScrollView, StatusBar, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { AlgorithmIconSvg, BlockIconSvg, CustomBackIconSvg, EmailIconSvg, EmptyIconSvg, LockIcon2Svg } from '@assets/icons/svgStrings';
+import { svgToDataUri } from '@/shared/utils/svgUtils';
+import { Image } from 'expo-image';
+
 
 type NavigationProp = NativeStackNavigationProp<SettingsStackParamList, 'AccountSettings'>;
 
@@ -115,7 +113,10 @@ export default function AccountSettingsScreen() {
           className="absolute left-4 top-14 w-10 h-10 bg-[#DFD2CD] rounded-full flex justify-center items-center"
           onPress={goBack}
         >
-          <CustomBackIcon width={30} height={30} />
+          <Image
+        source={{ uri: svgToDataUri(CustomBackIconSvg) }}
+        style={[{ width: 30, height: 30 }, {}]}
+      />
         </TouchableOpacity>
         <Text className="flex-1 text-center text-xl font-semibold">Capture Account</Text>
       </View>
@@ -137,31 +138,52 @@ export default function AccountSettingsScreen() {
 
         <View className="bg-stone-400 bg-opacity-0 rounded-[10px] shadow border border-black mb-6">
           <TouchableOpacity className="flex-row items-center p-3 border-b border-black border-opacity-20">
-            <BlockIcon height={25} width={25} />
+            <Image
+        source={{ uri: svgToDataUri(BlockIconSvg) }}
+        style={[{ width: 25, height: 25 }, {}]}
+      />
             <Text className="ml-4 text-xs font-bold">Account Information</Text>
             <View className="flex-1" />
-            <EmptyIcon height={20} width={20} />
+            <Image
+        source={{ uri: svgToDataUri(EmptyIconSvg) }}
+        style={[{ width: 20, height: 20 }, {}]}
+      />
           </TouchableOpacity>
 
           <TouchableOpacity className="flex-row items-center p-3 border-b border-black border-opacity-20">
-            <EmailIcon height={25} width={25} />
+            <Image
+        source={{ uri: svgToDataUri(EmailIconSvg) }}
+        style={[{ width: 25, height: 25 }, {}]}
+      />
             <Text className="ml-4 text-xs font-bold">Password & 2FA</Text>
             <View className="flex-1" />
-            <EmptyIcon height={20} width={20} />
+            <Image
+        source={{ uri: svgToDataUri(EmptyIconSvg) }}
+        style={[{ width: 20, height: 20 }, {}]}
+      />
           </TouchableOpacity>
 
           <TouchableOpacity className="flex-row items-center p-3 border-b border-black border-opacity-20">
-            <AlgorithmIcon height={25} width={25} />
+            <Image
+        source={{ uri: svgToDataUri(AlgorithmIconSvg) }}
+        style={[{ width: 25, height: 25 }, {}]}
+      />
             <Text className="ml-4 text-xs font-bold">
               Profile Verification (Media Outlet / Business)
             </Text>
             <View className="flex-1" />
-            <EmptyIcon height={20} width={20} />
+            <Image
+        source={{ uri: svgToDataUri(EmptyIconSvg) }}
+        style={[{ width: 20, height: 20 }, {}]}
+      />
           </TouchableOpacity>
 
           <View className="flex-row items-center justify-between p-3">
             <View className="flex-row items-center">
-              <LockIcon2 height={25} width={25} />
+              <Image
+        source={{ uri: svgToDataUri(LockIcon2Svg) }}
+        style={[{ width: 25, height: 25 }, {}]}
+      />
               <View className="ml-4">
                 <Text className="text-xs font-bold">Account Privacy</Text>
                 <Text className="text-[10px] text-black opacity-70">

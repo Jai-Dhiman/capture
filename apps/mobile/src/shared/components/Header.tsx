@@ -1,15 +1,19 @@
 import { useAuthStore } from '@/features/auth/stores/authStore';
-import CustomBackIcon from '@assets/icons/CustomBackIcon.svg';
-import CustomMenuIcon from '@assets/icons/CustomMenuIcon.svg';
-import EmptyIcon from '@assets/icons/EmptyIcon.svg';
-import PlusIcon from '@assets/icons/PlusIcon.svg';
-import ProfileIcon from '@assets/icons/ProfileIcon.svg';
-import SearchIcon from '@assets/icons/SearchIcon.svg';
+import { 
+  CustomBackIconSvg, 
+  CustomMenuIconSvg, 
+  EmptyIconSvg, 
+  PlusIconSvg, 
+  ProfileIconSvg, 
+  SearchIconSvg 
+} from '@assets/icons/svgStrings';
+import { svgToDataUri } from '@/shared/utils/svgUtils';
 import { useNavigation } from '@react-navigation/native';
 import { MotiView } from 'moti';
 import type React from 'react';
 import { useState } from 'react';
-import { ImageBackground, Modal, Pressable, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, Pressable, Text, TouchableOpacity, View } from 'react-native';
+import { Image } from 'expo-image';
 
 type HeaderProps = {
   showBackButton?: boolean;
@@ -40,10 +44,10 @@ const Header: React.FC<HeaderProps> = ({
   const headerHeight = height ?? HEADER_HEIGHT;
 
   const navigationItems = [
-    { name: 'Feed', icon: EmptyIcon, route: 'Feed' },
-    { name: 'Search', icon: SearchIcon, route: 'Search' },
-    { name: 'Profile', icon: ProfileIcon, route: 'Profile' },
-    { name: 'New Post', icon: PlusIcon, route: 'NewPost' },
+    { name: 'Feed', svg: EmptyIconSvg, route: 'Feed' },
+    { name: 'Search', svg: SearchIconSvg, route: 'Search' },
+    { name: 'Profile', svg: ProfileIconSvg, route: 'Profile' },
+    { name: 'New Post', svg: PlusIconSvg, route: 'NewPost' },
   ];
 
   const toggleMenu = () => {
@@ -93,7 +97,10 @@ const Header: React.FC<HeaderProps> = ({
               className="w-10 h-10 bg-[#DFD2CD] rounded-full flex justify-center items-center"
               onPress={toggleMenu}
             >
-              <CustomMenuIcon width={30} height={30} />
+              <Image
+                source={{ uri: svgToDataUri(CustomMenuIconSvg) }}
+                style={{ width: 30, height: 30 }}
+              />
             </TouchableOpacity>
           ) : (
             <View className="w-10 h-10" />
@@ -121,23 +128,23 @@ const Header: React.FC<HeaderProps> = ({
             >
               <Pressable onPress={(e) => e.stopPropagation()}>
                 <View className="w-56 h-72 pb-10 flex flex-col justify-start items-start gap-0.5">
-                  {navigationItems.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <TouchableOpacity
-                        key={item.route}
-                        className="self-stretch h-14 relative bg-[#e4cac7] rounded-2xl shadow-sm"
-                        onPress={() => handleNavigation(item.route)}
-                      >
-                        <Text className="left-[60px] top-[16px] absolute justify-center text-neutral-900 text-base font-base leading-normal">
-                          {item.name}
-                        </Text>
-                        <View className="w-10 h-10 left-[8px] top-[8px] absolute bg-white rounded-xl outline outline-1 outline-offset-[-1px] outline-zinc-100 flex justify-center items-center">
-                          <Icon width={22} height={22} />
-                        </View>
-                      </TouchableOpacity>
-                    );
-                  })}
+                  {navigationItems.map((item) => (
+                    <TouchableOpacity
+                      key={item.route}
+                      className="self-stretch h-14 relative bg-[#e4cac7] rounded-2xl shadow-sm"
+                      onPress={() => handleNavigation(item.route)}
+                    >
+                      <Text className="left-[60px] top-[16px] absolute justify-center text-neutral-900 text-base font-base leading-normal">
+                        {item.name}
+                      </Text>
+                      <View className="w-10 h-10 left-[8px] top-[8px] absolute bg-white rounded-xl outline outline-1 outline-offset-[-1px] outline-zinc-100 flex justify-center items-center">
+                        <Image
+                          source={{ uri: svgToDataUri(item.svg) }}
+                          style={{ width: 22, height: 22 }}
+                        />
+                      </View>
+                    </TouchableOpacity>
+                  ))}
                 </View>
               </Pressable>
             </MotiView>

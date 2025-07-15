@@ -1,12 +1,10 @@
-import BlockIcon from '@assets/icons/BlockIcon.svg';
-import EmptyIcon from '@assets/icons/EmptyIcon.svg';
-import NotificationIcon from '@assets/icons/NotificationIcon.svg';
-import QuestionIcon from '@assets/icons/QuestionIcon.svg';
-import ReportIcon from '@assets/icons/ReportIcon.svg';
-import TrashIcon from '@assets/icons/TrashIcon.svg';
 import { MotiView } from 'moti';
 import React from 'react';
 import { Dimensions, Modal, Pressable, Text, TouchableOpacity, View } from 'react-native';
+import { BlockIconSvg, EmptyIconSvg, NotificationIconSvg, QuestionIconSvg, ReportIconSvg, TrashIconSvg } from '@assets/icons/svgStrings';
+import { svgToDataUri } from '@/shared/utils/svgUtils';
+import { Image } from 'expo-image';
+
 
 interface PostMenuProps {
   isVisible: boolean;
@@ -37,45 +35,45 @@ export const PostMenu = ({
 }: PostMenuProps) => {
   const menuItems = isOwnPost
     ? [
-        {
-          text: isLoading ? 'Deleting...' : 'Delete Post',
-          onPress: onDeletePost,
-          disabled: isLoading,
-          icon: TrashIcon,
-        },
-      ]
+      {
+        text: isLoading ? 'Deleting...' : 'Delete Post',
+        onPress: onDeletePost,
+        disabled: isLoading,
+        icon: TrashIconSvg,
+      },
+    ]
     : [
-        {
-          text: isLoading ? 'Blocking...' : 'Block User',
-          onPress: onBlockUser,
-          disabled: isLoading,
-          icon: BlockIcon,
-        },
-        {
-          text: 'Report Post',
-          onPress: onReportPost,
-          icon: ReportIcon,
-        },
-        {
-          text: 'Why Am I Seeing This?',
-          onPress: onWhySeeing,
-          icon: QuestionIcon,
-        },
-        {
-          text: 'Enable Notifications',
-          onPress: onEnableNotifications,
-          icon: NotificationIcon,
-        },
-      ];
+      {
+        text: isLoading ? 'Blocking...' : 'Block User',
+        onPress: onBlockUser,
+        disabled: isLoading,
+        icon: BlockIconSvg,
+      },
+      {
+        text: 'Report Post',
+        onPress: onReportPost,
+        icon: ReportIconSvg,
+      },
+      {
+        text: 'Why Am I Seeing This?',
+        onPress: onWhySeeing,
+        icon: QuestionIconSvg,
+      },
+      {
+        text: 'Enable Notifications',
+        onPress: onEnableNotifications,
+        icon: NotificationIconSvg,
+      },
+    ];
 
   const screenWidth = Dimensions.get('window').width;
 
   // Calculate menu position based on button position
   const menuPosition = buttonPosition
     ? {
-        top: buttonPosition.y,
-        right: screenWidth - buttonPosition.x,
-      }
+      top: buttonPosition.y,
+      right: screenWidth - buttonPosition.x,
+    }
     : position;
 
   const from = buttonPosition ? { translateY: -10, opacity: 0 } : { translateY: 20, opacity: 0 };
@@ -99,7 +97,7 @@ export const PostMenu = ({
         <Pressable onPress={(e) => e.stopPropagation()}>
           <View className="w-56 pb-2 flex flex-col justify-start items-start gap-0.5">
             {menuItems.map((item) => {
-              const Icon = item.icon || EmptyIcon;
+              const Icon = item.icon || EmptyIconSvg;
               return (
                 <TouchableOpacity
                   key={item.text}
@@ -111,7 +109,10 @@ export const PostMenu = ({
                     {item.text}
                   </Text>
                   <View className="w-10 h-10 left-[8px] top-[8px] absolute bg-white rounded-xl outline outline-1 outline-offset-[-1px] outline-zinc-100 flex justify-center items-center">
-                    <Icon width={22} height={22} />
+                    <Image
+                      source={{ uri: svgToDataUri(Icon) }}
+                      style={{ width: 22, height: 22 }}
+                    />
                   </View>
                 </TouchableOpacity>
               );

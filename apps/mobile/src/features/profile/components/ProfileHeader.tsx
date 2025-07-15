@@ -1,18 +1,16 @@
 import { NotificationButton } from '@/features/notification/components/NotificationButton';
 import { MediaImage } from '@/features/post/components/MediaImage';
 import { SkeletonElement } from '@/shared/components/SkeletonLoader';
-import BackIcon from '@assets/icons/CustomBackIcon.svg';
-import MenuDots from '@assets/icons/CustomMenuIcon.svg';
-import EmptyIcon from '@assets/icons/EmptyIcon.svg';
-import PlusIcon from '@assets/icons/PlusIcon.svg';
-import ProfileIcon from '@assets/icons/ProfileIcon.svg';
-import SearchIcon from '@assets/icons/SearchIcon.svg';
 import { useNavigation } from '@react-navigation/native';
 import { MotiView } from 'moti';
 import type React from 'react';
 import { useState } from 'react';
 import { Modal, Pressable, Text, TouchableOpacity, View } from 'react-native';
 import { FollowButton } from './FollowButton';
+import { CustomBackIconSvg, CustomMenuIconSvg, EmptyIconSvg, PlusIconSvg, ProfileIconSvg, SearchIconSvg } from '@assets/icons/svgStrings';
+import { svgToDataUri } from '@/shared/utils/svgUtils';
+import { Image } from 'expo-image';
+
 
 interface ProfileHeaderProps {
   profileData?: any;
@@ -43,10 +41,10 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   const navigation = useNavigation<any>();
 
   const navigationItems = [
-    { name: 'Feed', icon: EmptyIcon, route: 'Feed' },
-    { name: 'Search', icon: SearchIcon, route: 'Search' },
-    { name: 'Profile', icon: ProfileIcon, route: 'Profile' },
-    { name: 'New Post', icon: PlusIcon, route: 'NewPost' },
+    { name: 'Feed', icon: EmptyIconSvg, route: 'Feed' },
+    { name: 'Search', icon: SearchIconSvg, route: 'Search' },
+    { name: 'Profile', icon: ProfileIconSvg, route: 'Profile' },
+    { name: 'New Post', icon: PlusIconSvg, route: 'NewPost' },
   ];
 
   const toggleMenu = () => {
@@ -70,7 +68,10 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               className="w-10 h-10 bg-[#DFD2CD] rounded-full flex justify-center items-center"
               onPress={onBackPress}
             >
-              <BackIcon width={30} height={30} />
+              <Image
+                source={{ uri: svgToDataUri(CustomBackIconSvg) }}
+                style={[{ width: 30, height: 30 }, {}]}
+              />
             </TouchableOpacity>
           ) : (
             <View className="w-10 h-10" />
@@ -85,7 +86,10 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                 className="w-10 h-10 bg-[#DFD2CD] rounded-full flex justify-center items-center"
                 onPress={toggleMenu}
               >
-                <MenuDots width={30} height={30} />
+                <Image
+                  source={{ uri: svgToDataUri(CustomMenuIconSvg) }}
+                  style={[{ width: 30, height: 30 }, {}]}
+                />
               </TouchableOpacity>
             )
           ) : (
@@ -128,7 +132,10 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                         {item.name}
                       </Text>
                       <View className="w-10 h-10 left-[8px] top-[8px] absolute bg-white rounded-xl outline outline-1 outline-offset-[-1px] outline-zinc-100 flex justify-center items-center">
-                        <Icon width={22} height={22} />
+                        <Image
+                          source={{ uri: svgToDataUri(Icon) }}
+                          style={{ width: 22, height: 22 }}
+                        />
                       </View>
                     </TouchableOpacity>
                   );

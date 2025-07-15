@@ -7,7 +7,6 @@ import { useBlockUser } from '@/features/profile/hooks/useBlocking';
 import type { AppStackParamList } from '@/navigation/types';
 import { SkeletonElement } from '@/shared/components/SkeletonLoader';
 import { useAlert } from '@/shared/lib/AlertContext';
-import LockIcon2 from '@assets/icons/LockIcon2.svg';
 import { type RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAtom } from 'jotai';
@@ -20,6 +19,10 @@ import { ProfileHeader } from '../components/ProfileHeader';
 import { ProfileTabView } from '../components/ProfileTabView';
 import { useProfile } from '../hooks/useProfile';
 import { useFollowers, useSyncFollowingState } from '../hooks/useRelationships';
+import { LockIcon2Svg } from '@assets/icons/svgStrings';
+import { svgToDataUri } from '@/shared/utils/svgUtils';
+import { Image } from 'expo-image';
+
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 type ProfileRouteProp = RouteProp<AppStackParamList, 'Profile'>;
@@ -235,7 +238,10 @@ export default function Profile() {
               />
               <View className="mt-8 items-center">
                 <View className="bg-stone-200 rounded-lg p-6 w-full items-center">
-                  <LockIcon2 height={50} width={50} />
+                  <Image
+        source={{ uri: svgToDataUri(LockIcon2Svg) }}
+        style={[{ width: 50, height: 50 }, {}]}
+      />
                   <Text className="text-lg font-semibold mt-4">This Account is Private</Text>
                   <Text className="text-sm text-center mt-2 opacity-70">
                     Follow this account to see their photos and videos.

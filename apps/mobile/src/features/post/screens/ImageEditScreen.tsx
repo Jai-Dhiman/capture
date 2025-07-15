@@ -11,7 +11,7 @@ import {
 } from '@shopify/react-native-skia';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, Image as RNImage, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, Image as RNImage, Text, TouchableOpacity, View } from 'react-native';
 import * as MediaLibrary from 'expo-media-library';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { useUndoRedo } from '../hooks/useUndoRedo';
@@ -769,9 +769,8 @@ export default function ImageEditScreen() {
           {/* Auto-Save Indicator */}
           <View className="absolute top-4 left-4 bg-black/50 rounded-full px-2 py-1 flex-row items-center">
             <View
-              className={`w-2 h-2 rounded-full mr-1.5 ${
-                isSaving ? 'bg-yellow-400' : 'bg-green-400'
-              }`}
+              className={`w-2 h-2 rounded-full mr-1.5 ${isSaving ? 'bg-yellow-400' : 'bg-green-400'
+                }`}
             />
             <Text className="text-white text-xs">
               {isSaving ? 'Saving...' : lastSaved ? 'Saved' : 'Auto-save'}
@@ -785,9 +784,8 @@ export default function ImageEditScreen() {
         <View className="flex-row bg-gray-200 rounded-full p-1">
           <TouchableOpacity
             onPress={setAdjustmentMode}
-            className={`px-6 py-2 rounded-full ${
-              editMode === 'adjustments' ? 'bg-[#E4CAC7] border border-black' : 'bg-transparent'
-            }`}
+            className={`px-6 py-2 rounded-full ${editMode === 'adjustments' ? 'bg-[#E4CAC7] border border-black' : 'bg-transparent'
+              }`}
           >
             <Text
               className={`text-sm ${editMode === 'adjustments' ? 'text-black font-semibold' : 'text-gray-600'}`}
@@ -797,9 +795,8 @@ export default function ImageEditScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             onPress={setFilterMode}
-            className={`px-6 py-2 rounded-full ${
-              editMode === 'filters' ? 'bg-[#E4CAC7] border border-black' : 'bg-transparent'
-            }`}
+            className={`px-6 py-2 rounded-full ${editMode === 'filters' ? 'bg-[#E4CAC7] border border-black' : 'bg-transparent'
+              }`}
           >
             <Text
               className={`text-sm ${editMode === 'filters' ? 'text-black font-semibold' : 'text-gray-600'}`}
@@ -838,7 +835,7 @@ export default function ImageEditScreen() {
                 onValueChange={handleValueChange}
                 minimumTrackTintColor="#E4CAC7"
                 maximumTrackTintColor="#D8C0BD"
-                // thumbStyle={{ backgroundColor: '#E4CAC7', borderWidth: 2, borderColor: '#D8C0BD' }}
+              // thumbStyle={{ backgroundColor: '#E4CAC7', borderWidth: 2, borderColor: '#D8C0BD' }}
               />
             </View>
           </View>
@@ -861,18 +858,16 @@ export default function ImageEditScreen() {
         <TouchableOpacity
           onPress={handleUndo}
           disabled={!canUndo}
-          className={`w-12 h-12 rounded-full justify-center items-center border-2 ${
-            canUndo ? 'bg-[#E4CAC7] border-black' : 'bg-gray-300 border-gray-400'
-          }`}
+          className={`w-12 h-12 rounded-full justify-center items-center border-2 ${canUndo ? 'bg-[#E4CAC7] border-black' : 'bg-gray-300 border-gray-400'
+            }`}
         >
           <Ionicons name="arrow-undo" size={20} color={canUndo ? 'black' : 'gray'} />
         </TouchableOpacity>
         <TouchableOpacity
           onPress={handleRedo}
           disabled={!canRedo}
-          className={`w-12 h-12 rounded-full justify-center items-center border-2 ${
-            canRedo ? 'bg-[#E4CAC7] border-black' : 'bg-gray-300 border-gray-400'
-          }`}
+          className={`w-12 h-12 rounded-full justify-center items-center border-2 ${canRedo ? 'bg-[#E4CAC7] border-black' : 'bg-gray-300 border-gray-400'
+            }`}
         >
           <Ionicons name="arrow-redo" size={20} color={canRedo ? 'black' : 'gray'} />
         </TouchableOpacity>

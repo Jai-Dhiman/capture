@@ -4,11 +4,6 @@ import { useBlockUser } from '@/features/profile/hooks/useBlocking';
 import type { AppStackParamList } from '@/navigation/types';
 import { SkeletonLoader } from '@/shared/components/SkeletonLoader';
 import { useAlert } from '@/shared/lib/AlertContext';
-import CommentIcon from '@assets/icons/CommentsIcon.svg';
-import FavoriteIcon from '@assets/icons/FavoriteIcon.svg';
-import FilledFavoriteIcon from '@assets/icons/FilledFavoriteIcon.svg';
-import SettingsIcon from '@assets/icons/MenuDots.svg';
-import ShareIcon from '@assets/icons/PaperPlaneIcon.svg';
 import { SHARE_URL } from '@env';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -29,6 +24,10 @@ import { useSavePost, useUnsavePost } from '../hooks/useSavesPosts';
 import { PostMediaGallery } from './PostMediaGallery';
 import { PostMenu } from './PostMenu';
 import { MediaImage } from './MediaImage';
+import { CommentsIconSvg, FavoriteIconSvg, FilledFavoriteIconSvg, MenuDotsSvg, PaperPlaneIconSvg } from '@assets/icons/svgStrings';
+import { svgToDataUri } from '@/shared/utils/svgUtils';
+import { Image } from 'expo-image';
+
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 
@@ -151,7 +150,10 @@ export const PostItem = ({ post: initialPost, isLoading = false }: PostItemProps
             className="w-6 h-6 justify-center items-center"
             onPress={handleOpenMenu}
           >
-            <SettingsIcon width={24} height={24} />
+            <Image
+        source={{ uri: svgToDataUri(MenuDotsSvg) }}
+        style={[{ width: 24, height: 24 }, {}]}
+      />
           </TouchableOpacity>
         </View>
 
@@ -175,11 +177,17 @@ export const PostItem = ({ post: initialPost, isLoading = false }: PostItemProps
           <View className="flex-row justify-between items-center">
             <View className="flex-row">
               <TouchableOpacity onPress={handleOpenComments} className="mr-4">
-                <CommentIcon width={20} height={20} />
+                <Image
+        source={{ uri: svgToDataUri(CommentsIconSvg) }}
+        style={[{ width: 20, height: 20 }, {}]}
+      />
               </TouchableOpacity>
 
               <TouchableOpacity onPress={handleShare} className="mr-10">
-                <ShareIcon width={20} height={20} />
+                <Image
+        source={{ uri: svgToDataUri(PaperPlaneIconSvg) }}
+        style={[{ width: 20, height: 20 }, {}]}
+      />
               </TouchableOpacity>
             </View>
 
@@ -190,9 +198,15 @@ export const PostItem = ({ post: initialPost, isLoading = false }: PostItemProps
               {savePostMutation.isPending || unsavePostMutation.isPending ? (
                 <ActivityIndicator size="small" color="#E4CAC7" />
               ) : post.isSaved ? (
-                <FilledFavoriteIcon width={20} height={20} />
+                <Image
+        source={{ uri: svgToDataUri(FilledFavoriteIconSvg) }}
+        style={[{ width: 20, height: 20 }, {}]}
+      />
               ) : (
-                <FavoriteIcon width={20} height={20} />
+                <Image
+        source={{ uri: svgToDataUri(FavoriteIconSvg) }}
+        style={[{ width: 20, height: 20 }, {}]}
+      />
               )}
             </TouchableOpacity>
           </View>

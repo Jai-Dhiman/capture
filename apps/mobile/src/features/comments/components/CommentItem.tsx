@@ -1,7 +1,6 @@
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { MediaImage } from '@/features/post/components/MediaImage';
 import { errorService } from '@/shared/services/errorService';
-import XIcon from '@assets/icons/XIcon.svg';
 import { API_URL } from '@env';
 import { useQuery } from '@tanstack/react-query';
 import { useAtom } from 'jotai';
@@ -10,6 +9,10 @@ import { ActivityIndicator, Alert, Text, TouchableOpacity, View } from 'react-na
 import { currentPostIdAtom, replyingToCommentAtom } from '../atoms/commentAtoms';
 import { useCommentActions } from '../hooks/useCommentActions';
 import type { Comment } from '../types/commentTypes';
+import { XIconSvg } from '@assets/icons/svgStrings';
+import { svgToDataUri } from '@/shared/utils/svgUtils';
+import { Image } from 'expo-image';
+
 
 export const CommentItem = ({ comment }: { comment: Comment }) => {
   const { startReply, cancelReply } = useCommentActions();
@@ -193,7 +196,10 @@ export const CommentItem = ({ comment }: { comment: Comment }) => {
           <View className="w-full p-4 flex flex-row items-start gap-2.5 relative">
             {isSelected && (
               <TouchableOpacity onPress={cancelReply} className="absolute top-2 right-2 z-10">
-                <XIcon width={16} height={16} />
+                <Image
+        source={{ uri: svgToDataUri(XIconSvg) }}
+        style={[{ width: 16, height: 16 }, {}]}
+      />
               </TouchableOpacity>
             )}
 

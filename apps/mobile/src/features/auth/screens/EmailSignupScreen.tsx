@@ -2,13 +2,15 @@ import type { AuthStackParamList } from '@/navigation/types';
 import Header from '@/shared/components/Header';
 import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 
-import EmailIcon from '@assets/icons/EmailIcon.svg';
-import ProfileIcon from '@assets/icons/ProfileIcon.svg';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm } from '@tanstack/react-form';
 import React, { useState, useRef } from 'react';
-import { Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
+import { EmailIconSvg, ProfileIconSvg } from '@assets/icons/svgStrings';
+import { svgToDataUri } from '@/shared/utils/svgUtils';
+import { Image } from 'expo-image';
+
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'EmailSignup'>;
@@ -144,7 +146,10 @@ export default function EmailSignupScreen({ navigation }: Props) {
                     onPress={() => phoneInputRef.current?.focus()}
                     className={`bg-white h-[60px] rounded-[16px] shadow-md flex-row items-center px-[9px] ${isPhoneFocused ? 'border-2 border-[#E4CAC7]' : ''}`}
                   >
-                    <ProfileIcon width={30} height={30} style={{ marginRight: 14 }} />
+                    <Image
+                      source={{ uri: svgToDataUri(ProfileIconSvg) }}
+                      style={[{ width: 30, height: 30 }, { marginRight: 14 }]}
+                    />
                     <TextInput
                       ref={phoneInputRef}
                       onFocus={() => setIsPhoneFocused(true)}
@@ -191,7 +196,10 @@ export default function EmailSignupScreen({ navigation }: Props) {
                     onPress={() => emailInputRef.current?.focus()}
                     className={`bg-white h-[60px] rounded-[16px] shadow-md flex-row items-center px-[9px] ${isEmailFocused ? 'border-2 border-[#E4CAC7]' : ''}`}
                   >
-                    <EmailIcon width={30} height={30} style={{ marginRight: 14 }} />
+                    <Image
+                      source={{ uri: svgToDataUri(EmailIconSvg) }}
+                      style={[{ width: 30, height: 30 }, { marginRight: 14 }]}
+                    />
                     <TextInput
                       ref={emailInputRef}
                       onFocus={() => setIsEmailFocused(true)}

@@ -76,8 +76,6 @@
     "react-native-reanimated-carousel": "^4.0.2",
     "react-native-safe-area-context": "4.12.0",
     "react-native-screens": "~4.4.0",
-    "react-native-svg": "15.2.0",
-    "react-native-svg-transformer": "^1.5.1",
     "react-native-tab-view": "^4.0.10",
     "react-native-url-polyfill": "^2.0.0",
     "react-native-video": "^6.15.0",
@@ -98,7 +96,6 @@
     "@types/node": "^22.12.0",
     "@types/react": "~18.3.23",
     "metro-react-native-babel-preset": "^0.77.0",
-    "react-native-svg-web": "^1.0.9",
     "reactotron-react-native": "^5.1.14",
     "tailwindcss": "3.3.2"
   },

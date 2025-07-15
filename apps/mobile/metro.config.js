@@ -10,14 +10,12 @@ const config = getSentryExpoConfig(__dirname, {
 
 const { transformer, resolver } = config;
 
+// SVG transformer removed - now using expo-image with SVG strings
 config.transformer = {
   ...transformer,
-  babelTransformerPath: require.resolve('react-native-svg-transformer'),
 };
 config.resolver = {
   ...resolver,
-  assetExts: resolver.assetExts.filter((ext) => ext !== 'svg'),
-  sourceExts: [...resolver.sourceExts, 'svg'],
   alias: {
     buffer: require.resolve('buffer'),
   },

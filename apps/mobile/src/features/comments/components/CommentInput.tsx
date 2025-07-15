@@ -1,9 +1,12 @@
-import SendCommentIcon from '@assets/icons/SendCommentIcon.svg';
 import { useAtom } from 'jotai';
 import React, { useState, useEffect, useRef } from 'react';
 import { Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { replyingToCommentAtom } from '../atoms/commentAtoms';
 import { useCommentActions } from '../hooks/useCommentActions';
+import { SendCommentIconSvg } from '@assets/icons/svgStrings';
+import { svgToDataUri } from '@/shared/utils/svgUtils';
+import { Image } from 'expo-image';
+
 
 export const CommentInput = () => {
   const [content, setContent] = useState('');
@@ -66,7 +69,10 @@ export const CommentInput = () => {
           disabled={!content.trim()}
           style={[styles.sendButton, { opacity: content.trim() ? 1 : 0.5 }]}
         >
-          <SendCommentIcon width={24} height={24} />
+          <Image
+        source={{ uri: svgToDataUri(SendCommentIconSvg) }}
+        style={[{ width: 24, height: 24 }, {}]}
+      />
         </TouchableOpacity>
       </View>
     </View>

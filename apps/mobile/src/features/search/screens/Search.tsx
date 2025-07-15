@@ -3,14 +3,16 @@ import { MediaImage } from '@/features/post/components/MediaImage';
 import { useSearchHashtags } from '@/features/post/hooks/useHashtags';
 import type { AppStackParamList } from '@/navigation/types';
 import { SkeletonElement, SkeletonLoader } from '@/shared/components/SkeletonLoader';
-import Background1 from '@assets/Background1.svg';
-import CustomBackIcon from '@assets/icons/CustomBackIcon.svg';
 import { API_URL } from '@env';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useState, useEffect } from 'react';
 import { SectionList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { CustomBackIconSvg } from '@assets/icons/svgStrings';
+import { svgToDataUri } from '@/shared/utils/svgUtils';
+import { Image } from 'expo-image';
+
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 
@@ -171,7 +173,7 @@ export default function UserSearch() {
       renderItem: ({ item }: { item: HashtagSearchResult }) => (
         <TouchableOpacity
           className="flex-row items-center p-4 border-b border-gray-100"
-          // onPress={() => handleHashtagPress(item)}
+        // onPress={() => handleHashtagPress(item)}
         >
           <View className="w-12 h-12 rounded-full bg-[#E4CAC7] justify-center items-center mr-4">
             <Text className="text-black font-bold">#</Text>
@@ -223,15 +225,29 @@ export default function UserSearch() {
   const isSearchLoading = isLoading || (isHashtagSearch && hashtagsLoading);
 
   return (
-    <View className="flex-1">
-      <Background1 width="100%" height="100%" style={StyleSheet.absoluteFill} />
+    <View className="flex-1 bg-[#DCDCDE] overflow-hidden">
+      <Image
+        source={require('@assets/DefaultBackground.png')}
+        style={{
+          opacity: 0.58,
+          width: '100%',
+          height: '100%',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+        }}
+        resizeMode="cover"
+      />
       <View className="flex-row items-center p-4 pt-20 shadow-md bg-transparent">
         <TouchableOpacity
           className="w-8 h-8 bg-[#DFD2CD] rounded-full drop-shadow-md flex justify-center items-center mr-2"
           style={{ boxShadow: '0 4px 6px rgba(0,0,0,0.2)' }}
           onPress={() => navigation.goBack()}
         >
-          <CustomBackIcon width={20} height={20} />
+          <Image
+            source={{ uri: svgToDataUri(CustomBackIconSvg) }}
+            style={[{ width: 20, height: 20 }, {}]}
+          />
         </TouchableOpacity>
         <View className="flex-1 flex-row items-center bg-white/50 rounded-lg shadow-sm border border-gray-300 py-1">
           <Ionicons name="search" size={18} color="gray" className="absolute left-3 z-10" />
@@ -253,7 +269,7 @@ export default function UserSearch() {
             {Array(4)
               .fill(0)
               .map((_, index) => (
-                <View key={index} className="flex-row items-center mb-4">
+                <View key={`skeleton-${index}`} className="flex-row items-center mb-4">
                   <SkeletonElement width={48} height={48} radius="round" />
                   {isHashtagSearch ? (
                     <SkeletonElement width={144} height={20} />
@@ -280,7 +296,7 @@ export default function UserSearch() {
           }
           stickySectionHeadersEnabled={false}
           ListEmptyComponent={renderEmptyState}
-          contentContainerStyle={{ flexGrow: 1, backgroundColor: 'rgba(229, 231, 235, 0.8)' }}
+          contentContainerStyle={{ flexGrow: 1, backgroundColor: 'transparent' }}
         />
       )}
     </View>

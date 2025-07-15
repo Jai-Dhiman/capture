@@ -1,8 +1,10 @@
-import AppleIcon from '@assets/icons/AppleLogo.svg';
-import GoogleLogo from '@assets/icons/GoogleLogo.svg';
 import React from 'react';
 import { ActivityIndicator, Platform, Text, TouchableOpacity, View } from 'react-native';
 import { useOAuth } from '../hooks/useOAuth';
+import { AppleLogoSvg, GoogleLogoSvg } from '@assets/icons/svgStrings';
+import { svgToDataUri } from '@/shared/utils/svgUtils';
+import { Image } from 'expo-image';
+
 
 interface OAuthButtonsProps {
   style?: 'default' | 'compact';
@@ -43,9 +45,8 @@ export function OAuthButtons({
         <TouchableOpacity
           onPress={() => loginWithGoogle.mutate()}
           disabled={loginWithGoogle.isPending}
-          className={`bg-white ${buttonHeight} rounded-[30px] shadow-md flex-row items-center justify-center ${spacing} ${
-            loginWithGoogle.isPending ? 'opacity-50' : ''
-          }`}
+          className={`bg-white ${buttonHeight} rounded-[30px] shadow-md flex-row items-center justify-center ${spacing} ${loginWithGoogle.isPending ? 'opacity-50' : ''
+            }`}
           style={showDivider ? { marginTop: dividerSpacing === 'mt-[29px]' ? 29 : 20 } : {}}
         >
           {loginWithGoogle.isPending ? (
@@ -57,7 +58,10 @@ export function OAuthButtons({
             </View>
           ) : (
             <>
-              <GoogleLogo width={24} height={24} style={{ marginRight: 16 }} />
+              <Image
+                source={{ uri: svgToDataUri(GoogleLogoSvg) }}
+                style={[{ width: 24, height: 24 }, { marginRight: 16 }]}
+              />
               <Text className="text-base font-bold font-roboto text-[#1C1C1C]">
                 Sign In with Google
               </Text>
@@ -71,9 +75,8 @@ export function OAuthButtons({
         <TouchableOpacity
           onPress={() => loginWithApple.mutate()}
           disabled={loginWithApple.isPending}
-          className={`bg-white ${buttonHeight} rounded-[30px] shadow-md flex-row items-center justify-center ${spacing} ${
-            loginWithApple.isPending ? 'opacity-50' : ''
-          }`}
+          className={`bg-white ${buttonHeight} rounded-[30px] shadow-md flex-row items-center justify-center ${spacing} ${loginWithApple.isPending ? 'opacity-50' : ''
+            }`}
         >
           {loginWithApple.isPending ? (
             <View className="flex-row items-center">
@@ -84,7 +87,10 @@ export function OAuthButtons({
             </View>
           ) : (
             <>
-              <AppleIcon width={24} height={24} style={{ marginRight: 16 }} />
+              <Image
+                source={{ uri: svgToDataUri(AppleLogoSvg) }}
+                style={[{ width: 24, height: 24 }, { marginRight: 16 }]}
+              />
               <Text className="text-base font-bold font-roboto text-[#1C1C1C]">
                 Sign In with Apple
               </Text>
@@ -127,9 +133,8 @@ export function GoogleOAuthButton({
     <TouchableOpacity
       onPress={handlePress}
       disabled={disabled || loginWithGoogle.isPending}
-      className={`bg-white ${buttonHeight} rounded-[30px] shadow-md flex-row items-center justify-center ${
-        disabled || loginWithGoogle.isPending ? 'opacity-50' : ''
-      }`}
+      className={`bg-white ${buttonHeight} rounded-[30px] shadow-md flex-row items-center justify-center ${disabled || loginWithGoogle.isPending ? 'opacity-50' : ''
+        }`}
     >
       {loginWithGoogle.isPending ? (
         <View className="flex-row items-center">
@@ -138,7 +143,10 @@ export function GoogleOAuthButton({
         </View>
       ) : (
         <>
-          <GoogleLogo width={24} height={24} style={{ marginRight: 16 }} />
+          <Image
+            source={{ uri: svgToDataUri(GoogleLogoSvg) }}
+            style={[{ width: 24, height: 24 }, { marginRight: 16 }]}
+          />
           <Text className="text-base font-bold font-roboto text-[#1C1C1C]">
             Sign In with Google
           </Text>
@@ -181,9 +189,8 @@ export function AppleOAuthButton({
     <TouchableOpacity
       onPress={handlePress}
       disabled={disabled || loginWithApple.isPending}
-      className={`bg-white ${buttonHeight} rounded-[30px] shadow-md flex-row items-center justify-center ${
-        disabled || loginWithApple.isPending ? 'opacity-50' : ''
-      }`}
+      className={`bg-white ${buttonHeight} rounded-[30px] shadow-md flex-row items-center justify-center ${disabled || loginWithApple.isPending ? 'opacity-50' : ''
+        }`}
     >
       {loginWithApple.isPending ? (
         <View className="flex-row items-center">
@@ -192,7 +199,10 @@ export function AppleOAuthButton({
         </View>
       ) : (
         <>
-          <AppleIcon width={24} height={24} style={{ marginRight: 16 }} />
+          <Image
+            source={{ uri: svgToDataUri(AppleLogoSvg) }}
+            style={[{ width: 24, height: 24 }, { marginRight: 16 }]}
+          />
           <Text className="text-base font-bold font-roboto text-[#1C1C1C]">Sign In with Apple</Text>
         </>
       )}

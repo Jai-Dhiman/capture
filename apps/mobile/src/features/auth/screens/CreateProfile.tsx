@@ -5,9 +5,10 @@ import { useAlert } from '@/shared/lib/AlertContext';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm } from '@tanstack/react-form';
+import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useState, useRef } from 'react';
-import { Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
 import { useCreateProfile } from '../hooks/useCreateProfile';
 
@@ -95,7 +96,7 @@ export default function CreateProfile() {
           text: 'Log Out',
           onPress: () => {
             logout.mutate(undefined, {
-              onSuccess: () => {},
+              onSuccess: () => { },
             });
           },
           style: 'destructive',
@@ -126,24 +127,27 @@ export default function CreateProfile() {
           <View className="w-full h-full absolute top-0 left-0 bg-zinc-300/60" />
 
           <View className="flex-row items-start mt-6 px-[22px] mb-4">
-            <TouchableOpacity
-              className="w-20 h-20 rounded-full bg-gray-200 items-center justify-center overflow-hidden shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] mr-[18px]"
-              onPress={pickImage}
-            >
-              {profileImage ? (
-                <Image source={{ uri: profileImage }} className="w-full h-full" />
-              ) : (
-                <View className="items-center justify-center">
-                  <Text className="text-gray-500 text-center font-roboto text-xs">Add Photo</Text>
-                </View>
+            <View className="items-center mr-[18px]">
+              <TouchableOpacity
+                className="w-20 h-20 rounded-full bg-gray-200 items-center justify-center overflow-hidden shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]"
+                onPress={pickImage}
+              >
+                {profileImage ? (
+                  <Image source={{ uri: profileImage }} className="w-full h-full" />
+                ) : (
+                  <View className="items-center justify-center">
+                    <Text className="text-gray-500 text-center font-roboto text-xs">
+                      Add Photo
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+              {profileImage && (
+                <TouchableOpacity onPress={pickImage} className="mt-1">
+                  <Text className="text-blue-700 text-xs font-normal font-roboto">Edit</Text>
+                </TouchableOpacity>
               )}
-            </TouchableOpacity>
-
-            {profileImage && (
-              <Text className="w-5 h-2.5 absolute left-[44px] top-[215px] text-center justify-start text-blue-700 text-xs font-normal font-roboto leading-3">
-                Edit
-              </Text>
-            )}
+            </View>
 
             <View className="flex-1 mt-[8px]">
               <Text className="text-black text-sm font-semibold font-roboto leading-none mb-1">

@@ -1,11 +1,6 @@
 import { commentDrawerOpenAtom, currentPostIdAtom } from '@/features/comments/atoms/commentAtoms';
 import { PostMediaGallery } from '@/features/post/components/PostMediaGallery';
 import { useAlert } from '@/shared/lib/AlertContext';
-import CommentIcon from '@assets/icons/CommentsIcon.svg';
-import FavoriteIcon from '@assets/icons/FavoriteIcon.svg';
-import FilledFavoriteIcon from '@assets/icons/FilledFavoriteIcon.svg';
-import SettingsIcon from '@assets/icons/MenuDots.svg';
-import ShareIcon from '@assets/icons/PaperPlaneIcon.svg';
 import { SHARE_URL } from '@env';
 import Clipboard from 'expo-clipboard';
 import { useAtom } from 'jotai';
@@ -21,6 +16,10 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import Carousel from 'react-native-reanimated-carousel';
+import { CommentsIconSvg, FavoriteIconSvg, FilledFavoriteIconSvg, MenuDotsSvg, PaperPlaneIconSvg } from '@assets/icons/svgStrings';
+import { svgToDataUri } from '@/shared/utils/svgUtils';
+import { Image } from 'expo-image';
+
 
 interface PostReanimatedCarouselProps {
   posts: any[];
@@ -120,7 +119,10 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
             onPress={() => onSettingsPress(post)}
             className="w-8 h-8 justify-center items-center"
           >
-            <SettingsIcon width={24} height={24} />
+            <Image
+        source={{ uri: svgToDataUri(MenuDotsSvg) }}
+        style={[{ width: 24, height: 24 }, {}]}
+      />
           </TouchableOpacity>
         </View>
 
@@ -148,7 +150,10 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
                 className="mr-4 p-2"
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <CommentIcon width={20} height={20} />
+                <Image
+        source={{ uri: svgToDataUri(CommentsIconSvg) }}
+        style={[{ width: 20, height: 20 }, {}]}
+      />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -156,7 +161,10 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
                 className="mr-4 p-2"
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <ShareIcon width={20} height={20} />
+                <Image
+        source={{ uri: svgToDataUri(PaperPlaneIconSvg) }}
+        style={[{ width: 20, height: 20 }, {}]}
+      />
               </TouchableOpacity>
             </View>
 
@@ -169,9 +177,15 @@ export const PostCarousel: React.FC<PostReanimatedCarouselProps> = ({
               {isCurrentPostSaving || isSaving ? (
                 <ActivityIndicator size="small" color="#E4CAC7" />
               ) : post.isSaved ? (
-                <FilledFavoriteIcon width={20} height={20} />
+                <Image
+        source={{ uri: svgToDataUri(FilledFavoriteIconSvg) }}
+        style={[{ width: 20, height: 20 }, {}]}
+      />
               ) : (
-                <FavoriteIcon width={20} height={20} />
+                <Image
+        source={{ uri: svgToDataUri(FavoriteIconSvg) }}
+        style={[{ width: 20, height: 20 }, {}]}
+      />
               )}
             </TouchableOpacity>
           </View>
