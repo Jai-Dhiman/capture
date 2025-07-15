@@ -7,6 +7,9 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
       "env": {
         "API_URL": "https://capture-api.jai-d.workers.dev",
         "SHARE_URL": "https://www.captureapp.org",
