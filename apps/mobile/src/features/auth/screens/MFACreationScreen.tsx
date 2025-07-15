@@ -79,6 +79,34 @@ export default function MFACreationScreen({ navigation }: Props) {
     }
   };
 
+  const handleDevSkip = () => {
+    console.log('[DEV_SKIP] Button pressed');
+    Alert.alert(
+      'Dev Skip MFA',
+      'This will skip MFA setup and mark security as configured. Only available in development.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+          onPress: () => console.log('[DEV_SKIP] Cancelled'),
+        },
+        {
+          text: 'Skip MFA',
+          style: 'destructive',
+          onPress: () => {
+            console.log('[DEV_SKIP] Skipping MFA setup...');
+            // Simulate MFA being set up by proceeding to next stage
+            const setStage = useAuthStore.getState().setStage;
+            console.log('[DEV_SKIP] Setting stage to profileRequired');
+            setStage('profileRequired');
+            console.log('[DEV_SKIP] Navigating to CreateProfile');
+            navigation.replace('CreateProfile');
+          },
+        },
+      ],
+    );
+  };
+
   const handleSkip = () => {
     if (isMandatory) {
       Alert.alert(
@@ -176,6 +204,21 @@ export default function MFACreationScreen({ navigation }: Props) {
               >
                 <Text className="text-gray-600 text-base font-medium font-roboto">
                   Skip for now
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            {__DEV__ && (
+              <TouchableOpacity
+                className="bg-yellow-500 py-3 px-4 rounded-xl items-center border border-yellow-600 mt-3"
+                onPress={() => {
+                  console.log('[DEV_SKIP] TouchableOpacity onPress triggered');
+                  handleDevSkip();
+                }}
+                activeOpacity={0.7}
+              >
+                <Text className="text-black text-sm font-bold font-roboto">
+                  🚧 DEV: Skip MFA Setup
                 </Text>
               </TouchableOpacity>
             )}
