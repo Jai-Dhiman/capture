@@ -26,6 +26,8 @@ export type AuthStackParamList = {
   };
   PasskeySetup: undefined;
   MFACreation: undefined;
+  TOTPSetup: undefined;
+  TOTPVerification: undefined;
   CreateProfile: undefined;
 };
 

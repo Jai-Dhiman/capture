@@ -13,6 +13,7 @@ import {
   verifyAppleToken,
 } from '../lib/auth/oauthUtils';
 import { PasskeyService as PS, PasskeyService } from '../lib/auth/passkeyService';
+import { TotpService } from '../lib/auth/totpService';
 import { authMiddleware } from '../middleware/auth';
 import { authRateLimiter, otpRateLimiter } from '../middleware/rateLimit';
 import type { Bindings, Variables } from '../types';
@@ -84,6 +85,20 @@ const passkeyAuthenticationCompleteSchema = z.object({
   }),
 });
 
+// TOTP validation schemas
+const totpSetupBeginSchema = z.object({
+  // No fields needed - uses authenticated user
+});
+
+const totpSetupCompleteSchema = z.object({
+  token: z.string().length(6).regex(/^\d+$/, 'Token must be 6 digits'),
+});
+
+const totpVerifySchema = z.object({
+  token: z.string().min(6).max(8), // 6 digits for TOTP, 8 for backup codes
+  isBackupCode: z.boolean().optional().default(false),
+});
+
 // Constants
 const REFRESH_TOKEN_EXPIRATION_SECONDS = 60 * 60 * 24 * 7; // 7 days
 const CODE_EXPIRATION_MINUTES = 10;
@@ -104,19 +119,30 @@ async function getUserSecurityStatus(db: any, userId: string) {
 
     const hasPasskeys = passkeys.length > 0;
 
-    // For now, we only check passkeys. In the future, we can add other MFA methods here
-    const hasAnyMFA = hasPasskeys;
+    // Check if user has active TOTP
+    const totpSecrets = await db
+      .select({ id: schema.totpSecrets.id })
+      .from(schema.totpSecrets)
+      .where(and(eq(schema.totpSecrets.userId, userId), eq(schema.totpSecrets.isActive, 1)))
+      .limit(1);
+
+    const hasTOTP = totpSecrets.length > 0;
+
+    // User has MFA if they have either passkeys or TOTP
+    const hasAnyMFA = hasPasskeys || hasTOTP;
 
     return {
-      securitySetupRequired: !hasAnyMFA,
+      securitySetupRequired: false, // Disabled for now - MFA is optional
       hasPasskeys,
+      hasTOTP,
     };
   } catch (error) {
     console.error('Error checking user security status:', error);
-    // Default to requiring security setup if there's an error
+    // Default to not requiring security setup if there's an error
     return {
-      securitySetupRequired: true,
+      securitySetupRequired: false,
       hasPasskeys: false,
+      hasTOTP: false,
     };
   }
 }
@@ -1462,6 +1488,315 @@ router.post('/passkey/check', authRateLimiter, async (c) => {
   } catch (error) {
     console.error('Check passkeys error:', error);
     return c.json({ error: 'Failed to check passkeys', code: 'auth/check-passkeys-failed' }, 500);
+  }
+});
+
+// TOTP endpoints
+
+// Begin TOTP setup - generate secret and QR code
+router.post('/totp/setup/begin', authMiddleware, authRateLimiter, async (c) => {
+  try {
+    const user = c.get('user');
+    const db = createD1Client(c.env);
+
+    // Check if user already has active TOTP
+    const existingTotp = await db
+      .select()
+      .from(schema.totpSecrets)
+      .where(and(eq(schema.totpSecrets.userId, user.id), eq(schema.totpSecrets.isActive, 1)))
+      .get();
+
+    if (existingTotp) {
+      return c.json(
+        { error: 'TOTP is already enabled for this account', code: 'auth/totp-already-active' },
+        400,
+      );
+    }
+
+    // Generate new secret
+    const secret = TotpService.generateSecret();
+    const qrCodeData = TotpService.generateQRCodeData(secret, user.email || user.id);
+
+    // Store inactive secret temporarily (will be activated on completion)
+    const totpId = nanoid();
+    await db.insert(schema.totpSecrets).values({
+      id: totpId,
+      userId: user.id,
+      secret,
+      isActive: 0,
+      createdAt: new Date().toISOString(),
+    });
+
+    return c.json({
+      secret,
+      qrCodeData,
+      totpId,
+    });
+  } catch (error) {
+    console.error('TOTP setup begin error:', error);
+    return c.json(
+      { error: 'Failed to begin TOTP setup', code: 'auth/totp-setup-failed' },
+      500,
+    );
+  }
+});
+
+// Complete TOTP setup - verify token and activate
+router.post('/totp/setup/complete', authMiddleware, authRateLimiter, async (c) => {
+  try {
+    const body = await c.req.json();
+    const validation = totpSetupCompleteSchema.safeParse(body);
+
+    if (!validation.success) {
+      return c.json(
+        {
+          error: 'Invalid input',
+          details: validation.error.errors,
+          code: 'auth/invalid-input',
+        },
+        400,
+      );
+    }
+
+    const { token } = validation.data;
+    const user = c.get('user');
+    const db = createD1Client(c.env);
+
+    // Get the inactive TOTP secret
+    const totpSecret = await db
+      .select()
+      .from(schema.totpSecrets)
+      .where(and(eq(schema.totpSecrets.userId, user.id), eq(schema.totpSecrets.isActive, 0)))
+      .get();
+
+    if (!totpSecret) {
+      return c.json(
+        { error: 'No TOTP setup in progress', code: 'auth/totp-setup-not-found' },
+        400,
+      );
+    }
+
+    // Verify the token
+    const isValid = TotpService.verifyTOTP(totpSecret.secret, token);
+    if (!isValid) {
+      return c.json(
+        { error: 'Invalid TOTP token', code: 'auth/invalid-totp-token' },
+        400,
+      );
+    }
+
+    // Generate backup codes
+    const backupCodes = TotpService.generateBackupCodes();
+    const hashedBackupCodes = TotpService.hashBackupCodes(backupCodes);
+
+    // Activate the TOTP and store backup codes
+    await db
+      .update(schema.totpSecrets)
+      .set({
+        isActive: 1,
+        backupCodes: JSON.stringify(hashedBackupCodes),
+        lastUsedAt: new Date().toISOString(),
+      })
+      .where(eq(schema.totpSecrets.id, totpSecret.id));
+
+    return c.json({
+      success: true,
+      message: 'TOTP enabled successfully',
+      backupCodes, // Return unhashed codes for user to save
+    });
+  } catch (error) {
+    console.error('TOTP setup complete error:', error);
+    return c.json(
+      { error: 'Failed to complete TOTP setup', code: 'auth/totp-setup-failed' },
+      500,
+    );
+  }
+});
+
+// Verify TOTP token (for login or sensitive operations)
+router.post('/totp/verify', authMiddleware, authRateLimiter, async (c) => {
+  try {
+    const body = await c.req.json();
+    const validation = totpVerifySchema.safeParse(body);
+
+    if (!validation.success) {
+      return c.json(
+        {
+          error: 'Invalid input',
+          details: validation.error.errors,
+          code: 'auth/invalid-input',
+        },
+        400,
+      );
+    }
+
+    const { token, isBackupCode } = validation.data;
+    const user = c.get('user');
+    const db = createD1Client(c.env);
+
+    // Get active TOTP secret
+    const totpSecret = await db
+      .select()
+      .from(schema.totpSecrets)
+      .where(and(eq(schema.totpSecrets.userId, user.id), eq(schema.totpSecrets.isActive, 1)))
+      .get();
+
+    if (!totpSecret) {
+      return c.json(
+        { error: 'TOTP not enabled for this account', code: 'auth/totp-not-enabled' },
+        400,
+      );
+    }
+
+    let isValid = false;
+
+    if (isBackupCode) {
+      // Verify backup code
+      const backupCodes = JSON.parse(totpSecret.backupCodes || '[]');
+      isValid = TotpService.verifyBackupCode(token, backupCodes);
+
+      if (isValid) {
+        // Remove used backup code
+        const updatedBackupCodes = TotpService.removeUsedBackupCode(token, backupCodes);
+        await db
+          .update(schema.totpSecrets)
+          .set({
+            backupCodes: JSON.stringify(updatedBackupCodes),
+            lastUsedAt: new Date().toISOString(),
+          })
+          .where(eq(schema.totpSecrets.id, totpSecret.id));
+      }
+    } else {
+      // Verify TOTP token
+      isValid = TotpService.verifyTOTP(totpSecret.secret, token);
+
+      if (isValid) {
+        // Update last used time
+        await db
+          .update(schema.totpSecrets)
+          .set({ lastUsedAt: new Date().toISOString() })
+          .where(eq(schema.totpSecrets.id, totpSecret.id));
+      }
+    }
+
+    if (!isValid) {
+      return c.json(
+        { error: 'Invalid TOTP token or backup code', code: 'auth/invalid-totp' },
+        400,
+      );
+    }
+
+    return c.json({ success: true, message: 'TOTP verified successfully' });
+  } catch (error) {
+    console.error('TOTP verify error:', error);
+    return c.json(
+      { error: 'Failed to verify TOTP', code: 'auth/totp-verify-failed' },
+      500,
+    );
+  }
+});
+
+// Generate new backup codes
+router.post('/totp/backup-codes', authMiddleware, authRateLimiter, async (c) => {
+  try {
+    const user = c.get('user');
+    const db = createD1Client(c.env);
+
+    // Get active TOTP secret
+    const totpSecret = await db
+      .select()
+      .from(schema.totpSecrets)
+      .where(and(eq(schema.totpSecrets.userId, user.id), eq(schema.totpSecrets.isActive, 1)))
+      .get();
+
+    if (!totpSecret) {
+      return c.json(
+        { error: 'TOTP not enabled for this account', code: 'auth/totp-not-enabled' },
+        400,
+      );
+    }
+
+    // Generate new backup codes
+    const backupCodes = TotpService.generateBackupCodes();
+    const hashedBackupCodes = TotpService.hashBackupCodes(backupCodes);
+
+    // Update stored backup codes
+    await db
+      .update(schema.totpSecrets)
+      .set({ backupCodes: JSON.stringify(hashedBackupCodes) })
+      .where(eq(schema.totpSecrets.id, totpSecret.id));
+
+    return c.json({
+      success: true,
+      backupCodes, // Return unhashed codes for user to save
+      message: 'New backup codes generated',
+    });
+  } catch (error) {
+    console.error('TOTP backup codes error:', error);
+    return c.json(
+      { error: 'Failed to generate backup codes', code: 'auth/backup-codes-failed' },
+      500,
+    );
+  }
+});
+
+// Disable TOTP
+router.delete('/totp/disable', authMiddleware, authRateLimiter, async (c) => {
+  try {
+    const body = await c.req.json();
+    const validation = z.object({ token: z.string().min(6).max(8) }).safeParse(body);
+
+    if (!validation.success) {
+      return c.json(
+        {
+          error: 'Invalid input',
+          details: validation.error.errors,
+          code: 'auth/invalid-input',
+        },
+        400,
+      );
+    }
+
+    const { token } = validation.data;
+    const user = c.get('user');
+    const db = createD1Client(c.env);
+
+    // Get active TOTP secret
+    const totpSecret = await db
+      .select()
+      .from(schema.totpSecrets)
+      .where(and(eq(schema.totpSecrets.userId, user.id), eq(schema.totpSecrets.isActive, 1)))
+      .get();
+
+    if (!totpSecret) {
+      return c.json(
+        { error: 'TOTP not enabled for this account', code: 'auth/totp-not-enabled' },
+        400,
+      );
+    }
+
+    // Verify current TOTP token or backup code
+    const backupCodes = JSON.parse(totpSecret.backupCodes || '[]');
+    const isValidTOTP = TotpService.verifyTOTP(totpSecret.secret, token);
+    const isValidBackup = TotpService.verifyBackupCode(token, backupCodes);
+
+    if (!isValidTOTP && !isValidBackup) {
+      return c.json(
+        { error: 'Invalid TOTP token or backup code', code: 'auth/invalid-totp' },
+        400,
+      );
+    }
+
+    // Delete TOTP secret
+    await db.delete(schema.totpSecrets).where(eq(schema.totpSecrets.id, totpSecret.id));
+
+    return c.json({ success: true, message: 'TOTP disabled successfully' });
+  } catch (error) {
+    console.error('TOTP disable error:', error);
+    return c.json(
+      { error: 'Failed to disable TOTP', code: 'auth/totp-disable-failed' },
+      500,
+    );
   }
 });
 

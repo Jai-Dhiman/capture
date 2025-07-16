@@ -34,6 +34,7 @@ export interface AuthResponse {
   isNewUser?: boolean;
   securitySetupRequired?: boolean; // Whether user needs to set up MFA
   hasPasskeys?: boolean; // Whether user has any passkeys
+  hasTOTP?: boolean; // Whether user has TOTP enabled
 }
 
 export interface BasicSuccessResponse {
@@ -174,6 +175,48 @@ export interface CheckUserRequest {
   email: string;
 }
 
+// TOTP/Authenticator types
+export interface TOTPSetupBeginResponse {
+  secret: string;
+  qrCodeData: string;
+  totpId: string;
+}
+
+export interface TOTPSetupCompleteRequest {
+  token: string;
+}
+
+export interface TOTPSetupCompleteResponse {
+  success: boolean;
+  message: string;
+  backupCodes: string[];
+}
+
+export interface TOTPVerifyRequest {
+  token: string;
+  isBackupCode?: boolean;
+}
+
+export interface TOTPVerifyResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface TOTPBackupCodesResponse {
+  success: boolean;
+  backupCodes: string[];
+  message: string;
+}
+
+export interface TOTPDisableRequest {
+  token: string;
+}
+
+export interface TOTPDisableResponse {
+  success: boolean;
+  message: string;
+}
+
 // User profile and security status
 export interface UserProfileResponse {
   id: string;
@@ -181,6 +224,7 @@ export interface UserProfileResponse {
   profileExists: boolean;
   securitySetupRequired: boolean;
   hasPasskeys: boolean;
+  hasTOTP: boolean;
 }
 
 // Zustand store related types

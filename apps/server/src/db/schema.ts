@@ -74,6 +74,26 @@ export const passkeys = sqliteTable(
   ],
 );
 
+export const totpSecrets = sqliteTable(
+  'totp_secrets',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .unique()
+      .references(() => users.id),
+    secret: text('secret').notNull(), // Base32 encoded secret
+    isActive: integer('is_active').default(0).notNull(),
+    backupCodes: text('backup_codes'), // JSON array of hashed backup codes
+    createdAt: numeric('created_at').default(new Date().toISOString()).notNull(),
+    lastUsedAt: numeric('last_used_at'),
+  },
+  (table) => [
+    index('totp_secrets_user_idx').on(table.userId),
+    index('totp_secrets_active_idx').on(table.isActive),
+  ],
+);
+
 export const post = sqliteTable(
   'post',
   {
