@@ -17,6 +17,7 @@ import {
   View,
   useWindowDimensions,
   StatusBar,
+  StyleSheet,
 } from 'react-native';
 import DraggableFlatList from 'react-native-draggable-flatlist';
 import { Image } from 'expo-image';
@@ -337,24 +338,33 @@ export default function NewPost() {
     );
   };
 
-  // Render selected photo in preview (larger)
-  const renderSelectedPhoto = ({ item, index, drag }: any) => {
-    const photoHeight = (PREVIEW_SECTION_HEIGHT - 60) / 2; // Fill the preview section height
+  // Responsive Image Preview Component
+  const ResponsiveImagePreview = () => {
+    const imageCount = selectedPhotos.length;
+    const spacing = Math.max(8, Math.min(16, width * 0.02));
+    const previewHeight = PREVIEW_SECTION_HEIGHT - 24; // Account for container padding
 
-    return (
-      <View style={{ marginRight: 12, marginBottom: 12 }}>
+    const imageStyle = StyleSheet.create({
+      container: {
+        borderRadius: 16,
+        overflow: 'hidden',
+        backgroundColor: '#f0f0f0',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.15,
+        shadowRadius: 5,
+        elevation: 4,
+      },
+    });
+
+    const renderImageWithControls = (photo: SelectedPhoto, index: number, style: any) => (
+      <View key={photo.uri} style={[imageStyle.container, style]}>
         <Pressable
-          onPress={() => handleSelectedPhotoPress(item)}
-          onLongPress={drag}
-          style={{
-            width: PREVIEW_PHOTO_SIZE,
-            height: photoHeight,
-            borderRadius: 12,
-            overflow: 'hidden',
-          }}
+          onPress={() => handleSelectedPhotoPress(photo)}
+          style={{ width: '100%', height: '100%' }}
         >
           <Image
-            source={{ uri: item.uri }}
+            source={{ uri: photo.uri }}
             style={{ width: '100%', height: '100%' }}
             contentFit="cover"
             cachePolicy="memory-disk"
@@ -399,6 +409,51 @@ export default function NewPost() {
         </Pressable>
       </View>
     );
+
+    if (imageCount === 1) {
+      return (
+        <View style={{ height: previewHeight }}>
+          {renderImageWithControls(selectedPhotos[0], 0, { width: '100%', height: '100%' })}
+        </View>
+      );
+    }
+
+    if (imageCount === 2) {
+      return (
+        <View style={{ height: previewHeight, flexDirection: 'row', gap: spacing }}>
+          {renderImageWithControls(selectedPhotos[0], 0, { flex: 1 })}
+          {renderImageWithControls(selectedPhotos[1], 1, { flex: 1 })}
+        </View>
+      );
+    }
+
+    if (imageCount === 3) {
+      return (
+        <View style={{ height: previewHeight, flexDirection: 'row', gap: spacing }}>
+          {renderImageWithControls(selectedPhotos[0], 0, { flex: 1 })}
+          {renderImageWithControls(selectedPhotos[1], 1, { flex: 1 })}
+          {renderImageWithControls(selectedPhotos[2], 2, { flex: 1 })}
+        </View>
+      );
+    }
+
+    if (imageCount === 4) {
+      const rowHeight = (previewHeight - spacing) / 2;
+      return (
+        <View style={{ height: previewHeight }}>
+          <View style={{ flexDirection: 'row', height: rowHeight, marginBottom: spacing / 2, gap: spacing }}>
+            {renderImageWithControls(selectedPhotos[0], 0, { flex: 1 })}
+            {renderImageWithControls(selectedPhotos[1], 1, { flex: 1 })}
+          </View>
+          <View style={{ flexDirection: 'row', height: rowHeight, marginTop: spacing / 2, gap: spacing }}>
+            {renderImageWithControls(selectedPhotos[2], 2, { flex: 1 })}
+            {renderImageWithControls(selectedPhotos[3], 3, { flex: 1 })}
+          </View>
+        </View>
+      );
+    }
+
+    return null;
   };
 
   return (
@@ -406,35 +461,22 @@ export default function NewPost() {
       <Header height={120} showBackButton={true} onBackPress={() => navigation?.goBack?.()} />
 
       <View className="flex-1 p-5">
-        {/* Type Selector */}
-        <View className="w-full h-10 mb-5 rounded-lg flex-row justify-center items-center overflow-hidden bg-white/10 shadow">
-          <TouchableOpacity
-            className={`flex-1 mx-1 h-8 rounded-md flex justify-center items-center ${postType === 'post' ? 'bg-[#a99ca3]' : 'bg-[#dcdcde]'}`}
-            onPress={() => setPostType('post')}
-          >
-            <Text
-              className={`text-center text-xs ${postType === 'post' ? 'text-white font-semibold' : 'text-black font-normal'}`}
-            >
-              Photo/Video
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className={`flex-1 mx-1 h-8 rounded-md flex justify-center items-center ${postType === 'thread' ? 'bg-[#a99ca3]' : 'bg-[#dcdcde]'}`}
-            onPress={() => setPostType('thread')}
-          >
-            <Text
-              className={`text-center text-xs ${postType === 'thread' ? 'text-white font-semibold' : 'text-black font-normal'}`}
-            >
-              Thread
-            </Text>
-          </TouchableOpacity>
-        </View>
 
         {/* Dynamic Content Based on Post Type */}
         {postType === 'post' ? (
           /* Photo Grid Mode */
-          <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
-            {/* Selected Photos Preview - FIRST (40% of screen) */}
+          <View style={{ flex: 1 }}>
+            {/* Next Button at Top (when images selected) */}
+            {selectedPhotos.length > 0 && (
+              <TouchableOpacity
+                className="bg-[#e4cac7] rounded-[30px] shadow px-6 py-3 mb-4"
+                onPress={handleNext}
+              >
+                <Text className="text-black text-center font-bold text-base">Next</Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Selected Photos Preview - Responsive Layout */}
             <View
               style={{
                 height: PREVIEW_SECTION_HEIGHT,
@@ -445,14 +487,7 @@ export default function NewPost() {
               }}
             >
               {selectedPhotos.length > 0 ? (
-                <DraggableFlatList
-                  data={selectedPhotos}
-                  renderItem={renderSelectedPhoto}
-                  keyExtractor={(item) => item.uri}
-                  onDragEnd={({ data }) => setSelectedPhotos(data)}
-                  numColumns={2}
-                  showsVerticalScrollIndicator={false}
-                />
+                <ResponsiveImagePreview />
               ) : (
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                   <Text style={{ fontSize: 16, color: '#666', textAlign: 'center' }}>
@@ -480,22 +515,18 @@ export default function NewPost() {
 
                 {/* Albums List */}
                 {showAlbums && (
-                  <View className="mt-3 max-h-40">
-                    <FlatList
-                      data={albums}
-                      keyExtractor={(item) => item.id}
-                      renderItem={({ item }) => (
-                        <TouchableOpacity
-                          onPress={() => handleAlbumSelect(item)}
-                          style={{ backgroundColor: '#DCDCDE', paddingVertical: 8, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: '#E5E5E5' }}
-                        >
-                          <Text className="font-medium">{item.title}</Text>
-                          <Text className="text-gray-500 text-xs">{item.assetCount} photos</Text>
-                        </TouchableOpacity>
-                      )}
-                      showsVerticalScrollIndicator={false}
-                    />
-                  </View>
+                  <ScrollView style={{ maxHeight: 160 }} showsVerticalScrollIndicator={false}>
+                    {albums.map((item) => (
+                      <TouchableOpacity
+                        key={item.id}
+                        onPress={() => handleAlbumSelect(item)}
+                        style={{ backgroundColor: '#DCDCDE', paddingVertical: 8, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: '#E5E5E5' }}
+                      >
+                        <Text className="font-medium">{item.title}</Text>
+                        <Text className="text-gray-500 text-xs">{item.assetCount} photos</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
                 )}
               </View>
             )}
@@ -529,21 +560,11 @@ export default function NewPost() {
                 keyExtractor={(item) => item.id}
                 numColumns={GRID_COLUMNS}
                 contentContainerStyle={{}}
-                style={{ marginHorizontal: -25 }}
+                style={{ marginHorizontal: -25, flex: 1 }}
                 showsVerticalScrollIndicator={false}
               />
             )}
-
-            {/* Next Button */}
-            {selectedPhotos.length > 0 && (
-              <TouchableOpacity
-                className="bg-[#e4cac7] rounded-[30px] shadow px-6 py-3 mt-4"
-                onPress={handleNext}
-              >
-                <Text className="text-black text-center font-bold text-base">Next</Text>
-              </TouchableOpacity>
-            )}
-          </ScrollView>
+          </View>
         ) : (
           /* Thread Content Mode */
           <View className="mt-2 bg-[#dcdcde] p-4 rounded-lg shadow">
@@ -576,6 +597,65 @@ export default function NewPost() {
             </TouchableOpacity>
           </View>
         )}
+      </View>
+
+      {/* Floating Post/Thread Type Selector - Bottom Right */}
+      <View
+        style={{
+          position: 'absolute',
+          bottom: 30,
+          right: 20,
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          borderRadius: 25,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.25,
+          shadowRadius: 8,
+          elevation: 8,
+          flexDirection: 'row',
+          overflow: 'hidden',
+        }}
+      >
+        <TouchableOpacity
+          style={{
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+            backgroundColor: postType === 'post' ? '#e4cac7' : 'transparent',
+            borderTopLeftRadius: 25,
+            borderBottomLeftRadius: 25,
+          }}
+          onPress={() => setPostType('post')}
+        >
+          <Text
+            style={{
+              fontSize: 12,
+              fontWeight: postType === 'post' ? '600' : '400',
+              color: postType === 'post' ? 'white' : '#333',
+            }}
+          >
+            Photo
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={{
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+            backgroundColor: postType === 'thread' ? '#e4cac7' : 'transparent',
+            borderTopRightRadius: 25,
+            borderBottomRightRadius: 25,
+          }}
+          onPress={() => setPostType('thread')}
+        >
+          <Text
+            style={{
+              fontSize: 12,
+              fontWeight: postType === 'thread' ? '600' : '400',
+              color: postType === 'thread' ? 'white' : '#333',
+            }}
+          >
+            Thread
+          </Text>
+        </TouchableOpacity>
       </View>
     </View>
   );

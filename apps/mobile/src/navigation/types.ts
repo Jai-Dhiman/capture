@@ -38,7 +38,9 @@ export type AppStackParamList = {
   SavedPosts: undefined;
   Search: undefined;
   Settings: NavigatorScreenParams<SettingsStackParamList> | undefined;
-  ImageEditScreen: { imageUri: string };
+  ImageEditScreen: { 
+    imageUri: string;
+  };
   PhotoSelectionScreen: {
     maxSelection?: number;
     onPhotosSelected: (

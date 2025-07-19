@@ -20,6 +20,7 @@ import {
   View,
 } from 'react-native';
 import { Image } from 'expo-image';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import DraggableFlatList from 'react-native-draggable-flatlist';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
@@ -47,8 +48,43 @@ export default function PostSettingsScreen({ route }: PostSettingsScreenProps) {
 
   // Handle photo selection for editing
   const handlePhotoPress = (photo: SelectedPhoto) => {
-    navigation.navigate('ImageEditScreen', { imageUri: photo.uri });
+    navigation.navigate('ImageEditScreen', { 
+      imageUri: photo.uri
+    });
   };
+
+  // Listen for navigation focus to handle edited images
+  React.useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', async () => {
+      try {
+        // Check if there's edited image data in AsyncStorage
+        const editedImageDataString = await AsyncStorage.getItem('editedImageData');
+        if (editedImageDataString) {
+          const editedImageData = JSON.parse(editedImageDataString);
+          console.log('Image edited:', editedImageData);
+          const { originalUri, editedUri } = editedImageData;
+          
+          // Update the photo in reorderedPhotos state with the edited URI
+          setReorderedPhotos(prev => {
+            const updated = prev.map(p => 
+              p.uri === originalUri 
+                ? { ...p, uri: editedUri, name: `edited_${p.name}` }
+                : p
+            );
+            console.log('Updated photos:', updated);
+            return updated;
+          });
+
+          // Clear the edited image data from AsyncStorage to prevent re-processing
+          await AsyncStorage.removeItem('editedImageData');
+        }
+      } catch (error) {
+        console.error('Error handling edited image data:', error);
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   // Handle creating the post
   const handleCreatePost = async () => {
@@ -108,7 +144,8 @@ export default function PostSettingsScreen({ route }: PostSettingsScreenProps) {
         source={{ uri: item.uri }}
         style={{ width: '100%', height: '100%' }}
         contentFit="cover"
-        cachePolicy="memory-disk"
+        cachePolicy="none"
+        key={item.uri}
       />
 
       {/* Order indicator */}
@@ -143,11 +180,12 @@ export default function PostSettingsScreen({ route }: PostSettingsScreenProps) {
           <DraggableFlatList
             data={reorderedPhotos}
             renderItem={renderPhotoPreview}
-            keyExtractor={(item) => item.uri}
+            keyExtractor={(item) => `${item.uri}-${item.name}`}
             onDragEnd={({ data }) => setReorderedPhotos(data)}
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 8 }}
+            extraData={reorderedPhotos}
           />
 
           <Text className="text-sm text-gray-500 mt-2">

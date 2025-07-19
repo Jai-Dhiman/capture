@@ -8,12 +8,15 @@ import {
   Group,
   Image as SkiaImage,
   useImage,
+  makeImageFromView,
 } from '@shopify/react-native-skia';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, Image as RNImage, Text, TouchableOpacity, View } from 'react-native';
 import * as MediaLibrary from 'expo-media-library';
 import * as ImageManipulator from 'expo-image-manipulator';
+import * as FileSystem from 'expo-file-system';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useUndoRedo } from '../hooks/useUndoRedo';
 import { useAutoSave } from '../hooks/useAutoSave';
 
@@ -22,7 +25,7 @@ type ImageEditScreenRouteProp = RouteProp<AppStackParamList, 'ImageEditScreen'>;
 export default function ImageEditScreen() {
   const navigation = useNavigation();
   const route = useRoute<ImageEditScreenRouteProp>();
-  const imageUri = route.params?.imageUri || '';
+  const { imageUri = '' } = route.params || {};
 
   if (!imageUri) {
     return (
@@ -274,6 +277,12 @@ export default function ImageEditScreen() {
   // UI mode state (adjustments or filters)
   const [editMode, setEditMode] = useState<'adjustments' | 'filters'>('adjustments');
 
+  // Track if user has made changes to prevent auto-load from overriding
+  const [hasUserChanges, setHasUserChanges] = useState(false);
+  
+  // Track if component has finished initial load to prevent conflicts
+  const [hasInitialLoaded, setHasInitialLoaded] = useState(false);
+
   // Undo/Redo functionality
   const initialValues = useMemo(() => {
     const values: Record<string, number> = {};
@@ -294,8 +303,8 @@ export default function ImageEditScreen() {
 
   const { pushState, undo, redo, canUndo, canRedo } = useUndoRedo(initialValues);
 
-  // Auto-save functionality
-  const autoSaveKey = `image-edit-${imageUri.split('/').pop() || 'unknown'}`;
+  // Auto-save functionality - unique key per editing session to prevent cross-contamination
+  const autoSaveKey = `image-edit-${Date.now()}-${imageUri.split('/').pop() || 'unknown'}`;
   const { saveNow, loadSaved, clearSaved, lastSaved, isSaving } = useAutoSave(
     {
       adjustmentValues,
@@ -304,18 +313,22 @@ export default function ImageEditScreen() {
     {
       key: autoSaveKey,
       interval: 3000, // Auto-save every 3 seconds
-      enabled: true,
+      enabled: hasUserChanges, // Only enable auto-save after user makes changes
     },
   );
 
   // Debounce timer for pushing states to history
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Canvas ref for image export
+  const canvasRef = useRef<any>(null);
 
   // Handle adjustment value changes
   const handleValueChange = useCallback(
     (value: number) => {
       const newValues = { ...adjustmentValues, [activeAdjustment]: value };
       setAdjustmentValues(newValues);
+      setHasUserChanges(true); // Mark that user has made changes
 
       // Clear existing timer
       if (debounceTimerRef.current) {
@@ -335,6 +348,7 @@ export default function ImageEditScreen() {
     const previousState = undo();
     if (previousState) {
       setAdjustmentValues(previousState);
+      setHasUserChanges(true); // Mark that user has made changes
     }
   }, [undo]);
 
@@ -343,6 +357,7 @@ export default function ImageEditScreen() {
     const nextState = redo();
     if (nextState) {
       setAdjustmentValues(nextState);
+      setHasUserChanges(true); // Mark that user has made changes
     }
   }, [redo]);
 
@@ -350,6 +365,7 @@ export default function ImageEditScreen() {
   const applyPresetFilter = useCallback(
     (filterValues: Record<string, number>) => {
       setAdjustmentValues(filterValues);
+      setHasUserChanges(true); // Mark that user has made changes
       pushState(filterValues);
     },
     [pushState],
@@ -407,12 +423,51 @@ export default function ImageEditScreen() {
   const handleManualSave = useCallback(async () => {
     try {
       await saveNow(); // Force save current state
-      await clearSaved(); // Clear auto-save since user explicitly saved
-      // TODO: Add additional save logic (export image, etc.)
+      
+      // Export the edited image
+      if (canvasRef.current && skiaImage) {
+        // Add a small delay to ensure the canvas is fully rendered with the current filters
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        const snapshot = canvasRef.current.makeImageSnapshot();
+        if (snapshot) {
+          // Convert Skia image to base64
+          const base64 = snapshot.encodeToBase64();
+          
+          // Create a temporary file with the edited image
+          const filename = `edited_${Date.now()}.jpg`;
+          const tempUri = `${FileSystem.cacheDirectory}${filename}`;
+          
+          // Write base64 data to file
+          await FileSystem.writeAsStringAsync(tempUri, base64, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          
+          // Store edited image data in AsyncStorage for PostSettingsScreen to pick up
+          await AsyncStorage.setItem('editedImageData', JSON.stringify({
+            originalUri: imageUri,
+            editedUri: tempUri,
+            timestamp: Date.now()
+          }));
+          
+          navigation.goBack();
+          await clearSaved(); // Clear auto-save since user explicitly saved
+        } else {
+          console.error('Failed to create canvas snapshot');
+          // Fallback: just go back without saving changes
+          navigation.goBack();
+        }
+      } else {
+        console.error('Canvas ref or skiaImage not available');
+        // Fallback: just go back without saving changes
+        navigation.goBack();
+      }
     } catch (error) {
       console.error('Manual save failed:', error);
+      // Fallback to just going back
+      navigation.goBack();
     }
-  }, [saveNow, clearSaved]);
+  }, [saveNow, clearSaved, navigation, skiaImage, imageUri]);
 
   const handleCancel = useCallback(() => {
     navigation.goBack();
@@ -460,22 +515,10 @@ export default function ImageEditScreen() {
     return getAdjustmentRange(activeAdjustment);
   }, [activeAdjustment, getAdjustmentRange]);
 
-  // Load saved edits on mount
+  // Initialize component - disabled auto-loading to prevent filter persistence between sessions
   useEffect(() => {
-    const loadSavedEdits = async () => {
-      try {
-        const saved = await loadSaved();
-        if (saved && saved.imageUri === imageUri) {
-          // Only load if it's for the same image
-          setAdjustmentValues(saved.adjustmentValues);
-        }
-      } catch (error) {
-        console.error('Failed to load saved edits:', error);
-      }
-    };
-
-    loadSavedEdits();
-  }, [imageUri, loadSaved]);
+    setHasInitialLoaded(true);
+  }, []);
 
   // Clear auto-save when leaving screen
   useEffect(() => {
@@ -698,11 +741,16 @@ export default function ImageEditScreen() {
     // Multiply 4x5 matrices (stored as flat arrays)
     for (let i = 0; i < 4; i++) {
       for (let j = 0; j < 5; j++) {
-        for (let k = 0; k < 4; k++) {
-          result[i * 5 + j] += a[i * 5 + k] * b[k * 5 + j];
-        }
-        // Handle the translation column (last column)
-        if (j === 4) {
+        if (j < 4) {
+          // Regular matrix multiplication for the 4x4 part
+          for (let k = 0; k < 4; k++) {
+            result[i * 5 + j] += a[i * 5 + k] * b[k * 5 + j];
+          }
+        } else {
+          // Handle the translation column (last column)
+          for (let k = 0; k < 4; k++) {
+            result[i * 5 + j] += a[i * 5 + k] * b[k * 5 + j];
+          }
           result[i * 5 + j] += a[i * 5 + 4];
         }
       }
@@ -737,12 +785,12 @@ export default function ImageEditScreen() {
   }, [adjustmentValues, getAdjustmentMatrix, multiplyMatrices, showOriginal]);
 
   return (
-    <View className="flex-1 bg-zinc-300 rounded-[30px] overflow-hidden p-4 pt-20">
+    <View className="flex-1 bg-zinc-300 rounded-[30px] overflow-hidden p-4 pt-20 pb-32">
       {/* Preview */}
       <View className="items-center">
         <View className="w-[340px] h-[510px] rounded-[10px] border border-black overflow-hidden relative">
           {skiaImage ? (
-            <Canvas style={{ width: '100%', height: '100%' }}>
+            <Canvas ref={canvasRef} style={{ width: '100%', height: '100%' }}>
               <Group>
                 <ColorMatrix matrix={combinedMatrix} />
                 <SkiaImage image={skiaImage} x={0} y={0} width={340} height={510} fit="cover" />
@@ -762,7 +810,7 @@ export default function ImageEditScreen() {
             className="absolute top-4 right-4 bg-black/50 rounded-full px-3 py-1.5"
           >
             <Text className="text-white text-xs font-medium">
-              {showOriginal ? 'After' : 'Before'}
+              {showOriginal ? 'Before' : 'After'}
             </Text>
           </TouchableOpacity>
 
@@ -821,12 +869,12 @@ export default function ImageEditScreen() {
             />
           </View>
           {/* Slider */}
-          <View className="mt-4 items-center px-4">
+          <View className="mt-4 items-center px-4 pb-16">
             <Text className="text-center text-black text-base font-semibold">
               {activeAdjustment}
             </Text>
-            <Text className="text-center text-black text-sm mb-2">{currentAdjustmentValue}</Text>
-            <View className="w-full px-4">
+            <Text className="text-center text-black text-sm mb-4">{currentAdjustmentValue}</Text>
+            <View className="w-full px-4 pb-8">
               <Slider
                 style={{ width: '100%', height: 40 }}
                 minimumValue={currentAdjustmentRange.min}
