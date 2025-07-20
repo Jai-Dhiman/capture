@@ -17,7 +17,8 @@ interface UploadFile {
 // Helper function to convert ph:// URLs to local file URIs
 const convertPhotoLibraryUri = async (uri: string): Promise<{ uri: string; size: number }> => {
   if (!uri.startsWith('ph://')) {
-    // For non-ph:// URIs, get file info
+    // For non-ph:// URIs (including edited images from cache), get file info
+    console.log('📸 Using direct URI (may be edited):', uri);
     const fileInfo = await FileSystem.getInfoAsync(uri);
     return {
       uri,

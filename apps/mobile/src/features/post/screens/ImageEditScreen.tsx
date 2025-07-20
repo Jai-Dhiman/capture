@@ -12,7 +12,7 @@ import {
 } from '@shopify/react-native-skia';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, Image as RNImage, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, Image as RNImage, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import * as MediaLibrary from 'expo-media-library';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as FileSystem from 'expo-file-system';
@@ -26,6 +26,11 @@ export default function ImageEditScreen() {
   const navigation = useNavigation();
   const route = useRoute<ImageEditScreenRouteProp>();
   const { imageUri = '' } = route.params || {};
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  
+  // Calculate image preview dimensions (leave space for controls at bottom)
+  const previewWidth = screenWidth;
+  const previewHeight = screenHeight * 0.5; // Use 50% of screen height
 
   if (!imageUri) {
     return (
@@ -421,49 +426,61 @@ export default function ImageEditScreen() {
   }, []);
 
   const handleManualSave = useCallback(async () => {
+    console.log('💾 Save button pressed!');
     try {
+      console.log('🔄 Forcing auto-save...');
       await saveNow(); // Force save current state
       
       // Export the edited image
+      console.log('🎨 Canvas ref available:', !!canvasRef.current);
+      console.log('🖼️ Skia image available:', !!skiaImage);
       if (canvasRef.current && skiaImage) {
         // Add a small delay to ensure the canvas is fully rendered with the current filters
         await new Promise(resolve => setTimeout(resolve, 100));
         
         const snapshot = canvasRef.current.makeImageSnapshot();
+        console.log('📷 Canvas snapshot created:', !!snapshot);
         if (snapshot) {
           // Convert Skia image to base64
           const base64 = snapshot.encodeToBase64();
+          console.log('📸 Base64 encoded, length:', base64?.length || 0);
           
           // Create a temporary file with the edited image
           const filename = `edited_${Date.now()}.jpg`;
           const tempUri = `${FileSystem.cacheDirectory}${filename}`;
           
           // Write base64 data to file
+          console.log('💾 Writing to temp file:', tempUri);
           await FileSystem.writeAsStringAsync(tempUri, base64, {
             encoding: FileSystem.EncodingType.Base64,
           });
+          console.log('✅ File written successfully');
           
           // Store edited image data in AsyncStorage for PostSettingsScreen to pick up
-          await AsyncStorage.setItem('editedImageData', JSON.stringify({
+          const editedImageData = {
             originalUri: imageUri,
             editedUri: tempUri,
             timestamp: Date.now()
-          }));
+          };
+          console.log('💾 Saving edited image data to AsyncStorage:', editedImageData);
+          await AsyncStorage.setItem('editedImageData', JSON.stringify(editedImageData));
           
           navigation.goBack();
           await clearSaved(); // Clear auto-save since user explicitly saved
         } else {
-          console.error('Failed to create canvas snapshot');
+          console.error('❌ Failed to create canvas snapshot');
           // Fallback: just go back without saving changes
           navigation.goBack();
         }
       } else {
-        console.error('Canvas ref or skiaImage not available');
+        console.error('❌ Canvas ref or skiaImage not available');
+        console.log('Canvas ref:', canvasRef.current);
+        console.log('Skia image:', skiaImage);
         // Fallback: just go back without saving changes
         navigation.goBack();
       }
     } catch (error) {
-      console.error('Manual save failed:', error);
+      console.error('❌ Manual save failed:', error);
       // Fallback to just going back
       navigation.goBack();
     }
@@ -785,15 +802,15 @@ export default function ImageEditScreen() {
   }, [adjustmentValues, getAdjustmentMatrix, multiplyMatrices, showOriginal]);
 
   return (
-    <View className="flex-1 bg-zinc-300 rounded-[30px] overflow-hidden p-4 pt-20 pb-32">
+    <View className="flex-1 bg-zinc-300 rounded-[30px] overflow-hidden pb-8">
       {/* Preview */}
-      <View className="items-center">
-        <View className="w-[340px] h-[510px] rounded-[10px] border border-black overflow-hidden relative">
+      <View style={{ height: previewHeight }}>
+        <View className="flex-1 overflow-hidden relative">
           {skiaImage ? (
             <Canvas ref={canvasRef} style={{ width: '100%', height: '100%' }}>
               <Group>
                 <ColorMatrix matrix={combinedMatrix} />
-                <SkiaImage image={skiaImage} x={0} y={0} width={340} height={510} fit="cover" />
+                <SkiaImage image={skiaImage} x={0} y={0} width={previewWidth} height={previewHeight} fit="cover" />
               </Group>
             </Canvas>
           ) : (
@@ -814,21 +831,13 @@ export default function ImageEditScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* Auto-Save Indicator */}
-          <View className="absolute top-4 left-4 bg-black/50 rounded-full px-2 py-1 flex-row items-center">
-            <View
-              className={`w-2 h-2 rounded-full mr-1.5 ${isSaving ? 'bg-yellow-400' : 'bg-green-400'
-                }`}
-            />
-            <Text className="text-white text-xs">
-              {isSaving ? 'Saving...' : lastSaved ? 'Saved' : 'Auto-save'}
-            </Text>
-          </View>
         </View>
       </View>
 
+      {/* Controls Area */}
+      <View className="flex-1 p-4 pb-6">
       {/* Mode Toggle */}
-      <View className="flex-row justify-center mt-6 mb-4">
+      <View className="flex-row justify-center mt-2 mb-3">
         <View className="flex-row bg-gray-200 rounded-full p-1">
           <TouchableOpacity
             onPress={setAdjustmentMode}
@@ -858,7 +867,7 @@ export default function ImageEditScreen() {
       {editMode === 'adjustments' ? (
         <>
           {/* Adjustment icons */}
-          <View className="h-20">
+          <View className="h-16">
             <FlatList
               data={adjustmentOptions}
               horizontal
@@ -869,12 +878,12 @@ export default function ImageEditScreen() {
             />
           </View>
           {/* Slider */}
-          <View className="mt-4 items-center px-4 pb-16">
+          <View className="mt-2 items-center px-4 pb-6">
             <Text className="text-center text-black text-base font-semibold">
               {activeAdjustment}
             </Text>
-            <Text className="text-center text-black text-sm mb-4">{currentAdjustmentValue}</Text>
-            <View className="w-full px-4 pb-8">
+            <Text className="text-center text-black text-sm mb-2">{currentAdjustmentValue}</Text>
+            <View className="w-full px-4 pb-2">
               <Slider
                 style={{ width: '100%', height: 40 }}
                 minimumValue={currentAdjustmentRange.min}
@@ -890,7 +899,7 @@ export default function ImageEditScreen() {
         </>
       ) : (
         /* Preset Filters */
-        <View className="h-32">
+        <View className="h-20">
           <FlatList
             data={presetFilters}
             horizontal
@@ -902,27 +911,27 @@ export default function ImageEditScreen() {
         </View>
       )}
       {/* Undo/Redo Controls */}
-      <View className="flex-row justify-center items-center gap-4 px-4 py-2">
+      <View className="flex-row justify-center items-center gap-3 px-4 py-1">
         <TouchableOpacity
           onPress={handleUndo}
           disabled={!canUndo}
-          className={`w-12 h-12 rounded-full justify-center items-center border-2 ${canUndo ? 'bg-[#E4CAC7] border-black' : 'bg-gray-300 border-gray-400'
+          className={`w-8 h-8 rounded-full justify-center items-center border ${canUndo ? 'bg-[#E4CAC7] border-black' : 'bg-gray-300 border-gray-400'
             }`}
         >
-          <Ionicons name="arrow-undo" size={20} color={canUndo ? 'black' : 'gray'} />
+          <Ionicons name="arrow-undo" size={16} color={canUndo ? 'black' : 'gray'} />
         </TouchableOpacity>
         <TouchableOpacity
           onPress={handleRedo}
           disabled={!canRedo}
-          className={`w-12 h-12 rounded-full justify-center items-center border-2 ${canRedo ? 'bg-[#E4CAC7] border-black' : 'bg-gray-300 border-gray-400'
+          className={`w-8 h-8 rounded-full justify-center items-center border ${canRedo ? 'bg-[#E4CAC7] border-black' : 'bg-gray-300 border-gray-400'
             }`}
         >
-          <Ionicons name="arrow-redo" size={20} color={canRedo ? 'black' : 'gray'} />
+          <Ionicons name="arrow-redo" size={16} color={canRedo ? 'black' : 'gray'} />
         </TouchableOpacity>
       </View>
 
       {/* Actions */}
-      <View className="flex-row justify-between px-8 py-4">
+      <View className="flex-row justify-between px-8 py-3 mt-2">
         <TouchableOpacity
           onPress={handleCancel}
           className="bg-[#E4CAC7] rounded-[30px] border border-[#D8C0BD] px-8 py-2"
@@ -935,6 +944,7 @@ export default function ImageEditScreen() {
         >
           <Text className="text-black text-xs">Save</Text>
         </TouchableOpacity>
+      </View>
       </View>
     </View>
   );

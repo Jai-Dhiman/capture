@@ -56,22 +56,27 @@ export default function PostSettingsScreen({ route }: PostSettingsScreenProps) {
   // Listen for navigation focus to handle edited images
   React.useEffect(() => {
     const unsubscribe = navigation.addListener('focus', async () => {
+      console.log('👀 PostSettingsScreen focused, checking for edited images...');
       try {
         // Check if there's edited image data in AsyncStorage
         const editedImageDataString = await AsyncStorage.getItem('editedImageData');
+        console.log('🔍 AsyncStorage editedImageData:', editedImageDataString);
         if (editedImageDataString) {
           const editedImageData = JSON.parse(editedImageDataString);
-          console.log('Image edited:', editedImageData);
+          console.log('🎨 Image edited data found:', editedImageData);
           const { originalUri, editedUri } = editedImageData;
           
           // Update the photo in reorderedPhotos state with the edited URI
+          console.log('🔍 Looking for originalUri in photos:', originalUri);
+          console.log('📋 Current photos:', reorderedPhotos.map(p => ({ uri: p.uri, name: p.name })));
+          
           setReorderedPhotos(prev => {
             const updated = prev.map(p => 
               p.uri === originalUri 
                 ? { ...p, uri: editedUri, name: `edited_${p.name}` }
                 : p
             );
-            console.log('Updated photos:', updated);
+            console.log('🔄 Updated photos with edited URI:', updated.map(p => ({ uri: p.uri, name: p.name })));
             return updated;
           });
 
@@ -101,6 +106,8 @@ export default function PostSettingsScreen({ route }: PostSettingsScreenProps) {
         name: photo.name,
         order: index,
       }));
+      
+      console.log('📤 Files being uploaded:', filesForUpload.map(f => ({ uri: f.uri, name: f.name })));
 
       const uploadResults = await uploadMediaMutation.mutateAsync(filesForUpload);
       const mediaIds = uploadResults.map((result: any) => result.id);

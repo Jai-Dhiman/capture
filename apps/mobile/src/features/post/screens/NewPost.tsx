@@ -22,6 +22,7 @@ import {
 import DraggableFlatList from 'react-native-draggable-flatlist';
 import { Image } from 'expo-image';
 import * as MediaLibrary from 'expo-media-library';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type NavigationProp = NativeStackNavigationProp<AppStackParamList>;
 type PostType = 'post' | 'thread';
@@ -82,6 +83,44 @@ export default function NewPost() {
       requestPermissionsAndLoadPhotos();
     }
   }, [postType, hasPermission]);
+
+  // Listen for navigation focus to handle edited images
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', async () => {
+      console.log('👀 NewPost focused, checking for edited images...');
+      try {
+        // Check if there's edited image data in AsyncStorage
+        const editedImageDataString = await AsyncStorage.getItem('editedImageData');
+        console.log('🔍 AsyncStorage editedImageData:', editedImageDataString);
+        if (editedImageDataString) {
+          const editedImageData = JSON.parse(editedImageDataString);
+          console.log('🎨 Image edited data found:', editedImageData);
+          const { originalUri, editedUri } = editedImageData;
+          
+          // Update the photo in selectedPhotos state with the edited URI
+          console.log('🔍 Looking for originalUri in photos:', originalUri);
+          console.log('📋 Current selectedPhotos:', selectedPhotos.map(p => ({ uri: p.uri, name: p.name })));
+          
+          setSelectedPhotos(prev => {
+            const updated = prev.map(p => 
+              p.uri === originalUri 
+                ? { ...p, uri: editedUri, name: `edited_${p.name}` }
+                : p
+            );
+            console.log('🔄 Updated selectedPhotos with edited URI:', updated.map(p => ({ uri: p.uri, name: p.name })));
+            return updated;
+          });
+
+          // Clear the edited image data from AsyncStorage to prevent re-processing
+          await AsyncStorage.removeItem('editedImageData');
+        }
+      } catch (error) {
+        console.error('Error handling edited image data:', error);
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   const requestPermissionsAndLoadPhotos = async () => {
     try {
