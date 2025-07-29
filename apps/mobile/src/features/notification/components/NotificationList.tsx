@@ -23,18 +23,18 @@ export const NotificationList: React.FC<NotificationListProps> = () => {
   };
 
   return (
-    <View className="flex-1 bg-white">
-      <View className="flex-row justify-between items-center p-4 border-b border-gray-200">
+    <View className="flex-1 bg-[#DCDCDE]">
+      <View className="flex-row justify-between items-center p-4 border-b border-stone-300">
         <Text className="text-xl font-semibold">Notifications</Text>
         <View className="flex-row">
           <TouchableOpacity onPress={handleToggleRead} className="mr-4">
-            <Text className="text-blue-500">{includeRead ? 'Hide Read' : 'Show All'}</Text>
+            <Text className="text-neutral-600">{includeRead ? 'Hide Read' : 'Show All'}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={handleMarkAllAsRead} disabled={isPending}>
             {isPending ? (
               <ActivityIndicator size="small" color="#000" />
             ) : (
-              <Text className="text-blue-500">Mark All Read</Text>
+              <Text className="text-neutral-600">Mark All Read</Text>
             )}
           </TouchableOpacity>
         </View>

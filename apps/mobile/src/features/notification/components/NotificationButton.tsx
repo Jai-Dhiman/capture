@@ -78,10 +78,10 @@ export const NotificationButton: React.FC<NotificationButtonProps> = ({ size = 3
         />
 
         <MotiView
-          from={{ translateY: -600, opacity: 0 }}
+          from={{ translateY: 600, opacity: 0 }}
           animate={{ translateY: 0, opacity: 1 }}
           transition={{ type: 'spring', damping: 15 }}
-          className="absolute top-[150px] left-0 right-0 bottom-0 bg-white rounded-t-3xl overflow-hidden"
+          className="absolute top-[150px] left-0 right-0 bottom-0 bg-[#DCDCDE] rounded-t-3xl overflow-hidden"
         >
           <View className="w-12 h-1 bg-gray-300 rounded-full self-center mt-2 mb-1" />
           <NotificationList onClose={() => setIsOpen(false)} />

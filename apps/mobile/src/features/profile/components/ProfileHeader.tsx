@@ -76,7 +76,9 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           ) : (
             <View className="w-10 h-10" />
           )}
-          <Text className="text-5xl font-light text-center flex-1">Capture</Text>
+          <Text className="text-5xl font-light text-center flex-1">
+            {profileData?.username || 'Capture'}
+          </Text>
 
           {showMenuButton ? (
             isOwnProfile ? (
