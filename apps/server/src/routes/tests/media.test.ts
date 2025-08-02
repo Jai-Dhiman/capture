@@ -1,436 +1,528 @@
-// Need to rewrite for new image service
+import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { Hono } from 'hono';
+import type { Bindings, Variables } from '../../types/index.js';
+import mediaRouter from '../media.js';
 
-// import { Hono } from 'hono';
-// import { beforeEach, describe, expect, it, vi } from 'vitest';
-// import { createMockBindings } from '../../test/utils/test-utils';
-// import type { Bindings, Variables } from '../../types';
-// import mediaRouter from '../media';
+// Mock the image service
+const mockGetUploadUrl = vi.fn();
+const mockGetBatchUploadUrls = vi.fn();
+const mockCreate = vi.fn();
+const mockCreateBatch = vi.fn();
+const mockProcessEditedImage = vi.fn();
+const mockOptimizeForVariants = vi.fn();
+const mockFindByIdPublic = vi.fn();
+const mockFindById = vi.fn();
+const mockGetImageUrl = vi.fn();
+const mockDelete = vi.fn();
+const mockDeleteBatch = vi.fn();
+const mockPurgeCDNCache = vi.fn();
+const mockGetDirectCloudflareUrl = vi.fn();
+const mockGetProcessorStatus = vi.fn();
+const mockClearProcessorMemory = vi.fn();
+const mockCanProcessMore = vi.fn();
 
-// // Mock the image service functions
-// const mockGetUploadUrl = vi.fn();
-// const mockCreate = vi.fn();
-// const mockGetImageUrl = vi.fn();
-// const mockFindById = vi.fn();
-// const mockDelete = vi.fn();
-// const mockGetDirectCloudflareUrl = vi.fn();
+vi.mock('../../lib/images/imageService.js', () => ({
+  createImageService: vi.fn(() => ({
+    getUploadUrl: mockGetUploadUrl,
+    getBatchUploadUrls: mockGetBatchUploadUrls,
+    create: mockCreate,
+    createBatch: mockCreateBatch,
+    processEditedImage: mockProcessEditedImage,
+    optimizeForVariants: mockOptimizeForVariants,
+    findByIdPublic: mockFindByIdPublic,
+    findById: mockFindById,
+    getImageUrl: mockGetImageUrl,
+    delete: mockDelete,
+    deleteBatch: mockDeleteBatch,
+    purgeCDNCache: mockPurgeCDNCache,
+    getDirectCloudflareUrl: mockGetDirectCloudflareUrl,
+    getProcessorStatus: mockGetProcessorStatus,
+    clearProcessorMemory: mockClearProcessorMemory,
+    canProcessMore: mockCanProcessMore,
+  })),
+}));
 
-// // Mock the imageService module
-// vi.mock('../../lib/imageService', () => ({
-//   createImageService: vi.fn(() => ({
-//     getUploadUrl: mockGetUploadUrl,
-//     create: mockCreate,
-//     getImageUrl: mockGetImageUrl,
-//     findById: mockFindById,
-//     delete: mockDelete,
-//     getDirectCloudflareUrl: mockGetDirectCloudflareUrl,
-//   })),
-// }));
+// Mock the caching service
+const mockCacheGet = vi.fn();
+const mockCacheSet = vi.fn();
+const mockCacheDelete = vi.fn();
+const mockInvalidatePattern = vi.fn();
 
-// describe('Media Routes', () => {
-//   let app: Hono<{ Bindings: Bindings; Variables: Variables }>;
-//   let mockBindings: Bindings;
-//   const mockUser = { id: 'test-user-id', email: 'test@example.com' };
+vi.mock('../../lib/cache/cachingService.js', () => ({
+  createCachingService: vi.fn(() => ({
+    get: mockCacheGet,
+    set: mockCacheSet,
+    delete: mockCacheDelete,
+    invalidatePattern: mockInvalidatePattern,
+  })),
+  CacheKeys: {
+    cdnUrl: vi.fn((mediaId, variant, format) => `cdn_url:${mediaId}:${variant}:${format}`),
+    media: vi.fn((mediaId) => `media:${mediaId}`),
+    cdnUrlPattern: vi.fn((mediaId) => `cdn_url:${mediaId}:*`),
+    mediaUrlPattern: vi.fn((storageKey) => `media_url:${storageKey}:*`),
+  },
+  CacheTTL: {
+    MEDIA: 3600,
+  },
+}));
 
-//   beforeEach(() => {
-//     vi.clearAllMocks();
-//     mockBindings = createMockBindings();
+// Mock security middleware
+vi.mock('../../middleware/security.js', () => ({
+  cdnSecurityHeaders: vi.fn(() => (c: any, next: any) => next()),
+}));
 
-//     app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
+describe('Media Routes', () => {
+  let app: Hono<{ Bindings: Bindings; Variables: Variables }>;
+  let mockEnv: Bindings;
+  const mockUser = { id: 'test-user-id', email: 'test@example.com' };
 
-//     // Set up environment and user in context
-//     app.use('*', async (c, next) => {
-//       c.env = mockBindings;
-//       c.set('user', mockUser as any);
-//       await next();
-//     });
+  beforeEach(() => {
+    vi.clearAllMocks();
+    
+    mockEnv = {
+      DB: {} as any,
+      KV: {} as any,
+      POST_VECTORS: {} as any,
+      USER_VECTORS: {} as any,
+      CACHE_KV: {} as any,
+      POST_QUEUE: {} as any,
+      USER_VECTOR_QUEUE: {} as any,
+      VOYAGE_API_KEY: 'test-key',
+      QDRANT_URL: 'test-url',
+      QDRANT_API_KEY: 'test-key',
+      QDRANT_COLLECTION_NAME: 'test-collection',
+    } as any;
 
-//     app.route('/media', mediaRouter);
-//   });
+    app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
-//   describe('POST /image-upload', () => {
-//     it('should generate an upload URL successfully', async () => {
-//       // Setup
-//       const mockUploadData = {
-//         uploadURL: 'https://example.com/upload',
-//         id: 'test-image-id',
-//       };
-//       mockGetUploadUrl.mockResolvedValue(mockUploadData);
+    // Set up environment and user in context
+    app.use('*', async (c, next) => {
+      c.env = mockEnv;
+      c.set('user', mockUser as any);
+      await next();
+    });
 
-//       // Execute
-//       const res = await app.request('/media/image-upload', {
-//         method: 'POST',
-//       });
+    app.route('/media', mediaRouter);
+  });
 
-//       // Assert
-//       expect(res.status).toBe(200);
-//       const data = await res.json();
-//       expect(data).toEqual(mockUploadData);
-//       expect(mockGetUploadUrl).toHaveBeenCalled();
-//     });
+  describe('POST /image-upload', () => {
+    it('should generate an upload URL successfully', async () => {
+      const mockUploadData = {
+        uploadURL: 'https://example.com/upload',
+        id: 'test-image-id',
+      };
+      mockGetUploadUrl.mockResolvedValue(mockUploadData);
 
-//     it('should return 401 when user is not authenticated', async () => {
-//       // Setup - app without user
-//       const appWithoutUser = new Hono<{ Bindings: Bindings; Variables: Variables }>();
-//       appWithoutUser.use('*', async (c, next) => {
-//         c.env = mockBindings;
-//         await next();
-//       });
-//       appWithoutUser.route('/media', mediaRouter);
+      const res = await app.request('/media/image-upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contentType: 'image/jpeg', fileSize: 1024 }),
+      });
 
-//       // Execute
-//       const res = await appWithoutUser.request('/media/image-upload', {
-//         method: 'POST',
-//       });
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data).toEqual(mockUploadData);
+      expect(mockGetUploadUrl).toHaveBeenCalledWith('test-user-id', 'user', 'image/jpeg', 1024);
+    });
 
-//       // Assert
-//       expect(res.status).toBe(401);
-//       const data = await res.json();
-//       expect(data).toEqual({ error: 'User not authenticated' });
-//       expect(mockGetUploadUrl).not.toHaveBeenCalled();
-//     });
+    it('should return 401 when user is not authenticated', async () => {
+      const appWithoutUser = new Hono<{ Bindings: Bindings; Variables: Variables }>();
+      appWithoutUser.use('*', async (c, next) => {
+        c.env = mockEnv;
+        await next();
+      });
+      appWithoutUser.route('/media', mediaRouter);
 
-//     it('should handle errors when generating upload URL fails', async () => {
-//       // Setup
-//       mockGetUploadUrl.mockRejectedValue(new Error('Failed to generate URL'));
+      const res = await appWithoutUser.request('/media/image-upload', {
+        method: 'POST',
+      });
 
-//       // Execute
-//       const res = await app.request('/media/image-upload', {
-//         method: 'POST',
-//       });
+      expect(res.status).toBe(401);
+      const data = await res.json();
+      expect(data).toEqual({ error: 'User not authenticated' });
+    });
 
-//       // Assert
-//       expect(res.status).toBe(500);
-//       const data = await res.json();
-//       expect(data).toEqual({ error: 'Failed to generate upload URL' });
-//     });
-//   });
+    it('should handle rate limit errors', async () => {
+      mockGetUploadUrl.mockRejectedValue(new Error('Rate limit exceeded'));
 
-//   describe('POST /image-record', () => {
-//     it('should create a media record successfully', async () => {
-//       // Setup
-//       const mockMediaData = {
-//         id: 'test-media-id',
-//         userId: mockUser.id,
-//         storageKey: 'test-image-id',
-//         type: 'image',
-//         order: 1,
-//         postId: 'test-post-id',
-//         createdAt: new Date().toISOString(),
-//       };
-//       mockCreate.mockResolvedValue(mockMediaData);
-//       mockGetImageUrl.mockResolvedValue('https://example.com/image.jpg');
+      const res = await app.request('/media/image-upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
 
-//       // Execute
-//       const res = await app.request('/media/image-record', {
-//         method: 'POST',
-//         headers: {
-//           'Content-Type': 'application/json',
-//         },
-//         body: JSON.stringify({
-//           imageId: 'test-image-id',
-//           order: 1,
-//           postId: 'test-post-id',
-//         }),
-//       });
+      expect(res.status).toBe(429);
+      const data = await res.json();
+      expect(data).toEqual({ error: 'Rate limit exceeded' });
+    });
+  });
 
-//       // Assert
-//       expect(res.status).toBe(200);
-//       const data = await res.json();
-//       expect(data).toEqual({
-//         media: {
-//           ...mockMediaData,
-//           url: 'https://example.com/image.jpg',
-//         },
-//       });
-//       expect(mockCreate).toHaveBeenCalledWith({
-//         userId: mockUser.id,
-//         imageId: 'test-image-id',
-//         order: 1,
-//         postId: 'test-post-id',
-//       });
-//       expect(mockGetImageUrl).toHaveBeenCalledWith(mockMediaData.storageKey, 'public', 300);
-//     });
+  describe('POST /batch-upload', () => {
+    it('should generate batch upload URLs successfully', async () => {
+      const mockBatchUrls = {
+        uploads: [
+          { uploadURL: 'https://example.com/upload1', id: 'id1' },
+          { uploadURL: 'https://example.com/upload2', id: 'id2' },
+        ],
+      };
+      mockGetBatchUploadUrls.mockResolvedValue(mockBatchUrls.uploads);
 
-//     it('should return 401 when user is not authenticated', async () => {
-//       // Setup - app without user
-//       const appWithoutUser = new Hono<{ Bindings: Bindings; Variables: Variables }>();
-//       appWithoutUser.use('*', async (c, next) => {
-//         c.env = mockBindings;
-//         await next();
-//       });
-//       appWithoutUser.route('/media', mediaRouter);
+      const res = await app.request('/media/batch-upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ count: 2, contentType: 'image/jpeg' }),
+      });
 
-//       // Execute
-//       const res = await appWithoutUser.request('/media/image-record', {
-//         method: 'POST',
-//         headers: {
-//           'Content-Type': 'application/json',
-//         },
-//         body: JSON.stringify({
-//           imageId: 'test-image-id',
-//         }),
-//       });
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data).toEqual(mockBatchUrls);
+      expect(mockGetBatchUploadUrls).toHaveBeenCalledWith('test-user-id', 'user', 2, 'image/jpeg');
+    });
 
-//       // Assert
-//       expect(res.status).toBe(401);
-//       const data = await res.json();
-//       expect(data).toEqual({ error: 'User not authenticated' });
-//       expect(mockCreate).not.toHaveBeenCalled();
-//     });
+    it('should return 400 for invalid count', async () => {
+      const res = await app.request('/media/batch-upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ count: 15 }),
+      });
 
-//     it('should return 400 when imageId is missing', async () => {
-//       // Execute
-//       const res = await app.request('/media/image-record', {
-//         method: 'POST',
-//         headers: {
-//           'Content-Type': 'application/json',
-//         },
-//         body: JSON.stringify({
-//           order: 1,
-//           postId: 'test-post-id',
-//         }),
-//       });
+      expect(res.status).toBe(400);
+      const data = await res.json();
+      expect(data).toEqual({ error: 'Count must be between 1 and 10' });
+    });
+  });
 
-//       // Assert
-//       expect(res.status).toBe(400);
-//       const data = await res.json();
-//       expect(data).toEqual({ error: 'Image ID is required' });
-//       expect(mockCreate).not.toHaveBeenCalled();
-//     });
+  describe('POST /image-record', () => {
+    it('should create a media record successfully', async () => {
+      const mockMedia = {
+        id: 'test-media-id',
+        userId: 'test-user-id',
+        storageKey: 'test-storage-key',
+        type: 'image',
+        order: 1,
+      };
+      mockCreate.mockResolvedValue(mockMedia);
+      mockGetImageUrl.mockResolvedValue('https://example.com/image.jpg');
 
-//     it('should handle errors when creating media record fails', async () => {
-//       // Setup
-//       mockCreate.mockRejectedValue(new Error('Database error'));
+      const res = await app.request('/media/image-record', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageId: 'test-image-id',
+          order: 1,
+          postId: 'test-post-id',
+        }),
+      });
 
-//       // Execute
-//       const res = await app.request('/media/image-record', {
-//         method: 'POST',
-//         headers: {
-//           'Content-Type': 'application/json',
-//         },
-//         body: JSON.stringify({
-//           imageId: 'test-image-id',
-//           order: 1,
-//           postId: 'test-post-id',
-//         }),
-//       });
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data).toEqual({
+        media: {
+          ...mockMedia,
+          url: 'https://example.com/image.jpg',
+        },
+      });
+    });
 
-//       // Assert
-//       expect(res.status).toBe(500);
-//       const data = await res.json();
-//       expect(data).toEqual({ error: 'Failed to create media record' });
-//     });
-//   });
+    it('should return 400 when imageId is missing', async () => {
+      const res = await app.request('/media/image-record', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order: 1 }),
+      });
 
-//   describe('GET /:mediaId/url', () => {
-//     it('should return the image URL successfully', async () => {
-//       // Setup
-//       const mockMediaData = {
-//         id: 'test-media-id',
-//         userId: mockUser.id,
-//         storageKey: 'test-storage-key',
-//         type: 'image',
-//       };
-//       mockFindById.mockResolvedValue(mockMediaData);
-//       mockGetImageUrl.mockResolvedValue('https://example.com/image.jpg');
+      expect(res.status).toBe(400);
+      const data = await res.json();
+      expect(data).toEqual({ error: 'Image ID is required' });
+    });
+  });
 
-//       // Execute
-//       const res = await app.request('/media/test-media-id/url', {
-//         method: 'GET',
-//       });
+  describe('POST /batch-records', () => {
+    it('should create batch media records successfully', async () => {
+      const mockMediaItems = [
+        { id: 'media1', storageKey: 'key1' },
+        { id: 'media2', storageKey: 'key2' },
+      ];
+      mockCreateBatch.mockResolvedValue(mockMediaItems);
+      mockGetImageUrl.mockResolvedValue('https://example.com/image.jpg');
 
-//       // Assert
-//       expect(res.status).toBe(200);
-//       const data = await res.json();
-//       expect(data).toEqual({ url: 'https://example.com/image.jpg' });
-//       expect(mockFindById).toHaveBeenCalledWith('test-media-id', mockUser.id);
-//       expect(mockGetImageUrl).toHaveBeenCalledWith(mockMediaData.storageKey, 'public', 1800);
-//     });
+      const res = await app.request('/media/batch-records', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mediaItems: [
+            { imageId: 'img1', order: 0 },
+            { imageId: 'img2', order: 1 },
+          ],
+        }),
+      });
 
-//     it('should respect custom expiry parameter', async () => {
-//       // Setup
-//       const mockMediaData = {
-//         id: 'test-media-id',
-//         userId: mockUser.id,
-//         storageKey: 'test-storage-key',
-//         type: 'image',
-//       };
-//       mockFindById.mockResolvedValue(mockMediaData);
-//       mockGetImageUrl.mockResolvedValue('https://example.com/image.jpg');
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.media).toHaveLength(2);
+      expect(data.media[0]).toHaveProperty('url');
+    });
 
-//       // Execute
-//       const res = await app.request('/media/test-media-id/url?expiry=3600', {
-//         method: 'GET',
-//       });
+    it('should return 400 for empty media items', async () => {
+      const res = await app.request('/media/batch-records', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mediaItems: [] }),
+      });
 
-//       // Assert
-//       expect(res.status).toBe(200);
-//       const data = await res.json();
-//       expect(data).toEqual({ url: 'https://example.com/image.jpg' });
-//       expect(mockGetImageUrl).toHaveBeenCalledWith(mockMediaData.storageKey, 'public', 3600);
-//     });
+      expect(res.status).toBe(400);
+      const data = await res.json();
+      expect(data).toEqual({ error: 'Media items array is required' });
+    });
+  });
 
-//     it('should cap expiry at maximum allowed value', async () => {
-//       // Setup
-//       const mockMediaData = {
-//         id: 'test-media-id',
-//         userId: mockUser.id,
-//         storageKey: 'test-storage-key',
-//         type: 'image',
-//       };
-//       mockFindById.mockResolvedValue(mockMediaData);
-//       mockGetImageUrl.mockResolvedValue('https://example.com/image.jpg');
+  describe('GET /:mediaId/url', () => {
+    it('should return image URL successfully', async () => {
+      const mockMedia = {
+        id: 'test-media-id',
+        storageKey: 'test-storage-key',
+      };
+      mockFindByIdPublic.mockResolvedValue(mockMedia);
+      mockGetImageUrl.mockResolvedValue('https://example.com/image.jpg');
 
-//       // Execute - requesting expiry higher than max (86400)
-//       const res = await app.request('/media/test-media-id/url?expiry=100000', {
-//         method: 'GET',
-//       });
+      const res = await app.request('/media/test-media-id/url');
 
-//       // Assert
-//       expect(res.status).toBe(200);
-//       const data = await res.json();
-//       expect(data).toEqual({ url: 'https://example.com/image.jpg' });
-//       expect(mockGetImageUrl).toHaveBeenCalledWith(mockMediaData.storageKey, 'public', 86400);
-//     });
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data).toEqual({ url: 'https://example.com/image.jpg' });
+    });
 
-//     it('should return 404 when media is not found', async () => {
-//       // Setup
-//       mockFindById.mockResolvedValue(null);
+    it('should return 404 when media not found', async () => {
+      mockFindByIdPublic.mockResolvedValue(null);
 
-//       // Execute
-//       const res = await app.request('/media/test-media-id/url', {
-//         method: 'GET',
-//       });
+      const res = await app.request('/media/test-media-id/url');
 
-//       // Assert
-//       expect(res.status).toBe(404);
-//       const data = await res.json();
-//       expect(data).toEqual({ error: 'Media not found' });
-//       expect(mockGetImageUrl).not.toHaveBeenCalled();
-//     });
+      expect(res.status).toBe(404);
+      const data = await res.json();
+      expect(data).toEqual({ error: 'Media not found' });
+    });
 
-//     it('should handle errors when getting image URL fails', async () => {
-//       // Setup
-//       const mockMediaData = {
-//         id: 'test-media-id',
-//         userId: mockUser.id,
-//         storageKey: 'test-storage-key',
-//         type: 'image',
-//       };
-//       mockFindById.mockResolvedValue(mockMediaData);
-//       mockGetImageUrl.mockRejectedValue(new Error('Failed to generate URL'));
+    it('should respect custom expiry parameter', async () => {
+      const mockMedia = {
+        id: 'test-media-id',
+        storageKey: 'test-storage-key',
+      };
+      mockFindByIdPublic.mockResolvedValue(mockMedia);
+      mockGetImageUrl.mockResolvedValue('https://example.com/image.jpg');
 
-//       // Execute
-//       const res = await app.request('/media/test-media-id/url', {
-//         method: 'GET',
-//       });
+      const res = await app.request('/media/test-media-id/url?expiry=3600');
 
-//       // Assert
-//       expect(res.status).toBe(500);
-//       const data = await res.json();
-//       expect(data).toEqual({ error: 'Failed to get image URL' });
-//     });
-//   });
+      expect(res.status).toBe(200);
+      expect(mockGetImageUrl).toHaveBeenCalledWith('test-storage-key', 'public', 3600);
+    });
+  });
 
-//   describe('DELETE /:mediaId', () => {
-//     it('should delete media successfully', async () => {
-//       // Setup
-//       mockDelete.mockResolvedValue(undefined);
+  describe('DELETE /:mediaId', () => {
+    it('should delete media successfully', async () => {
+      const mockResult = { success: true, deletedFiles: 1 };
+      mockDelete.mockResolvedValue(mockResult);
 
-//       // Execute
-//       const res = await app.request('/media/test-media-id', {
-//         method: 'DELETE',
-//       });
+      const res = await app.request('/media/test-media-id', {
+        method: 'DELETE',
+      });
 
-//       // Assert
-//       expect(res.status).toBe(200);
-//       const data = await res.json();
-//       expect(data).toEqual({ success: true });
-//       expect(mockDelete).toHaveBeenCalledWith('test-media-id', mockUser.id);
-//     });
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data).toEqual(mockResult);
+      expect(mockDelete).toHaveBeenCalledWith('test-media-id', 'test-user-id', 'user', {
+        permanent: false,
+        softDelete: false,
+      });
+    });
 
-//     it('should handle errors when deleting media fails', async () => {
-//       // Setup
-//       mockDelete.mockRejectedValue(new Error('Delete failed'));
+    it('should handle delete with query parameters', async () => {
+      const mockResult = { success: true, deletedFiles: 1 };
+      mockDelete.mockResolvedValue(mockResult);
 
-//       // Execute
-//       const res = await app.request('/media/test-media-id', {
-//         method: 'DELETE',
-//       });
+      const res = await app.request('/media/test-media-id?permanent=true&soft=true', {
+        method: 'DELETE',
+      });
 
-//       // Assert
-//       expect(res.status).toBe(500);
-//       const data = await res.json();
-//       expect(data).toEqual({ error: 'Delete failed' });
-//     });
-//   });
+      expect(res.status).toBe(200);
+      expect(mockDelete).toHaveBeenCalledWith('test-media-id', 'test-user-id', 'user', {
+        permanent: true,
+        softDelete: true,
+      });
+    });
+  });
 
-//   describe('GET /cloudflare-url/:cloudflareId', () => {
-//     it('should return direct Cloudflare URL successfully', async () => {
-//       // Setup
-//       mockGetDirectCloudflareUrl.mockResolvedValue('https://example.com/cloudflare-image.jpg');
+  describe('GET /cloudflare-url/:cloudflareId', () => {
+    it('should return direct Cloudflare URL successfully', async () => {
+      mockGetDirectCloudflareUrl.mockResolvedValue('https://cloudflare.com/image.jpg');
 
-//       // Execute
-//       const res = await app.request('/media/cloudflare-url/test-cloudflare-id', {
-//         method: 'GET',
-//       });
+      const res = await app.request('/media/cloudflare-url/test-cloudflare-id');
 
-//       // Assert
-//       expect(res.status).toBe(200);
-//       const data = await res.json();
-//       expect(data).toEqual({ url: 'https://example.com/cloudflare-image.jpg' });
-//       expect(mockGetDirectCloudflareUrl).toHaveBeenCalledWith('test-cloudflare-id', 'public', 1800);
-//     });
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data).toEqual({ url: 'https://cloudflare.com/image.jpg' });
+      expect(mockGetDirectCloudflareUrl).toHaveBeenCalledWith('test-cloudflare-id', 'public', 1800);
+    });
+  });
 
-//     it('should respect custom expiry parameter', async () => {
-//       // Setup
-//       mockGetDirectCloudflareUrl.mockResolvedValue('https://example.com/cloudflare-image.jpg');
+  describe('POST /transform/:mediaId', () => {
+    it('should transform image successfully', async () => {
+      const mockResult = {
+        processedImageId: 'processed-id',
+        variants: ['thumbnail', 'medium'],
+        originalSize: 1024,
+        processedSize: 512,
+      };
+      mockProcessEditedImage.mockResolvedValue(mockResult);
 
-//       // Execute
-//       const res = await app.request('/media/cloudflare-url/test-cloudflare-id?expiry=3600', {
-//         method: 'GET',
-//       });
+      const res = await app.request('/media/transform/test-media-id', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          transformParams: { brightness: 1.2, contrast: 1.1 },
+        }),
+      });
 
-//       // Assert
-//       expect(res.status).toBe(200);
-//       const data = await res.json();
-//       expect(data).toEqual({ url: 'https://example.com/cloudflare-image.jpg' });
-//       expect(mockGetDirectCloudflareUrl).toHaveBeenCalledWith('test-cloudflare-id', 'public', 3600);
-//     });
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data).toEqual(mockResult);
+    });
 
-//     it('should cap expiry at maximum allowed value', async () => {
-//       // Setup
-//       mockGetDirectCloudflareUrl.mockResolvedValue('https://example.com/cloudflare-image.jpg');
+    it('should return 400 when transform parameters are missing', async () => {
+      const res = await app.request('/media/transform/test-media-id', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
 
-//       // Execute - requesting expiry higher than max (86400)
-//       const res = await app.request('/media/cloudflare-url/test-cloudflare-id?expiry=100000', {
-//         method: 'GET',
-//       });
+      expect(res.status).toBe(400);
+      const data = await res.json();
+      expect(data).toEqual({ error: 'Transform parameters are required' });
+    });
+  });
 
-//       // Assert
-//       expect(res.status).toBe(200);
-//       const data = await res.json();
-//       expect(data).toEqual({ url: 'https://example.com/cloudflare-image.jpg' });
-//       expect(mockGetDirectCloudflareUrl).toHaveBeenCalledWith(
-//         'test-cloudflare-id',
-//         'public',
-//         86400,
-//       );
-//     });
+  describe('GET /cdn/*', () => {
+    it('should return CDN URL for regular media', async () => {
+      const mockMedia = {
+        id: 'test-media-id',
+        storageKey: 'test-storage-key',
+      };
+      mockCacheGet.mockResolvedValue(null); // No cache hit
+      mockFindByIdPublic.mockResolvedValue(mockMedia);
+      mockGetImageUrl.mockResolvedValue('https://cdn.example.com/image.jpg');
 
-//     it('should handle errors when getting Cloudflare URL fails', async () => {
-//       // Setup
-//       mockGetDirectCloudflareUrl.mockRejectedValue(new Error('Failed to generate URL'));
+      const res = await app.request('/media/cdn/test-media-id');
 
-//       // Execute
-//       const res = await app.request('/media/cloudflare-url/test-cloudflare-id', {
-//         method: 'GET',
-//       });
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data).toHaveProperty('url', 'https://cdn.example.com/image.jpg');
+      expect(data).toHaveProperty('variant', 'original');
+      expect(data).toHaveProperty('format', 'webp');
+    });
 
-//       // Assert
-//       expect(res.status).toBe(500);
-//       const data = await res.json();
-//       expect(data).toEqual({ error: 'Failed to get image URL' });
-//     });
-//   });
-// });
+    it('should handle seed images', async () => {
+      mockCacheGet.mockResolvedValue(null); // No cache hit
+      mockGetImageUrl.mockResolvedValue('https://cdn.example.com/seed-image.jpg');
+
+      const res = await app.request('/media/cdn/seed-images/photo-27.jpg');
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data).toHaveProperty('url', 'https://cdn.example.com/seed-image.jpg');
+    });
+
+    it('should return cached response when available', async () => {
+      const cachedResponse = {
+        url: 'https://cached.example.com/image.jpg',
+        variant: 'original',
+        format: 'webp',
+      };
+      mockCacheGet.mockResolvedValue(cachedResponse);
+
+      const res = await app.request('/media/cdn/test-media-id');
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data).toEqual(cachedResponse);
+    });
+  });
+
+  describe('POST /purge-cache/:mediaId', () => {
+    it('should purge cache successfully', async () => {
+      const mockMedia = {
+        id: 'test-media-id',
+        storageKey: 'test-storage-key',
+      };
+      mockFindById.mockResolvedValue(mockMedia);
+      mockPurgeCDNCache.mockResolvedValue({ urls: ['url1', 'url2'] });
+
+      const res = await app.request('/media/purge-cache/test-media-id', {
+        method: 'POST',
+      });
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data).toHaveProperty('success', true);
+      expect(data).toHaveProperty('purgedUrls', ['url1', 'url2']);
+    });
+  });
+
+  describe('GET /processor-status', () => {
+    it('should return processor status', async () => {
+      const mockStatus = { 
+        isRunning: true, 
+        queueLength: 5, 
+        memoryUsage: '128MB' 
+      };
+      mockGetProcessorStatus.mockReturnValue(mockStatus);
+
+      const res = await app.request('/media/processor-status');
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data).toEqual({ status: mockStatus });
+    });
+  });
+
+  describe('POST /batch-transform', () => {
+    it('should process batch transforms successfully', async () => {
+      mockCanProcessMore.mockReturnValue(true);
+      mockProcessEditedImage.mockResolvedValue({
+        processedImageId: 'processed-id',
+        variants: ['thumbnail'],
+      });
+
+      const res = await app.request('/media/batch-transform', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          transforms: [
+            { mediaId: 'media1', transformParams: { brightness: 1.2 } },
+            { mediaId: 'media2', transformParams: { contrast: 1.1 } },
+          ],
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data).toHaveProperty('total', 2);
+      expect(data).toHaveProperty('successCount', 2);
+      expect(data).toHaveProperty('failureCount', 0);
+    });
+
+    it('should return 503 when processor is at capacity', async () => {
+      mockCanProcessMore.mockReturnValue(false);
+
+      const res = await app.request('/media/batch-transform', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          transforms: [{ mediaId: 'media1', transformParams: {} }],
+        }),
+      });
+
+      expect(res.status).toBe(503);
+      const data = await res.json();
+      expect(data).toEqual({ error: 'Processor is at capacity, please try again later' });
+    });
+  });
+});

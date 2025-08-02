@@ -7,16 +7,27 @@ const mockGet = vi.fn();
 const mockAll = vi.fn();
 
 // Create a flexible mock that returns the right methods regardless of call chain
-const createFlexibleMock = () => ({
-  get: mockGet,
-  all: mockAll,
-  orderBy: vi.fn(() => createFlexibleMock()),
-  limit: vi.fn(() => createFlexibleMock()),
-  where: vi.fn(() => createFlexibleMock()),
-  leftJoin: vi.fn(() => createFlexibleMock()),
-  from: vi.fn(() => createFlexibleMock()),
-  groupBy: vi.fn(() => createFlexibleMock()),
-});
+const createFlexibleMock = () => {
+  const mock = {
+    get: mockGet,
+    all: mockAll,
+    orderBy: vi.fn(() => createFlexibleMock()),
+    limit: vi.fn(() => createFlexibleMock()),
+    where: vi.fn(() => createFlexibleMock()),
+    leftJoin: vi.fn(() => createFlexibleMock()),
+    from: vi.fn(() => createFlexibleMock()),
+    groupBy: vi.fn(() => createFlexibleMock()),
+    then: vi.fn((resolve, reject) => {
+      // Make this thenable so it can be awaited directly
+      const result = mockAll();
+      if (result && result.then) {
+        return result.then(resolve, reject);
+      }
+      return Promise.resolve(result).then(resolve, reject);
+    })
+  };
+  return mock;
+};
 
 const mockSelect = vi.fn(() => createFlexibleMock());
 

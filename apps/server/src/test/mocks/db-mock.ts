@@ -105,12 +105,65 @@ function createD1ClientMock(): MockD1ClientAndQueryBuilder {
     updateValues = null;
   };
 
-  function extractTableName(query: string): string {
-    const match = query.match(/(?:from|into|update)\s+("?(\w+)"?)/i);
-    if (match?.[2]) {
-      return match[2].toLowerCase();
+  function extractTableName(tableOrQuery: any): string {
+    // Handle Drizzle table objects
+    if (typeof tableOrQuery === 'object' && tableOrQuery !== null) {
+      // Try various Drizzle internal properties
+      const symbols = Object.getOwnPropertySymbols(tableOrQuery);
+      for (const symbol of symbols) {
+        const symbolKey = symbol.toString();
+        if (symbolKey.includes('Table') || symbolKey.includes('Name')) {
+          const value = tableOrQuery[symbol];
+          if (typeof value === 'string') {
+            return value;
+          }
+          if (typeof value === 'object' && value?.name) {
+            return value.name;
+          }
+        }
+      }
+      
+      // Check for Drizzle internal properties
+      if (tableOrQuery._.name) return tableOrQuery._.name;
+      if (tableOrQuery.tableName) return tableOrQuery.tableName;
+      
+      // Check if it's a table with columns by looking for known column patterns
+      const hasUserColumns = tableOrQuery.id && tableOrQuery.email && tableOrQuery.emailVerified;
+      const hasEmailCodeColumns = tableOrQuery.id && tableOrQuery.email && tableOrQuery.code && tableOrQuery.type;
+      
+      if (hasUserColumns) return 'users';
+      if (hasEmailCodeColumns) return 'emailCodes';
+      
+      // Extract from string representation with more specific patterns
+      const str = String(tableOrQuery);
+      
+      // Try to find table name in constructor or toString output
+      const tableNameMatch = str.match(/SQLiteTable.*?'([^']+)'/);
+      if (tableNameMatch) return tableNameMatch[1];
+      
+      // Pattern matching as fallback
+      if (str.includes('email_codes') || str.includes('emailCodes')) return 'emailCodes';
+      if (str.includes('"users"') || str.match(/\busers\b/)) return 'users';
+      if (str.includes('profile')) return 'profile'; 
+      if (str.includes('post')) return 'post';
+      if (str.includes('comment')) return 'comment';
+      if (str.includes('relationship')) return 'relationship';
+      if (str.includes('hashtag')) return 'hashtag';
+      if (str.includes('savedPost')) return 'savedPost';
+      if (str.includes('blocked_user')) return 'blocked_user';
+      if (str.includes('media')) return 'media';
     }
-    console.error(`Could not extract table name from query: "${query}"`);
+    
+    // Handle string queries (legacy)
+    if (typeof tableOrQuery === 'string') {
+      const match = tableOrQuery.match(/(?:from|into|update)\s+("?(\w+)"?)/i);
+      if (match?.[2]) {
+        return match[2].toLowerCase();
+      }
+    }
+    
+    // Debug: Log more info about what we couldn't parse
+    console.error(`Could not extract table name. Type: ${typeof tableOrQuery}, Constructor: ${tableOrQuery?.constructor?.name}`);
     return 'unknown_table';
   }
 
@@ -316,9 +369,9 @@ function createD1ClientMock(): MockD1ClientAndQueryBuilder {
       return queryBuilder;
     },
     from: (table: any) => {
-      const tableName = extractTableName(table.toString());
+      const tableName = extractTableName(table);
 
-      if (!tableName) {
+      if (!tableName || tableName === 'unknown_table') {
         console.error(
           'Mock DB (from): Could not determine table name from Drizzle object provided:',
           table,

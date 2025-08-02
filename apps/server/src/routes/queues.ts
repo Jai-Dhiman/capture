@@ -275,7 +275,7 @@ async function processIndividualMessage(
           .orderBy(schema.media.order)
           .all();
         
-        if (mediaRecords.length > 0) {
+        if (mediaRecords && mediaRecords.length > 0) {
           mediaData = {
             totalItems: mediaRecords.length,
             imageItems: mediaRecords.filter(m => m.type === 'image'),
@@ -580,6 +580,8 @@ async function processUserEmbedding(
     };
     
   } catch (error) {
+    // Still acknowledge the message to avoid infinite retries
+    message.ack();
     return {
       success: false,
       messageId,
