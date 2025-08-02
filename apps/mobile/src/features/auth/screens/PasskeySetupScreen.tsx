@@ -70,33 +70,21 @@ export default function PasskeySetupScreen({ navigation }: Props) {
   };
 
   const handleSkip = () => {
-    if (isMandatory) {
-      navigation.navigate('MFACreation');
-    } else {
-      navigation.navigate('CreateProfile');
-    }
+    // Always go to CreateProfile since passkey requirement is disabled
+    const setStage = useAuthStore.getState().setStage;
+    setStage('profileRequired');
+    navigation.navigate('CreateProfile');
   };
 
   const handleSkipPasskey = () => {
-    if (isMandatory) {
-      Alert.alert(
-        'Alternative Security Required',
-        'You need to set up some form of multi-factor authentication. Would you like to set up alternative MFA instead of passkeys?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Setup MFA Instead', style: 'default', onPress: handleSkip },
-        ],
-      );
-    } else {
-      Alert.alert(
-        'Skip Passkey Setup?',
-        "You can set up passkeys later in Settings. For now, you'll need to use other security methods.",
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Skip', style: 'destructive', onPress: handleSkip },
-        ],
-      );
-    }
+    Alert.alert(
+      'Skip Passkey Setup?',
+      "You can set up passkeys later in Settings for added security.",
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Skip', style: 'default', onPress: handleSkip },
+      ],
+    );
   };
 
   const handleBackPress = () => {
@@ -154,7 +142,7 @@ export default function PasskeySetupScreen({ navigation }: Props) {
             style={shadowStyle}
           >
             <Text className="text-base font-bold font-roboto text-black">
-              {isMandatory ? 'Setup Alternative MFA' : 'Continue'}
+              Continue
             </Text>
           </TouchableOpacity>
         </View>
@@ -250,7 +238,7 @@ export default function PasskeySetupScreen({ navigation }: Props) {
         <View className="items-center mt-4">
           <TouchableOpacity onPress={handleSkipPasskey} disabled={registerPasskey.isPending}>
             <Text className="text-base font-semibold font-roboto text-[#827B85] underline">
-              {isMandatory ? 'Setup MFA Instead' : "Don't Want A Passkey?"}
+              Don't Want A Passkey?
             </Text>
           </TouchableOpacity>
         </View>

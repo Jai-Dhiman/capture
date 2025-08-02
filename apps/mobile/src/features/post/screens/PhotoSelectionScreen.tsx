@@ -1,3 +1,8 @@
+/*
+Is this screen being used??
+*/
+
+
 import type React from 'react';
 import { useState, useEffect, useRef } from 'react';
 import {
@@ -74,9 +79,10 @@ const PhotoSelectionScreen: React.FC<PhotoSelectionScreenProps> = ({ route }) =>
 
   // Constants
   const GRID_COLUMNS = 3;
-  const GRID_SPACING = 2;
-  const PHOTO_SIZE = (width - GRID_SPACING * (GRID_COLUMNS + 1)) / GRID_COLUMNS;
-  const PREVIEW_HEIGHT = 80;
+  const PHOTO_SIZE = width / GRID_COLUMNS; // True edge to edge photos
+  const { height } = useWindowDimensions();
+  const SELECTED_SECTION_HEIGHT = height * 0.5; // 50% of screen height - taller
+  const SELECTED_PHOTO_SIZE = (width - 40) / 2; // Larger size for selected photos
 
   // Request permissions and load photos
   useEffect(() => {
@@ -123,11 +129,28 @@ const PhotoSelectionScreen: React.FC<PhotoSelectionScreenProps> = ({ route }) =>
 
       setAlbums(albumsWithCount.filter((album) => album.assetCount > 0) as Album[]);
 
-      // Load photos from "Recent" album (first album is usually recent)
+      // Find and load "Recents" album specifically
       if (albumsWithCount.length > 0) {
-        const recentAlbum = albumsWithCount[0];
-        setCurrentAlbum(recentAlbum as Album);
-        await loadPhotosFromAlbum(recentAlbum.id);
+        // Try multiple approaches to find the Recents album
+        let recentsAlbum = albumsWithCount.find((album) =>
+          album.title.toLowerCase() === 'recents' ||
+          album.title.toLowerCase() === 'recent' ||
+          album.title.toLowerCase() === 'camera roll' ||
+          album.title.toLowerCase() === 'all photos'
+        );
+
+        // If not found by title, try to find by type (smart albums are usually recents)
+        if (!recentsAlbum) {
+          recentsAlbum = albumsWithCount.find((album) => album.type === 'smartAlbum');
+        }
+
+        // Final fallback to first album
+        if (!recentsAlbum) {
+          recentsAlbum = albumsWithCount[0];
+        }
+
+        setCurrentAlbum(recentsAlbum as Album);
+        await loadPhotosFromAlbum(recentsAlbum.id);
       }
     } catch (error) {
       console.error('Failed to load albums:', error);
@@ -241,8 +264,6 @@ const PhotoSelectionScreen: React.FC<PhotoSelectionScreenProps> = ({ route }) =>
         style={{
           width: PHOTO_SIZE,
           height: PHOTO_SIZE,
-          marginRight: index % GRID_COLUMNS === GRID_COLUMNS - 1 ? 0 : GRID_SPACING,
-          marginBottom: GRID_SPACING,
         }}
       >
         <Image
@@ -299,44 +320,73 @@ const PhotoSelectionScreen: React.FC<PhotoSelectionScreenProps> = ({ route }) =>
     );
   };
 
-  const renderSelectedPhoto = ({ item, index, drag }: any) => (
-    <View style={{ marginRight: 8 }}>
-      <Pressable
-        onLongPress={drag}
-        style={{
-          width: PREVIEW_HEIGHT,
-          height: PREVIEW_HEIGHT,
-          borderRadius: 8,
-          overflow: 'hidden',
-        }}
-      >
-        <Image
-          source={{ uri: item.uri }}
-          style={{ width: '100%', height: '100%' }}
-          contentFit="cover"
-          cachePolicy="memory-disk"
-        />
+  const renderSelectedPhoto = ({ item, index, drag }: any) => {
+    const photoHeight = (SELECTED_SECTION_HEIGHT - 60) / 2; // Make photos taller to fill the section
+    const photoWidth = (width - 60) / 2;
 
-        {/* Remove button */}
-        <TouchableOpacity
-          onPress={() => handleRemoveFromSelection(index)}
+    return (
+      <View style={{ marginRight: 10, marginBottom: 10 }}>
+        <Pressable
+          onLongPress={drag}
           style={{
-            position: 'absolute',
-            top: -4,
-            right: -4,
-            width: 20,
-            height: 20,
-            borderRadius: 10,
-            backgroundColor: 'rgba(0,0,0,0.7)',
-            justifyContent: 'center',
-            alignItems: 'center',
+            width: photoWidth,
+            height: photoHeight,
+            borderRadius: 12,
+            overflow: 'hidden',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 4,
+            elevation: 3,
           }}
         >
-          <Text style={{ color: 'white', fontSize: 12, fontWeight: 'bold' }}>×</Text>
-        </TouchableOpacity>
-      </Pressable>
-    </View>
-  );
+          <Image
+            source={{ uri: item.uri }}
+            style={{ width: '100%', height: '100%' }}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+          />
+
+          {/* Remove button */}
+          <TouchableOpacity
+            onPress={() => handleRemoveFromSelection(index)}
+            style={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              width: 28,
+              height: 28,
+              borderRadius: 14,
+              backgroundColor: 'rgba(0,0,0,0.7)',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>×</Text>
+          </TouchableOpacity>
+
+          {/* Selection order indicator */}
+          <View
+            style={{
+              position: 'absolute',
+              top: 8,
+              left: 8,
+              width: 28,
+              height: 28,
+              borderRadius: 14,
+              backgroundColor: '#007AFF',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{ color: 'white', fontSize: 14, fontWeight: 'bold' }}>
+              {index + 1}
+            </Text>
+          </View>
+        </Pressable>
+      </View>
+    );
+  };
 
   const renderAlbumItem = ({ item }: { item: Album }) => (
     <TouchableOpacity
@@ -345,7 +395,7 @@ const PhotoSelectionScreen: React.FC<PhotoSelectionScreenProps> = ({ route }) =>
         padding: 16,
         borderBottomWidth: 1,
         borderBottomColor: '#E5E5E5',
-        backgroundColor: currentAlbum?.id === item.id ? '#F0F0F0' : 'white',
+        backgroundColor: currentAlbum?.id === item.id ? '#F0F0F0' : '#DCDCDE',
       }}
     >
       <Text style={{ fontSize: 16, fontWeight: '500' }}>{item.title}</Text>
@@ -355,19 +405,19 @@ const PhotoSelectionScreen: React.FC<PhotoSelectionScreenProps> = ({ route }) =>
 
   if (hasPermission === null) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>Requesting permissions...</Text>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'yellow' }}>
+        <Text style={{ fontSize: 30, color: 'red' }}>REQUESTING PERMISSIONS - YELLOW SCREEN</Text>
       </View>
     );
   }
 
   if (hasPermission === false) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-        <Text style={{ fontSize: 18, textAlign: 'center', marginBottom: 20 }}>
-          Photo Access Required
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: 'purple' }}>
+        <Text style={{ fontSize: 30, color: 'white', marginBottom: 20 }}>
+          PERMISSION DENIED - PURPLE SCREEN
         </Text>
-        <Text style={{ fontSize: 16, textAlign: 'center', color: '#666', marginBottom: 20 }}>
+        <Text style={{ fontSize: 16, textAlign: 'center', color: 'white', marginBottom: 20 }}>
           Please allow access to your photos to select images for your post.
         </Text>
         <TouchableOpacity
@@ -386,14 +436,42 @@ const PhotoSelectionScreen: React.FC<PhotoSelectionScreenProps> = ({ route }) =>
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#DCDCDE' }}>
-      <StatusBar barStyle="dark-content" backgroundColor="#DCDCDE" />
+    <View style={{ flex: 1, backgroundColor: 'red' }}>
+      <StatusBar barStyle="dark-content" backgroundColor="red" />
 
       {/* Header */}
       <Header height={120} showBackButton={true} onBackPress={() => navigation.goBack()} />
 
-      {/* Album selector */}
-      <View style={{ backgroundColor: 'white', paddingHorizontal: 16, paddingVertical: 12 }}>
+      <Text style={{ fontSize: 24, color: 'white', textAlign: 'center', padding: 20, backgroundColor: 'blue' }}>
+        TEST - CHANGES ARE WORKING
+      </Text>
+
+      {/* STEP 1: Preview Images Section - 50% of screen height - FIRST */}
+      <View style={{
+        height: SELECTED_SECTION_HEIGHT,
+        backgroundColor: '#DCDCDE',
+      }}>
+        {selectedPhotos.length > 0 ? (
+          <DraggableFlatList
+            data={selectedPhotos}
+            renderItem={renderSelectedPhoto}
+            keyExtractor={(item) => item.uri}
+            onDragEnd={({ data }) => setSelectedPhotos(data)}
+            numColumns={2}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 20 }}
+          />
+        ) : (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <Text style={{ fontSize: 16, color: '#666', textAlign: 'center' }}>
+              Select photos from below{'\n'}They will appear here
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {/* STEP 2: Album Selector - SECOND */}
+      <View style={{ backgroundColor: '#DCDCDE', paddingHorizontal: 16, paddingVertical: 12 }}>
         <TouchableOpacity
           onPress={() => setShowAlbums(!showAlbums)}
           style={{
@@ -414,7 +492,7 @@ const PhotoSelectionScreen: React.FC<PhotoSelectionScreenProps> = ({ route }) =>
 
       {/* Albums list */}
       {showAlbums && (
-        <View style={{ backgroundColor: 'white', maxHeight: 300 }}>
+        <View style={{ backgroundColor: '#DCDCDE', maxHeight: 300 }}>
           <FlatList
             data={albums}
             renderItem={renderAlbumItem}
@@ -424,26 +502,8 @@ const PhotoSelectionScreen: React.FC<PhotoSelectionScreenProps> = ({ route }) =>
         </View>
       )}
 
-      {/* Selected photos preview */}
-      {selectedPhotos.length > 0 && (
-        <View style={{ backgroundColor: 'white', paddingVertical: 12 }}>
-          <Text style={{ fontSize: 16, fontWeight: '600', paddingHorizontal: 16, marginBottom: 8 }}>
-            Selected ({selectedPhotos.length}/{maxSelection})
-          </Text>
-          <DraggableFlatList
-            data={selectedPhotos}
-            renderItem={renderSelectedPhoto}
-            keyExtractor={(item) => item.uri}
-            onDragEnd={({ data }) => setSelectedPhotos(data)}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
-          />
-        </View>
-      )}
-
-      {/* Photos grid */}
-      <View style={{ flex: 1 }}>
+      {/* Photos grid - Edge to edge */}
+      <View style={{ flex: 1, marginBottom: 80 }}>
         {loading ? (
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
             <Text>Loading photos...</Text>
@@ -455,11 +515,12 @@ const PhotoSelectionScreen: React.FC<PhotoSelectionScreenProps> = ({ route }) =>
             renderItem={renderPhotoItem}
             keyExtractor={(item) => item.id}
             numColumns={GRID_COLUMNS}
-            contentContainerStyle={{ padding: GRID_SPACING }}
+            contentContainerStyle={{}}
+            style={{}}
             showsVerticalScrollIndicator={false}
-            getItemLayout={(data, index) => ({
-              length: PHOTO_SIZE + GRID_SPACING,
-              offset: (PHOTO_SIZE + GRID_SPACING) * Math.floor(index / GRID_COLUMNS),
+            getItemLayout={(_, index) => ({
+              length: PHOTO_SIZE,
+              offset: PHOTO_SIZE * Math.floor(index / GRID_COLUMNS),
               index,
             })}
             initialNumToRender={21} // 7 rows of 3 columns
@@ -471,8 +532,18 @@ const PhotoSelectionScreen: React.FC<PhotoSelectionScreenProps> = ({ route }) =>
         )}
       </View>
 
-      {/* Done button */}
-      <View style={{ backgroundColor: 'white', padding: 16 }}>
+      {/* Done button - Fixed at bottom */}
+      <View style={{
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: '#DCDCDE',
+        padding: 16,
+        borderTopWidth: 1,
+        borderTopColor: '#E5E5E5',
+        paddingBottom: 34, // Extra padding for safe area
+      }}>
         <TouchableOpacity
           onPress={handleDone}
           style={{

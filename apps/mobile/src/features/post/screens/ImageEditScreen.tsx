@@ -8,12 +8,15 @@ import {
   Group,
   Image as SkiaImage,
   useImage,
+  makeImageFromView,
 } from '@shopify/react-native-skia';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, Image as RNImage, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, Image as RNImage, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import * as MediaLibrary from 'expo-media-library';
 import * as ImageManipulator from 'expo-image-manipulator';
+import * as FileSystem from 'expo-file-system';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useUndoRedo } from '../hooks/useUndoRedo';
 import { useAutoSave } from '../hooks/useAutoSave';
 
@@ -22,7 +25,12 @@ type ImageEditScreenRouteProp = RouteProp<AppStackParamList, 'ImageEditScreen'>;
 export default function ImageEditScreen() {
   const navigation = useNavigation();
   const route = useRoute<ImageEditScreenRouteProp>();
-  const imageUri = route.params?.imageUri || '';
+  const { imageUri = '' } = route.params || {};
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  
+  // Calculate image preview dimensions (leave space for controls at bottom)
+  const previewWidth = screenWidth;
+  const previewHeight = screenHeight * 0.5; // Use 50% of screen height
 
   if (!imageUri) {
     return (
@@ -274,6 +282,12 @@ export default function ImageEditScreen() {
   // UI mode state (adjustments or filters)
   const [editMode, setEditMode] = useState<'adjustments' | 'filters'>('adjustments');
 
+  // Track if user has made changes to prevent auto-load from overriding
+  const [hasUserChanges, setHasUserChanges] = useState(false);
+  
+  // Track if component has finished initial load to prevent conflicts
+  const [hasInitialLoaded, setHasInitialLoaded] = useState(false);
+
   // Undo/Redo functionality
   const initialValues = useMemo(() => {
     const values: Record<string, number> = {};
@@ -294,8 +308,8 @@ export default function ImageEditScreen() {
 
   const { pushState, undo, redo, canUndo, canRedo } = useUndoRedo(initialValues);
 
-  // Auto-save functionality
-  const autoSaveKey = `image-edit-${imageUri.split('/').pop() || 'unknown'}`;
+  // Auto-save functionality - unique key per editing session to prevent cross-contamination
+  const autoSaveKey = `image-edit-${Date.now()}-${imageUri.split('/').pop() || 'unknown'}`;
   const { saveNow, loadSaved, clearSaved, lastSaved, isSaving } = useAutoSave(
     {
       adjustmentValues,
@@ -304,18 +318,22 @@ export default function ImageEditScreen() {
     {
       key: autoSaveKey,
       interval: 3000, // Auto-save every 3 seconds
-      enabled: true,
+      enabled: hasUserChanges, // Only enable auto-save after user makes changes
     },
   );
 
   // Debounce timer for pushing states to history
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Canvas ref for image export
+  const canvasRef = useRef<any>(null);
 
   // Handle adjustment value changes
   const handleValueChange = useCallback(
     (value: number) => {
       const newValues = { ...adjustmentValues, [activeAdjustment]: value };
       setAdjustmentValues(newValues);
+      setHasUserChanges(true); // Mark that user has made changes
 
       // Clear existing timer
       if (debounceTimerRef.current) {
@@ -335,6 +353,7 @@ export default function ImageEditScreen() {
     const previousState = undo();
     if (previousState) {
       setAdjustmentValues(previousState);
+      setHasUserChanges(true); // Mark that user has made changes
     }
   }, [undo]);
 
@@ -343,6 +362,7 @@ export default function ImageEditScreen() {
     const nextState = redo();
     if (nextState) {
       setAdjustmentValues(nextState);
+      setHasUserChanges(true); // Mark that user has made changes
     }
   }, [redo]);
 
@@ -350,6 +370,7 @@ export default function ImageEditScreen() {
   const applyPresetFilter = useCallback(
     (filterValues: Record<string, number>) => {
       setAdjustmentValues(filterValues);
+      setHasUserChanges(true); // Mark that user has made changes
       pushState(filterValues);
     },
     [pushState],
@@ -405,14 +426,65 @@ export default function ImageEditScreen() {
   }, []);
 
   const handleManualSave = useCallback(async () => {
+    console.log('💾 Save button pressed!');
     try {
+      console.log('🔄 Forcing auto-save...');
       await saveNow(); // Force save current state
-      await clearSaved(); // Clear auto-save since user explicitly saved
-      // TODO: Add additional save logic (export image, etc.)
+      
+      // Export the edited image
+      console.log('🎨 Canvas ref available:', !!canvasRef.current);
+      console.log('🖼️ Skia image available:', !!skiaImage);
+      if (canvasRef.current && skiaImage) {
+        // Add a small delay to ensure the canvas is fully rendered with the current filters
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        const snapshot = canvasRef.current.makeImageSnapshot();
+        console.log('📷 Canvas snapshot created:', !!snapshot);
+        if (snapshot) {
+          // Convert Skia image to base64
+          const base64 = snapshot.encodeToBase64();
+          console.log('📸 Base64 encoded, length:', base64?.length || 0);
+          
+          // Create a temporary file with the edited image
+          const filename = `edited_${Date.now()}.jpg`;
+          const tempUri = `${FileSystem.cacheDirectory}${filename}`;
+          
+          // Write base64 data to file
+          console.log('💾 Writing to temp file:', tempUri);
+          await FileSystem.writeAsStringAsync(tempUri, base64, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          console.log('✅ File written successfully');
+          
+          // Store edited image data in AsyncStorage for PostSettingsScreen to pick up
+          const editedImageData = {
+            originalUri: imageUri,
+            editedUri: tempUri,
+            timestamp: Date.now()
+          };
+          console.log('💾 Saving edited image data to AsyncStorage:', editedImageData);
+          await AsyncStorage.setItem('editedImageData', JSON.stringify(editedImageData));
+          
+          navigation.goBack();
+          await clearSaved(); // Clear auto-save since user explicitly saved
+        } else {
+          console.error('❌ Failed to create canvas snapshot');
+          // Fallback: just go back without saving changes
+          navigation.goBack();
+        }
+      } else {
+        console.error('❌ Canvas ref or skiaImage not available');
+        console.log('Canvas ref:', canvasRef.current);
+        console.log('Skia image:', skiaImage);
+        // Fallback: just go back without saving changes
+        navigation.goBack();
+      }
     } catch (error) {
-      console.error('Manual save failed:', error);
+      console.error('❌ Manual save failed:', error);
+      // Fallback to just going back
+      navigation.goBack();
     }
-  }, [saveNow, clearSaved]);
+  }, [saveNow, clearSaved, navigation, skiaImage, imageUri]);
 
   const handleCancel = useCallback(() => {
     navigation.goBack();
@@ -460,22 +532,10 @@ export default function ImageEditScreen() {
     return getAdjustmentRange(activeAdjustment);
   }, [activeAdjustment, getAdjustmentRange]);
 
-  // Load saved edits on mount
+  // Initialize component - disabled auto-loading to prevent filter persistence between sessions
   useEffect(() => {
-    const loadSavedEdits = async () => {
-      try {
-        const saved = await loadSaved();
-        if (saved && saved.imageUri === imageUri) {
-          // Only load if it's for the same image
-          setAdjustmentValues(saved.adjustmentValues);
-        }
-      } catch (error) {
-        console.error('Failed to load saved edits:', error);
-      }
-    };
-
-    loadSavedEdits();
-  }, [imageUri, loadSaved]);
+    setHasInitialLoaded(true);
+  }, []);
 
   // Clear auto-save when leaving screen
   useEffect(() => {
@@ -698,11 +758,16 @@ export default function ImageEditScreen() {
     // Multiply 4x5 matrices (stored as flat arrays)
     for (let i = 0; i < 4; i++) {
       for (let j = 0; j < 5; j++) {
-        for (let k = 0; k < 4; k++) {
-          result[i * 5 + j] += a[i * 5 + k] * b[k * 5 + j];
-        }
-        // Handle the translation column (last column)
-        if (j === 4) {
+        if (j < 4) {
+          // Regular matrix multiplication for the 4x4 part
+          for (let k = 0; k < 4; k++) {
+            result[i * 5 + j] += a[i * 5 + k] * b[k * 5 + j];
+          }
+        } else {
+          // Handle the translation column (last column)
+          for (let k = 0; k < 4; k++) {
+            result[i * 5 + j] += a[i * 5 + k] * b[k * 5 + j];
+          }
           result[i * 5 + j] += a[i * 5 + 4];
         }
       }
@@ -737,15 +802,15 @@ export default function ImageEditScreen() {
   }, [adjustmentValues, getAdjustmentMatrix, multiplyMatrices, showOriginal]);
 
   return (
-    <View className="flex-1 bg-zinc-300 rounded-[30px] overflow-hidden p-4 pt-20">
+    <View className="flex-1 bg-zinc-300 rounded-[30px] overflow-hidden pb-8">
       {/* Preview */}
-      <View className="items-center">
-        <View className="w-[340px] h-[510px] rounded-[10px] border border-black overflow-hidden relative">
+      <View style={{ height: previewHeight }}>
+        <View className="flex-1 overflow-hidden relative">
           {skiaImage ? (
-            <Canvas style={{ width: '100%', height: '100%' }}>
+            <Canvas ref={canvasRef} style={{ width: '100%', height: '100%' }}>
               <Group>
                 <ColorMatrix matrix={combinedMatrix} />
-                <SkiaImage image={skiaImage} x={0} y={0} width={340} height={510} fit="cover" />
+                <SkiaImage image={skiaImage} x={0} y={0} width={previewWidth} height={previewHeight} fit="cover" />
               </Group>
             </Canvas>
           ) : (
@@ -762,32 +827,22 @@ export default function ImageEditScreen() {
             className="absolute top-4 right-4 bg-black/50 rounded-full px-3 py-1.5"
           >
             <Text className="text-white text-xs font-medium">
-              {showOriginal ? 'After' : 'Before'}
+              {showOriginal ? 'Before' : 'After'}
             </Text>
           </TouchableOpacity>
 
-          {/* Auto-Save Indicator */}
-          <View className="absolute top-4 left-4 bg-black/50 rounded-full px-2 py-1 flex-row items-center">
-            <View
-              className={`w-2 h-2 rounded-full mr-1.5 ${
-                isSaving ? 'bg-yellow-400' : 'bg-green-400'
-              }`}
-            />
-            <Text className="text-white text-xs">
-              {isSaving ? 'Saving...' : lastSaved ? 'Saved' : 'Auto-save'}
-            </Text>
-          </View>
         </View>
       </View>
 
+      {/* Controls Area */}
+      <View className="flex-1 p-4 pb-6">
       {/* Mode Toggle */}
-      <View className="flex-row justify-center mt-6 mb-4">
+      <View className="flex-row justify-center mt-2 mb-3">
         <View className="flex-row bg-gray-200 rounded-full p-1">
           <TouchableOpacity
             onPress={setAdjustmentMode}
-            className={`px-6 py-2 rounded-full ${
-              editMode === 'adjustments' ? 'bg-[#E4CAC7] border border-black' : 'bg-transparent'
-            }`}
+            className={`px-6 py-2 rounded-full ${editMode === 'adjustments' ? 'bg-[#E4CAC7] border border-black' : 'bg-transparent'
+              }`}
           >
             <Text
               className={`text-sm ${editMode === 'adjustments' ? 'text-black font-semibold' : 'text-gray-600'}`}
@@ -797,9 +852,8 @@ export default function ImageEditScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             onPress={setFilterMode}
-            className={`px-6 py-2 rounded-full ${
-              editMode === 'filters' ? 'bg-[#E4CAC7] border border-black' : 'bg-transparent'
-            }`}
+            className={`px-6 py-2 rounded-full ${editMode === 'filters' ? 'bg-[#E4CAC7] border border-black' : 'bg-transparent'
+              }`}
           >
             <Text
               className={`text-sm ${editMode === 'filters' ? 'text-black font-semibold' : 'text-gray-600'}`}
@@ -813,7 +867,7 @@ export default function ImageEditScreen() {
       {editMode === 'adjustments' ? (
         <>
           {/* Adjustment icons */}
-          <View className="h-20">
+          <View className="h-16">
             <FlatList
               data={adjustmentOptions}
               horizontal
@@ -824,12 +878,12 @@ export default function ImageEditScreen() {
             />
           </View>
           {/* Slider */}
-          <View className="mt-4 items-center px-4">
+          <View className="mt-2 items-center px-4 pb-6">
             <Text className="text-center text-black text-base font-semibold">
               {activeAdjustment}
             </Text>
             <Text className="text-center text-black text-sm mb-2">{currentAdjustmentValue}</Text>
-            <View className="w-full px-4">
+            <View className="w-full px-4 pb-2">
               <Slider
                 style={{ width: '100%', height: 40 }}
                 minimumValue={currentAdjustmentRange.min}
@@ -838,14 +892,14 @@ export default function ImageEditScreen() {
                 onValueChange={handleValueChange}
                 minimumTrackTintColor="#E4CAC7"
                 maximumTrackTintColor="#D8C0BD"
-                // thumbStyle={{ backgroundColor: '#E4CAC7', borderWidth: 2, borderColor: '#D8C0BD' }}
+              // thumbStyle={{ backgroundColor: '#E4CAC7', borderWidth: 2, borderColor: '#D8C0BD' }}
               />
             </View>
           </View>
         </>
       ) : (
         /* Preset Filters */
-        <View className="h-32">
+        <View className="h-20">
           <FlatList
             data={presetFilters}
             horizontal
@@ -857,29 +911,27 @@ export default function ImageEditScreen() {
         </View>
       )}
       {/* Undo/Redo Controls */}
-      <View className="flex-row justify-center items-center gap-4 px-4 py-2">
+      <View className="flex-row justify-center items-center gap-3 px-4 py-1">
         <TouchableOpacity
           onPress={handleUndo}
           disabled={!canUndo}
-          className={`w-12 h-12 rounded-full justify-center items-center border-2 ${
-            canUndo ? 'bg-[#E4CAC7] border-black' : 'bg-gray-300 border-gray-400'
-          }`}
+          className={`w-8 h-8 rounded-full justify-center items-center border ${canUndo ? 'bg-[#E4CAC7] border-black' : 'bg-gray-300 border-gray-400'
+            }`}
         >
-          <Ionicons name="arrow-undo" size={20} color={canUndo ? 'black' : 'gray'} />
+          <Ionicons name="arrow-undo" size={16} color={canUndo ? 'black' : 'gray'} />
         </TouchableOpacity>
         <TouchableOpacity
           onPress={handleRedo}
           disabled={!canRedo}
-          className={`w-12 h-12 rounded-full justify-center items-center border-2 ${
-            canRedo ? 'bg-[#E4CAC7] border-black' : 'bg-gray-300 border-gray-400'
-          }`}
+          className={`w-8 h-8 rounded-full justify-center items-center border ${canRedo ? 'bg-[#E4CAC7] border-black' : 'bg-gray-300 border-gray-400'
+            }`}
         >
-          <Ionicons name="arrow-redo" size={20} color={canRedo ? 'black' : 'gray'} />
+          <Ionicons name="arrow-redo" size={16} color={canRedo ? 'black' : 'gray'} />
         </TouchableOpacity>
       </View>
 
       {/* Actions */}
-      <View className="flex-row justify-between px-8 py-4">
+      <View className="flex-row justify-between px-8 py-3 mt-2">
         <TouchableOpacity
           onPress={handleCancel}
           className="bg-[#E4CAC7] rounded-[30px] border border-[#D8C0BD] px-8 py-2"
@@ -892,6 +944,7 @@ export default function ImageEditScreen() {
         >
           <Text className="text-black text-xs">Save</Text>
         </TouchableOpacity>
+      </View>
       </View>
     </View>
   );

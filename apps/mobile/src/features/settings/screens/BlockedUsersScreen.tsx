@@ -3,12 +3,15 @@ import { MediaImage } from '@/features/post/components/MediaImage';
 import { useBlockedUsers, useUnblockUser } from '@/features/profile/hooks/useBlocking';
 import type { SettingsStackParamList } from '@/navigation/types';
 import { SkeletonElement, SkeletonLoader } from '@/shared/components/SkeletonLoader';
-import CustomBackIcon from '@assets/icons/CustomBackIcon.svg';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { format } from 'date-fns';
 import React from 'react';
 import { ActivityIndicator, FlatList, StatusBar, Text, TouchableOpacity, View } from 'react-native';
+import { CustomBackIconSvg } from '@assets/icons/svgStrings';
+import { svgToDataUri } from '@/shared/utils/svgUtils';
+import { Image } from 'expo-image';
+
 
 type NavigationProp = NativeStackNavigationProp<SettingsStackParamList, 'BlockedUsers'>;
 
@@ -68,7 +71,10 @@ export default function BlockedUsersScreen() {
           className="absolute left-4 top-14 w-10 h-10 bg-[#DFD2CD] rounded-full flex justify-center items-center"
           onPress={goBack}
         >
-          <CustomBackIcon width={30} height={30} />
+          <Image
+        source={{ uri: svgToDataUri(CustomBackIconSvg) }}
+        style={[{ width: 30, height: 30 }, {}]}
+      />
         </TouchableOpacity>
         <Text className="text-center text-3xl font-light">Blocked Accounts</Text>
       </View>

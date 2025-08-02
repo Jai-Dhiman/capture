@@ -18,6 +18,7 @@ import {
 import { type MetadataService, createMetadataService } from './metadataService';
 import type { ImageMetadata, ImageVariant, ImageTransformation } from './metadata';
 import { CascadeDeletionService, type CascadeDeletionOptions } from './cascadeDeletionService';
+import { createR2PresignedUrlService, type R2PresignedUrlService } from './r2PresignedUrl';
 
 function generateId(): string {
   return nanoid();
@@ -60,6 +61,7 @@ export class ImageService {
   private wasmProcessor: WasmImageProcessor;
   private metadataService: MetadataService;
   private cascadeDeletionService: CascadeDeletionService;
+  private presignedUrlService: R2PresignedUrlService;
 
   constructor(env: Bindings) {
     this.db = drizzle(env.DB);
@@ -70,6 +72,7 @@ export class ImageService {
     this.cachingService = createCachingService(env);
     this.metadataService = createMetadataService(env);
     this.cascadeDeletionService = new CascadeDeletionService(env);
+    this.presignedUrlService = createR2PresignedUrlService(env);
     
     // Initialize WASM image processor
     this.wasmProcessor = new WasmImageProcessor(512);
@@ -88,7 +91,7 @@ export class ImageService {
   ): Promise<ImageUploadResult> {
     const id = generateId();
     const fileName = `${id}${this.getFileExtension(contentType)}`;
-    const storageKey = `images/${userId}_${fileName}`;
+    const storageKey = `images/${fileName}`;
     
     // Check rate limit
     const rateLimit = await this.rateLimiter.checkRateLimit(userId, 'upload', 10, 60000); // 10 uploads per minute
@@ -115,12 +118,9 @@ export class ImageService {
     }
     
     // Generate presigned URL for R2 upload with security headers
-    const uploadURL = await this.r2.createPresignedUrl(storageKey, 'PUT', {
+    const uploadURL = await this.presignedUrlService.createPresignedUrl(storageKey, 'PUT', {
       expiresIn: R2_CONFIG.upload.presignedUrlExpiry,
-      headers: {
-        ...(contentType && { 'Content-Type': contentType }),
-        'x-amz-server-side-encryption': 'AES256', // Enable encryption
-      },
+      contentType,
     });
 
     // Extract and store initial metadata
@@ -228,6 +228,28 @@ export class ImageService {
     );
   }
 
+  /**
+   * Find media by ID without user restriction - for public access
+   * This should only be used for media that's already been made accessible through other means
+   */
+  async findByIdPublic(mediaId: string): Promise<any> {
+    const cacheKey = CacheKeys.media(mediaId);
+    
+    return this.cachingService.getOrSet(
+      cacheKey,
+      async () => {
+        const result = await this.db
+          .select()
+          .from(media)
+          .where(eq(media.id, mediaId))
+          .limit(1);
+
+        return result[0] || null;
+      },
+      CacheTTL.MEDIA // 1 hour cache
+    );
+  }
+
   async getImageUrl(storageKey: string, _visibility: string, expirySeconds?: number): Promise<string> {
     const expiry = expirySeconds || R2_CONFIG.upload.downloadUrlExpiry;
     
@@ -238,7 +260,7 @@ export class ImageService {
       return this.cachingService.getOrSet(
         cacheKey,
         async () => {
-          return await this.r2.createPresignedUrl(storageKey, 'GET', {
+          return await this.presignedUrlService.createPresignedUrl(storageKey, 'GET', {
             expiresIn: expiry,
           });
         },
@@ -247,7 +269,7 @@ export class ImageService {
     }
     
     // For short-term URLs, generate directly without caching
-    const url = await this.r2.createPresignedUrl(storageKey, 'GET', {
+    const url = await this.presignedUrlService.createPresignedUrl(storageKey, 'GET', {
       expiresIn: expiry,
     });
 
@@ -528,8 +550,6 @@ export class ImageService {
       
       await Promise.all(storagePromises);
       
-      console.log(`Successfully optimized ${processedImageId} for ${Object.keys(variantResults).length} variants`);
-      
     } catch (error) {
       console.error(`Failed to optimize variants for ${processedImageId}:`, error);
       throw error;
@@ -557,12 +577,6 @@ export class ImageService {
     return `${baseName}_${variant}.${extension}`;
   }
 
-  async configureBucketCORS(): Promise<void> {
-    // This would typically be done through Cloudflare API or dashboard
-    // For now, log the required CORS configuration
-    console.log('CORS configuration required:', R2_CONFIG.corsPolicy);
-  }
-
   async purgeCDNCache(storageKey: string): Promise<{ urls: string[] }> {
     // Generate list of URLs to purge for different variants and formats
     const baseUrl = `https://capture-images.r2.cloudflarestorage.com/${storageKey}`;
@@ -581,7 +595,7 @@ export class ImageService {
     // TODO: Implement actual Cloudflare Cache API purging
     // This would typically use the Cloudflare API to purge specific URLs
     // For now, log the URLs that would be purged
-    console.log('Purging CDN cache for URLs:', urlsToPurge);
+    console.log('Implement cache purging for URLs:', urlsToPurge);
     
     return { urls: urlsToPurge };
   }
@@ -675,7 +689,6 @@ export class ImageService {
       });
       
       await Promise.all(storagePromises);
-      console.log(`Background variant creation completed for ${processedImageId}`);
       
     } catch (error) {
       console.error(`Background variant creation failed for ${processedImageId}:`, error);

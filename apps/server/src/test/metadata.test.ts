@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { MetadataService } from '../lib/images/metadataService';
 import { ImageSearchService } from '../lib/images/searchService';
 import { BulkOperationsService } from '../lib/images/bulkOperationsService';
-import { ImageMetadata, ImageVariant, ImageTransformation } from '../lib/images/metadata';
+import type { ImageMetadata, ImageVariant, ImageTransformation } from '../lib/images/metadata';
 
 // Mock environment for testing
 const mockEnv = {

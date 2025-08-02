@@ -1,6 +1,6 @@
 import type { Bindings } from '../../types';
 import { createCachingService, CacheKeys, CacheTTL, type CachingService } from '../cache/cachingService';
-import { 
+import type { 
   ImageMetadata, 
   ImageVariant, 
   ImageTransformation, 
@@ -46,15 +46,19 @@ export class MetadataService {
     // Store in R2 custom metadata
     if (this.config.useR2CustomMetadata) {
       try {
+        // Check if object exists first
         const existingObject = await this.r2.head(storageKey);
         if (existingObject) {
-          // Update existing object metadata
-          await this.r2.put(storageKey, existingObject.body, {
-            customMetadata: {
-              'metadata': metadataJson,
-              'updated-at': new Date().toISOString()
-            }
-          });
+          // Get the object content to update metadata
+          const fullObject = await this.r2.get(storageKey);
+          if (fullObject) {
+            await this.r2.put(storageKey, fullObject.body, {
+              customMetadata: {
+                'metadata': metadataJson,
+                'updated-at': new Date().toISOString()
+              }
+            });
+          }
         }
       } catch (error) {
         console.warn('Failed to store R2 custom metadata:', error);

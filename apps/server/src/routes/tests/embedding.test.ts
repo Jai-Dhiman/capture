@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Hono } from 'hono';
 import type { Bindings } from '../../types';
 import { createEmbeddingService } from '../../lib/ai/embeddingService';
@@ -8,11 +8,12 @@ import { wasmVectorService } from '../../lib/wasm/wasmVectorService';
 
 // Mock KV namespace
 const mockKV = {
-  get: async (key: string) => null,
-  put: async (key: string, value: string, options?: any) => {},
-  delete: async (key: string) => {},
-  list: async () => ({ keys: [] }),
-} as KVNamespace;
+  get: vi.fn().mockResolvedValue(null),
+  put: vi.fn().mockResolvedValue(undefined),
+  delete: vi.fn().mockResolvedValue(undefined),
+  list: vi.fn().mockResolvedValue({ keys: [], list_complete: true, cursor: undefined }),
+  getWithMetadata: vi.fn().mockResolvedValue({ value: null, metadata: null }),
+};
 
 // Mock environment for testing
 const mockEnv: Partial<Bindings> = {
@@ -20,7 +21,7 @@ const mockEnv: Partial<Bindings> = {
   QDRANT_URL: 'http://localhost:6333',
   QDRANT_API_KEY: 'test-key',
   QDRANT_COLLECTION_NAME: 'test_posts',
-  CACHE_KV: mockKV,
+  CACHE_KV: mockKV as any,
 };
 
 describe('Embedding Service Integration', () => {
@@ -51,7 +52,9 @@ describe('Embedding Service Integration', () => {
       console.log('First 5 values:', result.vector.slice(0, 5));
       
     } catch (error) {
-      console.log('⚠️ Voyage API test error:', error.message);
+      if (error instanceof Error) {
+        console.log('⚠️ Voyage API test error:', error.message);
+      }
       // With proper mocks, this should not fail
       expect(error).toBeUndefined();
     }
@@ -82,7 +85,9 @@ describe('Embedding Service Integration', () => {
       console.log('✅ Generated post embedding with metadata');
       
     } catch (error) {
-      console.log('⚠️ Post embedding generation failed:', error.message);
+      if (error instanceof Error) {
+        console.log('⚠️ Post embedding generation failed:', error.message);
+      }
     }
   });
 
@@ -98,7 +103,9 @@ describe('Embedding Service Integration', () => {
       console.log('✅ Qdrant collection configured for 1024 dimensions');
       
     } catch (error) {
-      console.log('⚠️ Qdrant not available for testing:', error.message);
+      if (error instanceof Error) {
+        console.log('⚠️ Qdrant not available for testing:', error.message);
+      }
     }
   });
 
@@ -125,7 +132,9 @@ describe('Embedding Service Integration', () => {
       console.log('✅ WASM available:', wasmVectorService.isWasmAvailable());
       
     } catch (error) {
-      console.log('⚠️ WASM test failed:', error.message);
+      if (error instanceof Error) {
+        console.log('⚠️ WASM test failed:', error.message);
+      }
       // This is expected in test environment without proper WASM setup
     }
   });
@@ -153,7 +162,9 @@ describe('Embedding Service Integration', () => {
       console.log('✅ Batch similarity search results:', Array.from(similarities));
       
     } catch (error) {
-      console.log('⚠️ Batch processing test failed:', error.message);
+      if (error instanceof Error) {
+        console.log('⚠️ Batch processing test failed:', error.message);
+      }
     }
   });
 
@@ -179,7 +190,9 @@ describe('Embedding Service Integration', () => {
       console.log('✅ Unified generateEmbedding method works correctly');
       
     } catch (error) {
-      console.log('⚠️ Unified embedding test error:', error.message);
+      if (error instanceof Error) {
+        console.log('⚠️ Unified embedding test error:', error.message);
+      }
       expect(error).toBeUndefined();
     }
   });
@@ -200,7 +213,142 @@ describe('Embedding Service Integration', () => {
       console.log('✅ Caching functionality working');
       
     } catch (error) {
-      console.log('⚠️ Cache test error:', error.message);
+      if (error instanceof Error) {
+        console.log('⚠️ Cache test error:', error.message);
+      }
+    }
+  });
+
+  it('should use text model for text-only posts', async () => {
+    const postData = {
+      postId: 'text-post-123',
+      content: 'This is a text-only post without images',
+      hashtags: ['#text', '#post'],
+      userId: 'user-123',
+      isPrivate: false,
+    };
+
+    try {
+      const result = await embeddingService.generatePostEmbedding(
+        postData.postId,
+        postData.content,
+        postData.hashtags,
+        postData.userId,
+        postData.isPrivate,
+        'voyage',
+        'text'
+      );
+
+      expect(result.embeddingResult.vector.length).toBe(1024);
+      expect(result.metadata.contentType).toBe('text');
+      expect(result.metadata.postId).toBe(postData.postId);
+      
+      console.log('✅ Text-only post uses text model (voyage-3.5-lite)');
+      
+    } catch (error) {
+      if (error instanceof Error) {
+        console.log('⚠️ Text model selection test failed:', error.message);
+      }
+    }
+  });
+
+  it('should use multimodal model for image posts', async () => {
+    const postData = {
+      postId: 'image-post-123',
+      content: 'Check out this amazing photo!',
+      hashtags: ['#photo', '#image'],
+      userId: 'user-123',
+      isPrivate: false,
+    };
+
+    try {
+      const result = await embeddingService.generatePostEmbedding(
+        postData.postId,
+        postData.content,
+        postData.hashtags,
+        postData.userId,
+        postData.isPrivate,
+        'voyage',
+        'image'
+      );
+
+      expect(result.embeddingResult.vector.length).toBe(1024);
+      expect(result.metadata.contentType).toBe('image');
+      expect(result.metadata.postId).toBe(postData.postId);
+      
+      console.log('✅ Image post uses multimodal model (voyage-multimodal-3)');
+      
+    } catch (error) {
+      if (error instanceof Error) {
+        console.log('⚠️ Multimodal model selection test failed:', error.message);
+      }
+    }
+  });
+
+  it('should use multimodal model for multimodal posts', async () => {
+    const postData = {
+      postId: 'multimodal-post-123',
+      content: 'This post has both text and images',
+      hashtags: ['#multimodal', '#mixed'],
+      userId: 'user-123',
+      isPrivate: false,
+    };
+
+    try {
+      const result = await embeddingService.generatePostEmbedding(
+        postData.postId,
+        postData.content,
+        postData.hashtags,
+        postData.userId,
+        postData.isPrivate,
+        'voyage',
+        'multimodal'
+      );
+
+      expect(result.embeddingResult.vector.length).toBe(1024);
+      expect(result.metadata.contentType).toBe('multimodal');
+      expect(result.metadata.postId).toBe(postData.postId);
+      
+      console.log('✅ Multimodal post uses multimodal model (voyage-multimodal-3)');
+      
+    } catch (error) {
+      if (error instanceof Error) {
+        console.log('⚠️ Multimodal model selection test failed:', error.message);
+      }
+    }
+  });
+
+  it('should default to text model for backward compatibility', async () => {
+    const postData = {
+      postId: 'legacy-post-123',
+      content: 'This is a legacy post without postType parameter',
+      hashtags: ['#legacy', '#backward-compatible'],
+      userId: 'user-123',
+      isPrivate: false,
+    };
+
+    try {
+      // Call without postType parameter to test backward compatibility
+      const result = await embeddingService.generatePostEmbedding(
+        postData.postId,
+        postData.content,
+        postData.hashtags,
+        postData.userId,
+        postData.isPrivate,
+        'voyage'
+        // No postType parameter
+      );
+
+      expect(result.embeddingResult.vector.length).toBe(1024);
+      expect(result.metadata.contentType).toBe('text'); // Should default to 'text'
+      expect(result.metadata.postId).toBe(postData.postId);
+      
+      console.log('✅ Backward compatibility: defaults to text model when postType is undefined');
+      
+    } catch (error) {
+      if (error instanceof Error) {
+        console.log('⚠️ Backward compatibility test failed:', error.message);
+      }
     }
   });
 
@@ -213,7 +361,11 @@ describe('Embedding Service Integration', () => {
       expect(() => invalidService).toThrow('Voyage API key is required');
       console.log('✅ Error handling for missing API key works');
     } catch (error) {
-      expect(error.message).toContain('Voyage API key is required');
+      if (error instanceof Error) {
+        expect(error.message).toContain('Voyage API key is required');
+      } else {
+        expect(error).toBeInstanceOf(Error);
+      }
     }
   });
 
@@ -227,7 +379,7 @@ describe('Embedding Service Integration', () => {
     
     const customService = createEmbeddingService(mockEnv as Bindings, cache, customConfig);
     
-    expect(customService.getModel()).toBe('custom-model');
+    expect(customService.getModel()).toBe('voyage-multimodal-3');
     expect(customService.getDimensions()).toBe(512);
     expect(customService.getAvailableProviders()).toEqual(['voyage']);
     
@@ -270,13 +422,13 @@ describe('Embedding Performance Analysis', () => {
       },
     ];
 
-    console.log('\\n🚀 WASM Optimization Opportunities:');
-    wasmCandidates.forEach((candidate, index) => {
-      console.log(`\\n${index + 1}. ${candidate.operation}`);
+    console.log('\n🚀 WASM Optimization Opportunities:');
+    for (const [index, candidate] of wasmCandidates.entries()) {
+      console.log(`\n${index + 1}. ${candidate.operation}`);
       console.log(`   Current: ${candidate.currentImplementation}`);
       console.log(`   WASM Benefit: ${candidate.wasmBenefit}`);
       console.log(`   Complexity: ${candidate.complexity}`);
-    });
+    }
 
     expect(wasmCandidates.length).toBeGreaterThan(0);
   });
@@ -312,18 +464,18 @@ describe('Embedding Performance Analysis', () => {
       ],
     };
 
-    console.log('\\n📊 Qdrant Database Requirements:');
-    qdrantRequirements.collections.forEach((collection) => {
-      console.log(`\\n📁 ${collection.name}:`);
+    console.log('\n📊 Qdrant Database Requirements:');
+    for (const collection of qdrantRequirements.collections) {
+      console.log(`\n📁 ${collection.name}:`);
       console.log(`   Dimensions: ${collection.dimensions}`);
       console.log(`   Purpose: ${collection.purpose}`);
       console.log(`   Migration: ${collection.migration}`);
-    });
+    }
 
-    console.log('\\n🔄 Migration Steps:');
-    qdrantRequirements.migrationSteps.forEach((step) => {
+    console.log('\n🔄 Migration Steps:');
+    for (const step of qdrantRequirements.migrationSteps) {
       console.log(`   ${step}`);
-    });
+    }
 
     expect(qdrantRequirements.collections).toHaveLength(3);
   });

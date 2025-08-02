@@ -2,13 +2,11 @@ import type { AuthStackParamList } from '@/navigation/types';
 import Header from '@/shared/components/Header';
 import { useAlert } from '@/shared/lib/AlertContext';
 import { errorService } from '@/shared/services/errorService';
-import EmailIcon from '@assets/icons/EmailIcon.svg';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm } from '@tanstack/react-form';
 import React, { useState, useRef, useEffect } from 'react';
 import {
   ActivityIndicator,
-  Image,
   Keyboard,
   Text,
   TextInput,
@@ -17,9 +15,12 @@ import {
   View,
 } from 'react-native';
 import { Platform } from 'react-native';
+import { Image } from 'expo-image';
 import { AppleOAuthButton, GoogleOAuthButton } from '../components/OAuthButtons';
 import { useAuth } from '../hooks/useAuth';
 import { usePasskey } from '../hooks/usePasskey';
+import { EmailIconSvg } from '@assets/icons/svgStrings';
+import { svgToDataUri } from '@/shared/utils/svgUtils';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'Login'>;
@@ -244,7 +245,10 @@ export default function LoginScreen({ navigation }: Props) {
                     className="bg-white h-[60px] rounded-[16px] shadow-md flex-row items-center px-[9px] mb-[64px]"
                     style={shadowStyle}
                   >
-                    <EmailIcon width={35} height={35} style={{ marginRight: 14 }} />
+                    <Image
+                      source={{ uri: svgToDataUri(EmailIconSvg) }}
+                      style={{ width: 35, height: 35, marginRight: 14 }}
+                    />
                     <TextInput
                       ref={emailInputRef}
                       autoFocus={false}

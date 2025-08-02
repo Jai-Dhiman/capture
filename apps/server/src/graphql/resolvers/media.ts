@@ -21,11 +21,11 @@ export const mediaResolvers = {
         }
 
         if (count === 1) {
-          const upload = await imageService.getUploadUrl();
+          const upload = await imageService.getUploadUrl(context.user.id);
           return { uploads: [upload] };
         }
 
-        const uploads = await imageService.getBatchUploadUrls(count);
+        const uploads = await imageService.getBatchUploadUrls(context.user.id, 'user', count);
         return { uploads };
       } catch (error) {
         console.error('Upload URL generation error:', error);

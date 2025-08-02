@@ -186,8 +186,6 @@ export class cachingService implements CachingService {
         const batch = keys.slice(i, i + batchSize);
         await Promise.all(batch.map(key => this.kv.delete(key)));
       }
-      
-      console.log(`[CACHE] Flushed ${keys.length} cache entries`);
     } catch (error) {
       console.error('[CACHE] Flush error:', error);
     }
@@ -250,6 +248,7 @@ export const CacheKeys = {
   cdnUrl: (mediaId: string, variant?: string, format?: string) =>
     `cdn_url:${mediaId}${variant ? `:${variant}` : ''}${format ? `:${format}` : ''}`,
   feedPage: (userId: string, cursor?: string) => `feed:${userId}:${cursor || 'start'}`,
+  followingFeed: (userId: string, limit: number, cursor?: string) => `following_feed:${userId}:${limit}:${cursor || 'start'}`,
   hashtag: (hashtagId: string) => `hashtag:${hashtagId}`,
   comment: (commentId: string) => `comment:${commentId}`,
   postComments: (postId: string) => `post_comments:${postId}`,

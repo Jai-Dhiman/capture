@@ -26,12 +26,13 @@ interface ProcessingResult {
 }
 
 interface BatchGroup {
-  contentType: string;
+  contentType: 'text' | 'image' | 'multimodal';
   messages: Array<{
     message: any;
     postId: string;
     content: string;
     hashtags: string[];
+    postType?: 'text' | 'image' | 'multimodal';
   }>;
 }
 
@@ -143,7 +144,7 @@ async function groupMessagesByContentType(
       const validHashtags = hashtags.filter((tag): tag is string => tag !== null);
       
       // Determine content type for batching
-      const contentType = determineContentType(post.content, validHashtags);
+      const contentType = await determineContentType(postId, post.content, validHashtags, db);
       
       if (!groups.has(contentType)) {
         groups.set(contentType, {
@@ -156,7 +157,8 @@ async function groupMessagesByContentType(
         message,
         postId,
         content: post.content,
-        hashtags: validHashtags
+        hashtags: validHashtags,
+        postType: contentType
       });
       
     } catch (error) {
@@ -167,12 +169,41 @@ async function groupMessagesByContentType(
   return Array.from(groups.values());
 }
 
-function determineContentType(content: string, hashtags: string[]): string {
-  // Simple content type determination - could be enhanced with ML classification
-  if (hashtags.length > 5) return 'hashtag-heavy';
-  if (content.length > 500) return 'long-form';
-  if (content.includes('http')) return 'link-content';
-  return 'standard';
+async function determineContentType(
+  postId: string, 
+  content: string, 
+  hashtags: string[], 
+  db: any
+): Promise<'text' | 'image' | 'multimodal'> {
+  try {
+    // Check if post has associated media
+    const mediaRecords = await db
+      .select({ type: schema.media.type })
+      .from(schema.media)
+      .where(eq(schema.media.postId, postId))
+      .all();
+
+    const hasMedia = mediaRecords.length > 0;
+    const hasImageMedia = mediaRecords.some(media => media.type === 'image');
+    
+    if (!hasMedia) {
+      // No media attachments - pure text post
+      return 'text';
+    } else if (hasImageMedia && content.trim().length > 0) {
+      // Has images AND text content - multimodal
+      return 'multimodal';
+    } else if (hasImageMedia) {
+      // Has images but minimal/no text - image post
+      return 'image';
+    } else {
+      // Has media but not images (video, etc.) - treat as multimodal for now
+      return 'multimodal';
+    }
+  } catch (error) {
+    console.warn(`Failed to determine content type for post ${postId}:`, error);
+    // Fallback to text type for safety
+    return 'text';
+  }
 }
 
 async function processBatchGroup(group: BatchGroup, env: Bindings): Promise<ProcessingResult[]> {
@@ -198,10 +229,10 @@ async function processBatchGroup(group: BatchGroup, env: Bindings): Promise<Proc
 }
 
 async function processIndividualMessage(
-  msgData: { message: any; postId: string; content: string; hashtags: string[] },
+  msgData: { message: any; postId: string; content: string; hashtags: string[]; postType?: 'text' | 'image' | 'multimodal' },
   env: Bindings
 ): Promise<ProcessingResult> {
-  const { message, postId, hashtags } = msgData;
+  const { message, postId, hashtags, postType } = msgData;
   const messageId = message.id;
   const startTime = Date.now();
   
@@ -225,6 +256,37 @@ async function processIndividualMessage(
       throw new Error(`Post or userId not found: ${postId}`);
     }
     
+    // Determine post type if not provided (for backward compatibility)
+    const effectivePostType = postType || await determineContentType(postId, post.content, hashtags, db);
+    
+    // Extract media data for image posts (for future enhancement)
+    let mediaData = null;
+    if (effectivePostType === 'image' || effectivePostType === 'multimodal') {
+      try {
+        const mediaRecords = await db
+          .select({
+            id: schema.media.id,
+            type: schema.media.type,
+            storageKey: schema.media.storageKey,
+            order: schema.media.order,
+          })
+          .from(schema.media)
+          .where(eq(schema.media.postId, postId))
+          .orderBy(schema.media.order)
+          .all();
+        
+        if (mediaRecords && mediaRecords.length > 0) {
+          mediaData = {
+            totalItems: mediaRecords.length,
+            imageItems: mediaRecords.filter(m => m.type === 'image'),
+            hasImages: mediaRecords.some(m => m.type === 'image'),
+          };
+        }
+      } catch (error) {
+        console.warn(`Failed to extract media data for post ${postId}:`, error);
+      }
+    }
+    
     const vectorData = await generatePostEmbedding(
       postId,
       post.content,
@@ -232,6 +294,8 @@ async function processIndividualMessage(
       env,
       post.userId,
       !!post.authorIsPrivate,
+      effectivePostType,
+      mediaData,
     );
     
     if (!vectorData || !Array.isArray(vectorData.vector) || vectorData.vector.length === 0) {
@@ -351,6 +415,9 @@ async function fallbackIndividualProcessing(messages: any[], env: Bindings): Pro
           .then((rows) => rows.map((r) => r.name));
         const validHashtags = hashtags.filter((tag): tag is string => tag !== null);
         
+        // Determine post type for fallback processing
+        const postType = await determineContentType(postId, post.content, validHashtags, db);
+        
         const vectorData = await generatePostEmbedding(
           postId,
           post.content,
@@ -358,6 +425,8 @@ async function fallbackIndividualProcessing(messages: any[], env: Bindings): Pro
           env,
           post.userId,
           !!post.authorIsPrivate,
+          postType,
+          null, // No media data in fallback processing for simplicity
         );
         
         if (!vectorData || !Array.isArray(vectorData.vector) || vectorData.vector.length === 0) {
@@ -511,6 +580,8 @@ async function processUserEmbedding(
     };
     
   } catch (error) {
+    // Still acknowledge the message to avoid infinite retries
+    message.ack();
     return {
       success: false,
       messageId,
@@ -771,6 +842,8 @@ async function generatePostEmbedding(
   env: Bindings,
   userId: string,
   isPrivate: boolean,
+  postType?: 'text' | 'image' | 'multimodal',
+  mediaData?: any,
 ): Promise<{
   vector: number[];
   postId: string;
@@ -782,6 +855,12 @@ async function generatePostEmbedding(
     const cachingService = createCachingService(env);
     const embeddingService = createEmbeddingService(env, cachingService);
     
+    // Note: mediaData is extracted but not yet used in embedding generation
+    // Future enhancement: incorporate image content directly into multimodal embeddings
+    if (mediaData && (postType === 'image' || postType === 'multimodal')) {
+      console.debug(`Post ${postId} has ${mediaData.totalItems} media items, ${mediaData.imageItems.length} images`);
+    }
+    
     // Generate embedding for post content + hashtags
     const result = await embeddingService.generatePostEmbedding(
       postId,
@@ -789,6 +868,8 @@ async function generatePostEmbedding(
       hashtags,
       userId,
       isPrivate,
+      'voyage',
+      postType,
     );
     
     return {

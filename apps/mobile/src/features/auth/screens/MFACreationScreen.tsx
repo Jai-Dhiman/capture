@@ -35,7 +35,7 @@ export default function MFACreationScreen({ navigation }: Props) {
       title: 'Authenticator App',
       description: 'Use apps like Google Authenticator or Authy',
       icon: '🔐',
-      available: false, // Not implemented yet
+      available: true,
     },
   ];
 
@@ -45,8 +45,13 @@ export default function MFACreationScreen({ navigation }: Props) {
       return;
     }
 
-    // For now, we'll just simulate the setup
-    // In a real implementation, you'd integrate with your backend
+    if (selectedMFA === 'authenticator') {
+      // Navigate to TOTP setup screen
+      navigation.navigate('TOTPSetup');
+      return;
+    }
+
+    // For other MFA methods (SMS, email), show placeholder
     Alert.alert(
       'MFA Setup',
       `${mfaOptions.find((option) => option.id === selectedMFA)?.title} setup would be implemented here.`,
@@ -79,32 +84,27 @@ export default function MFACreationScreen({ navigation }: Props) {
     }
   };
 
+
   const handleSkip = () => {
-    if (isMandatory) {
-      Alert.alert(
-        'Security Required',
-        'Multi-factor authentication is required to continue. Please select an option.',
-        [{ text: 'OK', style: 'default' }],
-      );
-    } else {
-      navigation.navigate('CreateProfile');
-    }
+    // Always allow skipping for now - passkey requirement is disabled
+    // Update auth stage to indicate profile is needed
+    const setStage = useAuthStore.getState().setStage;
+    setStage('profileRequired');
+    navigation.navigate('CreateProfile');
   };
 
   return (
     <View style={{ flex: 1 }}>
-      <Header showBackButton={!isMandatory} onBackPress={() => navigation.goBack()} />
+      <Header showBackButton onBackPress={() => navigation.goBack()} />
 
       <ScrollView className="flex-1 bg-white">
         <View className="flex-1 p-6 justify-center">
           <Text className="text-3xl font-bold text-center mb-4 text-gray-900 font-roboto">
-            {isMandatory ? 'Security Setup Required' : 'Multi-Factor Authentication'}
+            Multi-Factor Authentication
           </Text>
 
           <Text className="text-base text-center mb-8 leading-6 text-gray-600 font-roboto">
-            {isMandatory
-              ? 'Choose a multi-factor authentication method to secure your account and continue.'
-              : 'Add an extra layer of security to protect your account with multi-factor authentication.'}
+            Add an extra layer of security to protect your account with multi-factor authentication.
           </Text>
 
           <View className="mb-8">
@@ -169,22 +169,18 @@ export default function MFACreationScreen({ navigation }: Props) {
               <Text className="text-base font-bold font-roboto text-black">Set Up MFA</Text>
             </TouchableOpacity>
 
-            {!isMandatory && (
-              <TouchableOpacity
-                className="bg-transparent py-4 px-6 rounded-xl items-center border border-gray-300"
-                onPress={handleSkip}
-              >
-                <Text className="text-gray-600 text-base font-medium font-roboto">
-                  Skip for now
-                </Text>
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity
+              className="bg-transparent py-4 px-6 rounded-xl items-center border border-gray-300"
+              onPress={handleSkip}
+            >
+              <Text className="text-gray-600 text-base font-medium font-roboto">
+                Skip for now
+              </Text>
+            </TouchableOpacity>
           </View>
 
           <Text className="text-sm text-center text-gray-400 italic font-roboto">
-            {isMandatory
-              ? 'Multi-factor authentication is required to use the app securely.'
-              : 'You can always set up MFA later in your account settings.'}
+            You can always set up MFA later in your account settings.
           </Text>
         </View>
       </ScrollView>

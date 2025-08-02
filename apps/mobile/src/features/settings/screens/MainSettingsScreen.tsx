@@ -2,22 +2,14 @@ import { useAuth } from '@/features/auth/hooks/useAuth';
 import { MediaImage } from '@/features/post/components/MediaImage';
 import { useProfileStore } from '@/features/profile/stores/profileStore';
 import type { SettingsStackParamList } from '@/navigation/types';
-import AccountIcon from '@assets/icons/AccountIcon.svg';
-import AlgorithmIcon from '@assets/icons/AlgorithmIcon.svg';
-import BlockIcon from '@assets/icons/BlockIcon.svg';
-import CustomBackIcon from '@assets/icons/CustomBackIcon.svg';
-import CustomizeIcon from '@assets/icons/CustomizeIcon.svg';
-import EmailIcon from '@assets/icons/EmailIcon.svg';
-import EmptyIcon from '@assets/icons/EmptyIcon.svg';
-import FontBookIcon from '@assets/icons/FontBookIcon.svg';
-import LockIcon2 from '@assets/icons/LockIcon2.svg';
-import NotificationIcon from '@assets/icons/NotificationIcon.svg';
-import ShieldIcon from '@assets/icons/ShieldIcon.svg';
-import UserVerifiedIcon from '@assets/icons/UserVerifiedIcon.svg';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React from 'react';
 import { ScrollView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
+import { AccountIconSvg, AlgorithmIconSvg, BlockIconSvg, CustomBackIconSvg, CustomizeIconSvg, EmailIconSvg, EmptyIconSvg, FontBookIconSvg, LockIcon2Svg, NotificationIconSvg, ShieldIconSvg, UserVerifiedIconSvg } from '@assets/icons/svgStrings';
+import { svgToDataUri } from '@/shared/utils/svgUtils';
+import { Image } from 'expo-image';
+
 
 type NavigationProp = NativeStackNavigationProp<SettingsStackParamList, 'MainSettings'>;
 
@@ -44,7 +36,10 @@ export default function MainSettingsScreen() {
           onPress={goBack}
           activeOpacity={0.7}
         >
-          <CustomBackIcon width={30} height={30} />
+          <Image
+        source={{ uri: svgToDataUri(CustomBackIconSvg) }}
+        style={[{ width: 30, height: 30 }, {}]}
+      />
         </TouchableOpacity>
         <Text className="text-center text-4xl font-medium">Settings</Text>
       </View>
@@ -75,55 +70,94 @@ export default function MainSettingsScreen() {
             className="flex-row items-center p-3 border-b border-black border-opacity-20"
             onPress={() => navigation.navigate('BlockedUsers')}
           >
-            <BlockIcon height={25} width={25} />
+            <Image
+        source={{ uri: svgToDataUri(BlockIconSvg) }}
+        style={[{ width: 25, height: 25 }, {}]}
+      />
             <Text className="ml-4 text-xs font-bold">Blocked Profiles</Text>
             <View className="flex-1" />
-            <EmptyIcon height={20} width={20} />
+            <Image
+        source={{ uri: svgToDataUri(EmptyIconSvg) }}
+        style={[{ width: 20, height: 20 }, {}]}
+      />
           </TouchableOpacity>
 
           <TouchableOpacity className="flex-row items-center p-3 border-b border-black border-opacity-20">
-            <EmailIcon height={25} width={25} />
+            <Image
+        source={{ uri: svgToDataUri(EmailIconSvg) }}
+        style={[{ width: 25, height: 25 }, {}]}
+      />
             <Text className="ml-4 text-xs font-bold">Private Messaging Preferences</Text>
             <View className="flex-1" />
-            <EmptyIcon height={20} width={20} />
+            <Image
+        source={{ uri: svgToDataUri(EmptyIconSvg) }}
+        style={[{ width: 20, height: 20 }, {}]}
+      />
           </TouchableOpacity>
 
           <TouchableOpacity className="flex-row items-center p-3 border-b border-black border-opacity-20">
-            <AlgorithmIcon height={25} width={25} />
+            <Image
+        source={{ uri: svgToDataUri(AlgorithmIconSvg) }}
+        style={[{ width: 25, height: 25 }, {}]}
+      />
             <Text className="ml-4 text-xs font-bold">Algorithm Preferences</Text>
             <View className="flex-1" />
-            <EmptyIcon height={20} width={20} />
+            <Image
+        source={{ uri: svgToDataUri(EmptyIconSvg) }}
+        style={[{ width: 20, height: 20 }, {}]}
+      />
           </TouchableOpacity>
 
           <TouchableOpacity className="flex-row items-center p-3">
-            <LockIcon2 height={25} width={25} />
+            <Image
+        source={{ uri: svgToDataUri(LockIcon2Svg) }}
+        style={[{ width: 25, height: 25 }, {}]}
+      />
             <Text className="ml-4 text-xs font-bold">Data & Privacy Policy</Text>
             <View className="flex-1" />
-            <EmptyIcon height={20} width={20} />
+            <Image
+        source={{ uri: svgToDataUri(EmptyIconSvg) }}
+        style={[{ width: 20, height: 20 }, {}]}
+      />
           </TouchableOpacity>
         </View>
 
         {/* Customization Section */}
         <View className="bg-white bg-opacity-0 rounded-[10px] shadow border border-black mb-6">
           <TouchableOpacity className="flex-row items-center p-3 border-b border-black border-opacity-20">
-            <NotificationIcon height={25} width={25} />
+            <Image
+        source={{ uri: svgToDataUri(NotificationIconSvg) }}
+        style={[{ width: 25, height: 25 }, {}]}
+      />
             <Text className="ml-4 text-xs font-bold">Notification Customization</Text>
             <View className="flex-1" />
-            <EmptyIcon height={20} width={20} />
+            <Image
+        source={{ uri: svgToDataUri(EmptyIconSvg) }}
+        style={[{ width: 20, height: 20 }, {}]}
+      />
           </TouchableOpacity>
 
           <TouchableOpacity className="flex-row items-center p-3 border-b border-black border-opacity-20">
-            <CustomizeIcon height={25} width={25} />
+            <Image
+        source={{ uri: svgToDataUri(CustomizeIconSvg) }}
+        style={[{ width: 25, height: 25 }, {}]}
+      />
             <Text className="ml-4 text-xs font-bold">Appearance & Customization</Text>
             <View className="flex-1" />
-            <EmptyIcon height={20} width={20} />
+            <Image
+        source={{ uri: svgToDataUri(EmptyIconSvg) }}
+        style={[{ width: 20, height: 20 }, {}]}
+      />
           </TouchableOpacity>
 
           <TouchableOpacity
             className="flex-row items-center p-3 border-b border-black border-opacity-20"
             disabled={true}
           >
-            <FontBookIcon height={25} width={25} />
+            <Image
+        source={{ uri: svgToDataUri(FontBookIconSvg) }}
+        style={[{ width: 25, height: 25 }, {}]}
+      />
             <View className="ml-4">
               <Text className="text-xs font-bold">Font Customization</Text>
               <Text className="text-[10px] text-black opacity-70">
@@ -131,7 +165,10 @@ export default function MainSettingsScreen() {
               </Text>
             </View>
             <View className="flex-1" />
-            <EmptyIcon height={20} width={20} />
+            <Image
+        source={{ uri: svgToDataUri(EmptyIconSvg) }}
+        style={[{ width: 20, height: 20 }, {}]}
+      />
           </TouchableOpacity>
         </View>
 
@@ -143,33 +180,57 @@ export default function MainSettingsScreen() {
         {/* Support Section */}
         <View className="bg-white bg-opacity-0 rounded-[10px] shadow border border-black mb-8">
           <TouchableOpacity className="flex-row items-center p-3 border-b border-black border-opacity-20">
-            <ShieldIcon height={25} width={25} />
+            <Image
+        source={{ uri: svgToDataUri(ShieldIconSvg) }}
+        style={[{ width: 25, height: 25 }, {}]}
+      />
             <Text className="ml-4 text-xs font-bold">Report User</Text>
             <View className="flex-1" />
-            <EmptyIcon height={20} width={20} />
+            <Image
+        source={{ uri: svgToDataUri(EmptyIconSvg) }}
+        style={[{ width: 20, height: 20 }, {}]}
+      />
           </TouchableOpacity>
 
           <TouchableOpacity className="flex-row items-center p-3 border-b border-black border-opacity-20">
-            <AccountIcon height={25} width={25} />
+            <Image
+        source={{ uri: svgToDataUri(AccountIconSvg) }}
+        style={[{ width: 25, height: 25 }, {}]}
+      />
             <Text className="ml-4 text-xs font-bold">Report Bug</Text>
             <View className="flex-1" />
-            <EmptyIcon height={20} width={20} />
+            <Image
+        source={{ uri: svgToDataUri(EmptyIconSvg) }}
+        style={[{ width: 20, height: 20 }, {}]}
+      />
           </TouchableOpacity>
 
           <TouchableOpacity className="flex-row items-center p-3">
-            <UserVerifiedIcon height={25} width={25} />
+            <Image
+        source={{ uri: svgToDataUri(UserVerifiedIconSvg) }}
+        style={[{ width: 25, height: 25 }, {}]}
+      />
             <Text className="ml-4 text-xs font-bold">Feature Request</Text>
             <View className="flex-1" />
-            <EmptyIcon height={20} width={20} />
+            <Image
+        source={{ uri: svgToDataUri(EmptyIconSvg) }}
+        style={[{ width: 20, height: 20 }, {}]}
+      />
           </TouchableOpacity>
         </View>
 
         <View className="bg-white bg-opacity-0 rounded-[10px] shadow border border-black mb-8 mt-2">
           <TouchableOpacity className="flex-row items-center p-3" onPress={handleLogout}>
-            <UserVerifiedIcon height={25} width={25} />
+            <Image
+        source={{ uri: svgToDataUri(UserVerifiedIconSvg) }}
+        style={[{ width: 25, height: 25 }, {}]}
+      />
             <Text className="ml-4 text-xs font-bold text-red-600">Logout</Text>
             <View className="flex-1" />
-            <EmptyIcon height={20} width={20} />
+            <Image
+        source={{ uri: svgToDataUri(EmptyIconSvg) }}
+        style={[{ width: 20, height: 20 }, {}]}
+      />
           </TouchableOpacity>
         </View>
       </ScrollView>

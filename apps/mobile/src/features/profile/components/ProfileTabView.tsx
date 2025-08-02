@@ -1,8 +1,5 @@
 import { PostItem } from '@/features/post/components/PostItem';
 import { ThreadItem } from '@/features/post/components/ThreadItem';
-import SavedPosts from '@assets/icons/FavoriteIcon.svg';
-import PhotosIcon from '@assets/icons/PhotosIcon.svg';
-import TextIcon from '@assets/icons/TextIcon.svg';
 import React, { useState } from 'react';
 import {
   Dimensions,
@@ -14,6 +11,10 @@ import {
 } from 'react-native';
 import { SceneMap, TabView } from 'react-native-tab-view';
 import { PostsGrid } from './PostsGrid';
+import { FavoriteIconSvg, PhotosIconSvg, TextIconSvg } from '@assets/icons/svgStrings';
+import { svgToDataUri } from '@/shared/utils/svgUtils';
+import { Image } from 'expo-image';
+
 
 const INITIAL_PAGE_SIZE = 15;
 
@@ -234,7 +235,10 @@ export const ProfileTabView = ({
                 : 'items-center justify-center'
             }
           >
-            <PhotosIcon width={20} height={20} />
+            <Image
+        source={{ uri: svgToDataUri(PhotosIconSvg) }}
+        style={[{ width: 20, height: 20 }, {}]}
+      />
           </View>
         </TouchableOpacity>
 
@@ -246,7 +250,10 @@ export const ProfileTabView = ({
                 : 'items-center justify-center'
             }
           >
-            <TextIcon width={20} height={20} />
+            <Image
+        source={{ uri: svgToDataUri(TextIconSvg) }}
+        style={[{ width: 20, height: 20 }, {}]}
+      />
           </View>
         </TouchableOpacity>
 
@@ -258,7 +265,10 @@ export const ProfileTabView = ({
                 : 'items-center justify-center'
             }
           >
-            <SavedPosts width={20} height={20} />
+            <Image
+        source={{ uri: svgToDataUri(FavoriteIconSvg) }}
+        style={[{ width: 20, height: 20 }, {}]}
+      />
           </View>
         </TouchableOpacity>
       </View>

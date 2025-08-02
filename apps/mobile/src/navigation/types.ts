@@ -26,6 +26,8 @@ export type AuthStackParamList = {
   };
   PasskeySetup: undefined;
   MFACreation: undefined;
+  TOTPSetup: undefined;
+  TOTPVerification: undefined;
   CreateProfile: undefined;
 };
 
@@ -36,7 +38,9 @@ export type AppStackParamList = {
   SavedPosts: undefined;
   Search: undefined;
   Settings: NavigatorScreenParams<SettingsStackParamList> | undefined;
-  ImageEditScreen: { imageUri: string };
+  ImageEditScreen: { 
+    imageUri: string;
+  };
   PhotoSelectionScreen: {
     maxSelection?: number;
     onPhotosSelected: (

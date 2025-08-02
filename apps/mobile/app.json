@@ -5,8 +5,9 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/CaptureLogo.png",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "userInterfaceStyle": "light",
+    "jsEngine": "hermes",
     "splash": {
       "image": "./assets/CaptureLogo.png",
       "resizeMode": "contain",
@@ -36,49 +37,6 @@
       }
     },
     "scheme": "com.obscuratechnologies.capture",
-    "linking": {
-      "prefixes": [
-        "com.obscuratechnologies.capture://",
-        "capture://",
-        "http://localhost:8081",
-        "exp://192.168.1.64:8081",
-        "exp://7kyeaek-anonymous-8081.exp.direct",
-        "https://www.captureapp.org",
-        "https://capture-api.jai-d.workers.dev"
-      ],
-      "config": {
-        "screens": {
-          "Auth": {
-            "screens": {
-              "Login": "auth/login",
-              "Signup": "auth/signup",
-              "EmailSignup": "auth/email-signup",
-              "VerifyPhoneNumber": "auth/verify-phone",
-              "CreateProfile": "auth/create-profile",
-              "ForgotPassword": "auth/forgot-password",
-              "ResetPassword": "auth/reset-password",
-              "EmailVerificationPending": "auth/verify-email"
-            }
-          },
-          "App": {
-            "screens": {
-              "Feed": "feed",
-              "NewPost": "new-post",
-              "Profile": "profile/:userId?",
-              "Search": "search",
-              "Settings": {
-                "screens": {
-                  "MainSettings": "settings",
-                  "BlockedUsers": "settings/blocked-users",
-                  "AccountSettings": "settings/account",
-                  "VerifyPhone": "settings/verify-phone"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "web": {
       "bundler": "metro",
       "favicon": "./assets/CaptureLogo.png",

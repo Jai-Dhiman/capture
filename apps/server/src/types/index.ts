@@ -8,11 +8,15 @@ export type Bindings = {
   Capture_Rate_Limits: KVNamespace;
   POST_VECTORS: KVNamespace;
   USER_VECTORS: KVNamespace;
+  METADATA_KV: KVNamespace;
   CACHE_KV: KVNamespace;
   CLOUDFLARE_ACCOUNT_ID: string;
   CLOUDFLARE_ACCOUNT_HASH: string;
   CLOUDFLARE_IMAGES_TOKEN: string;
   CLOUDFLARE_IMAGES_KEY: string;
+  R2_ACCESS_KEY_ID: string;
+  R2_SECRET_ACCESS_KEY: string;
+  R2_ENDPOINT: string;
   SEED_SECRET: string;
   JWT_SECRET: string;
   RESEND_API_KEY: string;

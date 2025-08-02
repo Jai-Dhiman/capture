@@ -131,6 +131,8 @@ interface CandidatePost {
   saveCount?: number;
   commentCount?: number;
   viewCount?: number;
+  seenAt?: string;
+  isSeen?: boolean;
 }
 
 export class UnifiedDiscoveryResolver {
@@ -200,8 +202,15 @@ export class UnifiedDiscoveryResolver {
         privacySettings,
       );
 
-      // Sort and limit results
-      const sortedCandidates = processedCandidates
+      // Sort and limit results with deduplication
+      const uniqueProcessedCandidates = new Map();
+      for (const candidate of processedCandidates) {
+        if (!uniqueProcessedCandidates.has(candidate.id)) {
+          uniqueProcessedCandidates.set(candidate.id, candidate);
+        }
+      }
+      
+      const sortedCandidates = Array.from(uniqueProcessedCandidates.values())
         .sort((a, b) => b.scores.final - a.scores.final)
         .slice(0, limit);
 
@@ -211,7 +220,7 @@ export class UnifiedDiscoveryResolver {
       const hasMore = candidates.length >= limit * 3;
       const nextCursor =
         hasMore && sortedCandidates.length > 0
-          ? sortedCandidates[sortedCandidates.length - 1].id
+          ? sortedCandidates[sortedCandidates.length - 1].createdAt
           : undefined;
 
       return {
@@ -275,13 +284,21 @@ export class UnifiedDiscoveryResolver {
       const engagement = this.computeEngagementScore(candidate);
 
       // Compute final weighted score
-      const finalScore =
+      let finalScore =
         (similarity * weights.similarity +
           temporal * weights.temporal +
           diversity * weights.diversity +
           engagement * weights.engagement +
           privacy * weights.privacy) /
         5;
+
+      // Apply devaluation for seen posts
+      let devaluationScore = 1.0;
+      if (candidate.isSeen && candidate.seenAt) {
+        const daysSinceSeen = (Date.now() - new Date(candidate.seenAt).getTime()) / (24 * 60 * 60 * 1000);
+        devaluationScore = this.calculateDevaluationMultiplier(daysSinceSeen);
+        finalScore *= devaluationScore;
+      }
 
       results.push({
         id: candidate.id,
@@ -523,28 +540,42 @@ export class UnifiedDiscoveryResolver {
       return cached;
     }
 
-    // Get visible posts for user
-    const posts = await getVisiblePostsForUser(userId, this.bindings, { limit });
+    // Get visible posts for user with cursor-based pagination
+    const posts = await getVisiblePostsForUser(userId, this.bindings, { 
+      limit,
+      maxCreatedAt: cursor // Use cursor for pagination
+    });
 
-    // Get seen posts to filter out
-    const seenPosts = await getSeenPostsForUser(userId, this.bindings);
-    const seenPostIds = new Set(seenPosts);
+    // Get seen posts with timestamps for devaluation
+    const seenPostsData = await getSeenPostsForUser(userId, this.bindings);
+    const seenPostMap = new Map(seenPostsData.map(seen => [seen.postId, seen.seenAt]));
 
-    // Filter out seen posts
-    const unseenPosts = posts.filter((post) => !seenPostIds.has(post.id));
+    // Include all posts (seen and unseen) for graduated devaluation
+    const allPosts = posts;
 
-    // Convert to candidate format
-    const candidates: CandidatePost[] = unseenPosts.map((post) => ({
-      id: post.id,
-      userId: post.userId,
-      content: post.content,
-      createdAt: post.createdAt,
-      hashtags: [], // No hashtags in PostWithPrivacy interface - will need to be fetched separately if needed
-      isPrivate: Boolean(post.authorIsPrivate),
-      saveCount: post._saveCount || 0,
-      commentCount: post._commentCount || 0,
-      viewCount: 0, // No viewCount in PostWithPrivacy interface
-    }));
+    // Convert to candidate format with seen metadata and ensure uniqueness
+    const candidateMap = new Map<string, CandidatePost>();
+    
+    for (const post of allPosts) {
+      if (!candidateMap.has(post.id)) {
+        const seenAt = seenPostMap.get(post.id);
+        candidateMap.set(post.id, {
+          id: post.id,
+          userId: post.userId,
+          content: post.content,
+          createdAt: post.createdAt,
+          hashtags: [], // No hashtags in PostWithPrivacy interface - will need to be fetched separately if needed
+          isPrivate: Boolean(post.authorIsPrivate),
+          saveCount: post._saveCount || 0,
+          commentCount: post._commentCount || 0,
+          viewCount: 0, // No viewCount in PostWithPrivacy interface
+          seenAt: seenAt,
+          isSeen: !!seenAt,
+        });
+      }
+    }
+    
+    const candidates: CandidatePost[] = Array.from(candidateMap.values());
 
     // Cache for 5 minutes
     await this.cachingService.set(cacheKey, candidates, 300);
@@ -663,6 +694,26 @@ export class UnifiedDiscoveryResolver {
       normalizedComments * commentWeight +
       normalizedViews * viewWeight
     );
+  }
+
+  /**
+   * Calculate devaluation multiplier for seen posts
+   */
+  private calculateDevaluationMultiplier(daysSinceSeen: number): number {
+    // Base devaluation: 0.1 (90% reduction initially)
+    const baseDevaluation = 0.1;
+    
+    // Recovery rate: 0.05 per day (5% recovery daily)
+    const recoveryRate = 0.05;
+    
+    // Exponential recovery curve over ~18 days
+    const recoveryDays = 18.0;
+    const recoveryComponent = recoveryRate * daysSinceSeen;
+    const decayComponent = Math.exp(-daysSinceSeen / recoveryDays) * baseDevaluation;
+    
+    // Calculate multiplier with minimum of 0.1 and maximum of 1.0
+    const multiplier = decayComponent + recoveryComponent;
+    return Math.max(0.1, Math.min(1.0, multiplier));
   }
 
   /**

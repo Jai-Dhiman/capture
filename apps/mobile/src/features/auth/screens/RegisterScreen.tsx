@@ -1,11 +1,14 @@
 import type { AuthStackParamList } from '@/navigation/types';
 import Header from '@/shared/components/Header';
-import EmailIcon from '@assets/icons/EmailIcon.svg';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React from 'react';
-import { Image, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { Platform } from 'react-native';
 import { AppleOAuthButton, GoogleOAuthButton } from '../components/OAuthButtons';
+import { EmailIconSvg } from '@assets/icons/svgStrings';
+import { svgToDataUri } from '@/shared/utils/svgUtils';
+import { Image } from 'expo-image';
+
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'RegisterScreen'>;
@@ -55,7 +58,10 @@ export default function RegisterScreen({ navigation }: Props) {
               onPress={() => navigation.navigate('EmailSignup')}
               className="bg-white h-[56px] rounded-[30px] shadow-md flex-row items-center justify-center mb-[30px]"
             >
-              <EmailIcon width={24} height={24} style={{ marginRight: 16 }} />
+              <Image
+                source={{ uri: svgToDataUri(EmailIconSvg) }}
+                style={[{ width: 24, height: 24 }, { marginRight: 16 }]}
+              />
               <Text className="text-base font-bold font-roboto text-[#1C1C1C]">
                 Continue with Email
               </Text>

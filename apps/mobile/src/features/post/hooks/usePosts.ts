@@ -25,7 +25,6 @@ export const useUserPosts = (userId?: string) => {
                 media {
                   id
                   storageKey
-                  url
                   type
                   order
                 }

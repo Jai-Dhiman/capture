@@ -1,7 +1,5 @@
 # Project Plan: User Interest Theme Discovery via UMAP and API Integration
 
-(Start by moving from Cloudflare Vectorize to Qdrant, and making sure Qdrant is hooked up correctly and working )
-
 ## 1. Goal
 
 - To analyze the high-dimensional user interest vectors (derived from saved/created post embeddings and associated hashtags) using UMAP to discover latent thematic clusters within the user base.
@@ -12,7 +10,7 @@
 ## 2. Current State
 
 - User interest vectors (768 dimensions) are being generated via a weighted average of saved post embeddings, created post embeddings, and combined hashtag embeddings. These are stored in the `USER_VECTORS` KV namespace.
-- Post embeddings are stored in the `POST_VECTORS` KV namespace and Cloudflare Vectorize.
+- Post embeddings are stored in the `POST_VECTORS` KV namespace and Qdrant.
 - Source data (post content, hashtags, saved/created relationships) is stored in D1 database tables (`post`, `savedPost`, `hashtag`, `postHashtag`).
 - An API endpoint `GET /api/profile/interests` successfully retrieves and displays the source data (saved/created posts, hashtags) and confirms the existence of the user's vector.
 
