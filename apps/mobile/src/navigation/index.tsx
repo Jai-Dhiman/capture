@@ -78,14 +78,18 @@ export function MainNavigator() {
 
   // Initialize auth system on mount
   useEffect(() => {
+    console.log('[NAVIGATOR] MainNavigator mounted, initializing auth');
     initializeAuth();
   }, []);
 
   // Create a unique key that forces re-mount when auth state changes significantly
   const navigationKey = `${authStage}-${!!session}-${status}`;
 
+  console.log(`[NAVIGATOR] Auth state - stage: ${authStage}, session: ${!!session}, status: ${status}`);
+
   // Show loading screen while checking authentication
   if (status === 'checking' || status === 'pending') {
+    console.log('[NAVIGATOR] Showing loading screen');
     return <LoadingScreen />;
   }
 

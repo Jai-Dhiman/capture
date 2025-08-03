@@ -2,77 +2,74 @@ name: Server with WASM Build and Test
 
 on:
   push:
-    branches: [ main, develop ]
-    paths: [ 'apps/server/**' ]
-  pull_request:
-    branches: [ main, develop ]
-    paths: [ 'apps/server/**' ]
+    branches: [main, dev]
+    paths: ["apps/server/**"]
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Install Rust
-      uses: dtolnay/rust-toolchain@stable
-      with:
-        toolchain: stable
-        targets: wasm32-unknown-unknown
-    
-    - name: Cache Rust dependencies
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          apps/server/wasm-src/target
-        key: ${{ runner.os }}-cargo-${{ hashFiles('apps/server/wasm-src/Cargo.lock') }}
-    
-    - name: Install wasm-pack
-      run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-    
-    - name: Install Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-    
-    - name: Install pnpm
-      uses: pnpm/action-setup@v2
-      with:
-        version: 8
-    
-    - name: Build WASM package
-      run: |
-        cd apps/server
-        npm run build:wasm
-    
-    - name: Run Rust tests
-      run: |
-        cd apps/server
-        npm run test:wasm
-    
-    - name: Install server dependencies
-      run: |
-        cd apps/server
-        pnpm install
-    
-    - name: Run server tests
-      run: |
-        cd apps/server
-        pnpm test
-    
-    - name: Upload WASM artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: wasm-package
-        path: apps/server/wasm/
-    
-    - name: Check package size
-      run: |
-        cd apps/server/wasm
-        echo "WASM file size:"
-        du -h *.wasm
-        echo "Total package size:"
-        du -h .
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          targets: wasm32-unknown-unknown
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            apps/server/wasm-src/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('apps/server/wasm-src/Cargo.lock') }}
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Build WASM package
+        run: |
+          cd apps/server
+          npm run build:wasm
+
+      - name: Run Rust tests
+        run: |
+          cd apps/server
+          npm run test:wasm
+
+      - name: Install server dependencies
+        run: |
+          cd apps/server
+          pnpm install
+
+      - name: Run server tests
+        run: |
+          cd apps/server
+          pnpm test
+
+      - name: Upload WASM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm-package
+          path: apps/server/wasm/
+
+      - name: Check package size
+        run: |
+          cd apps/server/wasm
+          echo "WASM file size:"
+          du -h *.wasm
+          echo "Total package size:"
+          du -h .

@@ -37,8 +37,11 @@ const queryClient = new QueryClient({
 
 export default Sentry.wrap(function App() {
   useEffect(() => {
+    console.log('[APP] Starting app initialization');
     initializeAuth();
   }, []);
+
+  console.log('[APP] App component rendering');
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

@@ -1,6 +1,6 @@
 const config = {
-  name: "capture",
-  slug: "capture",
+  name: "Capture",
+  slug: "Capture",
   version: "1.0.0",
   orientation: "portrait",
   icon: "./assets/CaptureLogo.png",
@@ -108,7 +108,7 @@ const config = {
   },
   extra: {
     eas: {
-      projectId: "cad78a77-57e1-4d5e-b730-c779cdd2b6cb"
+      projectId: "4e5aa601-eda8-40fe-857e-44e547c19fa6"
     },
     API_URL: process.env.API_URL || "https://capture-api.jai-d.workers.dev",
     SHARE_URL: process.env.SHARE_URL || "https://www.captureapp.org"

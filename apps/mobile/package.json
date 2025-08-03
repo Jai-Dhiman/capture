@@ -20,7 +20,7 @@
     "@react-native-async-storage/async-storage": "2.1.2",
     "@react-native-community/netinfo": "^11.4.1",
     "@react-native-community/slider": "4.5.6",
-    "@react-native-google-signin/google-signin": "^14.0.1",
+    "@react-native-google-signin/google-signin": "13.3.1",
     "@react-navigation/native": "^7.0.15",
     "@react-navigation/native-stack": "^7.3.11",
     "@react-navigation/stack": "^7.1.1",
@@ -57,6 +57,8 @@
     "jotai-tanstack-query": "^0.9.0",
     "lodash": "^4.17.21",
     "lottie-react-native": "7.2.2",
+    "metro": "^0.82.5",
+    "metro-core": "^0.83.1",
     "moti": "^0.30.0",
     "nanoid": "^5.0.9",
     "nativewind": "^4.1.23",
@@ -96,6 +98,16 @@
     "@types/react": "~19.0.14",
     "metro-react-native-babel-preset": "^0.77.0",
     "tailwindcss": "3.3.2"
+  },
+  "expo": {
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "exclude": [
+          "react-native-keyboard-accessory"
+        ],
+        "listUnknownPackages": false
+      }
+    }
   },
   "private": true
 }
