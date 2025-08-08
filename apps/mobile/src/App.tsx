@@ -1,5 +1,7 @@
 import { Buffer } from 'buffer';
-global.Buffer = Buffer;
+if (typeof global.Buffer === 'undefined') {
+  global.Buffer = Buffer;
+}
 
 import { NavigationContainer } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -16,6 +18,7 @@ import { MainNavigator, linking } from '@/navigation/index';
 import { AlertProvider } from '@/shared/lib/AlertContext';
 import { ApolloProvider } from '@/shared/providers/ApolloProvider';
 import { JotaiInitializer } from '@/shared/providers/JotaiProvider';
+import ErrorBoundary from '@/shared/components/ErrorBoundary';
 import * as Sentry from '@sentry/react-native';
 import { Provider as JotaiProvider } from 'jotai';
 
@@ -38,31 +41,38 @@ const queryClient = new QueryClient({
 export default Sentry.wrap(function App() {
   useEffect(() => {
     console.log('[APP] Starting app initialization');
-    initializeAuth();
+    try {
+      initializeAuth();
+    } catch (error) {
+      console.error('[APP] Auth initialization failed:', error);
+      Sentry.captureException(error);
+    }
   }, []);
 
   console.log('[APP] App component rendering');
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <JotaiProvider>
-          <QueryClientProvider client={queryClient}>
-            <JotaiInitializer />
-            <ApolloProvider>
-              <AlertProvider>
-                <View className="flex-1 bg-black">
-                  <StatusBar style="light" />
-                  <NavigationContainer linking={linking}>
-                    <MainNavigator />
-                    <CommentDrawer />
-                  </NavigationContainer>
-                </View>
-              </AlertProvider>
-            </ApolloProvider>
-          </QueryClientProvider>
-        </JotaiProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <ErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <JotaiProvider>
+            <QueryClientProvider client={queryClient}>
+              <JotaiInitializer />
+              <ApolloProvider>
+                <AlertProvider>
+                  <View className="flex-1 bg-black">
+                    <StatusBar style="light" />
+                    <NavigationContainer linking={linking}>
+                      <MainNavigator />
+                      {/* <CommentDrawer /> */}
+                    </NavigationContainer>
+                  </View>
+                </AlertProvider>
+              </ApolloProvider>
+            </QueryClientProvider>
+          </JotaiProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 });

@@ -4,7 +4,8 @@ import { useAlert } from '@/shared/lib/AlertContext';
 import { errorService } from '@/shared/services/errorService';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm } from '@tanstack/react-form';
-import React, { useState, useRef, useEffect } from 'react';
+import * as React from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   ActivityIndicator,
   Keyboard,
@@ -35,6 +36,7 @@ type LoginState =
   | 'email-verification';
 
 export default function LoginScreen({ navigation }: Props) {
+  console.log('[LOGIN_SCREEN] LoginScreen component rendering');
   const [loginState, setLoginState] = useState<LoginState>('email');
   const [biometricName, setBiometricName] = useState<string>('Biometric');
   const emailInputRef = useRef<TextInput>(null);
@@ -323,7 +325,6 @@ export default function LoginScreen({ navigation }: Props) {
               )}
             </form.Subscribe>
 
-            {/* Fallback option for passkey */}
             {loginState === 'passkey' && (
               <View className="items-center mt-[16px]">
                 <TouchableOpacity onPress={() => setLoginState('email-verification')}>

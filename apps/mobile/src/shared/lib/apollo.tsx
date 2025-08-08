@@ -4,9 +4,13 @@ import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
 import { RetryLink } from '@apollo/client/link/retry';
 import { API_URL } from '@env';
+import Constants from 'expo-constants';
+
+// Fallback for production builds where @env might not work
+const apiUrl = API_URL || Constants.expoConfig?.extra?.API_URL || 'https://capture-api.jai-d.workers.dev';
 
 const httpLink = createHttpLink({
-  uri: `${API_URL}/graphql`,
+  uri: `${apiUrl}/graphql`,
 });
 
 const authLink = setContext(async (_, { headers }) => {
@@ -64,7 +68,7 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
 const retryLink = new RetryLink({
   delay: {
     initial: 300,
-    max: Infinity,
+    max: Number.POSITIVE_INFINITY,
     jitter: true,
   },
   attempts: {
