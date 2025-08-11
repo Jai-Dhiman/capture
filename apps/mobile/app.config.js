@@ -24,7 +24,9 @@ const config = {
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
       NSFaceIDUsageDescription: "Use Face ID to securely sign in to your account",
-      NSBiometricUsageDescription: "Use biometric authentication to securely access your account"
+      NSBiometricUsageDescription: "Use biometric authentication to securely access your account",
+      NSPhotoLibraryUsageDescription: "This app needs access to your photo library to allow you to select and share photos in your posts",
+      NSPhotoLibraryAddUsageDescription: "This app needs permission to save edited images to your photo library"
     }
   },
   android: {

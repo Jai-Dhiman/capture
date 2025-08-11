@@ -32,5 +32,12 @@ export const api = {
   // Health check endpoint (root path)
   health: () => apiRequest('/'),
   
-  // Add more API methods as needed
+  // Analytics endpoints
+  analytics: {
+    overview: () => apiRequest('/api/analytics/overview'),
+    userGrowth: () => apiRequest('/api/analytics/user-growth'),
+    contentActivity: () => apiRequest('/api/analytics/content-activity'),
+    topUsers: () => apiRequest('/api/analytics/top-users'),
+    recentActivity: () => apiRequest('/api/analytics/recent-activity'),
+  },
 }; 

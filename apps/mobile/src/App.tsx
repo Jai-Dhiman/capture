@@ -64,7 +64,7 @@ export default Sentry.wrap(function App() {
                     <StatusBar style="light" />
                     <NavigationContainer linking={linking}>
                       <MainNavigator />
-                      {/* <CommentDrawer /> */}
+                      <CommentDrawer />
                     </NavigationContainer>
                   </View>
                 </AlertProvider>

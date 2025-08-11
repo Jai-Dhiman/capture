@@ -149,7 +149,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       )}
 
       {isLoading ? (
-        <View className="flex-row mb-4 px-6 pt-2">
+        <View className="flex-row mb-0 px-6 pt-4 bg-[#DCDCDE] pb-4">
           <View className="w-28 h-28 rounded-full overflow-hidden shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]">
             <SkeletonElement width="100%" height="100%" radius="round" />
           </View>
@@ -161,8 +161,10 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               </View>
             </View>
             <View className="mt-1">
-              <SkeletonElement width="90%" height={14} radius={4} />
-              <SkeletonElement width="80%" height={14} radius={4} />
+              <SkeletonElement width={120} height={14} radius={4} />
+              <View className="mt-1">
+                <SkeletonElement width={100} height={14} radius={4} />
+              </View>
             </View>
             <View className="flex-row mt-3">
               <View className="mr-2">

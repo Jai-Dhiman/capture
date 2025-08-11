@@ -36,10 +36,10 @@ export default function Profile() {
   const userId = route.params?.userId || user?.id;
   const isOwnProfile = userId === user?.id;
 
-  // Calculate tab bar position (profile header + tab bar height)
-  const profileHeaderHeight = 280; // Estimated header height
-  const tabBarHeight = 56; // Standard tab bar height
-  const tabBarBottomPosition = profileHeaderHeight + tabBarHeight;
+  // Dynamic header and tab bar height measurement
+  const [headerHeight, setHeaderHeight] = useState(280); // Default fallback
+  const [tabBarLayout, setTabBarLayout] = useState({ y: 0, height: 56 }); // Default tab bar position
+  const tabBarBottomPosition = headerHeight + tabBarLayout.y + tabBarLayout.height;
 
   const [showFollowers, setShowFollowers] = useState(false);
   const [showPostCarousel, setShowPostCarousel] = useState(false);
@@ -154,19 +154,22 @@ export default function Profile() {
   if (profileLoading) {
     return (
       <View style={{ flex: 1, backgroundColor: '#dcdcde' }}>
-        <ProfileHeader
-          isLoading
-          showBackButton
-          onBackPress={() => navigation.goBack()}
-          showMenuButton
-          onMenuPress={() => {}}
-        />
+        <View onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
+          <ProfileHeader
+            isLoading
+            showBackButton
+            onBackPress={() => navigation.goBack()}
+            showMenuButton
+            onMenuPress={() => {}}
+          />
+        </View>
         <StatusBar barStyle="dark-content" />
-        <View style={{ flex: 1, backgroundColor: '#DCDCDE' }}>
+        <View style={{ backgroundColor: '#DCDCDE' }}>
           {/* Skeleton Tab Bar */}
           <View
-            className="w-full h-12 bg-[#DCDCDE]"
+            className="w-full h-12"
             style={{
+              backgroundColor: '#DCDCDE',
               shadowColor: '#000',
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.15,
@@ -189,27 +192,33 @@ export default function Profile() {
           {/* Skeleton Posts Grid */}
           <View
             style={{
-              flex: 1,
               paddingHorizontal: containerPadding,
               paddingTop: spacing,
             }}
           >
-            <View className="flex-row flex-wrap justify-between">
-              {Array(9)
-                .fill(0)
-                .map((_, index) => (
+            {/* Create 3 rows of 3 items each */}
+            {[0, 1, 2].map((row) => (
+              <View 
+                key={row} 
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  marginBottom: spacing,
+                }}
+              >
+                {[0, 1, 2].map((col) => (
                   <View
-                    key={index}
+                    key={`${row}-${col}`}
                     style={{
                       width: itemSize,
                       height: itemSize,
-                      marginBottom: spacing,
                     }}
                   >
                     <SkeletonElement width="100%" height="100%" radius={10} />
                   </View>
                 ))}
-            </View>
+              </View>
+            ))}
           </View>
         </View>
       </View>
@@ -223,19 +232,21 @@ export default function Profile() {
           <View className="flex-1 bg-[#DCDCDE]">
             <StatusBar barStyle="dark-content" />
             <View className="px-6 pt-4">
-              <ProfileHeader
-                profileData={profileData}
-                isOwnProfile={isOwnProfile}
-                userId={userId || ''}
-                onFollowersPress={() => setShowFollowers(true)}
-                onSettingsPress={() => navigation.navigate('Settings', { screen: 'MainSettings' })}
-                showBackButton={true}
-                onBackPress={() => navigation.goBack()}
-                showMenuButton={true}
-                onMenuPress={() => {
-                  /* menu logic here */
-                }}
-              />
+              <View onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
+                <ProfileHeader
+                  profileData={profileData}
+                  isOwnProfile={isOwnProfile}
+                  userId={userId || ''}
+                  onFollowersPress={() => setShowFollowers(true)}
+                  onSettingsPress={() => navigation.navigate('Settings', { screen: 'MainSettings' })}
+                  showBackButton={true}
+                  onBackPress={() => navigation.goBack()}
+                  showMenuButton={true}
+                  onMenuPress={() => {
+                    /* menu logic here */
+                  }}
+                />
+              </View>
               <View className="mt-8 items-center">
                 <View className="bg-stone-200 rounded-lg p-6 w-full items-center">
                   <Image
@@ -258,16 +269,18 @@ export default function Profile() {
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       <View className="flex-1 bg-[#DCDCDE]">
-        <ProfileHeader
-          profileData={profileData}
-          isOwnProfile={isOwnProfile}
-          userId={userId || ''}
-          onFollowersPress={() => setShowFollowers(true)}
-          onSettingsPress={() => navigation.navigate('Settings', { screen: 'MainSettings' })}
-          showBackButton={true}
-          onBackPress={() => navigation.goBack()}
-          showMenuButton={true}
-        />
+        <View onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
+          <ProfileHeader
+            profileData={profileData}
+            isOwnProfile={isOwnProfile}
+            userId={userId || ''}
+            onFollowersPress={() => setShowFollowers(true)}
+            onSettingsPress={() => navigation.navigate('Settings', { screen: 'MainSettings' })}
+            showBackButton={true}
+            onBackPress={() => navigation.goBack()}
+            showMenuButton={true}
+          />
+        </View>
         <StatusBar barStyle="dark-content" />
         <View className="flex-1">
           <ProfileTabView
@@ -283,6 +296,7 @@ export default function Profile() {
               setShowPostCarousel(false);
             }}
             carouselActive={showPostCarousel}
+            onTabBarLayout={(event) => setTabBarLayout(event.nativeEvent.layout)}
           />
         </View>
       </View>
@@ -291,7 +305,7 @@ export default function Profile() {
         <View
           className="absolute left-0 right-0 bg-[#DCDCDE]"
           style={{
-            top: tabBarBottomPosition - 20,
+            top: tabBarBottomPosition,
             height: height - tabBarBottomPosition - (isOwnProfile ? 70 : 50),
             zIndex: 1,
           }}
