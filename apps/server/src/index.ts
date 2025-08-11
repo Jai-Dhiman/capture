@@ -3,6 +3,7 @@ import { typeDefs } from '@/graphql/schema';
 import { authMiddleware } from '@/middleware/auth';
 import { errorHandler } from '@/middleware/errorHandler';
 import { securityHeaders, sslRedirectMiddleware } from '@/middleware/security';
+import analyticsRouter from '@/routes/analytics';
 import authRouter from '@/routes/auth';
 import cacheRouter from '@/routes/cache';
 import deeplinkRouter from '@/routes/deeplink';
@@ -102,9 +103,11 @@ app.route('/', healthRoutes);
 app.route('/auth', authRouter);
 app.route('/seed', seedRouter);
 
+// Analytics routes (public for dashboard access)
+app.route('/api/analytics', analyticsRouter);
+
 // Protected routes
 app.use('/api/*', authMiddleware);
-
 app.route('/api/cache', cacheRouter);
 app.route('/api/media', mediaRouter);
 app.route('/api/profile', profileRouter);

@@ -117,10 +117,13 @@ export const useAuthStore = create<AuthStoreState & AuthStoreActions>()(
       },
 
       checkInitialSession: async () => {
+        console.log('[AUTH] checkInitialSession started');
         set({ status: 'checking', error: null });
         const currentSession = get().session;
+        console.log('[AUTH] Current session:', !!currentSession);
 
         if (!currentSession?.access_token || !currentSession?.refresh_token) {
+          console.log('[AUTH] No valid session found, setting unauthenticated');
           set({
             status: 'success',
             stage: 'unauthenticated',
@@ -203,6 +206,8 @@ export const useAuthStore = create<AuthStoreState & AuthStoreActions>()(
 );
 
 export function initializeAuth() {
+  console.log('[AUTH] initializeAuth called');
   const { checkInitialSession } = useAuthStore.getState();
+  console.log('[AUTH] Calling checkInitialSession');
   checkInitialSession();
 }

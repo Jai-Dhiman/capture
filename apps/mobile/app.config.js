@@ -1,6 +1,6 @@
 const config = {
-  name: "capture",
-  slug: "capture",
+  name: "Capture",
+  slug: "Capture",
   version: "1.0.0",
   orientation: "portrait",
   icon: "./assets/CaptureLogo.png",
@@ -24,7 +24,9 @@ const config = {
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
       NSFaceIDUsageDescription: "Use Face ID to securely sign in to your account",
-      NSBiometricUsageDescription: "Use biometric authentication to securely access your account"
+      NSBiometricUsageDescription: "Use biometric authentication to securely access your account",
+      NSPhotoLibraryUsageDescription: "This app needs access to your photo library to allow you to select and share photos in your posts",
+      NSPhotoLibraryAddUsageDescription: "This app needs permission to save edited images to your photo library"
     }
   },
   android: {
@@ -35,14 +37,12 @@ const config = {
       backgroundColor: "#ffffff"
     }
   },
-  scheme: "com.obscuratechnologies.capture",
+  scheme: "capture",
   linking: {
     prefixes: [
       "com.obscuratechnologies.capture://",
       "capture://",
-      "http://localhost:8081",
-      "exp://192.168.1.64:8081",
-      "exp://7kyeaek-anonymous-8081.exp.direct",
+      "exp+capture://",
       "https://www.captureapp.org",
       "https://capture-api.jai-d.workers.dev"
     ],
@@ -91,7 +91,11 @@ const config = {
       {
         url: "https://sentry.io/",
         project: "capture",
-        organization: "capture-7u"
+        organization: "capture-7u",
+        setCommits: false,
+        enableAutoUpload: false,
+        disableSourceMapUpload: true,
+        suppressNativeWebpackWarning: true
       }
     ],
     "expo-asset",
@@ -108,7 +112,7 @@ const config = {
   },
   extra: {
     eas: {
-      projectId: "cad78a77-57e1-4d5e-b730-c779cdd2b6cb"
+      projectId: "4e5aa601-eda8-40fe-857e-44e547c19fa6"
     },
     API_URL: process.env.API_URL || "https://capture-api.jai-d.workers.dev",
     SHARE_URL: process.env.SHARE_URL || "https://www.captureapp.org"

@@ -46,6 +46,21 @@
         "EXPO_PUBLIC_APPLE_CLIENT_ID": "com.obscuratechnologies.capture.signin"
       }
     },
+    "testflight": {
+      "distribution": "store",
+      "ios": {
+        "autoIncrement": true
+      },
+      "env": {
+        "API_URL": "https://capture-api.jai-d.workers.dev",
+        "SHARE_URL": "https://www.captureapp.org",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "562912588429-ia1001urt4gds03e1b47qpefsum2efns.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS": "562912588429-kjsb2br221rgfnlv11nimbsom1n69ju0.apps.googleusercontent.com",
+        "EXPO_PUBLIC_APPLE_CLIENT_ID": "com.obscuratechnologies.capture.signin",
+        "SENTRY_ALLOW_FAILURE": "true",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+      }
+    },
     "production": {
       "autoIncrement": true
     }

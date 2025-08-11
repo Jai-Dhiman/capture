@@ -1,11 +1,11 @@
 import { useAuthStore } from '@/features/auth/stores/authStore';
-import { 
-  CustomBackIconSvg, 
-  CustomMenuIconSvg, 
-  EmptyIconSvg, 
-  PlusIconSvg, 
-  ProfileIconSvg, 
-  SearchIconSvg 
+import {
+  CustomBackIconSvg,
+  CustomMenuIconSvg,
+  EmptyIconSvg,
+  PlusIconSvg,
+  ProfileIconSvg,
+  SearchIconSvg
 } from '@assets/icons/svgStrings';
 import { svgToDataUri } from '@/shared/utils/svgUtils';
 import { useNavigation } from '@react-navigation/native';
@@ -69,7 +69,7 @@ const Header: React.FC<HeaderProps> = ({
         className="absolute top-0 left-0 w-full z-10 bg-transparent"
         style={{ height: headerHeight, overflow: 'hidden' }}
       >
-        {showBackground && (
+        {/* {showBackground && (
           <ImageBackground
             source={require('@assets/DefaultBackground.png')}
             style={{
@@ -78,7 +78,7 @@ const Header: React.FC<HeaderProps> = ({
               position: 'absolute',
             }}
           />
-        )}
+        )} */}
         <View className="absolute left-0 right-0 bottom-8 flex-row items-center justify-between px-8">
           {showBackButton ? (
             <TouchableOpacity
