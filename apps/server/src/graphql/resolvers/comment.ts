@@ -321,6 +321,12 @@ export const commentResolvers = {
           .where(eq(schema.comment.id, id))
           .execute();
 
+        // Decrement the comment count in the post
+        await db
+          .update(schema.post)
+          .set({ _commentCount: sql`${schema.post._commentCount} - 1` })
+          .where(eq(schema.post.id, comment.postId));
+
         return {
           id,
           success: true,

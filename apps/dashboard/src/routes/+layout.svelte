@@ -1,6 +1,6 @@
 <script>
   import { page } from '$app/stores';  
-  import { Server, BarChart3, Home } from 'lucide-svelte';
+  import { Server, BarChart3, Home, MessageSquare } from 'lucide-svelte';
 
   $: currentPath = $page.url.pathname;
 </script>
@@ -135,14 +135,32 @@
   <nav class="bg-white shadow-sm border-b border-stone-200">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between h-16">
-        <div class="flex items-center">
+        <div class="flex items-center space-x-8">
           <h1 class="text-xl font-bold text-stone-900">Capture Dashboard</h1>
+          
+          <nav class="flex space-x-8">
+            <a 
+              href="/"
+              class="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md {currentPath === '/' ? 'text-blue-600 bg-blue-50' : 'text-stone-600 hover:text-stone-700 hover:bg-stone-100'}"
+            >
+              <BarChart3 class="w-4 h-4 mr-2" />
+              Analytics
+            </a>
+            
+            <a 
+              href="/feedback"
+              class="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md {currentPath === '/feedback' ? 'text-blue-600 bg-blue-50' : 'text-stone-600 hover:text-stone-700 hover:bg-stone-100'}"
+            >
+              <MessageSquare class="w-4 h-4 mr-2" />
+              Feedback
+            </a>
+          </nav>
         </div>
         
         <div class="flex items-center">
           <span class="inline-flex items-center px-3 py-2 text-sm font-medium text-stone-600">
-            <BarChart3 class="w-4 h-4 mr-2" />
-            Analytics Dashboard
+            <Server class="w-4 h-4 mr-2" />
+            Admin Dashboard
           </span>
         </div>
       </div>

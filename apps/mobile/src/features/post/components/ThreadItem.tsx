@@ -21,6 +21,7 @@ import {
 } from 'react-native';
 import { useDeletePost } from '../hooks/usePosts';
 import { useSavePost, useUnsavePost } from '../hooks/useSavesPosts';
+import { useLikePost, useUnlikePost } from '../hooks/useLikePosts';
 import { PostMenu } from './PostMenu';
 import { MediaImage } from './MediaImage';
 import { CommentsIconSvg, FavoriteIconSvg, FilledFavoriteIconSvg, MenuDotsSvg, PaperPlaneIconSvg } from '@assets/icons/svgStrings';
@@ -50,6 +51,8 @@ export const ThreadItem = ({ thread: initialThread, isLoading = false }: ThreadI
   const [, setCurrentPostId] = useAtom(currentPostIdAtom);
   const savePostMutation = useSavePost();
   const unsavePostMutation = useUnsavePost();
+  const likePostMutation = useLikePost();
+  const unlikePostMutation = useUnlikePost();
   const deletePostMutation = useDeletePost();
   const { showAlert } = useAlert();
   const { user } = useAuthStore();
@@ -76,6 +79,21 @@ export const ThreadItem = ({ thread: initialThread, isLoading = false }: ThreadI
     } catch (error: any) {
       console.error('Save/Unsave error:', error);
       showAlert(`Failed to ${thread.isSaved ? 'unsave' : 'save'} post`, { type: 'error' });
+    }
+  };
+
+  const handleToggleLikePost = async () => {
+    try {
+      if (thread.isLiked) {
+        await unlikePostMutation.mutateAsync(thread.id);
+        setThread((prev: typeof initialThread) => ({ ...prev, isLiked: false }));
+      } else {
+        await likePostMutation.mutateAsync(thread.id);
+        setThread((prev: typeof initialThread) => ({ ...prev, isLiked: true }));
+      }
+    } catch (error: any) {
+      console.error('Like/Unlike error:', error);
+      showAlert(`Failed to ${thread.isLiked ? 'unlike' : 'like'} post`, { type: 'error' });
     }
   };
 
@@ -174,39 +192,54 @@ export const ThreadItem = ({ thread: initialThread, isLoading = false }: ThreadI
 
           <View className="flex-row justify-between items-center">
             <View className="flex-row">
-              <TouchableOpacity onPress={handleOpenComments} className="mr-4">
+              <TouchableOpacity onPress={handleOpenComments} className="mr-4 flex-row items-center">
                 <Image
-        source={{ uri: svgToDataUri(CommentsIconSvg) }}
-        style={[{ width: 20, height: 20 }, {}]}
-      />
+                  source={{ uri: svgToDataUri(CommentsIconSvg) }}
+                  style={[{ width: 20, height: 20 }, {}]}
+                />
+                <Text className="ml-1 text-black text-sm">{thread._commentCount || 0}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity onPress={handleShare} className="mr-10">
                 <Image
-        source={{ uri: svgToDataUri(PaperPlaneIconSvg) }}
-        style={[{ width: 20, height: 20 }, {}]}
-      />
+                  source={{ uri: svgToDataUri(PaperPlaneIconSvg) }}
+                  style={[{ width: 20, height: 20 }, {}]}
+                />
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity
-              onPress={handleToggleSavePost}
-              disabled={savePostMutation.isPending || unsavePostMutation.isPending}
-            >
-              {savePostMutation.isPending || unsavePostMutation.isPending ? (
-                <ActivityIndicator size="small" color="#E4CAC7" />
-              ) : thread.isSaved ? (
-                <Image
-        source={{ uri: svgToDataUri(FilledFavoriteIconSvg) }}
-        style={[{ width: 20, height: 20 }, {}]}
-      />
-              ) : (
-                <Image
-        source={{ uri: svgToDataUri(FavoriteIconSvg) }}
-        style={[{ width: 20, height: 20 }, {}]}
-      />
-              )}
-            </TouchableOpacity>
+            <View className="flex-row">
+              <TouchableOpacity
+                onPress={handleToggleLikePost}
+                disabled={likePostMutation.isPending || unlikePostMutation.isPending}
+                className="mr-4"
+              >
+                {likePostMutation.isPending || unlikePostMutation.isPending ? (
+                  <ActivityIndicator size="small" color="#E4CAC7" />
+                ) : (
+                  <Text className="text-red-500 text-lg">{thread.isLiked ? '♥' : '♡'}</Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={handleToggleSavePost}
+                disabled={savePostMutation.isPending || unsavePostMutation.isPending}
+              >
+                {savePostMutation.isPending || unsavePostMutation.isPending ? (
+                  <ActivityIndicator size="small" color="#E4CAC7" />
+                ) : thread.isSaved ? (
+                  <Image
+                    source={{ uri: svgToDataUri(FilledFavoriteIconSvg) }}
+                    style={[{ width: 20, height: 20 }, {}]}
+                  />
+                ) : (
+                  <Image
+                    source={{ uri: svgToDataUri(FavoriteIconSvg) }}
+                    style={[{ width: 20, height: 20 }, {}]}
+                  />
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 

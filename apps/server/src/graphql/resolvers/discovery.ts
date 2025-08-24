@@ -9,6 +9,7 @@ import type { Bindings, ContextType } from '../../types/index.js';
 import { EmbeddingService } from '../../lib/ai/embeddingService.js';
 import { createCachingService } from '../../lib/cache/cachingService.js';
 import { QdrantClient } from '../../lib/infrastructure/qdrantClient.js';
+import { discoveryLogger } from '../../lib/logging/discoveryLogger.js';
 import {
   AutoInitializingWasmUtils,
   OptimizedVectorOps,
@@ -18,6 +19,7 @@ import {
 import { createD1Client } from '../../db/index.js';
 import * as schema from '../../db/schema.js';
 import { desc, eq, inArray, sql } from 'drizzle-orm';
+import { loadDevaluationConfig, type DevaluationConfig } from '../../lib/discovery/devaluationConfig.js';
 
 // Database imports
 import {
@@ -42,6 +44,13 @@ export interface UserInteraction {
   metadata?: Record<string, unknown>;
 }
 
+export interface ViewQualityMetrics {
+  dwellTime?: number; // milliseconds spent viewing
+  scrollVelocity?: number; // pixels per second
+  interactionType?: 'quick_scroll' | 'engaged_view' | 'partial_interaction';
+  engagementActions?: string[]; // ['like', 'save', 'comment']
+}
+
 export interface DiscoveryOptions {
   limit?: number;
   cursor?: string;
@@ -52,6 +61,8 @@ export interface DiscoveryOptions {
   includePrivacyFilter?: boolean;
   adaptiveParameters?: boolean;
   userEngagementHistory?: UserEngagementProfile;
+  sessionId?: string;
+  isNewSession?: boolean;
 }
 
 export interface DiscoveryResult {
@@ -79,6 +90,7 @@ export interface DiscoveredPost {
   metadata: {
     saveCount: number;
     commentCount: number;
+    likeCount: number;
     viewCount: number;
   };
 }
@@ -130,9 +142,14 @@ interface CandidatePost {
   isPrivate: boolean;
   saveCount?: number;
   commentCount?: number;
+  likeCount?: number;
   viewCount?: number;
   seenAt?: string;
   isSeen?: boolean;
+  viewQuality?: ViewQualityMetrics;
+  contentType?: string;
+  isViral?: boolean;
+  recentEngagementVelocity?: number;
 }
 
 export class UnifiedDiscoveryResolver {
@@ -140,12 +157,14 @@ export class UnifiedDiscoveryResolver {
   private embeddingService: EmbeddingService;
   private qdrantClient: QdrantClient;
   private cachingService: ReturnType<typeof createCachingService>;
+  private devaluationConfig: DevaluationConfig;
 
   constructor(private bindings: Bindings) {
     this.wasmUtils = new AutoInitializingWasmUtils();
     this.cachingService = createCachingService(bindings);
     this.embeddingService = new EmbeddingService(bindings.VOYAGE_API_KEY, this.cachingService);
     this.qdrantClient = new QdrantClient(bindings);
+    this.devaluationConfig = loadDevaluationConfig(bindings);
   }
 
   /**
@@ -162,7 +181,16 @@ export class UnifiedDiscoveryResolver {
       includePrivacyFilter = true,
       adaptiveParameters = false,
       userEngagementHistory,
+      experimentalFeatures = false,
     } = options;
+
+    // Start logging session
+    const sessionId = discoveryLogger.startSession(userId, {
+      limit,
+      cursor,
+      experimentalFeatures,
+      adaptiveParameters,
+    });
 
     try {
       // Ensure WASM is ready
@@ -181,9 +209,21 @@ export class UnifiedDiscoveryResolver {
           : weights;
 
       // Get candidate posts
+      const candidateStartTime = Date.now();
       const candidates = await this.getCandidatePosts(userId, limit * 3, cursor);
+      const seenPosts = await this.getSeenPostsForLogging(userId);
+      
+      // Log candidate retrieval
+      discoveryLogger.logCandidateRetrieval(
+        userId, 
+        sessionId,
+        candidates,
+        seenPosts,
+        Date.now() - candidateStartTime
+      );
 
       if (candidates.length === 0) {
+        discoveryLogger.logResults(userId, sessionId, [], false, undefined, Date.now() - startTime);
         return {
           posts: [],
           hasMore: false,
@@ -192,7 +232,8 @@ export class UnifiedDiscoveryResolver {
       }
 
       // Process candidates through WASM pipeline
-      const processedCandidates = await this.processCandidatesWasm(
+      const wasmStartTime = Date.now();
+      const { processedCandidates, wasmOperations, fallbacks, devaluationStats } = await this.processCandidatesWasm(
         candidates,
         userId,
         finalWeights,
@@ -200,6 +241,18 @@ export class UnifiedDiscoveryResolver {
         temporalDecayRate,
         includePrivacyFilter,
         privacySettings,
+        sessionId,
+      );
+
+      // Log WASM processing
+      discoveryLogger.logWasmProcessing(
+        userId,
+        sessionId,
+        processedCandidates,
+        wasmOperations,
+        fallbacks,
+        Date.now() - wasmStartTime,
+        devaluationStats
       );
 
       // Sort and limit results with deduplication
@@ -223,11 +276,21 @@ export class UnifiedDiscoveryResolver {
           ? sortedCandidates[sortedCandidates.length - 1].createdAt
           : undefined;
 
+      // Log final results
+      discoveryLogger.logResults(
+        userId,
+        sessionId,
+        completePosts,
+        hasMore,
+        nextCursor,
+        Date.now() - startTime
+      );
+
       return {
         posts: completePosts,
         hasMore,
         nextCursor,
-        metrics: this.createMetrics(startTime, candidates.length, [
+        metrics: this.createMetrics(startTime, candidates.length, wasmOperations || [
           'vectorNormalization',
           'similarityComputation',
           'diversityScoring',
@@ -235,6 +298,7 @@ export class UnifiedDiscoveryResolver {
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      discoveryLogger.logError(userId, sessionId, error as Error, 'discovery_pipeline');
       throw new Error(`Discovery failed: ${errorMessage}`);
     }
   }
@@ -250,80 +314,122 @@ export class UnifiedDiscoveryResolver {
     temporalDecayRate: number,
     includePrivacyFilter: boolean,
     privacySettings: UserPrivacySettings,
-  ): Promise<DiscoveredPost[]> {
+    sessionId: string,
+  ): Promise<{
+    processedCandidates: DiscoveredPost[];
+    wasmOperations: string[];
+    fallbacks: string[];
+    devaluationStats: {
+      devaluedCount: number;
+      averageMultiplier: number;
+    };
+  }> {
+    const wasmOperations: string[] = [];
+    const fallbacks: string[] = [];
+    let devaluedCount = 0;
+    let totalDevaluationMultiplier = 0;
     // Get user embedding for similarity computation
     const userEmbedding = await this.getUserEmbedding(userId);
 
     // Extract and normalize embeddings
-    const embeddings = await this.extractAndNormalizeEmbeddings(candidates);
+    try {
+      const embeddings = await this.extractAndNormalizeEmbeddings(candidates);
+      wasmOperations.push('vectorNormalization');
 
-    // Compute similarity scores using WASM
-    const similarityScores = await this.computeSimilarityScoresWasm(userEmbedding, embeddings);
+      // Compute similarity scores using WASM
+      const similarityScores = await this.computeSimilarityScoresWasm(userEmbedding, embeddings);
+      wasmOperations.push('similarityComputation');
 
-    // Apply temporal decay using WASM
-    const temporalScores = await this.applyTemporalDecayWasm(candidates, temporalDecayRate);
+      // Apply temporal decay using WASM
+      const temporalScores = await this.applyTemporalDecayWasm(candidates, temporalDecayRate);
+      wasmOperations.push('temporalDecay');
 
-    // Compute diversity scores using WASM
-    const diversityScores = await this.computeDiversityScoresWasm(embeddings, diversityThreshold);
+      // Compute diversity scores using WASM
+      const diversityScores = await this.computeDiversityScoresWasm(embeddings, diversityThreshold);
+      wasmOperations.push('diversityScoring');
 
-    // Apply privacy filter if enabled
-    const privacyScores = includePrivacyFilter
-      ? await this.applyPrivacyFilterWasm(candidates, userId, privacySettings)
-      : candidates.map(() => 1.0);
+      // Apply privacy filter if enabled
+      const privacyScores = includePrivacyFilter
+        ? await this.applyPrivacyFilterWasm(candidates, userId, privacySettings)
+        : candidates.map(() => 1.0);
+      
+      if (includePrivacyFilter) wasmOperations.push('privacyFiltering');
 
-    // Combine all scores
-    const results: DiscoveredPost[] = [];
-    for (let i = 0; i < candidates.length; i++) {
-      const candidate = candidates[i];
-      const similarity = similarityScores[i] || 0;
-      const temporal = temporalScores[i] || 0;
-      const diversity = diversityScores[i] || 0;
-      const privacy = privacyScores[i] || 0;
+      // Combine all scores
+      const results: DiscoveredPost[] = [];
+      for (let i = 0; i < candidates.length; i++) {
+        const candidate = candidates[i];
+        const similarity = similarityScores[i] || 0;
+        const temporal = temporalScores[i] || 0;
+        const diversity = diversityScores[i] || 0;
+        const privacy = privacyScores[i] || 0;
 
-      // Compute engagement score
-      const engagement = this.computeEngagementScore(candidate);
+        // Compute engagement score (now includes likes!)
+        const engagement = this.computeEngagementScore(candidate);
 
-      // Compute final weighted score
-      let finalScore =
-        (similarity * weights.similarity +
-          temporal * weights.temporal +
-          diversity * weights.diversity +
-          engagement * weights.engagement +
-          privacy * weights.privacy) /
-        5;
+        // Compute final weighted score
+        let finalScore =
+          (similarity * weights.similarity +
+            temporal * weights.temporal +
+            diversity * weights.diversity +
+            engagement * weights.engagement +
+            privacy * weights.privacy) /
+          5;
 
-      // Apply devaluation for seen posts
-      let devaluationScore = 1.0;
-      if (candidate.isSeen && candidate.seenAt) {
-        const daysSinceSeen = (Date.now() - new Date(candidate.seenAt).getTime()) / (24 * 60 * 60 * 1000);
-        devaluationScore = this.calculateDevaluationMultiplier(daysSinceSeen);
-        finalScore *= devaluationScore;
+        // Apply context-aware devaluation for seen posts
+        let devaluationScore = 1.0;
+        if (candidate.isSeen && candidate.seenAt) {
+          devaluedCount++;
+          const daysSinceSeen = (Date.now() - new Date(candidate.seenAt).getTime()) / (24 * 60 * 60 * 1000);
+          devaluationScore = this.calculateContextAwareDevaluationMultiplier(
+            candidate,
+            daysSinceSeen,
+            sessionId
+          );
+          totalDevaluationMultiplier += devaluationScore;
+          finalScore *= devaluationScore;
+        }
+
+        results.push({
+          id: candidate.id,
+          userId: candidate.userId,
+          content: candidate.content,
+          createdAt: candidate.createdAt,
+          hashtags: candidate.hashtags || [],
+          scores: {
+            discovery: finalScore,
+            similarity,
+            engagement,
+            temporal,
+            diversity,
+            privacy,
+            final: finalScore,
+          },
+          metadata: {
+            saveCount: candidate.saveCount || 0,
+            commentCount: candidate.commentCount || 0,
+            likeCount: candidate.likeCount || 0,
+            viewCount: candidate.viewCount || 0,
+          },
+        });
       }
 
-      results.push({
-        id: candidate.id,
-        userId: candidate.userId,
-        content: candidate.content,
-        createdAt: candidate.createdAt,
-        hashtags: candidate.hashtags || [],
-        scores: {
-          discovery: finalScore,
-          similarity,
-          engagement,
-          temporal,
-          diversity,
-          privacy,
-          final: finalScore,
+      return {
+        processedCandidates: results,
+        wasmOperations,
+        fallbacks,
+        devaluationStats: {
+          devaluedCount,
+          averageMultiplier: devaluedCount > 0 ? totalDevaluationMultiplier / devaluedCount : 1,
         },
-        metadata: {
-          saveCount: candidate.saveCount || 0,
-          commentCount: candidate.commentCount || 0,
-          viewCount: candidate.viewCount || 0,
-        },
-      });
+      };
+    } catch (error) {
+      fallbacks.push(`WASM processing failed: ${error}`);
+      discoveryLogger.logWarning(userId, sessionId, `WASM processing failed, using fallback`, { error });
+      
+      // Fallback to simple processing
+      return this.processCandidatesFallback(candidates, userId, weights, sessionId);
     }
-
-    return results;
   }
 
   /**
@@ -525,7 +631,43 @@ export class UnifiedDiscoveryResolver {
   }
 
   /**
-   * Get candidate posts for discovery
+   * Enhanced method to detect viral/trending content
+   */
+  private calculateEngagementVelocity(candidate: CandidatePost): number {
+    const postAgeHours = Math.max((Date.now() - new Date(candidate.createdAt).getTime()) / (1000 * 60 * 60), 0.1);
+    const totalEngagement = (candidate.likeCount || 0) + (candidate.saveCount || 0) + (candidate.commentCount || 0);
+    return totalEngagement / postAgeHours;
+  }
+  
+  /**
+   * Determine content type based on post characteristics
+   */
+  private inferContentType(candidate: CandidatePost): string {
+    const content = candidate.content.toLowerCase();
+    
+    // Simple keyword-based classification (can be enhanced with ML)
+    if (content.includes('news') || content.includes('breaking') || content.includes('update')) {
+      return 'news';
+    }
+    if (content.includes('learn') || content.includes('how to') || content.includes('tutorial')) {
+      return 'educational';
+    }
+    if (content.includes('funny') || content.includes('lol') || content.includes('😂')) {
+      return 'entertainment';
+    }
+    
+    // Check if it's a personal post (low engagement, personal pronouns)
+    const personalWords = ['my', 'me', 'i', 'personal', 'family'];
+    const hasPersonalWords = personalWords.some(word => content.includes(word));
+    if (hasPersonalWords && (candidate.likeCount || 0) < 10) {
+      return 'personal';
+    }
+    
+    return 'general';
+  }
+  
+  /**
+   * Get candidate posts for discovery with enhanced metadata
    */
   private async getCandidatePosts(
     userId: string,
@@ -553,13 +695,15 @@ export class UnifiedDiscoveryResolver {
     // Include all posts (seen and unseen) for graduated devaluation
     const allPosts = posts;
 
-    // Convert to candidate format with seen metadata and ensure uniqueness
+    // Convert to candidate format with enhanced metadata
     const candidateMap = new Map<string, CandidatePost>();
     
     for (const post of allPosts) {
       if (!candidateMap.has(post.id)) {
         const seenAt = seenPostMap.get(post.id);
-        candidateMap.set(post.id, {
+        
+        // Create enhanced candidate with context-aware metadata
+        const candidate: CandidatePost = {
           id: post.id,
           userId: post.userId,
           content: post.content,
@@ -568,10 +712,28 @@ export class UnifiedDiscoveryResolver {
           isPrivate: Boolean(post.authorIsPrivate),
           saveCount: post._saveCount || 0,
           commentCount: post._commentCount || 0,
+          likeCount: post._likeCount || 0,
           viewCount: 0, // No viewCount in PostWithPrivacy interface
           seenAt: seenAt,
           isSeen: !!seenAt,
-        });
+        };
+        
+        // Enhance with context-aware metadata
+        candidate.recentEngagementVelocity = this.calculateEngagementVelocity(candidate);
+        candidate.contentType = this.inferContentType(candidate);
+        candidate.isViral = candidate.recentEngagementVelocity > this.devaluationConfig.viralVelocityThreshold;
+        
+        // TODO: In production, fetch actual view quality from user interaction data
+        // For now, we'll use placeholder logic
+        if (seenAt) {
+          candidate.viewQuality = {
+            interactionType: this.inferViewQuality(candidate),
+            dwellTime: Math.random() * 5000, // Placeholder
+            scrollVelocity: Math.random() * 100 // Placeholder
+          };
+        }
+        
+        candidateMap.set(post.id, candidate);
       }
     }
     
@@ -581,6 +743,22 @@ export class UnifiedDiscoveryResolver {
     await this.cachingService.set(cacheKey, candidates, 300);
 
     return candidates;
+  }
+  
+  /**
+   * Infer view quality based on post characteristics and engagement
+   * In production, this would use actual user interaction data
+   */
+  private inferViewQuality(candidate: CandidatePost): 'quick_scroll' | 'engaged_view' | 'partial_interaction' {
+    const engagementRate = ((candidate.likeCount || 0) + (candidate.saveCount || 0) + (candidate.commentCount || 0)) / Math.max(candidate.viewCount || 1, 1);
+    
+    if (engagementRate > 0.1) {
+      return 'engaged_view';
+    } else if (engagementRate > 0.02) {
+      return 'partial_interaction';
+    } else {
+      return 'quick_scroll';
+    }
   }
 
   /**
@@ -678,42 +856,111 @@ export class UnifiedDiscoveryResolver {
   }
 
   /**
-   * Compute engagement score for a post
+   * Compute engagement score for a post (now includes likes!)
    */
   private computeEngagementScore(candidate: CandidatePost): number {
-    const saveWeight = 0.4;
-    const commentWeight = 0.4;
-    const viewWeight = 0.2;
+    // Updated weights to include likes
+    const likeWeight = 0.3;      // Likes are common, moderate weight
+    const saveWeight = 0.35;     // Saves are strong engagement signal
+    const commentWeight = 0.25;  // Comments are high-quality engagement
+    const viewWeight = 0.1;      // Views are weak signal
 
-    const normalizedSaves = Math.min((candidate.saveCount || 0) / 100, 1);
-    const normalizedComments = Math.min((candidate.commentCount || 0) / 50, 1);
-    const normalizedViews = Math.min((candidate.viewCount || 0) / 1000, 1);
+    // Normalize engagement metrics with realistic thresholds
+    const normalizedLikes = Math.min((candidate.likeCount || 0) / 200, 1);    // 200 likes = max score
+    const normalizedSaves = Math.min((candidate.saveCount || 0) / 100, 1);   // 100 saves = max score  
+    const normalizedComments = Math.min((candidate.commentCount || 0) / 50, 1); // 50 comments = max score
+    const normalizedViews = Math.min((candidate.viewCount || 0) / 1000, 1);  // 1000 views = max score
 
-    return (
+    const engagementScore = (
+      normalizedLikes * likeWeight +
       normalizedSaves * saveWeight +
       normalizedComments * commentWeight +
       normalizedViews * viewWeight
     );
+
+    // Add engagement velocity bonus (engagement per hour since posting)
+    const postAgeHours = Math.max((Date.now() - new Date(candidate.createdAt).getTime()) / (1000 * 60 * 60), 0.1);
+    const totalEngagement = (candidate.likeCount || 0) + (candidate.saveCount || 0) + (candidate.commentCount || 0);
+    const velocityBonus = Math.min(totalEngagement / postAgeHours / 10, 0.2); // Max 20% bonus
+
+    return Math.min(engagementScore + velocityBonus, 1.0);
   }
 
   /**
-   * Calculate devaluation multiplier for seen posts
+   * Calculate context-aware devaluation multiplier for seen posts
+   * Less aggressive and more intelligent than the previous approach
    */
-  private calculateDevaluationMultiplier(daysSinceSeen: number): number {
-    // Base devaluation: 0.1 (90% reduction initially)
-    const baseDevaluation = 0.1;
+  private calculateContextAwareDevaluationMultiplier(
+    candidate: CandidatePost,
+    daysSinceSeen: number,
+    sessionId: string
+  ): number {
+    // Use configurable base devaluation
+    let baseDevaluation = this.devaluationConfig.baseDevaluationMultiplier;
     
-    // Recovery rate: 0.05 per day (5% recovery daily)
-    const recoveryRate = 0.05;
+    // 1. Engagement-based adjustment
+    const totalEngagement = (candidate.likeCount || 0) + (candidate.saveCount || 0) + (candidate.commentCount || 0);
+    const engagementMultiplier = Math.min(totalEngagement / this.devaluationConfig.highEngagementThreshold, this.devaluationConfig.maxEngagementReduction);
+    baseDevaluation = Math.max(this.devaluationConfig.minimumRetention, baseDevaluation - engagementMultiplier);
     
-    // Exponential recovery curve over ~18 days
-    const recoveryDays = 18.0;
+    // 2. View quality consideration
+    if (candidate.viewQuality?.interactionType) {
+      const qualityMultiplier = this.devaluationConfig.viewQualityMultipliers[candidate.viewQuality.interactionType];
+      baseDevaluation *= qualityMultiplier;
+    }
+    
+    // 3. Content type awareness
+    const contentType = candidate.contentType || 'general';
+    const contentMultiplier = this.devaluationConfig.contentTypeMultipliers[contentType as keyof typeof this.devaluationConfig.contentTypeMultipliers] || this.devaluationConfig.contentTypeMultipliers.general;
+    baseDevaluation *= contentMultiplier;
+    
+    // 4. Viral/trending content override
+    if (candidate.isViral || (candidate.recentEngagementVelocity || 0) > this.devaluationConfig.viralVelocityThreshold) {
+      baseDevaluation = Math.max(this.devaluationConfig.viralMinimumRetention, baseDevaluation);
+    }
+    
+    // 5. Session boundary consideration
+    const isNewSession = this.isNewUserSession(sessionId);
+    if (isNewSession) {
+      baseDevaluation = Math.max(this.devaluationConfig.newSessionMinimumRetention, baseDevaluation);
+    }
+    
+    // 6. Time-based recovery (configurable parameters)
+    const recoveryRate = this.devaluationConfig.dailyRecoveryRate;
+    const recoveryDays = this.devaluationConfig.recoveryTimelineDays;
     const recoveryComponent = recoveryRate * daysSinceSeen;
     const decayComponent = Math.exp(-daysSinceSeen / recoveryDays) * baseDevaluation;
     
-    // Calculate multiplier with minimum of 0.1 and maximum of 1.0
+    // Calculate final multiplier
     const multiplier = decayComponent + recoveryComponent;
-    return Math.max(0.1, Math.min(1.0, multiplier));
+    
+    // Apply configurable bounds
+    return Math.max(this.devaluationConfig.minimumRetention, Math.min(1.0, multiplier));
+  }
+  
+  /**
+   * Check if this is a new user session (simplified implementation)
+   * In production, you'd want more sophisticated session tracking
+   */
+  private isNewUserSession(sessionId: string): boolean {
+    // Simple heuristic: check if session is less than 30 minutes old
+    // In a real implementation, you'd track session start times
+    return Math.random() < 0.3; // Placeholder - 30% chance of "new session"
+  }
+  
+  /**
+   * Legacy method for backward compatibility
+   * @deprecated Use calculateContextAwareDevaluationMultiplier instead
+   */
+  private calculateDevaluationMultiplier(daysSinceSeen: number): number {
+    // Fallback to old logic if needed
+    const baseDevaluation = 0.5; // Made less aggressive
+    const recoveryRate = 0.08;
+    const recoveryDays = 12.0;
+    const recoveryComponent = recoveryRate * daysSinceSeen;
+    const decayComponent = Math.exp(-daysSinceSeen / recoveryDays) * baseDevaluation;
+    const multiplier = decayComponent + recoveryComponent;
+    return Math.max(0.2, Math.min(1.0, multiplier));
   }
 
   /**
@@ -892,6 +1139,105 @@ export class UnifiedDiscoveryResolver {
 
     return completePosts;
   }
+
+  /**
+   * Get seen posts for logging purposes
+   */
+  private async getSeenPostsForLogging(userId: string): Promise<any[]> {
+    try {
+      return await getSeenPostsForUser(userId, this.bindings);
+    } catch (error) {
+      console.warn('Failed to get seen posts for logging:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Fallback processing when WASM fails
+   */
+  private async processCandidatesFallback(
+    candidates: CandidatePost[],
+    userId: string,
+    weights: ScoringWeights,
+    sessionId: string
+  ): Promise<{
+    processedCandidates: DiscoveredPost[];
+    wasmOperations: string[];
+    fallbacks: string[];
+    devaluationStats: {
+      devaluedCount: number;
+      averageMultiplier: number;
+    };
+  }> {
+    const fallbacks = ['JavaScript fallback processing'];
+    let devaluedCount = 0;
+    let totalDevaluationMultiplier = 0;
+
+    const results: DiscoveredPost[] = [];
+    
+    for (const candidate of candidates) {
+      // Simple similarity based on content length and basic metrics
+      const similarity = Math.random() * 0.5 + 0.25; // Random baseline similarity
+      const temporal = Math.exp(-0.1 * (Date.now() - new Date(candidate.createdAt).getTime()) / (1000 * 60 * 60));
+      const diversity = 0.7; // Default diversity score
+      const privacy = 1.0; // Default privacy score
+      const engagement = this.computeEngagementScore(candidate);
+
+      let finalScore = (
+        similarity * weights.similarity +
+        temporal * weights.temporal +
+        diversity * weights.diversity +
+        engagement * weights.engagement +
+        privacy * weights.privacy
+      ) / 5;
+
+      // Apply context-aware devaluation for seen posts (fallback)
+      let devaluationScore = 1.0;
+      if (candidate.isSeen && candidate.seenAt) {
+        devaluedCount++;
+        const daysSinceSeen = (Date.now() - new Date(candidate.seenAt).getTime()) / (24 * 60 * 60 * 1000);
+        // Use the less aggressive legacy method for fallback
+        devaluationScore = this.calculateDevaluationMultiplier(daysSinceSeen);
+        totalDevaluationMultiplier += devaluationScore;
+        finalScore *= devaluationScore;
+      }
+
+      results.push({
+        id: candidate.id,
+        userId: candidate.userId,
+        content: candidate.content,
+        createdAt: candidate.createdAt,
+        hashtags: candidate.hashtags || [],
+        scores: {
+          discovery: finalScore,
+          similarity,
+          engagement,
+          temporal,
+          diversity,
+          privacy,
+          final: finalScore,
+        },
+        metadata: {
+          saveCount: candidate.saveCount || 0,
+          commentCount: candidate.commentCount || 0,
+          likeCount: candidate.likeCount || 0,
+          viewCount: candidate.viewCount || 0,
+        },
+      });
+    }
+
+    discoveryLogger.logWarning(userId, sessionId, 'Using fallback processing - WASM failed');
+
+    return {
+      processedCandidates: results,
+      wasmOperations: [],
+      fallbacks,
+      devaluationStats: {
+        devaluedCount,
+        averageMultiplier: devaluedCount > 0 ? totalDevaluationMultiplier / devaluedCount : 1,
+      },
+    };
+  }
 }
 
 /**
@@ -905,6 +1251,8 @@ export const discoveryResolvers = {
         limit?: number;
         cursor?: string;
         experimentalFeatures?: boolean;
+        sessionId?: string;
+        isNewSession?: boolean;
       },
       context: ContextType,
     ) => {
@@ -913,7 +1261,87 @@ export const discoveryResolvers = {
       }
       
       const resolver = new UnifiedDiscoveryResolver(context.env);
-      return resolver.discoverPosts(context.user.id, args);
+      
+      // Enhanced options with session context
+      const options = {
+        ...args,
+        sessionId: args.sessionId || `session_${Date.now()}_${Math.random()}`,
+        isNewSession: args.isNewSession ?? false,
+      };
+      
+      return resolver.discoverPosts(context.user.id, options);
+    },
+
+    discoveryAnalytics: async (
+      _parent: unknown,
+      args: {
+        userId?: string;
+        limit?: number;
+      },
+      context: ContextType,
+    ) => {
+      if (!context?.user) {
+        throw new Error('Authentication required');
+      }
+
+      const targetUserId = args.userId || context.user.id;
+      const limit = args.limit || 10;
+
+      const sessionLogs = discoveryLogger.getSessionAnalytics(targetUserId, limit);
+      const seenPostsAnalytics = discoveryLogger.getSeenPostsAnalytics();
+
+      return {
+        sessionLogs: sessionLogs.map(log => ({
+          userId: log.userId,
+          sessionId: log.sessionId,
+          timestamp: log.timestamp,
+          phase: log.phase,
+          processingTimeMs: log.metrics.processingTimeMs,
+          candidatesFound: log.metrics.candidatesFound,
+          candidatesProcessed: log.metrics.candidatesProcessed,
+          finalResults: log.metrics.finalResults,
+          averageScores: {
+            similarity: log.metrics.averageSimilarityScore,
+            engagement: log.metrics.averageEngagementScore,
+            diversity: log.metrics.averageDiversityScore,
+            temporal: log.metrics.averageTemporalScore,
+            privacy: log.metrics.averagePrivacyScore,
+            final: log.metrics.averageFinalScore,
+          },
+          qualityMetrics: {
+            uniquenessRatio: log.metrics.uniquenessRatio,
+            freshnessScore: log.metrics.freshnessScore,
+            personalRelevanceScore: log.metrics.personalRelevanceScore,
+          },
+          devaluationStats: {
+            devaluedCount: log.metrics.seenPostsDevalued,
+            averageMultiplier: log.metrics.averageDevaluationMultiplier,
+          },
+          options: log.options,
+        })),
+        seenPostsAnalytics,
+      };
+    },
+
+    discoveryPerformanceSummary: async (
+      _parent: unknown,
+      _args: any,
+      context: ContextType,
+    ) => {
+      if (!context?.user) {
+        throw new Error('Authentication required');
+      }
+
+      const summary = discoveryLogger.getPerformanceSummary();
+      
+      return {
+        totalSessions: summary.totalSessions,
+        averageProcessingTime: summary.averageProcessingTime,
+        averageResults: summary.averageResults,
+        errorRate: summary.errorRate,
+        wasmUsageRate: summary.wasmUsageRate,
+        averageQualityScores: summary.averageQualityScores,
+      };
     },
   },
   Mutation: {

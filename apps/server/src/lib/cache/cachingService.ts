@@ -263,6 +263,12 @@ export const CacheKeys = {
   seenPosts: (userId: string) => `seen_posts:${userId}`,
   blockedUsers: (userId: string) => `blocked_users:${userId}`,
 
+  // Feedback system cache keys
+  feedbackCategories: () => `feedback_categories`,
+  feedbackTicket: (ticketId: string) => `feedback_ticket:${ticketId}`,
+  userTickets: (userId: string) => `user_tickets:${userId}`,
+  adminTickets: (filters?: string) => `admin_tickets${filters ? `:${filters}` : ''}`,
+
   // CLIP embedding cache keys
   clipTextEmbedding: (textHash: string, model: string, dimensions: number) =>
     `clip_text_embedding:${model}:${dimensions}:${textHash}`,

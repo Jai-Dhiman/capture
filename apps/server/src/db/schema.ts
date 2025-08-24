@@ -110,6 +110,7 @@ export const post = sqliteTable(
     updatedAt: numeric('updated_at').default(new Date().toISOString()).notNull(),
     _saveCount: integer('_save_count').default(0).notNull(),
     _commentCount: integer('_comment_count').default(0).notNull(),
+    _likeCount: integer('_like_count').default(0).notNull(),
   },
   (table) => [
     index('user_posts_idx').on(table.userId), 
@@ -117,7 +118,7 @@ export const post = sqliteTable(
     // Discovery feed optimization - compound index for filtering by draft status, userId, and sorting
     index('post_discovery_idx').on(table.isDraft, table.userId, table.createdAt),
     // Post popularity index for sorting by engagement
-    index('post_popularity_idx').on(table._saveCount, table._commentCount, table.createdAt),
+    index('post_popularity_idx').on(table._saveCount, table._commentCount, table._likeCount, table.createdAt),
     // User content overview index
     index('user_posts_time_idx').on(table.userId, table.createdAt),
   ],
@@ -507,3 +508,149 @@ export const userActivity = sqliteTable(
     index('user_activity_time_idx').on(table.createdAt),
   ],
 );
+
+// Feedback System Tables
+
+export const feedbackCategory = sqliteTable(
+  'feedback_category',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull().unique(),
+    description: text('description'),
+    isActive: integer('is_active').default(1).notNull(),
+    priorityLevel: integer('priority_level').default(1).notNull(), // 1=low, 2=medium, 3=high
+    createdAt: numeric('created_at').default(new Date().toISOString()).notNull(),
+  },
+  (table) => [
+    index('feedback_category_name_idx').on(table.name),
+    index('feedback_category_active_idx').on(table.isActive),
+    index('feedback_category_priority_idx').on(table.priorityLevel),
+  ],
+);
+
+export const feedbackTicket = sqliteTable(
+  'feedback_ticket',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id),
+    categoryId: text('category_id')
+      .notNull()
+      .references(() => feedbackCategory.id),
+    subject: text('subject').notNull(),
+    description: text('description').notNull(),
+    priority: text('priority').default('medium').notNull(), // low, medium, high, urgent
+    status: text('status').default('open').notNull(), // open, in_progress, resolved, closed
+    type: text('type').default('feedback').notNull(), // feedback, bug_report, feature_request, support
+    appVersion: text('app_version'),
+    deviceInfo: text('device_info'), // JSON string with device details
+    createdAt: numeric('created_at').default(new Date().toISOString()).notNull(),
+    updatedAt: numeric('updated_at').default(new Date().toISOString()).notNull(),
+    resolvedAt: numeric('resolved_at'),
+    assignedAdminId: text('assigned_admin_id'), // for future admin assignment feature
+  },
+  (table) => [
+    index('feedback_user_idx').on(table.userId),
+    index('feedback_status_idx').on(table.status),
+    index('feedback_category_idx').on(table.categoryId),
+    index('feedback_priority_idx').on(table.priority),
+    index('feedback_created_idx').on(table.createdAt),
+    index('feedback_user_status_idx').on(table.userId, table.status, table.createdAt),
+    // Admin dashboard optimization - compound index for filtering and sorting
+    index('feedback_admin_queue_idx').on(table.status, table.priority, table.createdAt),
+    index('feedback_type_idx').on(table.type),
+  ],
+);
+
+export const feedbackResponse = sqliteTable(
+  'feedback_response',
+  {
+    id: text('id').primaryKey(),
+    ticketId: text('ticket_id')
+      .notNull()
+      .references(() => feedbackTicket.id),
+    responderId: text('responder_id')
+      .notNull()
+      .references(() => users.id),
+    responderType: text('responder_type').default('user').notNull(), // user, admin, system
+    message: text('message').notNull(),
+    isInternal: integer('is_internal').default(0).notNull(), // admin-only notes
+    createdAt: numeric('created_at').default(new Date().toISOString()).notNull(),
+  },
+  (table) => [
+    index('response_ticket_idx').on(table.ticketId),
+    index('response_time_idx').on(table.createdAt),
+    index('response_responder_idx').on(table.responderId),
+    // Conversation thread optimization - compound index for ticket conversation view
+    index('response_thread_idx').on(table.ticketId, table.isInternal, table.createdAt),
+  ],
+);
+
+export const feedbackAttachment = sqliteTable(
+  'feedback_attachment',
+  {
+    id: text('id').primaryKey(),
+    ticketId: text('ticket_id')
+      .notNull()
+      .references(() => feedbackTicket.id),
+    mediaId: text('media_id')
+      .notNull()
+      .references(() => media.id),
+    uploadedBy: text('uploaded_by')
+      .notNull()
+      .references(() => users.id),
+    description: text('description'),
+    createdAt: numeric('created_at').default(new Date().toISOString()).notNull(),
+  },
+  (table) => [
+    index('attachment_ticket_idx').on(table.ticketId),
+    index('attachment_media_idx').on(table.mediaId),
+    index('attachment_uploader_idx').on(table.uploadedBy),
+  ],
+);
+
+// Feedback System Relations
+
+export const feedbackCategoryRelations = relations(feedbackCategory, ({ many }) => ({
+  tickets: many(feedbackTicket),
+}));
+
+export const feedbackTicketRelations = relations(feedbackTicket, ({ one, many }) => ({
+  user: one(users, {
+    fields: [feedbackTicket.userId],
+    references: [users.id],
+  }),
+  category: one(feedbackCategory, {
+    fields: [feedbackTicket.categoryId],
+    references: [feedbackCategory.id],
+  }),
+  responses: many(feedbackResponse),
+  attachments: many(feedbackAttachment),
+}));
+
+export const feedbackResponseRelations = relations(feedbackResponse, ({ one }) => ({
+  ticket: one(feedbackTicket, {
+    fields: [feedbackResponse.ticketId],
+    references: [feedbackTicket.id],
+  }),
+  responder: one(users, {
+    fields: [feedbackResponse.responderId],
+    references: [users.id],
+  }),
+}));
+
+export const feedbackAttachmentRelations = relations(feedbackAttachment, ({ one }) => ({
+  ticket: one(feedbackTicket, {
+    fields: [feedbackAttachment.ticketId],
+    references: [feedbackTicket.id],
+  }),
+  media: one(media, {
+    fields: [feedbackAttachment.mediaId],
+    references: [media.id],
+  }),
+  uploadedBy: one(users, {
+    fields: [feedbackAttachment.uploadedBy],
+    references: [users.id],
+  }),
+}));
