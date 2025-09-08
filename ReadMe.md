@@ -11,7 +11,7 @@
 
 ## Project Overview
 
-Capture is a full-stack mobile application that reimagines social media by prioritizing user privacy, safety, and mental wellbeing. This project demonstrates implementation of modern mobile and backend development practices using React Native, TypeScript, and serverless architecture.
+Capture is a full-stack social media application currently in pre-beta development. The project demonstrates modern mobile and backend development practices, implementing a complete privacy-focused social platform using React Native, TypeScript, and edge computing architecture.
 
 ### Core Technical Challenges Addressed
     
@@ -36,12 +36,17 @@ Capture is a full-stack mobile application that reimagines social media by prior
 ```
 apps/mobile/
 ├── src/
-│   ├── components/    # Reusable UI components
-│   ├── screens/       # Application screens
-│   ├── stores/        # State management
-│   ├── services/      # API integrations
-│   ├── lib/           # Utilities and helpers
-│   └── App.tsx        # Application entry point
+│   ├── features/         # Feature-based organization
+│   │   ├── auth/         # Authentication (passkeys, OAuth, MFA)
+│   │   ├── feed/         # Home and discovery feeds
+│   │   ├── post/         # Post creation and management
+│   │   ├── profile/      # User profiles and relationships
+│   │   ├── comments/     # Comment system
+│   │   ├── search/       # Search functionality
+│   │   └── settings/     # App settings and preferences
+│   ├── shared/           # Shared components and utilities
+│   ├── navigation/       # Navigation configuration
+│   └── App.tsx          # Application entry point
 └── ...
 ```
 
@@ -52,7 +57,7 @@ apps/server/
 ├── src/
 │   ├── index.ts           # Hono app entry point with Workers integration
 │   ├── graphql/           # GraphQL schema and resolvers (Apollo Server)
-│   ├── routes/            # REST API endpoints (auth, media, cache, etc.)
+│   ├── routes/            # REST API endpoints (auth, media, analytics)
 │   ├── middleware/        # Authentication, security, rate limiting
 │   ├── db/               # Drizzle ORM schema and database queries
 │   ├── lib/              # Core services and utilities
@@ -71,6 +76,18 @@ apps/server/
 │   └── tests/            # Rust unit tests
 ├── wasm/                 # Compiled WASM output
 └── drizzle/              # Database migrations and schema
+```
+
+### Dashboard (SvelteKit Analytics)
+
+```
+apps/dashboard/
+├── src/
+│   ├── routes/           # Dashboard pages and analytics
+│   ├── lib/              # Dashboard utilities and API clients
+│   │   └── components/   # Reusable Svelte components
+│   └── app.html         # Dashboard entry point
+└── ...
 ```
 
 
@@ -97,6 +114,13 @@ apps/server/
 - **SQLite (D1)**: Cloudflare's distributed serverless SQL database
 - **R2 Object Storage**: File and media storage with CDN integration
 - **Qdrant**: Vector database for AI embeddings and search
+
+### Dashboard & Analytics
+
+- **SvelteKit**: Full-stack framework for the admin dashboard
+- **Svelte 5**: Reactive UI framework with modern syntax
+- **TailwindCSS**: Utility-first CSS framework
+- **shadcn-svelte**: Pre-built UI components for Svelte
 
 ### DevOps & Infrastructure
 
@@ -157,22 +181,32 @@ This project employs modern development practices including:
 
 ## Current Status
 
-The app is in active development with the following components implemented:
+**Development Phase**: Pre-beta (No public users yet)
+
+The application is a fully functional social media platform with comprehensive features implemented across all layers:
 
 ### Mobile App (React Native + Expo)
-- **Authentication**: Complete passkey, Apple, and Google Sign-In
-- **Core Features**: Feed, posts, profiles, comments, search
-- **UI/UX**: Modern design with animations and smooth interactions
-- **Biometric Security**: Face ID/Touch ID integration
-- **Performance**: Optimized with React Query caching and Flash List
+- **Authentication**: Complete passkey, Apple, and Google Sign-In with MFA
+- **Core Social Features**: Following/discovery feeds, post creation with media
+- **User Interactions**: Comments, likes, saves, user profiles, and relationships
+- **Advanced Features**: Search, hashtags, blocking, notifications
+- **Security**: Biometric authentication (Face ID/Touch ID) integration
+- **Performance**: Optimized with TanStack Query caching, FlashList virtualization
+- **State Management**: Zustand stores with Jotai atoms for fine-grained reactivity
 
 ### Server Infrastructure (Cloudflare Workers)
-- **API**: GraphQL and REST endpoints fully operational
-- **Database**: SQLite D1 with Drizzle ORM for relational data
-- **Storage**: R2 object storage with CDN for media files
-- **Authentication**: JWT + passkey system with session management
-- **Performance**: Edge computing with WASM modules for image processing
-- **AI**: Vector embeddings for content discovery and search
+- **API Layer**: GraphQL (Apollo Server) + REST endpoints fully operational
+- **Database**: SQLite D1 with Drizzle ORM, comprehensive schema with relationships
+- **Storage**: R2 object storage with CDN integration for media files
+- **Authentication**: JWT + WebAuthn passkey system with session management
+- **Image Processing**: Rust WASM modules for high-performance transformations
+- **AI Services**: Vector embeddings with Qdrant for content discovery
+- **Analytics**: Real-time metrics collection and processing
+
+### Admin Dashboard (SvelteKit)
+- **Analytics**: User metrics, content statistics, growth tracking
+- **Monitoring**: Real-time system health and performance dashboards
+- **Management**: User administration and content moderation tools
 
 ## Running the Project
 
@@ -188,7 +222,7 @@ The app is in active development with the following components implemented:
 ### Setup and Installation
 
 ```bash
-# Clone the repository
+# Clone the repository (if authorized)
 git clone https://github.com/Jai-Dhiman/capture.git
 cd capture
 
@@ -201,10 +235,11 @@ pnpm run build:wasm
 cd ../..
 
 # Development commands
-pnpm dev              # Start both mobile and server in development
+pnpm dev              # Start all apps (mobile, server, dashboard)
 # OR individually:
-cd apps/mobile && pnpm dev     # Mobile app only (Expo dev server)
-cd apps/server && pnpm dev     # Server only (Wrangler dev)
+cd apps/mobile && pnpm dev      # Mobile app (Expo dev server)
+cd apps/server && pnpm dev      # Server (Wrangler dev)
+cd apps/dashboard && pnpm dev   # Dashboard (SvelteKit dev)
 ```
 
 ### Environment Setup
@@ -214,21 +249,39 @@ cd apps/server && pnpm dev     # Server only (Wrangler dev)
 - Configure Google Sign-In and Apple authentication keys
 
 **Server:**
-- Set up Cloudflare Workers environment variables
+- Set up Cloudflare Workers environment variables (JWT secrets, API keys)
 - Configure D1 database with `pnpm db:migrate`
-- Set up R2 bucket for image storage
+- Set up R2 bucket for image storage and CDN
+- Configure Qdrant vector database for AI features
 
-## Project Status
+**Dashboard:**
+- Copy environment configuration for API access
+- Ensure server analytics endpoints are accessible
 
-**Current State:** Functional MVP with core social media features implemented across both mobile and server components.
+## Technical Achievements
 
-**Deployment:**
-- **Mobile**: Expo development builds for iOS and Android
-- **Server**: Live on Cloudflare Workers at `capture-api.jai-d.workers.dev`
-- **Database**: Production SQLite D1 database with migrations
-- **Storage**: R2 object storage with CDN integration
+This project demonstrates modern full-stack development practices including:
 
-This project demonstrates modern full-stack development practices and serves as a portfolio showcase. It may evolve into a closed-source product in the future.
+- **Full-stack Type Safety**: End-to-end TypeScript with shared types
+- **Advanced Authentication**: WebAuthn passkeys with biometric fallbacks
+- **Edge Computing**: Rust WASM modules for high-performance image processing
+- **Modern State Management**: Reactive patterns with optimistic updates
+- **Scalable Architecture**: Microservices-ready modular design
+- **Real-time Features**: Live updates and notifications
+- **Privacy-First Design**: Minimal data collection with user control
+
+## Development Status
+
+**Current State:** Complete, production-ready social media platform in pre-beta phase.
+
+**Deployment Infrastructure:**
+- **Mobile**: Expo development builds configured for iOS and Android
+- **Server**: Live on Cloudflare Workers with global edge distribution
+- **Database**: Production SQLite D1 with comprehensive migrations
+- **Storage**: R2 object storage with CDN integration and image optimization
+- **Analytics**: Real-time dashboard with SvelteKit frontend
+
+**Next Steps:** Public beta launch preparation, user acquisition strategy, and scaling optimization.
 
 ---
 

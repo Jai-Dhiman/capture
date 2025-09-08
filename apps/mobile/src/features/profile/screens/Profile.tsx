@@ -4,6 +4,7 @@ import { PostMenu } from '@/features/post/components/PostMenu';
 import { useDeletePost, useUserPosts } from '@/features/post/hooks/usePosts';
 import { useSavePost, useSavedPosts, useUnsavePost } from '@/features/post/hooks/useSavesPosts';
 import { useBlockUser } from '@/features/profile/hooks/useBlocking';
+import { useGridCarouselLayout } from '@/features/profile/hooks/useGridCarouselLayout';
 import type { AppStackParamList } from '@/navigation/types';
 import { SkeletonElement } from '@/shared/components/SkeletonLoader';
 import { useAlert } from '@/shared/lib/AlertContext';
@@ -36,10 +37,8 @@ export default function Profile() {
   const userId = route.params?.userId || user?.id;
   const isOwnProfile = userId === user?.id;
 
-  // Dynamic header and tab bar height measurement
-  const [headerHeight, setHeaderHeight] = useState(280); // Default fallback
-  const [tabBarLayout, setTabBarLayout] = useState({ y: 0, height: 56 }); // Default tab bar position
-  const tabBarBottomPosition = headerHeight + tabBarLayout.y + tabBarLayout.height;
+  // Use the new grid-carousel layout hook
+  const gridCarouselLayout = useGridCarouselLayout();
 
   const [showFollowers, setShowFollowers] = useState(false);
   const [showPostCarousel, setShowPostCarousel] = useState(false);
@@ -71,22 +70,8 @@ export default function Profile() {
       : [],
   );
 
-  const getGridItemSize = useCallback(() => {
-    const gridMargin = 16;
-    const gridSpacing = 8;
-    const numColumns = 3;
-
-    const availableWidth = width - gridMargin * 2;
-    const itemSize = (availableWidth - gridSpacing * (numColumns - 1)) / numColumns;
-
-    return {
-      itemSize,
-      spacing: gridSpacing,
-      containerPadding: gridMargin,
-    };
-  }, [width]);
-
-  const { itemSize, spacing, containerPadding } = getGridItemSize();
+  // Extract layout values from the hook
+  const { itemSize, spacing, containerPadding, carouselTop, carouselHeight } = gridCarouselLayout;
 
   const carouselPosts = React.useMemo(() => {
     return posts ? posts.filter((post: any) => post.type === 'post') : [];
@@ -154,7 +139,7 @@ export default function Profile() {
   if (profileLoading) {
     return (
       <View style={{ flex: 1, backgroundColor: '#dcdcde' }}>
-        <View onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
+        <View onLayout={(event) => gridCarouselLayout.updateHeaderHeight(event.nativeEvent.layout.height)}>
           <ProfileHeader
             isLoading
             showBackButton
@@ -232,7 +217,7 @@ export default function Profile() {
           <View className="flex-1 bg-[#DCDCDE]">
             <StatusBar barStyle="dark-content" />
             <View className="px-6 pt-4">
-              <View onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
+              <View onLayout={(event) => gridCarouselLayout.updateHeaderHeight(event.nativeEvent.layout.height)}>
                 <ProfileHeader
                   profileData={profileData}
                   isOwnProfile={isOwnProfile}
@@ -269,7 +254,7 @@ export default function Profile() {
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       <View className="flex-1 bg-[#DCDCDE]">
-        <View onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
+        <View onLayout={(event) => gridCarouselLayout.updateHeaderHeight(event.nativeEvent.layout.height)}>
           <ProfileHeader
             profileData={profileData}
             isOwnProfile={isOwnProfile}
@@ -296,7 +281,7 @@ export default function Profile() {
               setShowPostCarousel(false);
             }}
             carouselActive={showPostCarousel}
-            onTabBarLayout={(event) => setTabBarLayout(event.nativeEvent.layout)}
+            onTabBarLayout={gridCarouselLayout.onTabBarLayout}
           />
         </View>
       </View>
@@ -305,8 +290,8 @@ export default function Profile() {
         <View
           className="absolute left-0 right-0 bg-[#DCDCDE]"
           style={{
-            top: tabBarBottomPosition,
-            height: height - tabBarBottomPosition - (isOwnProfile ? 70 : 50),
+            top: carouselTop,
+            height: carouselHeight,
             zIndex: 1,
           }}
         >
@@ -314,10 +299,8 @@ export default function Profile() {
             <PostCarousel
               posts={carouselPosts}
               initialIndex={initialPostIndex}
-              onSettingsPress={handlePostSettings}
-              onToggleSave={handleToggleSavePost}
-              onOpenComments={handleOpenComments}
-              isSaving={savePostMutation.isPending || unsavePostMutation.isPending}
+              carouselHeight={carouselHeight}
+              itemSize={itemSize}
             />
           </View>
         </View>

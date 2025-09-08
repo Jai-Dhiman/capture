@@ -880,10 +880,13 @@ router.post('/oauth/google/token', authRateLimiter, async (c) => {
 
 router.post('/oauth/apple', authRateLimiter, async (c) => {
   try {
+    console.log('🍎 Apple OAuth request started');
     const body = await c.req.json();
+    console.log('🍎 Request body parsed, has identityToken:', !!body?.identityToken);
     const validation = oauthAppleSchema.safeParse(body);
 
     if (!validation.success) {
+      console.log('🍎 Validation failed:', validation.error.errors);
       return c.json(
         {
           error: 'Invalid input',
@@ -895,8 +898,17 @@ router.post('/oauth/apple', authRateLimiter, async (c) => {
     }
 
     const { identityToken } = validation.data;
+    console.log('🍎 identityToken length:', identityToken?.length);
 
+    console.log('🍎 APPLE_CLIENT_ID check:', !!c.env.APPLE_CLIENT_ID);
+    console.log('🍎 APPLE_CLIENT_ID value (first 10 chars):', c.env.APPLE_CLIENT_ID?.substring(0, 10));
+    console.log('🍎 APPLE_CLIENT_ID type:', typeof c.env.APPLE_CLIENT_ID);
+    console.log('🍎 All env keys:', Object.keys(c.env));
+    console.log('🍎 JWT_SECRET exists:', !!c.env.JWT_SECRET);
+    console.log('🍎 GOOGLE_CLIENT_ID exists:', !!c.env.GOOGLE_CLIENT_ID);
+    
     if (!c.env.APPLE_CLIENT_ID) {
+      console.log('🍎 APPLE_CLIENT_ID is missing!');
       return c.json(
         { error: 'Apple OAuth not configured', code: 'auth/oauth-not-configured' },
         500,
@@ -1037,7 +1049,11 @@ router.post('/oauth/apple', authRateLimiter, async (c) => {
       ...securityStatus,
     });
   } catch (error) {
-    console.error('Apple OAuth error:', error);
+    console.error('🍎 Apple OAuth error:', error);
+    console.error('🍎 Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return c.json({ error: 'Apple OAuth authentication failed', code: 'auth/oauth-failed' }, 500);
   }
 });

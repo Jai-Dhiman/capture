@@ -39,18 +39,6 @@ const queryClient = new QueryClient({
 });
 
 export default Sentry.wrap(function App() {
-  useEffect(() => {
-    console.log('[APP] Starting app initialization');
-    try {
-      initializeAuth();
-    } catch (error) {
-      console.error('[APP] Auth initialization failed:', error);
-      Sentry.captureException(error);
-    }
-  }, []);
-
-  console.log('[APP] App component rendering');
-
   return (
     <ErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1 }}>

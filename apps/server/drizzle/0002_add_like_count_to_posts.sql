@@ -1,0 +1,2 @@
+-- This migration is now empty - all functionality moved to 0003_add_like_count_safe.sql
+-- Keeping this file to maintain migration sequence consistency

@@ -36,7 +36,6 @@ type LoginState =
   | 'email-verification';
 
 export default function LoginScreen({ navigation }: Props) {
-  console.log('[LOGIN_SCREEN] LoginScreen component rendering');
   const [loginState, setLoginState] = useState<LoginState>('email');
   const [biometricName, setBiometricName] = useState<string>('Biometric');
   const emailInputRef = useRef<TextInput>(null);
@@ -220,14 +219,14 @@ export default function LoginScreen({ navigation }: Props) {
           }}
           resizeMode="cover"
         />
-        <Header height={155} showBackground={false} />
+        <Header height={150} showBackground={false} />
         <TouchableWithoutFeedback
           onPress={() => {
             Keyboard.dismiss();
             emailInputRef.current?.blur();
           }}
         >
-          <View className="flex-1 px-[26px] pt-[96px]">
+          <View className="flex-1 px-[26px] pt-[80px]">
             <form.Field
               name="email"
               validators={{
@@ -239,8 +238,8 @@ export default function LoginScreen({ navigation }: Props) {
               }}
             >
               {(field) => (
-                <View className="mb-[6px]">
-                  <Text className="text-base font-roboto mb-[6px]">Email</Text>
+                <View className="mb-[0px]">
+                  <Text className="text-base font-roboto mb-[2px]">Email</Text>
                   <TouchableOpacity
                     activeOpacity={1}
                     onPress={() => emailInputRef.current?.focus()}
@@ -249,12 +248,12 @@ export default function LoginScreen({ navigation }: Props) {
                   >
                     <Image
                       source={{ uri: svgToDataUri(EmailIconSvg) }}
-                      style={{ width: 35, height: 35, marginRight: 14 }}
+                      style={{ width: 35, height: 30, marginRight: 14 }}
                     />
                     <TextInput
                       ref={emailInputRef}
                       autoFocus={false}
-                      onFocus={() => {}}
+                      onFocus={() => { }}
                       onBlur={() => {
                         field.handleBlur();
                       }}
@@ -279,7 +278,7 @@ export default function LoginScreen({ navigation }: Props) {
                     />
                   </TouchableOpacity>
                   {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
-                    <Text className="text-red-500 text-xs mt-1 ml-2 font-roboto">
+                    <Text className="text-red-500 text-xs  ml-2 font-roboto">
                       {field.state.meta.errors.join(', ')}
                     </Text>
                   )}
@@ -291,20 +290,20 @@ export default function LoginScreen({ navigation }: Props) {
               {(sendCode.isError ||
                 authenticateWithPasskey.isError ||
                 loginState === 'user-not-found') && (
-                <Text className="text-red-500 text-xs text-center font-roboto">
-                  {loginState === 'passkey'
-                    ? 'Passkey authentication failed. Please try again.'
-                    : loginState === 'user-not-found'
-                      ? 'No account found for this email address.'
-                      : 'Failed to send verification code. Please try again.'}
-                </Text>
-              )}
+                  <Text className="text-red-500 text-xs text-center font-roboto">
+                    {loginState === 'passkey'
+                      ? 'Passkey authentication failed. Please try again.'
+                      : loginState === 'user-not-found'
+                        ? 'No account found for this email address.'
+                        : 'Failed to send verification code. Please try again.'}
+                  </Text>
+                )}
             </View>
 
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
               {([canSubmit, isFormSubmitting]) => (
                 <TouchableOpacity
-                  className={`h-[56px] ${canSubmit ? 'bg-[#E4CAC7]' : 'bg-stone-300'} mt-[26px] rounded-[30px] shadow-md justify-center items-center`}
+                  className={`h-[56px] ${canSubmit ? 'bg-[#E4CAC7]' : 'bg-stone-300'} rounded-[30px] shadow-md justify-center items-center`}
                   onPress={() => form.handleSubmit()}
                   disabled={!canSubmit || isFormSubmitting || isLoading}
                   style={shadowStyle}
@@ -337,14 +336,17 @@ export default function LoginScreen({ navigation }: Props) {
 
             <View className="items-center mt-[24px]">
               <TouchableOpacity onPress={() => navigation.navigate('RegisterScreen')}>
-                <Text className="text-base font-semibold font-roboto text-[#827B85] underline">
+                <Text
+                  className="text-base font-semibold font-roboto text-[#827B85]"
+                  style={{ textDecorationColor: '#827B85', textDecorationStyle: 'solid' }}
+                >
                   Account Recovery
                 </Text>
               </TouchableOpacity>
             </View>
             <View className="h-[1px] bg-[#7B7B7B] my-4 mt-[32px]" />
 
-            <View style={shadowStyle} className="mt-[29px] mb-[23px]">
+            <View style={shadowStyle} className="mt-[20px] mb-[23px]">
               <GoogleOAuthButton />
             </View>
 
@@ -354,7 +356,7 @@ export default function LoginScreen({ navigation }: Props) {
 
             <View className="items-center">
               <TouchableOpacity onPress={() => navigation.navigate('RegisterScreen')}>
-                <Text className="text-base font-semibold font-roboto text-[#827B85] underline">
+                <Text className="text-base font-semibold font-roboto text-[#827B85]">
                   Don't Have an Account?
                 </Text>
               </TouchableOpacity>

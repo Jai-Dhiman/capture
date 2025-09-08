@@ -1,6 +1,7 @@
 import { graphqlFetch } from '@/shared/lib/graphqlClient';
 import { type QueryFunctionContext, useInfiniteQuery } from '@tanstack/react-query';
 import type { Post } from '@/features/post/types/postTypes';
+import { useSessionTracking } from './useSessionTracking';
 
 interface DiscoveryResult {
   posts: Post[];
@@ -17,13 +18,15 @@ interface DiscoveryResult {
 }
 
 export const useDiscoverFeed = (limit = 10) => {
+  const { sessionId, isNewSession } = useSessionTracking();
+
   return useInfiniteQuery<DiscoveryResult, Error>({
-    queryKey: ['discoverFeed'],
+    queryKey: ['discoverFeed', sessionId], // Include sessionId in query key for proper caching
     queryFn: async ({ pageParam: cursor }: QueryFunctionContext) => {
       const data = await graphqlFetch<{ discoverFeed: DiscoveryResult }>({
         query: `
-          query GetDiscoverFeed($limit: Int, $cursor: String) {
-            discoverFeed(limit: $limit, cursor: $cursor) {
+          query GetDiscoverFeed($limit: Int, $cursor: String, $sessionId: String, $isNewSession: Boolean) {
+            discoverFeed(limit: $limit, cursor: $cursor, sessionId: $sessionId, isNewSession: $isNewSession) {
               posts {
                 id
                 userId
@@ -59,6 +62,7 @@ export const useDiscoverFeed = (limit = 10) => {
                 }
                 _commentCount
                 _saveCount
+                _likeCount
               }
               hasMore
               nextCursor
@@ -73,7 +77,7 @@ export const useDiscoverFeed = (limit = 10) => {
             }
           }
         `,
-        variables: { limit, cursor },
+        variables: { limit, cursor, sessionId, isNewSession },
       });
 
       return data.discoverFeed;

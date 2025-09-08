@@ -1,6 +1,7 @@
 import { blockingResolvers } from './blocking';
 import { commentResolvers } from './comment';
 import { discoveryResolvers } from './discovery';
+import { feedbackResolvers } from './feedback';
 import { hashtagResolvers } from './hashtag';
 import { mediaResolvers } from './media';
 import { notificationResolvers } from './notification';
@@ -26,6 +27,7 @@ export const resolvers: ResolverMap = {
     ...blockingResolvers.Query,
     ...discoveryResolvers.Query,
     ...notificationResolvers.Query,
+    ...feedbackResolvers.Query,
   },
   Mutation: {
     ...postResolvers.Mutation,
@@ -37,6 +39,7 @@ export const resolvers: ResolverMap = {
     ...blockingResolvers.Mutation,
     ...discoveryResolvers.Mutation,
     ...notificationResolvers.Mutation,
+    ...feedbackResolvers.Mutation,
   },
 
   Post: {
@@ -50,4 +53,7 @@ export const resolvers: ResolverMap = {
   Hashtag: hashtagResolvers.Hashtag || {},
   Comment: commentResolvers.Comment,
   Notification: notificationResolvers.Notification,
+  FeedbackTicket: feedbackResolvers.FeedbackTicket || {},
+  FeedbackResponse: feedbackResolvers.FeedbackResponse || {},
+  FeedbackAttachment: feedbackResolvers.FeedbackAttachment || {},
 };
