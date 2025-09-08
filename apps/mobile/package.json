@@ -40,6 +40,7 @@
     "expo-clipboard": "~7.1.5",
     "expo-constants": "~17.1.7",
     "expo-crypto": "~14.1.5",
+    "expo-dev-client": "~5.0.20",
     "expo-doctor": "^1.13.3",
     "expo-file-system": "~18.1.11",
     "expo-image": "^2.4.0",
