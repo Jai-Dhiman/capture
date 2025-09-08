@@ -24,7 +24,9 @@ const config = {
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
       NSFaceIDUsageDescription: "Use Face ID to securely sign in to your account",
-      NSBiometricUsageDescription: "Use biometric authentication to securely access your account"
+      NSBiometricUsageDescription: "Use biometric authentication to securely access your account",
+      NSPhotoLibraryUsageDescription: "This app needs access to your photo library to allow you to select and share photos in your posts",
+      NSPhotoLibraryAddUsageDescription: "This app needs permission to save edited images to your photo library"
     }
   },
   android: {
@@ -35,14 +37,12 @@ const config = {
       backgroundColor: "#ffffff"
     }
   },
-  scheme: "com.obscuratechnologies.capture",
+  scheme: "capture",
   linking: {
     prefixes: [
       "com.obscuratechnologies.capture://",
       "capture://",
-      "http://localhost:8081",
-      "exp://192.168.1.64:8081",
-      "exp://7kyeaek-anonymous-8081.exp.direct",
+      "exp+capture://",
       "https://www.captureapp.org",
       "https://capture-api.jai-d.workers.dev"
     ],
@@ -91,7 +91,11 @@ const config = {
       {
         url: "https://sentry.io/",
         project: "capture",
-        organization: "capture-7u"
+        organization: "capture-7u",
+        setCommits: false,
+        enableAutoUpload: false,
+        disableSourceMapUpload: true,
+        suppressNativeWebpackWarning: true
       }
     ],
     "expo-asset",

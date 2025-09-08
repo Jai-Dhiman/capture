@@ -51,6 +51,7 @@ export const useFollowingFeed = (limit = 10) => {
                 }
                 _commentCount
                 _saveCount
+                _likeCount
               }
               hasMore
               nextCursor

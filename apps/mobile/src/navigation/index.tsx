@@ -110,5 +110,6 @@ export function MainNavigator() {
   }
 
   // User is not authenticated - show auth stack
+  console.log('[NAVIGATOR] Returning AuthStack with key:', navigationKey);
   return <AuthStack key={navigationKey} />;
 }

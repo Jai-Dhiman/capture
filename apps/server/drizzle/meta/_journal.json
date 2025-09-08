@@ -8,6 +8,27 @@
       "when": 1752265834019,
       "tag": "0000_cooing_warhawk",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1755229863787,
+      "tag": "0001_motionless_mandroid",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1755927599994,
+      "tag": "0002_add_like_count_to_posts",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1755927700000,
+      "tag": "0003_add_like_count_safe",
+      "breakpoints": true
     }
   ]
 }

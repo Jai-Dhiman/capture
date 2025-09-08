@@ -3,10 +3,12 @@ import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
 import { RetryLink } from '@apollo/client/link/retry';
-import { API_URL } from '@env';
+import { API_URL } from '@/shared/config/env';
+
+const apiUrl = API_URL;
 
 const httpLink = createHttpLink({
-  uri: `${API_URL}/graphql`,
+  uri: `${apiUrl}/graphql`,
 });
 
 const authLink = setContext(async (_, { headers }) => {
@@ -64,7 +66,7 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
 const retryLink = new RetryLink({
   delay: {
     initial: 300,
-    max: Infinity,
+    max: Number.POSITIVE_INFINITY,
     jitter: true,
   },
   attempts: {

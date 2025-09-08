@@ -29,6 +29,7 @@ interface ProfileTabViewProps {
   isLoadingSaved: boolean;
   onTabPress?: (index: number) => void;
   carouselActive?: boolean;
+  onTabBarLayout?: (event: any) => void;
 }
 
 export const ProfileTabView = ({
@@ -38,6 +39,7 @@ export const ProfileTabView = ({
   isLoading,
   isLoadingSaved,
   onTabPress,
+  onTabBarLayout,
 }: ProfileTabViewProps) => {
   const layout = useWindowDimensions();
   const [index, setIndex] = useState(0);
@@ -215,6 +217,7 @@ export const ProfileTabView = ({
   const renderTabBar = () => (
     <View
       className="w-full h-12 bg-[#DCDCDE]"
+      onLayout={onTabBarLayout}
       style={{
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },

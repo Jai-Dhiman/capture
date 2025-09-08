@@ -1,7 +1,7 @@
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { MediaImage } from '@/features/post/components/MediaImage';
 import { errorService } from '@/shared/services/errorService';
-import { API_URL } from '@env';
+import { API_URL } from '@/shared/config/env';
 import { useQuery } from '@tanstack/react-query';
 import { useAtom } from 'jotai';
 import React, { useState, useEffect } from 'react';

@@ -16,6 +16,7 @@ import {
 import type { Bindings } from '@/types';
 import { faker } from '@faker-js/faker';
 import { nanoid } from 'nanoid';
+import { eq } from 'drizzle-orm';
 import { createEmbeddingService } from '../ai/embeddingService';
 import { createCachingService } from '../cache/cachingService';
 import { createQdrantClient } from '../infrastructure/qdrantClient';
@@ -397,6 +398,25 @@ export async function seedDatabase(
   }
 
   await batchInsert(db, comment, comments);
+
+  // 6.1. Update comment counts in posts based on actual comments created
+  console.log('📊 Updating comment counts for posts...');
+  
+  // Group comments by postId to count them
+  const commentCounts: Record<string, number> = {};
+  for (const comment of comments) {
+    commentCounts[comment.postId] = (commentCounts[comment.postId] || 0) + 1;
+  }
+  
+  // Update each post with its actual comment count
+  for (const [postId, count] of Object.entries(commentCounts)) {
+    await db
+      .update(post)
+      .set({ _commentCount: count })
+      .where(eq(post.id, postId));
+  }
+  
+  console.log(`✅ Updated comment counts for ${Object.keys(commentCounts).length} posts`);
 
   // 7. Create relationships
   const relationships = [];

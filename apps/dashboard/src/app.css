@@ -1,3 +1,13 @@
 @tailwind base;
 @tailwind components;
-@tailwind utilities; 
+@tailwind utilities;
+
+/* Test to see if CSS is loading */
+body {
+  background: purple !important;
+}
+
+.test-class {
+  color: orange !important;
+  font-size: 2rem !important;
+}
