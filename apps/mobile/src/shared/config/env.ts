@@ -1,39 +1,48 @@
 import Constants from 'expo-constants';
 
-// Import from @env with proper fallbacks for web builds
-let API_URL_ENV: string | undefined;
-let SHARE_URL_ENV: string | undefined;
+// Single source of truth for runtime configuration.
+// We avoid using @env directly to prevent accidental silent fallbacks.
+// In release builds, missing required keys will throw immediately.
 
-try {
-  // This might fail in web builds, so wrap in try-catch
-  const envModule = require('@env');
-  API_URL_ENV = envModule.API_URL;
-  SHARE_URL_ENV = envModule.SHARE_URL;
-} catch (error) {
-  console.warn('Failed to load @env module, using fallbacks:', error);
+function readExtra(key: string): string | undefined {
+  // Expo/EAS injects public vars into expoConfig.extra and process.env
+  const fromExtra = (Constants.expoConfig as any)?.extra?.[key];
+  const fromProcess = (process?.env as any)?.[key];
+  return (fromExtra ?? fromProcess ?? undefined) as string | undefined;
 }
 
-// Centralized configuration with proper fallbacks
-export const ENV_CONFIG = {
-  API_URL: 
-    API_URL_ENV || 
-    Constants.expoConfig?.extra?.API_URL || 
-    process.env.API_URL ||
-    'https://capture-api.jai-d.workers.dev',
-    
-  SHARE_URL: 
-    SHARE_URL_ENV || 
-    Constants.expoConfig?.extra?.SHARE_URL || 
-    process.env.SHARE_URL ||
-    'https://www.captureapp.org',
-};
+function requireKey(key: string, val: string | undefined): string {
+  if (!val || String(val).trim().length === 0) {
+    // Fail fast in release builds; warn in dev and test.
+    const isDev = typeof __DEV__ !== 'undefined' && __DEV__;
+    const isTest = process?.env?.NODE_ENV === 'test';
+    if (isDev || isTest) {
+      console.warn(`[ENV] Missing ${key}. Using empty string in ${isTest ? 'test' : 'development'}; release builds will fail.`);
+      return '';
+    }
+    throw new Error(`[ENV] Missing required configuration key: ${key}`);
+  }
+  return String(val);
+}
 
-// Export individual values for backward compatibility
+// Resolve all keys (prefix public web-exposed keys with EXPO_PUBLIC_ when appropriate)
+const API_URL_RESOLVED = readExtra('API_URL') || readExtra('EXPO_PUBLIC_API_URL');
+const SHARE_URL_RESOLVED = readExtra('SHARE_URL') || readExtra('EXPO_PUBLIC_SHARE_URL');
+const SENTRY_DSN_RESOLVED = readExtra('EXPO_PUBLIC_SENTRY_DSN');
+const GOOGLE_CLIENT_ID_RESOLVED = readExtra('EXPO_PUBLIC_GOOGLE_CLIENT_ID');
+const GOOGLE_CLIENT_ID_IOS_RESOLVED = readExtra('EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS');
+const APPLE_CLIENT_ID_RESOLVED = readExtra('EXPO_PUBLIC_APPLE_CLIENT_ID');
+
+export const ENV_CONFIG = {
+  API_URL: requireKey('EXPO_PUBLIC_API_URL', API_URL_RESOLVED || 'https://capture-api.jai-d.workers.dev'),
+  SHARE_URL: requireKey('EXPO_PUBLIC_SHARE_URL', SHARE_URL_RESOLVED || 'https://www.captureapp.org'),
+  SENTRY_DSN: requireKey('EXPO_PUBLIC_SENTRY_DSN', SENTRY_DSN_RESOLVED || ''),
+  GOOGLE_CLIENT_ID: requireKey('EXPO_PUBLIC_GOOGLE_CLIENT_ID', GOOGLE_CLIENT_ID_RESOLVED || ''),
+  GOOGLE_CLIENT_ID_IOS: requireKey('EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS', GOOGLE_CLIENT_ID_IOS_RESOLVED || ''),
+  APPLE_CLIENT_ID: requireKey('EXPO_PUBLIC_APPLE_CLIENT_ID', APPLE_CLIENT_ID_RESOLVED || ''),
+} as const;
+
+// Individual exports for backward compatibility
 export const API_URL = ENV_CONFIG.API_URL;
 export const SHARE_URL = ENV_CONFIG.SHARE_URL;
-
-console.log('[ENV_CONFIG] Loaded configuration:', {
-  API_URL: ENV_CONFIG.API_URL,
-  SHARE_URL: ENV_CONFIG.SHARE_URL,
-  source: API_URL_ENV ? '@env' : 'fallback',
-});
+export const SENTRY_DSN = ENV_CONFIG.SENTRY_DSN;

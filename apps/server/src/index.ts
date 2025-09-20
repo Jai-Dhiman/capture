@@ -41,11 +41,13 @@ app.use(
       'http://localhost:19000',
       'http://localhost:19006',
       'http://localhost:8969/stream',
-      'https://o4509049381519360.ingest.us.sentry.io/api/4509049386434560/envelope/?sentry_key=74904d3bf1ebb2b0747f5356b0a83624&sentry_version=7&sentry_client=sentry.javascript.react-native%2F6.3.0.',
       'exp://*',
       'https://*.exp.direct',
       'https://capture-api.jai-d.workers.dev',
       'https://cdn.capture-app.com',
+      'https://www.captureapp.org',
+      'https://captureapp.org',
+      'null',
     ],
     allowHeaders: ['Content-Type', 'Authorization', 'sentry-trace', 'baggage'],
     allowMethods: ['POST', 'GET', 'OPTIONS', 'DELETE', 'PUT'],
@@ -59,6 +61,9 @@ app.use(
 const server = new ApolloServer({
   typeDefs,
   resolvers,
+  // Harden GraphQL in production-like environments by disabling introspection.
+  // Cloudflare Workers don’t expose env at module init, so we default to disabled.
+  introspection: false,
 });
 
 const handler = startServerAndCreateCloudflareWorkersHandler(server, {
@@ -102,6 +107,18 @@ app.get('/.well-known/apple-app-site-association', (c) => {
 app.route('/', healthRoutes);
 app.route('/auth', authRouter);
 app.route('/seed', seedRouter);
+
+// Version endpoint for operability and smoke tests
+app.get('/version', (c) => {
+  const commit = (c.env as any)?.COMMIT_SHA || 'unknown';
+  const env = (c.env as any)?.ENV || 'unknown';
+  return c.json({
+    version: '1',
+    env,
+    commit,
+    buildTime: new Date().toISOString(),
+  });
+});
 
 // Analytics routes (public for dashboard access)
 app.route('/api/analytics', analyticsRouter);

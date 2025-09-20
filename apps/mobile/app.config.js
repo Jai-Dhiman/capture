@@ -93,8 +93,8 @@ const config = {
         project: "capture",
         organization: "capture-7u",
         setCommits: false,
-        enableAutoUpload: false,
-        disableSourceMapUpload: true,
+        enableAutoUpload: true,
+        disableSourceMapUpload: false,
         suppressNativeWebpackWarning: true
       }
     ],
@@ -114,8 +114,9 @@ const config = {
     eas: {
       projectId: "4e5aa601-eda8-40fe-857e-44e547c19fa6"
     },
-    API_URL: process.env.API_URL || "https://capture-api.jai-d.workers.dev",
-    SHARE_URL: process.env.SHARE_URL || "https://www.captureapp.org"
+    API_URL: process.env.EXPO_PUBLIC_API_URL || process.env.API_URL || "https://capture-api.jai-d.workers.dev",
+    SHARE_URL: process.env.EXPO_PUBLIC_SHARE_URL || process.env.SHARE_URL || "https://www.captureapp.org",
+    SENTRY_DSN: process.env.EXPO_PUBLIC_SENTRY_DSN || ""
   }
 };
 

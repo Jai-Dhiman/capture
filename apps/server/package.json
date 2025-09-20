@@ -13,7 +13,10 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "wrangler d1 migrations apply capture-db",
     "test": "vitest",
+    "test:unit": "vitest run",
+    "test:e2e": "vitest run src/test/e2e.server.test.ts",
     "test:coverage": "vitest run --coverage",
+    "load:test": "artillery run -t $API_URL load/basic.yml",
     "ssl:setup": "node scripts/setup-cdn-ssl.js",
     "ssl:monitor": "node scripts/monitor-ssl.js",
     "ssl:check": "node scripts/monitor-ssl.js",
@@ -43,6 +46,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250317.0",
     "@hono/node-server": "^1.13.8",
+    "artillery": "^2.0.9",
     "drizzle-kit": "^0.30.4",
     "msw": "^2.7.0",
     "tsx": "^4.19.2",

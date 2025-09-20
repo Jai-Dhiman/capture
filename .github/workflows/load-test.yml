@@ -1,14 +1,15 @@
-name: Capture CI/CD Pipeline
+name: Server Load Test (Artillery)
 
 on:
-  push:
-    branches: [main, dev]
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
+    inputs:
+      api_url:
+        description: "Target API base URL (e.g., https://capture-api.jai-d.workers.dev)"
+        required: true
+        type: string
 
 jobs:
-  test:
-    name: Tests
+  artillery:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,12 +27,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Server Unit & E2E Tests
-        run: |
-          pnpm --filter server test:unit
-          pnpm --filter server test:e2e
-
-      - name: Mobile Unit Tests
-        run: pnpm --filter mobile test -- --ci
+      - name: Run load test
+        run: pnpm --filter server load:test
         env:
-          CI: true
+          API_URL: ${{ inputs.api_url }}

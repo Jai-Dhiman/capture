@@ -1,5 +1,5 @@
 import { useAuthStore } from '@/features/auth/stores/authStore';
-import { API_URL } from '@env';
+import { API_URL } from '@/shared/config/env';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import * as MediaLibrary from 'expo-media-library';
 import * as ImageManipulator from 'expo-image-manipulator';

@@ -14,7 +14,6 @@ import {
   View,
 } from 'react-native';
 import { EmptyState } from '../components/EmptyState';
-import { DiscoveryDebugModal } from '../components/DiscoveryDebugModal';
 import { useDiscoverFeed } from '../hooks/useDiscoverFeed';
 import { useFollowingFeed } from '../hooks/useFollowingFeed';
 import { useMarkPostsAsSeen } from '@/features/post/hooks/usePosts';
@@ -23,7 +22,6 @@ const HEADER_HEIGHT = 150;
 
 export default function Feed() {
   const [refreshing, setRefreshing] = useState(false);
-  const [debugModalVisible, setDebugModalVisible] = useState(false);
   const seenPostIdsRef = useRef(new Set<string>());
 
   // Header animation hook - only show header on fast upward scrolls
@@ -191,15 +189,6 @@ export default function Feed() {
       <Header hideHeader={hideHeader} height={HEADER_HEIGHT} addSpacer={false} />
       <HeaderSpacer hideHeader={hideHeader} height={HEADER_HEIGHT} />
       
-      {/* Debug Analytics Button - Only show in development */}
-      {__DEV__ && (
-        <TouchableOpacity
-          className="absolute top-20 right-4 z-50 bg-blue-500 p-2 rounded-full shadow-lg"
-          onPress={() => setDebugModalVisible(true)}
-        >
-          <Text className="text-white text-xs font-bold">📊</Text>
-        </TouchableOpacity>
-      )}
 
       <View className="flex-1">
         <FlashList
@@ -225,12 +214,6 @@ export default function Feed() {
           }
         />
       </View>
-      
-      {/* Discovery Analytics Debug Modal */}
-      <DiscoveryDebugModal
-        visible={debugModalVisible}
-        onClose={() => setDebugModalVisible(false)}
-      />
     </View>
   );
 }

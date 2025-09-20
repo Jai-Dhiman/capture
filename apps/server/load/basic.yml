@@ -1,0 +1,23 @@
+config:
+  target: "{{ $env.API_URL | default 'https://capture-api.jai-d.workers.dev' }}"
+  phases:
+    - duration: 60
+      arrivalRate: 5
+  defaults:
+    headers:
+      Content-Type: application/json
+scenarios:
+  - name: Health and version
+    flow:
+      - get:
+          url: "/"
+      - get:
+          url: "/version"
+  - name: GraphQL introspection (should fail)
+    flow:
+      - post:
+          url: "/graphql"
+          json:
+            query: "query IntrospectionQuery { __schema { types { name } } }"
+          expect:
+            - statusCode: 400
