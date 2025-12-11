@@ -1,5 +1,5 @@
 import { useAuthStore } from '@/features/auth/stores/authStore';
-import { API_URL } from '@env';
+import { API_URL } from '@/shared/config/env';
 
 interface GraphQLRequest {
   query: string;
