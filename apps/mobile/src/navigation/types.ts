@@ -29,6 +29,10 @@ export type AuthStackParamList = {
   TOTPSetup: undefined;
   TOTPVerification: undefined;
   CreateProfile: undefined;
+  ForgotPassword: undefined;
+  ResetPassword: {
+    email: string;
+  };
 };
 
 export type AppStackParamList = {
@@ -66,4 +70,10 @@ export type SettingsStackParamList = {
   MainSettings: undefined;
   BlockedUsers: undefined;
   AccountSettings: undefined;
+  ReportBug: undefined;
+  FeatureRequest: undefined;
+  PrivacyPolicy: undefined;
+  NotificationSettings: undefined;
+  Appearance: undefined;
+  ReportUser: { userId: string; username: string };
 };

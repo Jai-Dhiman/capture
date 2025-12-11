@@ -8,6 +8,8 @@ import PasskeySetupScreen from '@/features/auth/screens/PasskeySetupScreen';
 import MFACreationScreen from '@/features/auth/screens/MFACreationScreen';
 import TOTPSetupScreen from '@/features/auth/screens/TOTPSetupScreen';
 import TOTPVerificationScreen from '@/features/auth/screens/TOTPVerificationScreen';
+import ForgotPasswordScreen from '@/features/auth/screens/ForgotPasswordScreen';
+import ResetPasswordScreen from '@/features/auth/screens/ResetPasswordScreen';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
@@ -54,6 +56,8 @@ export default function AuthStack() {
       <Stack.Screen name="TOTPSetup" component={TOTPSetupScreen} />
       <Stack.Screen name="TOTPVerification" component={TOTPVerificationScreen} />
       <Stack.Screen name="CreateProfile" component={CreateProfile} />
+      <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+      <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
     </Stack.Navigator>
   );
 }

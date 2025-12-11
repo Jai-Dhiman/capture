@@ -108,7 +108,10 @@ export default function MainSettingsScreen() {
       />
           </TouchableOpacity>
 
-          <TouchableOpacity className="flex-row items-center p-3">
+          <TouchableOpacity
+            className="flex-row items-center p-3"
+            onPress={() => navigation.navigate('PrivacyPolicy')}
+          >
             <Image
         source={{ uri: svgToDataUri(LockIcon2Svg) }}
         style={[{ width: 25, height: 25 }, {}]}
@@ -124,7 +127,10 @@ export default function MainSettingsScreen() {
 
         {/* Customization Section */}
         <View className="bg-white bg-opacity-0 rounded-[10px] shadow border border-black mb-6">
-          <TouchableOpacity className="flex-row items-center p-3 border-b border-black border-opacity-20">
+          <TouchableOpacity
+            className="flex-row items-center p-3 border-b border-black border-opacity-20"
+            onPress={() => navigation.navigate('NotificationSettings')}
+          >
             <Image
         source={{ uri: svgToDataUri(NotificationIconSvg) }}
         style={[{ width: 25, height: 25 }, {}]}
@@ -137,7 +143,10 @@ export default function MainSettingsScreen() {
       />
           </TouchableOpacity>
 
-          <TouchableOpacity className="flex-row items-center p-3 border-b border-black border-opacity-20">
+          <TouchableOpacity
+            className="flex-row items-center p-3 border-b border-black border-opacity-20"
+            onPress={() => navigation.navigate('Appearance')}
+          >
             <Image
         source={{ uri: svgToDataUri(CustomizeIconSvg) }}
         style={[{ width: 25, height: 25 }, {}]}
@@ -179,20 +188,10 @@ export default function MainSettingsScreen() {
 
         {/* Support Section */}
         <View className="bg-white bg-opacity-0 rounded-[10px] shadow border border-black mb-8">
-          <TouchableOpacity className="flex-row items-center p-3 border-b border-black border-opacity-20">
-            <Image
-        source={{ uri: svgToDataUri(ShieldIconSvg) }}
-        style={[{ width: 25, height: 25 }, {}]}
-      />
-            <Text className="ml-4 text-xs font-bold">Report User</Text>
-            <View className="flex-1" />
-            <Image
-        source={{ uri: svgToDataUri(EmptyIconSvg) }}
-        style={[{ width: 20, height: 20 }, {}]}
-      />
-          </TouchableOpacity>
-
-          <TouchableOpacity className="flex-row items-center p-3 border-b border-black border-opacity-20">
+          <TouchableOpacity
+            className="flex-row items-center p-3 border-b border-black border-opacity-20"
+            onPress={() => navigation.navigate('ReportBug')}
+          >
             <Image
         source={{ uri: svgToDataUri(AccountIconSvg) }}
         style={[{ width: 25, height: 25 }, {}]}
@@ -205,7 +204,10 @@ export default function MainSettingsScreen() {
       />
           </TouchableOpacity>
 
-          <TouchableOpacity className="flex-row items-center p-3">
+          <TouchableOpacity
+            className="flex-row items-center p-3"
+            onPress={() => navigation.navigate('FeatureRequest')}
+          >
             <Image
         source={{ uri: svgToDataUri(UserVerifiedIconSvg) }}
         style={[{ width: 25, height: 25 }, {}]}

@@ -7,20 +7,65 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import React, { useState, useEffect } from 'react';
-import { ScrollView, StatusBar, Switch, Text, TouchableOpacity, View } from 'react-native';
-import { AlgorithmIconSvg, BlockIconSvg, CustomBackIconSvg, EmailIconSvg, EmptyIconSvg, LockIcon2Svg } from '@assets/icons/svgStrings';
+import { Alert, ScrollView, StatusBar, Switch, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { AlgorithmIconSvg, BlockIconSvg, CustomBackIconSvg, EmailIconSvg, EmptyIconSvg, LockIcon2Svg, TrashIconSvg } from '@assets/icons/svgStrings';
 import { svgToDataUri } from '@/shared/utils/svgUtils';
 import { Image } from 'expo-image';
+import { apiClient } from '@/shared/lib/apiClient';
+import { useAlert } from '@/shared/lib/AlertContext';
 
 
 type NavigationProp = NativeStackNavigationProp<SettingsStackParamList, 'AccountSettings'>;
 
 export default function AccountSettingsScreen() {
   const navigation = useNavigation<NavigationProp>();
-  const { user, session } = useAuthStore();
+  const { user, session, clearAuth } = useAuthStore();
   const { profile } = useProfileStore();
   const [isPrivate, setIsPrivate] = useState(false);
   const queryClient = useQueryClient();
+  const { showAlert } = useAlert();
+
+  const deleteAccountMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiClient.delete<{ success: boolean; message: string }>('/auth/account');
+      return response;
+    },
+    onSuccess: () => {
+      showAlert('Account deleted successfully', { type: 'success' });
+      clearAuth();
+    },
+    onError: (error: Error) => {
+      showAlert(error.message || 'Failed to delete account', { type: 'error' });
+    },
+  });
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'Are you sure you want to delete your account? This action cannot be undone. Your posts and comments will be anonymized.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              'Confirm Deletion',
+              'This is your final confirmation. Your account will be permanently deleted.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Delete Forever',
+                  style: 'destructive',
+                  onPress: () => deleteAccountMutation.mutate(),
+                },
+              ]
+            );
+          },
+        },
+      ]
+    );
+  };
 
   useEffect(() => {
     const fetchPrivacySetting = async () => {
@@ -199,6 +244,31 @@ export default function AccountSettingsScreen() {
               disabled={updatePrivacyMutation.isPending}
             />
           </View>
+        </View>
+
+        {/* Delete Account Section */}
+        <View className="mt-8 mb-12">
+          <Text className="text-xs text-gray-500 mb-3 px-1">Danger Zone</Text>
+          <TouchableOpacity
+            className="bg-red-50 rounded-[10px] shadow border border-red-200 p-4 flex-row items-center justify-center"
+            onPress={handleDeleteAccount}
+            disabled={deleteAccountMutation.isPending}
+          >
+            {deleteAccountMutation.isPending ? (
+              <ActivityIndicator color="#EF4444" />
+            ) : (
+              <>
+                <Image
+                  source={{ uri: svgToDataUri(TrashIconSvg || BlockIconSvg) }}
+                  style={{ width: 20, height: 20, tintColor: '#EF4444' }}
+                />
+                <Text className="ml-2 text-red-500 font-semibold">Delete Account</Text>
+              </>
+            )}
+          </TouchableOpacity>
+          <Text className="text-[10px] text-gray-500 mt-2 px-1 text-center">
+            Your posts and comments will be anonymized. This cannot be undone.
+          </Text>
         </View>
       </ScrollView>
     </View>

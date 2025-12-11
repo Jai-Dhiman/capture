@@ -3,8 +3,10 @@ import { commentResolvers } from './comment';
 import { discoveryResolvers } from './discovery';
 import { feedbackResolvers } from './feedback';
 import { hashtagResolvers } from './hashtag';
+import { likeResolvers } from './like';
 import { mediaResolvers } from './media';
 import { notificationResolvers } from './notification';
+import { notificationSettingsResolvers } from './notificationSettings';
 import { postResolvers } from './post';
 import { profileResolvers } from './profile';
 import { relationshipResolvers } from './relationship';
@@ -23,10 +25,12 @@ export const resolvers: ResolverMap = {
     ...hashtagResolvers.Query,
     ...commentResolvers.Query,
     ...savedPostResolvers.Query,
+    ...likeResolvers.Query,
     ...relationshipResolvers.Query,
     ...blockingResolvers.Query,
     ...discoveryResolvers.Query,
     ...notificationResolvers.Query,
+    ...notificationSettingsResolvers.Query,
     ...feedbackResolvers.Query,
   },
   Mutation: {
@@ -36,15 +40,18 @@ export const resolvers: ResolverMap = {
     ...hashtagResolvers.Mutation,
     ...commentResolvers.Mutation,
     ...savedPostResolvers.Mutation,
+    ...likeResolvers.Mutation,
     ...blockingResolvers.Mutation,
     ...discoveryResolvers.Mutation,
     ...notificationResolvers.Mutation,
+    ...notificationSettingsResolvers.Mutation,
     ...feedbackResolvers.Mutation,
   },
 
   Post: {
     ...(postResolvers.Post || {}),
     ...(savedPostResolvers.Post || {}),
+    ...(likeResolvers.Post || {}),
   },
   Profile: {
     ...relationshipResolvers.Profile,
@@ -53,6 +60,7 @@ export const resolvers: ResolverMap = {
   Hashtag: hashtagResolvers.Hashtag || {},
   Comment: commentResolvers.Comment,
   Notification: notificationResolvers.Notification,
+  NotificationSettings: notificationSettingsResolvers.NotificationSettings,
   FeedbackTicket: feedbackResolvers.FeedbackTicket || {},
   FeedbackResponse: feedbackResolvers.FeedbackResponse || {},
   FeedbackAttachment: feedbackResolvers.FeedbackAttachment || {},

@@ -18,6 +18,7 @@ export const typeDefs = `
       limit: Int
     ): CommentConnection!
     savedPosts(limit: Int, offset: Int): [Post!]!
+    likedPosts(limit: Int, offset: Int): [Post!]!
     followers(userId: ID!): [Profile!]!
     following(userId: ID!): [Profile!]!
     blockedUsers: [Profile!]!
@@ -30,7 +31,8 @@ export const typeDefs = `
     discoveryPerformanceSummary: DiscoveryPerformanceSummary
     notifications(limit: Int = 20, offset: Int = 0, includeRead: Boolean = false): [Notification!]!
     unreadNotificationCount: Int!
-    
+    notificationSettings: NotificationSettings
+
     # Feedback System Queries
     myTickets(status: TicketStatus, limit: Int = 10, offset: Int = 0): [FeedbackTicket!]!
     ticket(id: ID!): FeedbackTicket
@@ -66,13 +68,16 @@ export const typeDefs = `
     unfollowUser(userId: ID!): UnfollowResponse!
     savePost(postId: ID!): SavePostResponse!
     unsavePost(postId: ID!): UnsavePostResponse!
+    likePost(postId: ID!): LikePostResponse!
+    unlikePost(postId: ID!): UnlikePostResponse!
     updatePrivacySettings(isPrivate: Boolean!): Profile!
     blockUser(userId: ID!): BlockResponse!
     unblockUser(userId: ID!): UnblockResponse!
     markNotificationRead(id: ID!): NotificationReadResponse!
     markAllNotificationsRead: NotificationReadResponse!
     markPostsAsSeen(postIds: [ID!]!): SeenPostsResponse!
-    
+    updateNotificationSettings(input: NotificationSettingsInput!): NotificationSettings!
+
     # Feedback System Mutations
     createTicket(input: CreateTicketInput!): FeedbackTicket!
     addTicketResponse(ticketId: ID!, message: String!): FeedbackResponse!
@@ -126,6 +131,7 @@ export const typeDefs = `
     hashtags: [Hashtag!]!
     savedBy: [Profile!]!
     isSaved: Boolean!
+    isLiked: Boolean!
     isDraft: Boolean!
     editingMetadata: EditingMetadata
     version: Int!
@@ -309,6 +315,15 @@ export const typeDefs = `
     success: Boolean!
   }
 
+  type LikePostResponse {
+    success: Boolean!
+    post: Post
+  }
+
+  type UnlikePostResponse {
+    success: Boolean!
+  }
+
   type BlockResponse {
   success: Boolean!
   blockedUser: Profile
@@ -429,6 +444,7 @@ enum NotificationType {
   COMMENT_REPLY
   MENTION
   POST_SAVE
+  POST_LIKE
 }
 
 type NotificationReadResponse {
@@ -650,5 +666,25 @@ input CategoryInput {
   description: String
   priorityLevel: Int = 1
   isActive: Boolean = true
+}
+
+type NotificationSettings {
+  id: ID!
+  enablePush: Boolean!
+  likes: Boolean!
+  comments: Boolean!
+  follows: Boolean!
+  mentions: Boolean!
+  saves: Boolean!
+  updatedAt: String!
+}
+
+input NotificationSettingsInput {
+  enablePush: Boolean
+  likes: Boolean
+  comments: Boolean
+  follows: Boolean
+  mentions: Boolean
+  saves: Boolean
 }
 `;
