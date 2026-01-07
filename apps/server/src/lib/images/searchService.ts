@@ -11,7 +11,7 @@ export class ImageSearchService {
   private cachingService: CachingService;
 
   constructor(env: Bindings) {
-    this.kv = env.METADATA_KV;
+    this.kv = env.CAPTURE_KV;
     this.cachingService = createCachingService(env);
   }
 
@@ -38,9 +38,9 @@ export class ImageSearchService {
     const allImageIds = new Set<string>();
 
     for (const tag of tags) {
-      const tagKey = `tag:${tag}`;
+      const tagKey = `img:tag:${tag}`;
       const tagData = await this.kv.get(tagKey);
-      
+
       if (tagData) {
         const imageIds = JSON.parse(tagData) as string[];
         for (const id of imageIds) {
@@ -53,7 +53,7 @@ export class ImageSearchService {
 
     // Filter by user if specified
     if (userId) {
-      const userKey = `user:${userId}`;
+      const userKey = `img:user:${userId}`;
       const userData = await this.kv.get(userKey);
       
       if (userData) {
@@ -76,7 +76,7 @@ export class ImageSearchService {
     sortBy?: 'uploadedAt' | 'size';
     sortOrder?: 'asc' | 'desc';
   }): Promise<string[]> {
-    const userKey = `user:${userId}`;
+    const userKey = `img:user:${userId}`;
     const userData = await this.kv.get(userKey);
     
     if (!userData) {
@@ -88,7 +88,7 @@ export class ImageSearchService {
     // Apply sorting if specified
     if (options?.sortBy) {
       const metadataPromises = imageIds.map(async (id) => {
-        const searchKey = `search:${id}`;
+        const searchKey = `img:search:${id}`;
         const searchData = await this.kv.get(searchKey);
         return searchData ? { id, ...JSON.parse(searchData) } : null;
       });
@@ -130,7 +130,7 @@ export class ImageSearchService {
     
     // Get metadata for all matching images
     const metadataPromises = imageIds.map(async (id) => {
-      const searchKey = `search:${id}`;
+      const searchKey = `img:search:${id}`;
       const searchData = await this.kv.get(searchKey);
       return searchData ? JSON.parse(searchData) : null;
     });
@@ -193,7 +193,7 @@ export class ImageSearchService {
     
     // Get metadata for results
     const metadataPromises = imageIds.map(async (id) => {
-      const searchKey = `search:${id}`;
+      const searchKey = `img:search:${id}`;
       const searchData = await this.kv.get(searchKey);
       return searchData ? { id, ...JSON.parse(searchData) } : null;
     });
@@ -272,15 +272,15 @@ export class ImageSearchService {
       } else {
         // For global search, we'd need a different approach
         // This is a simplified implementation
-        const list = await this.kv.list({ prefix: 'search:' });
-        candidateIds = new Set(list.keys.map(key => key.name.replace('search:', '')));
+        const list = await this.kv.list({ prefix: 'img:search:' });
+        candidateIds = new Set(list.keys.map(key => key.name.replace('img:search:', '')));
       }
     }
 
     // Apply additional filters
     const filteredIds = [];
     for (const id of candidateIds) {
-      const searchKey = `search:${id}`;
+      const searchKey = `img:search:${id}`;
       const searchData = await this.kv.get(searchKey);
       
       if (searchData) {

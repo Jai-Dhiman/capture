@@ -17,7 +17,7 @@ export class MetadataService {
 
   constructor(env: Bindings, config?: Partial<MetadataStorageConfig>) {
     this.r2 = env.IMAGE_STORAGE;
-    this.kv = env.METADATA_KV;
+    this.kv = env.CAPTURE_KV;
     this.cachingService = createCachingService(env);
     
     this.config = {
@@ -67,7 +67,7 @@ export class MetadataService {
 
     // Store in Workers KV for search
     if (this.config.useWorkersKV) {
-      const kvKey = `metadata:${imageId}`;
+      const kvKey = `img:meta:${imageId}`;
       await this.kv.put(kvKey, metadataJson, {
         expirationTtl: this.config.cacheTTL
       });
@@ -92,7 +92,7 @@ export class MetadataService {
       async () => {
         // Try Workers KV first
         if (this.config.useWorkersKV) {
-          const kvKey = `metadata:${imageId}`;
+          const kvKey = `img:meta:${imageId}`;
           const kvResult = await this.kv.get(kvKey);
           if (kvResult) {
             return JSON.parse(kvResult) as ImageMetadata;
@@ -142,7 +142,7 @@ export class MetadataService {
   async deleteMetadata(imageId: string): Promise<void> {
     // Remove from KV
     if (this.config.useWorkersKV) {
-      const kvKey = `metadata:${imageId}`;
+      const kvKey = `img:meta:${imageId}`;
       await this.kv.delete(kvKey);
       
       // Remove from search indexes
@@ -267,16 +267,16 @@ export class MetadataService {
     };
 
     // Store in search index
-    await this.kv.put(`search:${imageId}`, JSON.stringify(searchData), {
+    await this.kv.put(`img:search:${imageId}`, JSON.stringify(searchData), {
       expirationTtl: this.config.cacheTTL
     });
 
     // Update tag indexes
     for (const tag of metadata.tags) {
-      const tagKey = `tag:${tag}`;
+      const tagKey = `img:tag:${tag}`;
       const existingTagData = await this.kv.get(tagKey);
       const tagImageIds = existingTagData ? JSON.parse(existingTagData) : [];
-      
+
       if (!tagImageIds.includes(imageId)) {
         tagImageIds.push(imageId);
         await this.kv.put(tagKey, JSON.stringify(tagImageIds), {
@@ -286,10 +286,10 @@ export class MetadataService {
     }
 
     // Update user index
-    const userKey = `user:${metadata.userId}`;
+    const userKey = `img:user:${metadata.userId}`;
     const existingUserData = await this.kv.get(userKey);
     const userImageIds = existingUserData ? JSON.parse(existingUserData) : [];
-    
+
     if (!userImageIds.includes(imageId)) {
       userImageIds.push(imageId);
       await this.kv.put(userKey, JSON.stringify(userImageIds), {
@@ -304,15 +304,15 @@ export class MetadataService {
   private async removeFromSearchIndexes(imageId: string): Promise<void> {
     if (!this.config.enableSearch) return;
 
-    const searchKey = `search:${imageId}`;
+    const searchKey = `img:search:${imageId}`;
     const searchData = await this.kv.get(searchKey);
-    
+
     if (searchData) {
       const metadata = JSON.parse(searchData);
-      
+
       // Remove from tag indexes
       for (const tag of metadata.tags || []) {
-        const tagKey = `tag:${tag}`;
+        const tagKey = `img:tag:${tag}`;
         const tagData = await this.kv.get(tagKey);
         if (tagData) {
           const tagImageIds = JSON.parse(tagData).filter((id: string) => id !== imageId);
@@ -325,7 +325,7 @@ export class MetadataService {
       }
 
       // Remove from user index
-      const userKey = `user:${metadata.userId}`;
+      const userKey = `img:user:${metadata.userId}`;
       const userData = await this.kv.get(userKey);
       if (userData) {
         const userImageIds = JSON.parse(userData).filter((id: string) => id !== imageId);

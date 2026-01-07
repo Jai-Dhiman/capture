@@ -96,21 +96,12 @@ describe('Queue Handlers', () => {
     // Setup mock environment
     mockEnv = {
       DB: {} as D1Database,
-      KV: {
-        get: vi.fn(),
-        put: vi.fn(),
-      } as any,
-      POST_VECTORS: {
+      CAPTURE_KV: {
         get: vi.fn(),
         put: vi.fn(),
         delete: vi.fn(),
+        list: vi.fn().mockResolvedValue({ keys: [], list_complete: true, cursor: undefined }),
       } as any,
-      USER_VECTORS: {
-        get: vi.fn(),
-        put: vi.fn(),
-        delete: vi.fn(),
-      } as any,
-      CACHE_KV: {} as any,
       POST_QUEUE: {
         send: vi.fn(),
       } as any,
@@ -520,13 +511,13 @@ describe('Queue Handlers', () => {
       });
 
       // Mock KV store operations for vectors
-      (mockEnv.POST_VECTORS as any).get.mockResolvedValue({ vector: [0.1, 0.2, 0.3] });
+      (mockEnv.CAPTURE_KV as any).get.mockResolvedValue({ vector: [0.1, 0.2, 0.3] });
 
       // Mock hashtag embedding generation
       mockGenerateTextEmbedding
         .mockResolvedValue({ vector: [0.1, 0.1, 0.1] });
-      
-      (mockEnv.USER_VECTORS as any).put.mockResolvedValue(undefined);
+
+      (mockEnv.CAPTURE_KV as any).put.mockResolvedValue(undefined);
 
       const batch: MessageBatch<{ userId: string }> = {
         messages: [
@@ -545,8 +536,8 @@ describe('Queue Handlers', () => {
       await handleUserEmbeddingQueue(batch, mockEnv);
 
       expect(mockAck).toHaveBeenCalled();
-      expect(mockEnv.USER_VECTORS.put).toHaveBeenCalledWith(
-        'test-user-id',
+      expect(mockEnv.CAPTURE_KV.put).toHaveBeenCalledWith(
+        'vec:user:test-user-id',
         expect.stringContaining('[')
       );
     });
@@ -556,9 +547,9 @@ describe('Queue Handlers', () => {
       const mockRetry = vi.fn();
 
       // Mock empty saved and created posts
-      mockAll.mockResolvedValue([]); 
+      mockAll.mockResolvedValue([]);
 
-      (mockEnv.USER_VECTORS as any).delete.mockResolvedValue(undefined);
+      (mockEnv.CAPTURE_KV as any).delete.mockResolvedValue(undefined);
 
       const batch: MessageBatch<{ userId: string }> = {
         messages: [
@@ -577,7 +568,7 @@ describe('Queue Handlers', () => {
       await handleUserEmbeddingQueue(batch, mockEnv);
 
       expect(mockAck).toHaveBeenCalled();
-      expect(mockEnv.USER_VECTORS.delete).toHaveBeenCalledWith('empty-user-id');
+      expect(mockEnv.CAPTURE_KV.delete).toHaveBeenCalledWith('vec:user:empty-user-id');
     });
 
     it('should handle failed vector calculation gracefully', async () => {
@@ -601,8 +592,8 @@ describe('Queue Handlers', () => {
       });
 
       // Mock KV store to return invalid vectors
-      (mockEnv.POST_VECTORS as any).get.mockResolvedValue(null);
-      (mockEnv.USER_VECTORS as any).delete.mockResolvedValue(undefined);
+      (mockEnv.CAPTURE_KV as any).get.mockResolvedValue(null);
+      (mockEnv.CAPTURE_KV as any).delete.mockResolvedValue(undefined);
 
       const batch: MessageBatch<{ userId: string }> = {
         messages: [
@@ -621,7 +612,7 @@ describe('Queue Handlers', () => {
       await handleUserEmbeddingQueue(batch, mockEnv);
 
       expect(mockAck).toHaveBeenCalled();
-      expect(mockEnv.USER_VECTORS.delete).toHaveBeenCalledWith('test-user-id');
+      expect(mockEnv.CAPTURE_KV.delete).toHaveBeenCalledWith('vec:user:test-user-id');
     });
 
     it('should handle database errors gracefully', async () => {

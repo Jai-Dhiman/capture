@@ -213,8 +213,8 @@ export class cachingService implements CachingService {
 
 // Factory function to create the service
 export function createCachingService(env: Bindings): CachingService {
-  const kvNamespace = env.CACHE_KV; // Cloudflare KV namespace for caching
-  
+  const kvNamespace = env.CAPTURE_KV; // Cloudflare KV namespace for caching
+
   if (!kvNamespace) {
     console.warn('[CACHE] No KV namespace provided, caching will be disabled');
     

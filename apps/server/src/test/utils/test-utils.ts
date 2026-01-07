@@ -50,33 +50,12 @@ export function createMockBindings(): Bindings {
       }),
       createPresignedUrl: vi.fn().mockResolvedValue('https://example.com/presigned-url'),
     } as unknown as R2Bucket,
-    KV: {
+    CAPTURE_KV: {
       get: vi.fn(),
       getWithMetadata: vi.fn(),
       put: vi.fn(),
       delete: vi.fn(),
-      list: vi.fn(),
-    } as unknown as KVNamespace,
-    Capture_Rate_Limits: {
-      get: vi.fn(),
-      getWithMetadata: vi.fn(),
-      put: vi.fn(),
-      delete: vi.fn(),
-      list: vi.fn(),
-    } as unknown as KVNamespace,
-    POST_VECTORS: {
-      get: vi.fn(),
-      getWithMetadata: vi.fn(),
-      put: vi.fn(),
-      delete: vi.fn(),
-      list: vi.fn(),
-    } as unknown as KVNamespace,
-    USER_VECTORS: {
-      get: vi.fn(),
-      getWithMetadata: vi.fn(),
-      put: vi.fn(),
-      delete: vi.fn(),
-      list: vi.fn(),
+      list: vi.fn().mockResolvedValue({ keys: [], list_complete: true, cursor: undefined }),
     } as unknown as KVNamespace,
     VECTORIZE: {
       insert: vi.fn(),

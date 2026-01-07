@@ -44,11 +44,7 @@ export function createGraphQLTestClient(options: TestClientOptions = {}): {
       CLOUDFLARE_IMAGES_TOKEN: 'test-images-token',
       CLOUDFLARE_IMAGES_KEY: 'test-images-key',
       // Required by Bindings type - add actual mocks or leave as dummy values if not used by these tests
-      KV: {} as any,
-      REFRESH_TOKEN_KV: {} as any,
-      Capture_Rate_Limits: {} as any,
-      POST_VECTORS: {} as any,
-      USER_VECTORS: {} as any,
+      CAPTURE_KV: {} as any,
       SEED_SECRET: 'mock-seed-secret',
       JWT_SECRET: 'mock-jwt-secret',
       AI: {} as any,

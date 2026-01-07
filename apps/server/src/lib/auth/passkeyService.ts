@@ -127,9 +127,9 @@ export class PasskeyService {
   }
 
   private async storeChallenge(userId: string, challenge: string) {
-    if (this.env.REFRESH_TOKEN_KV) {
+    if (this.env.CAPTURE_KV) {
       try {
-        await this.env.REFRESH_TOKEN_KV.put(`passkey_challenge_${userId}`, challenge, {
+        await this.env.CAPTURE_KV.put(`auth:pk_reg:${userId}`, challenge, {
           expirationTtl: 300, // 5 minutes
         });
       } catch {
@@ -141,15 +141,15 @@ export class PasskeyService {
   }
 
   private async getStoredChallenge(userId: string): Promise<string | null> {
-    if (this.env.REFRESH_TOKEN_KV) {
-      return await this.env.REFRESH_TOKEN_KV.get(`passkey_challenge_${userId}`);
+    if (this.env.CAPTURE_KV) {
+      return await this.env.CAPTURE_KV.get(`auth:pk_reg:${userId}`);
     }
     return null;
   }
 
   private async removeChallenge(userId: string) {
-    if (this.env.REFRESH_TOKEN_KV) {
-      await this.env.REFRESH_TOKEN_KV.delete(`passkey_challenge_${userId}`);
+    if (this.env.CAPTURE_KV) {
+      await this.env.CAPTURE_KV.delete(`auth:pk_reg:${userId}`);
     }
   }
 

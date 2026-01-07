@@ -34,28 +34,8 @@ binding = "IMAGE_STORAGE"
 bucket_name = "capture-images"
 
 [[kv_namespaces]]
-binding = "REFRESH_TOKEN_KV"
-id = "26595ad6034b4448922107a1cc70e012"
-
-[[kv_namespaces]]
-binding = "Capture_Rate_Limits"
-id = "94122c41067e4db7b87b7618ecf06b49"
-
-[[kv_namespaces]]
-binding = "POST_VECTORS"
-id = "7edac15c451741d28833d410037d090a"
-
-[[kv_namespaces]]
-binding = "USER_VECTORS"
-id = "99abeb7032754aa59283001ec4ed4006"
-
-[[kv_namespaces]]
-binding = "METADATA_KV"
-id = "18b0e916c1e0435a9fc92d59bbe0b6c3"
-
-[[kv_namespaces]]
-binding = "CACHE_KV"
-id = "9755928f8e3c4323b63f06e84fc1b5a1"
+binding = "CAPTURE_KV"
+id = "33f2f79c71fc4bdcbc2b81e7913feb65"
 
 [[queues.producers]]
 binding = "POST_QUEUE"

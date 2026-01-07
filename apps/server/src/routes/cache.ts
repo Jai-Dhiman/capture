@@ -155,7 +155,7 @@ cacheRouter.get('/stats', async (c) => {
   }
 
   try {
-    const kv = c.env.CACHE_KV;
+    const kv = c.env.CAPTURE_KV;
 
     // Get basic KV stats
     const list = await kv.list({ limit: 1000 });

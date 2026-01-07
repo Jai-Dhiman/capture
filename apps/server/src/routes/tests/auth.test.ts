@@ -117,20 +117,13 @@ describe('Auth Routes', () => {
     
     mockEnv = {
       DB: {} as any,
-      KV: {} as any,
-      POST_VECTORS: {} as any,
-      USER_VECTORS: {} as any,
-      CACHE_KV: {} as any,
       POST_QUEUE: {} as any,
       USER_VECTOR_QUEUE: {} as any,
-      REFRESH_TOKEN_KV: {
+      CAPTURE_KV: {
         put: vi.fn().mockResolvedValue(undefined),
         get: vi.fn().mockResolvedValue(null),
         delete: vi.fn().mockResolvedValue(undefined),
-      } as any,
-      Capture_Rate_Limits: {
-        put: vi.fn().mockResolvedValue(undefined),
-        get: vi.fn().mockResolvedValue(JSON.stringify({ count: 1, resetTime: Date.now() + 60000 })),
+        list: vi.fn().mockResolvedValue({ keys: [], list_complete: true, cursor: undefined }),
       } as any,
       RESEND_API_KEY: 'test-resend-key',
       JWT_SECRET: 'test-jwt-secret',
@@ -411,7 +404,7 @@ describe('Auth Routes', () => {
   describe('POST /refresh', () => {
     it('should refresh token successfully', async () => {
       // Mock valid refresh token in KV - return the user ID directly
-      (mockEnv.REFRESH_TOKEN_KV.get as any).mockResolvedValue('test-user-id');
+      (mockEnv.CAPTURE_KV.get as any).mockResolvedValue('test-user-id');
 
       // Mock user lookup
       mockGet.mockResolvedValueOnce({
@@ -433,7 +426,7 @@ describe('Auth Routes', () => {
       expect(data).toHaveProperty('session');
       expect(data.session).toHaveProperty('access_token', 'mock-jwt-token');
       expect(data.session).toHaveProperty('refresh_token');
-      expect(mockEnv.REFRESH_TOKEN_KV.get).toHaveBeenCalledWith('rt_valid-refresh-token');
+      expect(mockEnv.CAPTURE_KV.get).toHaveBeenCalledWith('auth:rt:valid-refresh-token');
     });
 
     it('should return 400 for invalid input', async () => {
@@ -450,7 +443,7 @@ describe('Auth Routes', () => {
 
     it('should return 401 for invalid refresh token', async () => {
       // Mock no refresh token in KV
-      (mockEnv.REFRESH_TOKEN_KV.get as any).mockResolvedValue(null);
+      (mockEnv.CAPTURE_KV.get as any).mockResolvedValue(null);
 
       const res = await app.request('/auth/refresh', {
         method: 'POST',
@@ -465,7 +458,7 @@ describe('Auth Routes', () => {
 
     it('should return 401 for expired refresh token', async () => {
       // Mock expired refresh token (KV returns null for expired tokens)
-      (mockEnv.REFRESH_TOKEN_KV.get as any).mockResolvedValue(null);
+      (mockEnv.CAPTURE_KV.get as any).mockResolvedValue(null);
 
       const res = await app.request('/auth/refresh', {
         method: 'POST',
@@ -480,7 +473,7 @@ describe('Auth Routes', () => {
 
     it('should return 401 for non-existent user', async () => {
       // Mock valid refresh token but no user
-      (mockEnv.REFRESH_TOKEN_KV.get as any).mockResolvedValue('non-existent-user');
+      (mockEnv.CAPTURE_KV.get as any).mockResolvedValue('non-existent-user');
       mockGet.mockResolvedValue(null);
 
       const res = await app.request('/auth/refresh', {
@@ -506,7 +499,7 @@ describe('Auth Routes', () => {
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data).toHaveProperty('success', true);
-      expect(mockEnv.REFRESH_TOKEN_KV.delete).toHaveBeenCalledWith('rt_some-token');
+      expect(mockEnv.CAPTURE_KV.delete).toHaveBeenCalledWith('auth:rt:some-token');
     });
 
     it('should logout successfully without refresh token', async () => {

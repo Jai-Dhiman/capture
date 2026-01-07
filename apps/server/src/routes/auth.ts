@@ -169,12 +169,12 @@ async function generateJwtToken(
 
   const refreshToken = nanoid(64);
 
-  if (env.REFRESH_TOKEN_KV) {
-    await env.REFRESH_TOKEN_KV.put(`rt_${refreshToken}`, userId, {
+  if (env.CAPTURE_KV) {
+    await env.CAPTURE_KV.put(`auth:rt:${refreshToken}`, userId, {
       expirationTtl: REFRESH_TOKEN_EXPIRATION_SECONDS,
     });
   } else {
-    console.warn('REFRESH_TOKEN_KV is not available. Refresh token will not be stored.');
+    console.warn('CAPTURE_KV is not available. Refresh token will not be stored.');
   }
 
   return { accessToken, refreshToken, accessTokenExpiresAt };
@@ -486,14 +486,14 @@ router.post('/refresh', authRateLimiter, async (c) => {
 
     const { refresh_token } = validation.data;
 
-    if (!c.env.REFRESH_TOKEN_KV) {
+    if (!c.env.CAPTURE_KV) {
       return c.json(
         { error: 'Token refresh capability not configured.', code: 'auth/kv-not-configured' },
         500,
       );
     }
 
-    const storedUserId = await c.env.REFRESH_TOKEN_KV.get(`rt_${refresh_token}`);
+    const storedUserId = await c.env.CAPTURE_KV.get(`auth:rt:${refresh_token}`);
     if (!storedUserId) {
       return c.json(
         { error: 'Invalid or expired refresh token', code: 'auth/invalid-refresh-token' },
@@ -502,7 +502,7 @@ router.post('/refresh', authRateLimiter, async (c) => {
     }
 
     // Invalidate the used refresh token immediately
-    await c.env.REFRESH_TOKEN_KV.delete(`rt_${refresh_token}`);
+    await c.env.CAPTURE_KV.delete(`auth:rt:${refresh_token}`);
 
     const db = createD1Client(c.env);
     const user = await db
@@ -560,8 +560,8 @@ router.post('/logout', async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const refreshTokenToInvalidate = body.refresh_token;
 
-  if (refreshTokenToInvalidate && c.env.REFRESH_TOKEN_KV) {
-    await c.env.REFRESH_TOKEN_KV.delete(`rt_${refreshTokenToInvalidate}`);
+  if (refreshTokenToInvalidate && c.env.CAPTURE_KV) {
+    await c.env.CAPTURE_KV.delete(`auth:rt:${refreshTokenToInvalidate}`);
   }
 
   return c.json({ success: true, message: 'Logged out successfully.' });
@@ -1546,8 +1546,8 @@ router.post('/passkey/authenticate/begin', authRateLimiter, async (c) => {
     const options = await passkeyService.generateAuthenticationOptions(devices);
 
     // Store challenge for later verification
-    if (c.env.REFRESH_TOKEN_KV) {
-      await c.env.REFRESH_TOKEN_KV.put(`passkey_auth_challenge_${user.id}`, options.challenge, {
+    if (c.env.CAPTURE_KV) {
+      await c.env.CAPTURE_KV.put(`auth:pk_auth:${user.id}`, options.challenge, {
         expirationTtl: 300, // 5 minutes
       });
     }
@@ -1616,8 +1616,8 @@ router.post('/passkey/authenticate/complete', authRateLimiter, async (c) => {
     }
 
     // Get stored challenge
-    const challenge = c.env.REFRESH_TOKEN_KV
-      ? await c.env.REFRESH_TOKEN_KV.get(`passkey_auth_challenge_${user.id}`)
+    const challenge = c.env.CAPTURE_KV
+      ? await c.env.CAPTURE_KV.get(`auth:pk_auth:${user.id}`)
       : null;
 
     if (!challenge) {
@@ -1666,8 +1666,8 @@ router.post('/passkey/authenticate/complete', authRateLimiter, async (c) => {
       .where(eq(schema.passkeys.id, passkey.id));
 
     // Clean up challenge
-    if (c.env.REFRESH_TOKEN_KV) {
-      await c.env.REFRESH_TOKEN_KV.delete(`passkey_auth_challenge_${user.id}`);
+    if (c.env.CAPTURE_KV) {
+      await c.env.CAPTURE_KV.delete(`auth:pk_auth:${user.id}`);
     }
 
     // Generate tokens

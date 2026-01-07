@@ -17,7 +17,7 @@ export class BulkOperationsService {
   constructor(env: Bindings) {
     this.metadataService = new MetadataService(env);
     this.searchService = new ImageSearchService(env);
-    this.kv = env.METADATA_KV;
+    this.kv = env.CAPTURE_KV;
   }
 
   /**
@@ -76,7 +76,7 @@ export class BulkOperationsService {
     operation: BulkMetadataOperation;
     result?: BulkOperationResult;
   } | null> {
-    const statusData = await this.kv.get(`bulk_operation:${operationId}`);
+    const statusData = await this.kv.get(`img:bulk:${operationId}`);
     return statusData ? JSON.parse(statusData) : null;
   }
 
@@ -309,7 +309,7 @@ export class BulkOperationsService {
   }>> {
     // In a real implementation, you'd want to maintain an index of operations by user
     // For now, this is a simplified version
-    const list = await this.kv.list({ prefix: 'bulk_operation:' });
+    const list = await this.kv.list({ prefix: 'img:bulk:' });
     const operations = [];
 
     for (const item of list.keys.slice(0, limit * 2)) { // Get more to filter
@@ -318,7 +318,7 @@ export class BulkOperationsService {
         const operationData = JSON.parse(data);
         if (operationData.operation.userId === userId) {
           operations.push({
-            operationId: item.name.replace('bulk_operation:', ''),
+            operationId: item.name.replace('img:bulk:', ''),
             ...operationData
           });
         }
@@ -334,7 +334,7 @@ export class BulkOperationsService {
    * Cancel a running bulk operation
    */
   async cancelOperation(operationId: string, userId: string): Promise<boolean> {
-    const statusData = await this.kv.get(`bulk_operation:${operationId}`);
+    const statusData = await this.kv.get(`img:bulk:${operationId}`);
     if (!statusData) {
       return false;
     }
@@ -371,7 +371,7 @@ export class BulkOperationsService {
       updatedAt: new Date().toISOString()
     };
 
-    await this.kv.put(`bulk_operation:${operationId}`, JSON.stringify(statusData), {
+    await this.kv.put(`img:bulk:${operationId}`, JSON.stringify(statusData), {
       expirationTtl: 86400 // 24 hours
     });
   }
