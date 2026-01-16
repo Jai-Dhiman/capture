@@ -25,6 +25,13 @@ export type Bindings = {
   VOYAGE_API_KEY: string;
   POST_QUEUE: Queue<{ postId: string }>;
   USER_VECTOR_QUEUE: Queue<{ userId: string }>;
+  // Feature flags for discovery system
+  // 'simple' = recency + engagement only (no Qdrant/Voyage costs)
+  // 'full' = full vector similarity with WASM + Qdrant + Voyage
+  DISCOVERY_MODE?: 'simple' | 'full';
+  // Passkey configuration
+  PASSKEY_RP_ID: string;
+  PASSKEY_ALLOWED_ORIGINS: string;
 };
 
 export interface AppUser {

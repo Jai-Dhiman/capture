@@ -315,8 +315,6 @@ mediaRouter.get('/cdn/*', cdnSecurityHeaders(), async (c) => {
   const variant = c.req.query('variant') || 'original';
   const format = c.req.query('format') || 'webp';
 
-  console.log(`[CDN] Request for mediaId: ${mediaId}, variant: ${variant}, format: ${format}`);
-
   try {
     // Validate that mediaId is not null or undefined
     if (!mediaId || typeof mediaId !== 'string') {
@@ -332,7 +330,6 @@ mediaRouter.get('/cdn/*', cdnSecurityHeaders(), async (c) => {
     
     const cachedResponse = await cachingService.get(cacheKey);
     if (cachedResponse) {
-      console.log(`[CDN] Cache hit for ${mediaId}`);
       // Set CDN headers for cached response
       c.header('Cache-Control', 'public, max-age=31536000, stale-while-revalidate=86400');
       c.header('ETag', `"${mediaId}-${variant}-${format}"`);
@@ -344,7 +341,6 @@ mediaRouter.get('/cdn/*', cdnSecurityHeaders(), async (c) => {
 
     // Check if this is a seed image path (profile images from seeding)
     if (mediaId.includes('seed-images/')) {
-      console.log(`[CDN] Detected seed image: ${mediaId}`);
       // Handle seed images directly as storage keys
       const storageKey = mediaId; // seed-images/photo-27.jpg
       
@@ -357,15 +353,11 @@ mediaRouter.get('/cdn/*', cdnSecurityHeaders(), async (c) => {
       // Support conditional requests
       const ifNoneMatch = c.req.header('if-none-match');
       if (ifNoneMatch === `"${mediaId}-${variant}-${format}"`) {
-        console.log(`[CDN] Returning 304 for ${mediaId}`);
         return c.newResponse(null, 304);
       }
 
       try {
-        console.log(`[CDN] Attempting to get image URL for storage key: ${storageKey}`);
         const url = await imageService.getImageUrl(storageKey, 'public', 604800); // 1 week expiry (max for R2)
-        
-        console.log(`[CDN] Successfully got URL for seed image: ${mediaId}`);
         const response = { 
           url,
           variant,
@@ -392,7 +384,6 @@ mediaRouter.get('/cdn/*', cdnSecurityHeaders(), async (c) => {
           isMissing: true
         };
         
-        console.log(`[CDN] Returning fallback response for missing seed image: ${mediaId}`);
         // Cache the fallback response to avoid repeated lookups
         await cachingService.set(cacheKey, fallbackResponse, CacheTTL.MEDIA);
         
@@ -400,12 +391,10 @@ mediaRouter.get('/cdn/*', cdnSecurityHeaders(), async (c) => {
       }
     }
 
-    console.log(`[CDN] Looking up regular media record for: ${mediaId}`);
     // Use public access since media access control is handled by the GraphQL layer
     const media = await imageService.findByIdPublic(mediaId);
 
     if (!media) {
-      console.log(`[CDN] Media not found: ${mediaId}`);
       return c.json({ error: 'Media not found' }, 404);
     }
 
@@ -602,57 +591,15 @@ mediaRouter.post('/transform/:mediaId', async (c) => {
 });
 
 // Get deleted media items (for soft delete recovery)
+// Feature not yet implemented - returns 501
 mediaRouter.get('/deleted', async (c) => {
-  const user = c.get('user');
-
-  if (!user) {
-    return c.json({ error: 'User not authenticated' }, 401);
-  }
-
-  try {
-    const imageService = createImageService(c.env);
-    const limit = Number.parseInt(c.req.query('limit') || '10');
-    const offset = Number.parseInt(c.req.query('offset') || '0');
-    
-    // TODO: Implement getDeletedMedia method in imageService
-    // For now, return empty array
-    return c.json({ 
-      deletedMedia: [],
-      pagination: {
-        limit,
-        offset,
-        total: 0
-      }
-    });
-  } catch (error) {
-    console.error('Error getting deleted media:', error);
-    return c.json({ error: 'Failed to get deleted media' }, 500);
-  }
+  return c.json({ error: 'Not Implemented', code: 'media/not-implemented' }, 501);
 });
 
 // Restore soft-deleted media
+// Feature not yet implemented - returns 501
 mediaRouter.post('/restore/:mediaId', async (c) => {
-  const mediaId = c.req.param('mediaId');
-  const user = c.get('user');
-
-  if (!user) {
-    return c.json({ error: 'User not authenticated' }, 401);
-  }
-
-  try {
-    const imageService = createImageService(c.env);
-    
-    // TODO: Implement restoreMedia method in imageService
-    // For now, return success
-    return c.json({ 
-      success: true,
-      mediaId,
-      message: 'Media restored successfully'
-    });
-  } catch (error) {
-    console.error('Error restoring media:', error);
-    return c.json({ error: 'Failed to restore media' }, 500);
-  }
+  return c.json({ error: 'Not Implemented', code: 'media/not-implemented' }, 501);
 });
 
 // Get WASM processor status
@@ -766,53 +713,15 @@ mediaRouter.post('/batch-transform', async (c) => {
 });
 
 // Get cleanup status and orphaned resources
+// Feature not yet implemented - returns 501
 mediaRouter.get('/cleanup-status', async (c) => {
-  const user = c.get('user');
-
-  if (!user) {
-    return c.json({ error: 'User not authenticated' }, 401);
-  }
-
-  try {
-    const imageService = createImageService(c.env);
-    
-    // TODO: Implement getCleanupStatus method in imageService
-    // For now, return mock data
-    return c.json({
-      orphanedFiles: 0,
-      totalStorage: 0,
-      reclaimableStorage: 0,
-      lastCleanup: null
-    });
-  } catch (error) {
-    console.error('Error getting cleanup status:', error);
-    return c.json({ error: 'Failed to get cleanup status' }, 500);
-  }
+  return c.json({ error: 'Not Implemented', code: 'media/not-implemented' }, 501);
 });
 
 // Trigger cleanup of orphaned resources
+// Feature not yet implemented - returns 501
 mediaRouter.post('/cleanup', async (c) => {
-  const user = c.get('user');
-
-  if (!user) {
-    return c.json({ error: 'User not authenticated' }, 401);
-  }
-
-  try {
-    const imageService = createImageService(c.env);
-    
-    // TODO: Implement cleanup method in imageService
-    // For now, return success
-    return c.json({
-      success: true,
-      cleanedFiles: 0,
-      reclaimedStorage: 0,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('Error during cleanup:', error);
-    return c.json({ error: 'Failed to perform cleanup' }, 500);
-  }
+  return c.json({ error: 'Not Implemented', code: 'media/not-implemented' }, 501);
 });
 
 export default mediaRouter;

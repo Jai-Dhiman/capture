@@ -18,12 +18,6 @@ export type AuthStackParamList = {
     isNewUser: boolean;
     message: string;
   };
-  PhoneCodeVerification: {
-    email: string;
-    phone: string;
-    isNewUser: boolean;
-    message: string;
-  };
   PasskeySetup: undefined;
   MFACreation: undefined;
   TOTPSetup: undefined;

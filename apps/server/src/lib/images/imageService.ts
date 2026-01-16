@@ -594,9 +594,6 @@ export class ImageService {
 
     // TODO: Implement actual Cloudflare Cache API purging
     // This would typically use the Cloudflare API to purge specific URLs
-    // For now, log the URLs that would be purged
-    console.log('Implement cache purging for URLs:', urlsToPurge);
-    
     return { urls: urlsToPurge };
   }
 
@@ -622,9 +619,7 @@ export class ImageService {
       cacheByQueryString: true,
       sortQueryStringForCache: true,
     };
-    
-    console.log('CDN configuration would be applied:', cdnConfig);
-    
+
     // TODO: Implement actual Cloudflare API calls to configure these rules
     // This would use the Cloudflare API to create page rules or zone settings
   }

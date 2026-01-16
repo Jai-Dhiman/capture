@@ -1,5 +1,4 @@
 import EmailCodeVerificationScreen from '@/features/auth/screens/EmailCodeVerificationScreen';
-import PhoneCodeVerificationScreen from '@/features/auth/screens/PhoneCodeVerificationScreen';
 import CreateProfile from '@/features/auth/screens/CreateProfile';
 import EmailSignupScreen from '@/features/auth/screens/EmailSignupScreen';
 import LoginScreen from '@/features/auth/screens/LoginScreen';
@@ -52,7 +51,6 @@ export default function AuthStack() {
       <Stack.Screen name="RegisterScreen" component={RegisterScreen} />
       <Stack.Screen name="EmailSignup" component={EmailSignupScreen} />
       <Stack.Screen name="EmailCodeVerification" component={EmailCodeVerificationScreen} />
-      <Stack.Screen name="PhoneCodeVerification" component={PhoneCodeVerificationScreen} />
       <Stack.Screen name="TOTPSetup" component={TOTPSetupScreen} />
       <Stack.Screen name="TOTPVerification" component={TOTPVerificationScreen} />
       <Stack.Screen name="CreateProfile" component={CreateProfile} />

@@ -26,7 +26,6 @@ export const linking: LinkingOptions<RootStackParamList> = {
           RegisterScreen: 'auth/register',
           EmailSignup: 'auth/email-signup',
           EmailCodeVerification: 'auth/email-verification',
-          PhoneCodeVerification: 'auth/phone-verification',
           PasskeySetup: 'auth/passkey-setup',
           MFACreation: 'auth/mfa-setup',
           CreateProfile: 'auth/create-profile',
