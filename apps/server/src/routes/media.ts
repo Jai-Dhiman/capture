@@ -97,8 +97,9 @@ mediaRouter.post('/image-record', async (c) => {
       draftPostId,
     });
 
-    // Generate URL with short expiry for immediate use
-    const url = await imageService.getImageUrl(media.storageKey, 'public', 300); // 5 minute expiry
+    // Generate URL for immediate use
+    const baseUrl = new URL(c.req.url).origin;
+    const url = imageService.getImageUrl(media.storageKey, baseUrl);
 
     return c.json({
       media: {
@@ -150,12 +151,11 @@ mediaRouter.post('/batch-records', async (c) => {
     const createdMedia = await imageService.createBatch(enrichedItems);
 
     // Generate URLs for immediate use
-    const mediaWithUrls = await Promise.all(
-      createdMedia.map(async (media) => {
-        const url = await imageService.getImageUrl(media.storageKey, 'public', 300);
-        return { ...media, url };
-      }),
-    );
+    const baseUrl = new URL(c.req.url).origin;
+    const mediaWithUrls = createdMedia.map((media) => {
+      const url = imageService.getImageUrl(media.storageKey, baseUrl);
+      return { ...media, url };
+    });
 
     return c.json({ media: mediaWithUrls });
   } catch (error) {
@@ -233,7 +233,8 @@ mediaRouter.get('/:mediaId/url', async (c) => {
       return c.newResponse(null, 304);
     }
 
-    const url = await imageService.getImageUrl(media.storageKey, 'public', finalExpiry);
+    const baseUrl = new URL(c.req.url).origin;
+    const url = imageService.getImageUrl(media.storageKey, baseUrl);
     return c.json({ url });
   } catch (error) {
     console.error('Error:', error instanceof Error ? error.message : 'Unknown error');
@@ -357,7 +358,8 @@ mediaRouter.get('/cdn/*', cdnSecurityHeaders(), async (c) => {
       }
 
       try {
-        const url = await imageService.getImageUrl(storageKey, 'public', 604800); // 1 week expiry (max for R2)
+        const baseUrl = new URL(c.req.url).origin;
+        const url = imageService.getImageUrl(storageKey, baseUrl);
         const response = { 
           url,
           variant,
@@ -410,7 +412,8 @@ mediaRouter.get('/cdn/*', cdnSecurityHeaders(), async (c) => {
       return c.newResponse(null, 304);
     }
 
-    const url = await imageService.getImageUrl(media.storageKey, 'public', 604800); // 1 week expiry (max for R2)
+    const baseUrl = new URL(c.req.url).origin;
+    const url = imageService.getImageUrl(media.storageKey, baseUrl);
     
     const response = { 
       url,
@@ -538,13 +541,11 @@ mediaRouter.post('/purge-cache', async (c) => {
 
 mediaRouter.get('/cloudflare-url/:cloudflareId', async (c) => {
   const cloudflareId = c.req.param('cloudflareId');
-  const expirySeconds = Number.parseInt(c.req.query('expiry') || '1800');
-  const maxExpirySeconds = 86400;
-  const finalExpiry = Math.min(expirySeconds, maxExpirySeconds);
 
   try {
     const imageService = createImageService(c.env);
-    const url = await imageService.getDirectCloudflareUrl(cloudflareId, 'public', finalExpiry);
+    const baseUrl = new URL(c.req.url).origin;
+    const url = imageService.getDirectCloudflareUrl(cloudflareId, baseUrl);
     return c.json({ url });
   } catch (error) {
     console.error('Error getting Cloudflare URL:', error);

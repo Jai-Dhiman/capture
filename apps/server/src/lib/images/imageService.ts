@@ -250,35 +250,17 @@ export class ImageService {
     );
   }
 
-  async getImageUrl(storageKey: string, _visibility: string, expirySeconds?: number): Promise<string> {
-    const expiry = expirySeconds || R2_CONFIG.upload.downloadUrlExpiry;
-    
-    // For long-term URLs (> 1 hour), use caching to avoid regenerating frequently
-    if (expiry > 3600) {
-      const cacheKey = `image_url:${storageKey}:${expiry}`;
-      
-      return this.cachingService.getOrSet(
-        cacheKey,
-        async () => {
-          return await this.presignedUrlService.createPresignedUrl(storageKey, 'GET', {
-            expiresIn: expiry,
-          });
-        },
-        Math.min(expiry / 2, CacheTTL.LONG) // Cache for half the URL lifetime or 30 minutes max
-      );
-    }
-    
-    // For short-term URLs, generate directly without caching
-    const url = await this.presignedUrlService.createPresignedUrl(storageKey, 'GET', {
-      expiresIn: expiry,
-    });
-
-    return url;
+  /**
+   * Generate a public URL for an image served directly through the Worker.
+   * Uses the /images/* route which reads from the R2 binding.
+   */
+  getImageUrl(storageKey: string, baseUrl: string): string {
+    return `${baseUrl}/images/${storageKey}`;
   }
 
-  async getDirectCloudflareUrl(cloudflareId: string, _visibility: string, expirySeconds: number): Promise<string> {
+  getDirectCloudflareUrl(cloudflareId: string, baseUrl: string): string {
     const storageKey = `images/${cloudflareId}`;
-    return this.getImageUrl(storageKey, _visibility, expirySeconds);
+    return this.getImageUrl(storageKey, baseUrl);
   }
 
   async delete(mediaId: string, userId: string, userRole: string = 'user', options?: { permanent?: boolean, softDelete?: boolean }): Promise<{ success: boolean; deletedVariants: string[]; errors?: string[] }> {
