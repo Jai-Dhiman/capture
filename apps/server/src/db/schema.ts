@@ -8,6 +8,7 @@ export const users = sqliteTable('users', {
   phone: text('phone'),
   phoneVerified: integer('phone_verified').default(0).notNull(),
   appleId: text('apple_id').unique(), // Apple Sign-In subject ID
+  role: text('role').default('user').notNull(), // 'user', 'moderator', 'admin'
   createdAt: numeric('created_at').default(new Date().toISOString()).notNull(),
   updatedAt: numeric('updated_at').default(new Date().toISOString()).notNull(),
 });
@@ -489,6 +490,11 @@ export const notificationSettings = sqliteTable('notification_settings', {
   enableInApp: integer('enable_in_app').default(1).notNull(),
   enablePush: integer('enable_push').default(1).notNull(),
   frequency: text('frequency').default('IMMEDIATE').notNull(),
+  likes: integer('likes').default(1).notNull(),
+  comments: integer('comments').default(1).notNull(),
+  follows: integer('follows').default(1).notNull(),
+  mentions: integer('mentions').default(1).notNull(),
+  saves: integer('saves').default(0).notNull(),
   createdAt: numeric('created_at').default(new Date().toISOString()).notNull(),
   updatedAt: numeric('updated_at').default(new Date().toISOString()).notNull(),
 });
@@ -651,6 +657,35 @@ export const feedbackAttachmentRelations = relations(feedbackAttachment, ({ one 
   }),
   uploadedBy: one(users, {
     fields: [feedbackAttachment.uploadedBy],
+    references: [users.id],
+  }),
+}));
+
+// Push Notification Device Tokens
+export const deviceToken = sqliteTable(
+  'device_token',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id),
+    token: text('token').notNull(),
+    platform: text('platform').notNull(), // 'ios' | 'android'
+    deviceName: text('device_name'),
+    isActive: integer('is_active').default(1).notNull(),
+    createdAt: numeric('created_at').default(new Date().toISOString()).notNull(),
+    updatedAt: numeric('updated_at').default(new Date().toISOString()).notNull(),
+  },
+  (table) => [
+    index('device_token_user_idx').on(table.userId),
+    index('device_token_token_idx').on(table.token),
+    index('device_token_active_idx').on(table.userId, table.isActive),
+  ],
+);
+
+export const deviceTokenRelations = relations(deviceToken, ({ one }) => ({
+  user: one(users, {
+    fields: [deviceToken.userId],
     references: [users.id],
   }),
 }));

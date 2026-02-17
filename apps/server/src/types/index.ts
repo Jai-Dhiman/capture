@@ -3,13 +3,7 @@ import type { Queue } from '@cloudflare/workers-types';
 export type Bindings = {
   DB: D1Database;
   IMAGE_STORAGE: R2Bucket;
-  KV: KVNamespace;
-  REFRESH_TOKEN_KV: KVNamespace;
-  Capture_Rate_Limits: KVNamespace;
-  POST_VECTORS: KVNamespace;
-  USER_VECTORS: KVNamespace;
-  METADATA_KV: KVNamespace;
-  CACHE_KV: KVNamespace;
+  CAPTURE_KV: KVNamespace;
   CLOUDFLARE_ACCOUNT_ID: string;
   CLOUDFLARE_ACCOUNT_HASH: string;
   CLOUDFLARE_IMAGES_TOKEN: string;
@@ -31,6 +25,13 @@ export type Bindings = {
   VOYAGE_API_KEY: string;
   POST_QUEUE: Queue<{ postId: string }>;
   USER_VECTOR_QUEUE: Queue<{ userId: string }>;
+  // Feature flags for discovery system
+  // 'simple' = recency + engagement only (no Qdrant/Voyage costs)
+  // 'full' = full vector similarity with WASM + Qdrant + Voyage
+  DISCOVERY_MODE?: 'simple' | 'full';
+  // Passkey configuration
+  PASSKEY_RP_ID: string;
+  PASSKEY_ALLOWED_ORIGINS: string;
 };
 
 export interface AppUser {

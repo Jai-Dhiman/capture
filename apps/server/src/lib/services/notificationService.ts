@@ -1,7 +1,8 @@
-import { nanoid } from 'nanoid';
 import { createD1Client } from '@/db';
 import { notification } from '@/db/schema';
 import type { ContextType } from '@/types';
+import { nanoid } from 'nanoid';
+import { createNotificationData, sendPushNotification } from './pushNotificationService';
 
 type CreateNotificationParams = {
   userId: string;
@@ -11,6 +12,7 @@ type CreateNotificationParams = {
   resourceType?: string;
   message: string;
   env: ContextType['env'];
+  pushTitle?: string;
 };
 
 export async function createNotification(params: CreateNotificationParams) {
@@ -22,6 +24,7 @@ export async function createNotification(params: CreateNotificationParams) {
     resourceType = null,
     message,
     env,
+    pushTitle,
   } = params;
 
   const db = createD1Client(env);
@@ -36,6 +39,22 @@ export async function createNotification(params: CreateNotificationParams) {
     message,
     isRead: 0,
     createdAt: new Date().toISOString(),
+  });
+
+  // Send push notification (fire and forget - don't block on this)
+  sendPushNotification({
+    userId,
+    title: pushTitle || 'Capture',
+    body: message,
+    data: createNotificationData({
+      type,
+      resourceId: resourceId || undefined,
+      resourceType: resourceType || undefined,
+      actionUserId: actionUserId || undefined,
+    }),
+    env,
+  }).catch((error) => {
+    console.error('Failed to send push notification:', error);
   });
 }
 
@@ -129,6 +148,32 @@ export async function createCommentReplyNotification({
     resourceId: commentId,
     resourceType: 'comment',
     message: `@${actionUsername} replied to your comment`,
+    env,
+  });
+}
+
+export async function createLikeNotification({
+  postAuthorId,
+  actionUserId,
+  actionUsername,
+  postId,
+  env,
+}: {
+  postAuthorId: string;
+  actionUserId: string;
+  actionUsername: string;
+  postId: string;
+  env: ContextType['env'];
+}) {
+  if (postAuthorId === actionUserId) return;
+
+  await createNotification({
+    userId: postAuthorId,
+    type: 'POST_LIKE',
+    actionUserId,
+    resourceId: postId,
+    resourceType: 'post',
+    message: `@${actionUsername} liked your post`,
     env,
   });
 }

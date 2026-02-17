@@ -18,17 +18,15 @@ export type AuthStackParamList = {
     isNewUser: boolean;
     message: string;
   };
-  PhoneCodeVerification: {
-    email: string;
-    phone: string;
-    isNewUser: boolean;
-    message: string;
-  };
   PasskeySetup: undefined;
   MFACreation: undefined;
   TOTPSetup: undefined;
   TOTPVerification: undefined;
   CreateProfile: undefined;
+  ForgotPassword: undefined;
+  ResetPassword: {
+    email: string;
+  };
 };
 
 export type AppStackParamList = {
@@ -66,4 +64,10 @@ export type SettingsStackParamList = {
   MainSettings: undefined;
   BlockedUsers: undefined;
   AccountSettings: undefined;
+  ReportBug: undefined;
+  FeatureRequest: undefined;
+  PrivacyPolicy: undefined;
+  NotificationSettings: undefined;
+  Appearance: undefined;
+  ReportUser: { userId: string; username: string };
 };

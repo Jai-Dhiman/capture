@@ -14,8 +14,6 @@ import type {
 import type { Bindings } from '@/types';
 
 const RP_NAME = 'Capture';
-const RP_ID = 'capture-api.jai-d.workers.dev';
-const ORIGIN = ['https://capture-api.jai-d.workers.dev'];
 
 export interface PasskeyUser {
   id: string;
@@ -33,9 +31,21 @@ export interface PasskeyDevice {
 
 export class PasskeyService {
   private env: Bindings;
+  private rpId: string;
+  private allowedOrigins: string[];
 
   constructor(env: Bindings) {
     this.env = env;
+
+    if (!env.PASSKEY_RP_ID) {
+      throw new Error('PASSKEY_RP_ID environment variable is required');
+    }
+    if (!env.PASSKEY_ALLOWED_ORIGINS) {
+      throw new Error('PASSKEY_ALLOWED_ORIGINS environment variable is required');
+    }
+
+    this.rpId = env.PASSKEY_RP_ID;
+    this.allowedOrigins = env.PASSKEY_ALLOWED_ORIGINS.split(',').map((o) => o.trim());
   }
 
   async generateRegistrationOptions(user: PasskeyUser, excludeCredentials: string[] = []) {
@@ -43,7 +53,7 @@ export class PasskeyService {
 
     const options = await generateRegistrationOptions({
       rpName: RP_NAME,
-      rpID: RP_ID,
+      rpID: this.rpId,
       userName: user.email,
       userID: userIDBuffer,
       userDisplayName: user.displayName,
@@ -79,8 +89,8 @@ export class PasskeyService {
     const verification = await verifyRegistrationResponse({
       response,
       expectedChallenge: challenge,
-      expectedOrigin: ORIGIN,
-      expectedRPID: RP_ID,
+      expectedOrigin: this.allowedOrigins,
+      expectedRPID: this.rpId,
       requireUserVerification: true,
     });
 
@@ -92,7 +102,7 @@ export class PasskeyService {
 
   async generateAuthenticationOptions(allowCredentials: PasskeyDevice[] = []) {
     const options = await generateAuthenticationOptions({
-      rpID: RP_ID,
+      rpID: this.rpId,
       allowCredentials: allowCredentials.map((device) => ({
         id: device.credentialIdString || '',
         type: 'public-key' as const,
@@ -112,8 +122,8 @@ export class PasskeyService {
     const verification = await verifyAuthenticationResponse({
       response,
       expectedChallenge: challenge,
-      expectedOrigin: ORIGIN,
-      expectedRPID: RP_ID,
+      expectedOrigin: this.allowedOrigins,
+      expectedRPID: this.rpId,
       credential: {
         id: device.credentialIdString || '',
         publicKey: device.credentialPublicKey,
@@ -127,9 +137,9 @@ export class PasskeyService {
   }
 
   private async storeChallenge(userId: string, challenge: string) {
-    if (this.env.REFRESH_TOKEN_KV) {
+    if (this.env.CAPTURE_KV) {
       try {
-        await this.env.REFRESH_TOKEN_KV.put(`passkey_challenge_${userId}`, challenge, {
+        await this.env.CAPTURE_KV.put(`auth:pk_reg:${userId}`, challenge, {
           expirationTtl: 300, // 5 minutes
         });
       } catch {
@@ -141,15 +151,15 @@ export class PasskeyService {
   }
 
   private async getStoredChallenge(userId: string): Promise<string | null> {
-    if (this.env.REFRESH_TOKEN_KV) {
-      return await this.env.REFRESH_TOKEN_KV.get(`passkey_challenge_${userId}`);
+    if (this.env.CAPTURE_KV) {
+      return await this.env.CAPTURE_KV.get(`auth:pk_reg:${userId}`);
     }
     return null;
   }
 
   private async removeChallenge(userId: string) {
-    if (this.env.REFRESH_TOKEN_KV) {
-      await this.env.REFRESH_TOKEN_KV.delete(`passkey_challenge_${userId}`);
+    if (this.env.CAPTURE_KV) {
+      await this.env.CAPTURE_KV.delete(`auth:pk_reg:${userId}`);
     }
   }
 

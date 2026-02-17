@@ -11,13 +11,7 @@ const mockEnv = {
     put: () => Promise.resolve(),
     delete: () => Promise.resolve()
   },
-  METADATA_KV: {
-    get: () => Promise.resolve(null),
-    put: () => Promise.resolve(),
-    delete: () => Promise.resolve(),
-    list: () => Promise.resolve({ keys: [] })
-  },
-  CACHE_KV: {
+  CAPTURE_KV: {
     get: () => Promise.resolve(null),
     put: () => Promise.resolve(),
     delete: () => Promise.resolve(),
@@ -226,7 +220,7 @@ describe('ImageSearchService', () => {
     it('should search images by tags', async () => {
       // Mock KV data
       const mockTagData = JSON.stringify(['image1', 'image2', 'image3']);
-      mockEnv.METADATA_KV.get = async (key: string) => {
+      mockEnv.CAPTURE_KV.get = async (key: string) => {
         if (key === 'tag:nature') return mockTagData;
         return null;
       };
@@ -237,7 +231,7 @@ describe('ImageSearchService', () => {
     });
 
     it('should handle non-existent tags', async () => {
-      mockEnv.METADATA_KV.get = async () => null;
+      mockEnv.CAPTURE_KV.get = async () => null;
 
       const results = await searchService.searchByTags(['nonexistent']);
       
@@ -248,7 +242,7 @@ describe('ImageSearchService', () => {
   describe('user-based search', () => {
     it('should search images by user', async () => {
       const mockUserData = JSON.stringify(['user-image1', 'user-image2']);
-      mockEnv.METADATA_KV.get = async (key: string) => {
+      mockEnv.CAPTURE_KV.get = async (key: string) => {
         if (key === 'user:user-123') return mockUserData;
         return null;
       };
@@ -260,7 +254,7 @@ describe('ImageSearchService', () => {
 
     it('should handle pagination', async () => {
       const mockUserData = JSON.stringify(['img1', 'img2', 'img3', 'img4', 'img5']);
-      mockEnv.METADATA_KV.get = async () => mockUserData;
+      mockEnv.CAPTURE_KV.get = async () => mockUserData;
 
       const results = await searchService.searchByUser('user-123', {
         limit: 2,

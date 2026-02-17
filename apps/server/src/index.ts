@@ -103,6 +103,26 @@ app.get('/.well-known/apple-app-site-association', (c) => {
   return c.json(aasa);
 });
 
+// Public image serving from R2 (no auth required for image display)
+app.get('/images/*', async (c) => {
+  const key = c.req.path.replace('/images/', '');
+  if (!key) {
+    return c.json({ error: 'Missing image key' }, 400);
+  }
+
+  const object = await c.env.IMAGE_STORAGE.get(key);
+  if (!object) {
+    return c.notFound();
+  }
+
+  const headers = new Headers();
+  object.writeHttpMetadata(headers);
+  headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+  headers.set('Access-Control-Allow-Origin', '*');
+
+  return new Response(object.body, { headers });
+});
+
 // Public routes
 app.route('/', healthRoutes);
 app.route('/auth', authRouter);

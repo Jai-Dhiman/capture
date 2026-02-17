@@ -81,10 +81,7 @@ describe('Media Routes', () => {
     
     mockEnv = {
       DB: {} as any,
-      KV: {} as any,
-      POST_VECTORS: {} as any,
-      USER_VECTORS: {} as any,
-      CACHE_KV: {} as any,
+      CAPTURE_KV: {} as any,
       POST_QUEUE: {} as any,
       USER_VECTOR_QUEUE: {} as any,
       VOYAGE_API_KEY: 'test-key',

@@ -41,20 +41,11 @@ export default function CodeVerificationScreen({ navigation, route }: Props) {
         },
         {
           onSuccess: (data) => {
-            if (isNewUser && phone) {
-              navigation.navigate('PhoneCodeVerification', {
-                email,
-                phone,
-                isNewUser,
-                message: "We've sent a verification code to your phone number.",
-              });
-            } else {
-              // Handle navigation based on the auth response
-              if (data.securitySetupRequired) {
-                navigation.navigate('PasskeySetup');
-              } else if (!data.profileExists) {
-                navigation.navigate('CreateProfile');
-              }
+            // Handle navigation based on the auth response
+            if (data.securitySetupRequired) {
+              navigation.navigate('PasskeySetup');
+            } else if (!data.profileExists) {
+              navigation.navigate('CreateProfile');
             }
           },
           onError: () => {

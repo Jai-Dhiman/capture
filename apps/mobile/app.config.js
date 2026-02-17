@@ -105,7 +105,15 @@ const config = {
         iosUrlScheme: "com.googleusercontent.apps.562912588429-kjsb2br221rgfnlv11nimbsom1n69ju0"
       }
     ],
-    "expo-apple-authentication"
+    "expo-apple-authentication",
+    [
+      "expo-notifications",
+      {
+        icon: "./assets/CaptureLogo.png",
+        color: "#FF6B6B",
+        sounds: []
+      }
+    ]
   ],
   updates: {
     url: "https://u.expo.dev/cad78a77-57e1-4d5e-b730-c779cdd2b6cb"

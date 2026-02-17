@@ -21,7 +21,7 @@ const mockEnv: Partial<Bindings> = {
   QDRANT_URL: 'http://localhost:6333',
   QDRANT_API_KEY: 'test-key',
   QDRANT_COLLECTION_NAME: 'test_posts',
-  CACHE_KV: mockKV as any,
+  CAPTURE_KV: mockKV as any,
 };
 
 describe('Embedding Service Integration', () => {

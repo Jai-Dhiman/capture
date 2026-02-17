@@ -302,7 +302,7 @@ async function processIndividualMessage(
       throw new Error(`Failed to generate valid embedding vector for post ${postId}`);
     }
     
-    await storePostEmbedding(vectorData, env.POST_VECTORS);
+    await storePostEmbedding(vectorData, env.CAPTURE_KV);
     
     try {
       await env.USER_VECTOR_QUEUE.send({ userId: post.userId });
@@ -434,7 +434,7 @@ async function fallbackIndividualProcessing(messages: any[], env: Bindings): Pro
           return;
         }
         
-        await storePostEmbedding(vectorData, env.POST_VECTORS);
+        await storePostEmbedding(vectorData, env.CAPTURE_KV);
         
         try {
           await env.USER_VECTOR_QUEUE.send({ userId: post.userId });
@@ -533,7 +533,7 @@ async function processUserEmbedding(
     
     if (allPostIds.length === 0) {
       logger.debug(`No posts found for user ${userId}, storing null vector`);
-      await env.USER_VECTORS.delete(userId);
+      await env.CAPTURE_KV.delete(`vec:user:${userId}`);
       message.ack();
       return {
         success: true,
@@ -545,8 +545,8 @@ async function processUserEmbedding(
     
     // 3. Batch fetch vectors from KV for these posts
     const [savedVectors, createdVectors] = await Promise.all([
-      fetchVectorsBatch(savedPostIds, env.POST_VECTORS),
-      fetchVectorsBatch(createdPostIds, env.POST_VECTORS)
+      fetchVectorsBatch(savedPostIds, env.CAPTURE_KV),
+      fetchVectorsBatch(createdPostIds, env.CAPTURE_KV)
     ]);
     
     // 4. Get hashtag vectors for frequently used hashtags
@@ -557,7 +557,7 @@ async function processUserEmbedding(
     
     if (!userVector) {
       logger.warn(`Failed to calculate user vector for ${userId}`);
-      await env.USER_VECTORS.delete(userId);
+      await env.CAPTURE_KV.delete(`vec:user:${userId}`);
       message.ack();
       return {
         success: true,
@@ -568,7 +568,7 @@ async function processUserEmbedding(
     }
     
     // 6. Store user vector in KV
-    await env.USER_VECTORS.put(userId, JSON.stringify(Array.from(userVector)));
+    await env.CAPTURE_KV.put(`vec:user:${userId}`, JSON.stringify(Array.from(userVector)));
     
     message.ack();
     
@@ -605,7 +605,7 @@ async function fetchVectorsBatch(
     
     const batchPromises = batch.map(async (postId) => {
       try {
-        const vectorData = await vectorStore.get(`post:${postId}`, { type: 'json' }) as { vector: number[] } | null;
+        const vectorData = await vectorStore.get(`vec:post:${postId}`, { type: 'json' }) as { vector: number[] } | null;
         return vectorData?.vector && Array.isArray(vectorData.vector) ? vectorData.vector : null;
       } catch (error) {
         console.warn(`Failed to get vector for post ${postId}:`, error);
@@ -770,7 +770,7 @@ async function fallbackUserEmbeddingProcessing(
         const allPostIds = Array.from(uniquePostIds);
         
         if (allPostIds.length === 0) {
-          await env.USER_VECTORS.delete(userId);
+          await env.CAPTURE_KV.delete(`vec:user:${userId}`);
           message.ack();
           return;
         }
@@ -781,7 +781,7 @@ async function fallbackUserEmbeddingProcessing(
         
         for (const postId of savedPostIds) {
           try {
-            const vectorData = await env.POST_VECTORS.get(`post:${postId}`, { type: 'json' }) as { vector: number[] } | null;
+            const vectorData = await env.CAPTURE_KV.get(`vec:post:${postId}`, { type: 'json' }) as { vector: number[] } | null;
             if (vectorData?.vector && Array.isArray(vectorData.vector)) {
               savedVectors.push(vectorData.vector);
             }
@@ -792,7 +792,7 @@ async function fallbackUserEmbeddingProcessing(
         
         for (const postId of createdPostIds) {
           try {
-            const vectorData = await env.POST_VECTORS.get(`post:${postId}`, { type: 'json' }) as { vector: number[] } | null;
+            const vectorData = await env.CAPTURE_KV.get(`vec:post:${postId}`, { type: 'json' }) as { vector: number[] } | null;
             if (vectorData?.vector && Array.isArray(vectorData.vector)) {
               createdVectors.push(vectorData.vector);
             }
@@ -804,12 +804,12 @@ async function fallbackUserEmbeddingProcessing(
         const userVector = calculateAverageVector(savedVectors, createdVectors);
         
         if (!userVector) {
-          await env.USER_VECTORS.delete(userId);
+          await env.CAPTURE_KV.delete(`vec:user:${userId}`);
           message.ack();
           return;
         }
         
-        await env.USER_VECTORS.put(userId, JSON.stringify(userVector));
+        await env.CAPTURE_KV.put(`vec:user:${userId}`, JSON.stringify(userVector));
         message.ack();
         
       } catch (error) {
@@ -900,7 +900,7 @@ async function storePostEmbedding(
 ): Promise<void> {
   try {
     // Store in KV store for fast access
-    await kvStore.put(`post:${vectorData.postId}`, JSON.stringify(vectorData));
+    await kvStore.put(`vec:post:${vectorData.postId}`, JSON.stringify(vectorData));
     
     // Optionally store in Qdrant for vector search (simplified for beta)
     // For now, we'll focus on KV storage only

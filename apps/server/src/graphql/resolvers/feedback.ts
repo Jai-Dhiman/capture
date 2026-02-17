@@ -4,6 +4,7 @@ import { createD1Client } from '../../db';
 import * as schema from '../../db/schema';
 import { createCachingService, CacheKeys, CacheTTL } from '../../lib/cache/cachingService';
 import type { ContextType } from '../../types';
+import { requireAdmin, isAdmin } from '../../middleware/admin';
 
 // Helper functions to convert database values to GraphQL enum values
 function mapStatus(dbStatus: string): string {
@@ -108,11 +109,9 @@ export const feedbackResolvers = {
     },
 
     async ticket(_parent: unknown, { id }: { id: string }, context: ContextType) {
-      // TEMPORARY: Allow unauthenticated access for admin dashboard testing
-      // TODO: Implement proper admin authentication and authorization
-      // if (!context.user) {
-      //   throw new Error('Authentication required');
-      // }
+      if (!context.user) {
+        throw new Error('Authentication required');
+      }
 
       try {
         const db = createD1Client(context.env);
@@ -126,11 +125,11 @@ export const feedbackResolvers = {
           throw new Error('Ticket not found');
         }
 
-        // TEMPORARY: Skip authorization check for admin dashboard testing
-        // TODO: Add proper role-based access control
-        // if (ticket.userId !== context.user.id) {
-        //   throw new Error('Not authorized to access this ticket');
-        // }
+        // Allow access if user owns the ticket or is an admin
+        const userIsAdmin = await isAdmin(context);
+        if (ticket.userId !== context.user.id && !userIsAdmin) {
+          throw new Error('Not authorized to access this ticket');
+        }
 
         const [user, category, responses, attachments] = await Promise.all([
           db
@@ -196,11 +195,7 @@ export const feedbackResolvers = {
       },
       context: ContextType,
     ) {
-      // TEMPORARY: Allow unauthenticated access for admin dashboard testing
-      // TODO: Implement proper admin authentication
-      // if (!context.user) {
-      //   throw new Error('Authentication required');
-      // }
+      await requireAdmin(context);
 
       try {
         const db = createD1Client(context.env);
@@ -279,11 +274,7 @@ export const feedbackResolvers = {
     },
 
     async adminTicketStats(_parent: unknown, _args: unknown, context: ContextType) {
-      // TEMPORARY: Allow unauthenticated access for admin dashboard testing
-      // TODO: Implement proper admin authentication
-      // if (!context.user) {
-      //   throw new Error('Authentication required');
-      // }
+      await requireAdmin(context);
 
       try {
         const db = createD1Client(context.env);
@@ -297,11 +288,9 @@ export const feedbackResolvers = {
     },
 
     async feedbackCategories(_parent: unknown, _args: unknown, context: ContextType) {
-      // TEMPORARY: Allow unauthenticated access for admin dashboard testing
-      // TODO: Implement proper admin authentication
-      // if (!context.user) {
-      //   throw new Error('Authentication required');
-      // }
+      if (!context.user) {
+        throw new Error('Authentication required');
+      }
 
       const cachingService = createCachingService(context.env);
       const cacheKey = CacheKeys.feedbackCategories();
@@ -605,8 +594,7 @@ export const feedbackResolvers = {
       try {
         const db = createD1Client(context.env);
 
-        // For now, allow both users and admins to update status
-        // TODO: Add proper role-based access control
+        // Allow both ticket owner and admins to update status
         const ticket = await db
           .select()
           .from(schema.feedbackTicket)
@@ -677,11 +665,7 @@ export const feedbackResolvers = {
       }: { ticketId: string; message: string; isInternal?: boolean },
       context: ContextType,
     ) {
-      if (!context.user) {
-        throw new Error('Authentication required');
-      }
-
-      // TODO: Add admin role check here when roles are implemented
+      await requireAdmin(context);
 
       try {
         const db = createD1Client(context.env);
@@ -702,7 +686,7 @@ export const feedbackResolvers = {
         await db.insert(schema.feedbackResponse).values({
           id: responseId,
           ticketId,
-          responderId: context.user.id,
+          responderId: context.user!.id,
           responderType: 'admin',
           message,
           isInternal: isInternal ? 1 : 0,
@@ -715,7 +699,7 @@ export const feedbackResolvers = {
             .update(schema.feedbackTicket)
             .set({
               status: 'in_progress',
-              assignedAdminId: context.user.id,
+              assignedAdminId: context.user!.id,
               updatedAt: now,
             })
             .where(eq(schema.feedbackTicket.id, ticketId));
@@ -726,7 +710,7 @@ export const feedbackResolvers = {
           db
             .select()
             .from(schema.profile)
-            .where(eq(schema.profile.userId, context.user.id))
+            .where(eq(schema.profile.userId, context.user!.id))
             .get(),
           db
             .select()
@@ -753,11 +737,7 @@ export const feedbackResolvers = {
       { input }: { input: any },
       context: ContextType,
     ) {
-      if (!context.user) {
-        throw new Error('Authentication required');
-      }
-
-      // TODO: Add admin role check here when roles are implemented
+      await requireAdmin(context);
 
       try {
         const db = createD1Client(context.env);
@@ -800,11 +780,7 @@ export const feedbackResolvers = {
       { id, input }: { id: string; input: any },
       context: ContextType,
     ) {
-      if (!context.user) {
-        throw new Error('Authentication required');
-      }
-
-      // TODO: Add admin role check here when roles are implemented
+      await requireAdmin(context);
 
       try {
         const db = createD1Client(context.env);

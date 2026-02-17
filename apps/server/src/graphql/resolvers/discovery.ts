@@ -168,9 +168,25 @@ export class UnifiedDiscoveryResolver {
   }
 
   /**
-   * Main discovery method - WASM-optimized only
+   * Main discovery method - routes to simple or full mode based on DISCOVERY_MODE
    */
   async discoverPosts(userId: string, options: DiscoveryOptions = {}): Promise<DiscoveryResult> {
+    // Check discovery mode - default to 'simple' for cost savings at launch
+    const discoveryMode = this.bindings.DISCOVERY_MODE || 'simple';
+
+    if (discoveryMode === 'simple') {
+      return this.discoverPostsSimple(userId, options);
+    }
+
+    // Full mode: WASM + Qdrant + Voyage
+    return this.discoverPostsFull(userId, options);
+  }
+
+  /**
+   * Full discovery method - WASM-optimized with vector similarity
+   * Used when DISCOVERY_MODE='full'
+   */
+  private async discoverPostsFull(userId: string, options: DiscoveryOptions = {}): Promise<DiscoveryResult> {
     const startTime = Date.now();
     const {
       limit = 20,
@@ -304,6 +320,221 @@ export class UnifiedDiscoveryResolver {
   }
 
   /**
+   * Simple discovery method - no vector similarity, just recency + engagement
+   * Used when DISCOVERY_MODE='simple' to avoid Qdrant/Voyage costs
+   */
+  async discoverPostsSimple(userId: string, options: DiscoveryOptions = {}): Promise<DiscoveryResult> {
+    const startTime = Date.now();
+    const {
+      limit = 20,
+      cursor,
+    } = options;
+
+    const sessionId = discoveryLogger.startSession(userId, {
+      limit,
+      cursor,
+      experimentalFeatures: false,
+      adaptiveParameters: false,
+    });
+
+    try {
+      // Get candidate posts (reuses existing method, but we won't use embeddings)
+      const candidateStartTime = Date.now();
+      const candidates = await this.getCandidatePostsSimple(userId, limit * 3, cursor);
+      const seenPosts = await this.getSeenPostsForLogging(userId);
+
+      discoveryLogger.logCandidateRetrieval(
+        userId,
+        sessionId,
+        candidates,
+        seenPosts,
+        Date.now() - candidateStartTime
+      );
+
+      if (candidates.length === 0) {
+        discoveryLogger.logResults(userId, sessionId, [], false, undefined, Date.now() - startTime);
+        return {
+          posts: [],
+          hasMore: false,
+          metrics: this.createMetrics(startTime, 0, ['simple_mode']),
+        };
+      }
+
+      // Process with simple scoring (no WASM, no vectors)
+      const processedCandidates = this.scoreCandidatesSimple(candidates, sessionId);
+
+      // Sort and limit results with deduplication
+      const uniqueProcessed = new Map<string, DiscoveredPost>();
+      for (const candidate of processedCandidates) {
+        if (!uniqueProcessed.has(candidate.id)) {
+          uniqueProcessed.set(candidate.id, candidate);
+        }
+      }
+
+      const sortedCandidates = Array.from(uniqueProcessed.values())
+        .sort((a, b) => b.scores.final - a.scores.final)
+        .slice(0, limit);
+
+      // Convert to complete Post objects
+      const completePosts = await this.convertToCompletePosts(sortedCandidates);
+
+      const hasMore = candidates.length >= limit * 3;
+      const nextCursor =
+        hasMore && sortedCandidates.length > 0
+          ? sortedCandidates[sortedCandidates.length - 1].createdAt
+          : undefined;
+
+      discoveryLogger.logResults(
+        userId,
+        sessionId,
+        completePosts,
+        hasMore,
+        nextCursor,
+        Date.now() - startTime
+      );
+
+      return {
+        posts: completePosts,
+        hasMore,
+        nextCursor,
+        metrics: this.createMetrics(startTime, candidates.length, ['simple_mode', 'recency', 'engagement', 'diversity']),
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      discoveryLogger.logError(userId, sessionId, error as Error, 'simple_discovery_pipeline');
+      throw new Error(`Simple discovery failed: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Get candidate posts for simple discovery (no embedding vectors needed)
+   */
+  private async getCandidatePostsSimple(
+    userId: string,
+    limit: number,
+    cursor?: string,
+  ): Promise<CandidatePost[]> {
+    const cacheKey = `candidates_simple:${userId}:${limit}:${cursor || 'initial'}`;
+
+    const cached = await this.cachingService.get<CandidatePost[]>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    // Get visible posts for user with cursor-based pagination
+    const posts = await getVisiblePostsForUser(userId, this.bindings, {
+      limit,
+      maxCreatedAt: cursor,
+    });
+
+    // Get seen posts (returns string[] of post IDs)
+    const seenPostIds = await getSeenPostsForUser(userId, this.bindings);
+    const seenPostSet = new Set(seenPostIds);
+
+    // Convert to candidate format (no embedding vectors)
+    const candidateMap = new Map<string, CandidatePost>();
+
+    for (const post of posts) {
+      if (!candidateMap.has(post.id)) {
+        const isSeen = seenPostSet.has(post.id);
+
+        const candidate: CandidatePost = {
+          id: post.id,
+          userId: post.userId,
+          content: post.content,
+          createdAt: post.createdAt,
+          hashtags: [],
+          isPrivate: Boolean(post.authorIsPrivate),
+          saveCount: post._saveCount || 0,
+          commentCount: post._commentCount || 0,
+          likeCount: 0, // Not available in PostWithPrivacy
+          viewCount: 0,
+          isSeen,
+          // No embedding vector or seenAt timestamp in simple mode
+        };
+
+        // Add engagement velocity for ranking
+        candidate.recentEngagementVelocity = this.calculateEngagementVelocity(candidate);
+        candidate.contentType = this.inferContentType(candidate);
+        candidate.isViral = candidate.recentEngagementVelocity > this.devaluationConfig.viralVelocityThreshold;
+
+        candidateMap.set(post.id, candidate);
+      }
+    }
+
+    const candidates = Array.from(candidateMap.values());
+
+    // Cache for 2 minutes (shorter than full mode since it's cheaper to recompute)
+    await this.cachingService.set(cacheKey, candidates, 120);
+
+    return candidates;
+  }
+
+  /**
+   * Simple scoring: recency (40%) + engagement (40%) + diversity (20%)
+   * No vector similarity - just basic signals
+   */
+  private scoreCandidatesSimple(
+    candidates: CandidatePost[],
+    sessionId: string,
+  ): DiscoveredPost[] {
+    const results: DiscoveredPost[] = [];
+    const userPostCounts = new Map<string, number>();
+
+    for (const candidate of candidates) {
+      // 1. Recency score (exponential decay over hours)
+      const ageHours = (Date.now() - new Date(candidate.createdAt).getTime()) / (1000 * 60 * 60);
+      const recencyScore = Math.exp(-0.02 * ageHours); // Slower decay than full mode
+
+      // 2. Engagement score (reuse existing method)
+      const engagementScore = this.computeEngagementScore(candidate);
+
+      // 3. Diversity score (penalize multiple posts from same user)
+      const userCount = userPostCounts.get(candidate.userId) || 0;
+      userPostCounts.set(candidate.userId, userCount + 1);
+      const diversityScore = 1.0 / (1.0 + userCount * 0.5); // Diminishing returns for same user
+
+      // Weighted combination: recency 40%, engagement 40%, diversity 20%
+      let finalScore = (
+        recencyScore * 0.4 +
+        engagementScore * 0.4 +
+        diversityScore * 0.2
+      );
+
+      // Apply devaluation for seen posts (simple binary approach - no timestamp available)
+      if (candidate.isSeen) {
+        // In simple mode, we don't have seenAt timestamp, so use a fixed multiplier
+        finalScore *= 0.5; // 50% reduction for seen posts
+      }
+
+      results.push({
+        id: candidate.id,
+        userId: candidate.userId,
+        content: candidate.content,
+        createdAt: candidate.createdAt,
+        hashtags: candidate.hashtags || [],
+        scores: {
+          discovery: finalScore,
+          similarity: 0, // Not computed in simple mode
+          engagement: engagementScore,
+          temporal: recencyScore,
+          diversity: diversityScore,
+          privacy: 1.0, // Privacy filtering done at query level
+          final: finalScore,
+        },
+        metadata: {
+          saveCount: candidate.saveCount || 0,
+          commentCount: candidate.commentCount || 0,
+          likeCount: candidate.likeCount || 0,
+          viewCount: candidate.viewCount || 0,
+        },
+      });
+    }
+
+    return results;
+  }
+
+  /**
    * Process candidates using WASM-only operations
    */
   private async processCandidatesWasm(
@@ -378,14 +609,20 @@ export class UnifiedDiscoveryResolver {
 
         // Apply context-aware devaluation for seen posts
         let devaluationScore = 1.0;
-        if (candidate.isSeen && candidate.seenAt) {
+        if (candidate.isSeen) {
           devaluedCount++;
-          const daysSinceSeen = (Date.now() - new Date(candidate.seenAt).getTime()) / (24 * 60 * 60 * 1000);
-          devaluationScore = this.calculateContextAwareDevaluationMultiplier(
-            candidate,
-            daysSinceSeen,
-            sessionId
-          );
+          if (candidate.seenAt) {
+            // Time-based devaluation when we have the timestamp
+            const daysSinceSeen = (Date.now() - new Date(candidate.seenAt).getTime()) / (24 * 60 * 60 * 1000);
+            devaluationScore = this.calculateContextAwareDevaluationMultiplier(
+              candidate,
+              daysSinceSeen,
+              sessionId
+            );
+          } else {
+            // Simple fixed multiplier when no timestamp available
+            devaluationScore = 0.5;
+          }
           totalDevaluationMultiplier += devaluationScore;
           finalScore *= devaluationScore;
         }
@@ -688,20 +925,20 @@ export class UnifiedDiscoveryResolver {
       maxCreatedAt: cursor // Use cursor for pagination
     });
 
-    // Get seen posts with timestamps for devaluation
-    const seenPostsData = await getSeenPostsForUser(userId, this.bindings);
-    const seenPostMap = new Map(seenPostsData.map(seen => [seen.postId, seen.seenAt]));
+    // Get seen posts (returns string[] of post IDs - no timestamps available from this query)
+    const seenPostIds = await getSeenPostsForUser(userId, this.bindings);
+    const seenPostSet = new Set(seenPostIds);
 
     // Include all posts (seen and unseen) for graduated devaluation
     const allPosts = posts;
 
     // Convert to candidate format with enhanced metadata
     const candidateMap = new Map<string, CandidatePost>();
-    
+
     for (const post of allPosts) {
       if (!candidateMap.has(post.id)) {
-        const seenAt = seenPostMap.get(post.id);
-        
+        const isSeen = seenPostSet.has(post.id);
+
         // Create enhanced candidate with context-aware metadata
         const candidate: CandidatePost = {
           id: post.id,
@@ -712,10 +949,9 @@ export class UnifiedDiscoveryResolver {
           isPrivate: Boolean(post.authorIsPrivate),
           saveCount: post._saveCount || 0,
           commentCount: post._commentCount || 0,
-          likeCount: post._likeCount || 0,
+          likeCount: 0, // Not available in PostWithPrivacy interface
           viewCount: 0, // No viewCount in PostWithPrivacy interface
-          seenAt: seenAt,
-          isSeen: !!seenAt,
+          isSeen,
         };
         
         // Enhance with context-aware metadata
@@ -725,7 +961,7 @@ export class UnifiedDiscoveryResolver {
         
         // TODO: In production, fetch actual view quality from user interaction data
         // For now, we'll use placeholder logic
-        if (seenAt) {
+        if (isSeen) {
           candidate.viewQuality = {
             interactionType: this.inferViewQuality(candidate),
             dwellTime: Math.random() * 5000, // Placeholder
@@ -1193,11 +1429,16 @@ export class UnifiedDiscoveryResolver {
 
       // Apply context-aware devaluation for seen posts (fallback)
       let devaluationScore = 1.0;
-      if (candidate.isSeen && candidate.seenAt) {
+      if (candidate.isSeen) {
         devaluedCount++;
-        const daysSinceSeen = (Date.now() - new Date(candidate.seenAt).getTime()) / (24 * 60 * 60 * 1000);
-        // Use the less aggressive legacy method for fallback
-        devaluationScore = this.calculateDevaluationMultiplier(daysSinceSeen);
+        if (candidate.seenAt) {
+          const daysSinceSeen = (Date.now() - new Date(candidate.seenAt).getTime()) / (24 * 60 * 60 * 1000);
+          // Use the less aggressive legacy method for fallback
+          devaluationScore = this.calculateDevaluationMultiplier(daysSinceSeen);
+        } else {
+          // Simple fixed multiplier when no timestamp available
+          devaluationScore = 0.5;
+        }
         totalDevaluationMultiplier += devaluationScore;
         finalScore *= devaluationScore;
       }

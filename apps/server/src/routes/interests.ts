@@ -14,17 +14,17 @@ interstsRouter.get('/', authMiddleware, async (c) => {
   }
   const userId = user.id;
   const db = createD1Client(c.env);
-  const userVectorsKV = c.env.USER_VECTORS;
+  const kv = c.env.CAPTURE_KV;
   const POST_LIMIT = 20; // Consistent with queue logic
 
-  if (!userVectorsKV) {
-    console.error(`[interests] USER_VECTORS KV binding missing for user ${userId}`);
+  if (!kv) {
+    console.error(`[interests] CAPTURE_KV binding missing for user ${userId}`);
     return c.json({ error: 'Server configuration error' }, 500);
   }
 
   try {
     // 1. Fetch User Embedding Vector & Check Existence
-    const userVectorData = await userVectorsKV.get<number[]>(userId, { type: 'json' });
+    const userVectorData = await kv.get<number[]>(`vec:user:${userId}`, { type: 'json' });
     const userVectorExists =
       userVectorData !== null && Array.isArray(userVectorData) && userVectorData.length > 0;
     // 2. Fetch Source Posts (Saved & Created)

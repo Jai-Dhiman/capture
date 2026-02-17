@@ -1,0 +1,1195 @@
+{
+  "info": {
+    "name": "Capture API - Production",
+    "description": "Complete API collection for Capture backend. Base URL: https://capture-api.jai-d.workers.dev\n\nDiscovery mode is set to 'simple' (recency + engagement, no embeddings).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://capture-api.jai-d.workers.dev",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/auth/me"
+          }
+        },
+        {
+          "name": "Send Verification Code",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/send-code",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Verify Code",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/verify-code",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"code\": \"123456\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/refresh",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/logout",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/forgot-password",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/reset-password",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"reset-token\",\n  \"password\": \"newPassword123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Account",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/auth/account"
+          }
+        },
+        {
+          "name": "Register Device (Push Notifications)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/register-device",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"expo-push-token\",\n  \"platform\": \"ios\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Unregister Device",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/unregister-device",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"expo-push-token\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth - OAuth",
+      "item": [
+        {
+          "name": "Google OAuth (Auth Code)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/oauth/google",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"google-auth-code\",\n  \"redirectUri\": \"your-redirect-uri\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Google OAuth (ID Token)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/oauth/google/token",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idToken\": \"google-id-token\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Apple OAuth",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/oauth/apple",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idToken\": \"apple-id-token\",\n  \"authorizationCode\": \"apple-auth-code\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth - Passkeys",
+      "item": [
+        {
+          "name": "Begin Passkey Registration",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/passkey/register/begin"
+          }
+        },
+        {
+          "name": "Complete Passkey Registration",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/passkey/register/complete",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"credential-id\",\n  \"rawId\": \"raw-credential-id\",\n  \"response\": {\n    \"clientDataJSON\": \"...\",\n    \"attestationObject\": \"...\"\n  },\n  \"type\": \"public-key\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Begin Passkey Authentication",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/passkey/authenticate/begin",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Complete Passkey Authentication",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/passkey/authenticate/complete",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"credential-id\",\n  \"rawId\": \"raw-credential-id\",\n  \"response\": {\n    \"clientDataJSON\": \"...\",\n    \"authenticatorData\": \"...\",\n    \"signature\": \"...\"\n  },\n  \"type\": \"public-key\"\n}"
+            }
+          }
+        },
+        {
+          "name": "List Passkeys",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/auth/passkey/list"
+          }
+        },
+        {
+          "name": "Delete Passkey",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/auth/passkey/:passkeyId"
+          }
+        },
+        {
+          "name": "Check User Has Passkeys",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/passkey/check",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth - TOTP (2FA)",
+      "item": [
+        {
+          "name": "Begin TOTP Setup",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/totp/setup/begin"
+          }
+        },
+        {
+          "name": "Complete TOTP Setup",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/totp/setup/complete",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"123456\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Verify TOTP Token",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/totp/verify",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"123456\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Generate New Backup Codes",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/totp/backup-codes"
+          }
+        },
+        {
+          "name": "Disable TOTP",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/auth/totp/disable"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profile",
+      "item": [
+        {
+          "name": "Check Username Availability",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/profile/check-username?username=testuser",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "profile", "check-username"],
+              "query": [
+                {"key": "username", "value": "testuser"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Profile",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/profile",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"newuser\",\n  \"displayName\": \"New User\",\n  \"bio\": \"Hello world\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Profile",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/profile/:userId"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Media",
+      "item": [
+        {
+          "name": "Get Image Upload URL",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/media/image-upload",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contentType\": \"image/jpeg\",\n  \"filename\": \"photo.jpg\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Batch Upload URLs",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/media/batch-upload",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"images\": [\n    {\"contentType\": \"image/jpeg\", \"filename\": \"photo1.jpg\"},\n    {\"contentType\": \"image/jpeg\", \"filename\": \"photo2.jpg\"}\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Media Record",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/media/image-record",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"key\": \"uploads/user-id/image-key.jpg\",\n  \"mimeType\": \"image/jpeg\",\n  \"width\": 1920,\n  \"height\": 1080\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Batch Media Records",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/media/batch-records",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"records\": [\n    {\"key\": \"uploads/user-id/img1.jpg\", \"mimeType\": \"image/jpeg\", \"width\": 1920, \"height\": 1080},\n    {\"key\": \"uploads/user-id/img2.jpg\", \"mimeType\": \"image/jpeg\", \"width\": 1920, \"height\": 1080}\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Process Edited Image",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/media/process-edited",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceMediaId\": \"media-uuid\",\n  \"edits\": {\n    \"brightness\": 0.1,\n    \"contrast\": 0.05\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Media URL",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/media/:mediaId/url?expiresIn=3600",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "media", ":mediaId", "url"],
+              "query": [
+                {"key": "expiresIn", "value": "3600"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Media",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/media/:mediaId"
+          }
+        },
+        {
+          "name": "Batch Delete Media",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/media",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mediaIds\": [\"media-id-1\", \"media-id-2\"]\n}"
+            }
+          }
+        },
+        {
+          "name": "Get CDN Image",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/media/cdn/:mediaId"
+          }
+        },
+        {
+          "name": "Purge CDN Cache (Single)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/media/purge-cache/:mediaId"
+          }
+        },
+        {
+          "name": "Purge CDN Cache (Batch)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/media/purge-cache",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mediaIds\": [\"media-id-1\", \"media-id-2\"]\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Cloudflare URL",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/media/cloudflare-url/:cloudflareId"
+          }
+        },
+        {
+          "name": "Transform Image (WASM)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/media/transform/:mediaId",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operations\": [\n    {\"type\": \"resize\", \"width\": 800, \"height\": 600}\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Batch Transform Images",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/media/batch-transform",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transforms\": [\n    {\"mediaId\": \"id-1\", \"operations\": [{\"type\": \"resize\", \"width\": 400}]},\n    {\"mediaId\": \"id-2\", \"operations\": [{\"type\": \"resize\", \"width\": 400}]}\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Processor Status",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/media/processor-status"
+          }
+        },
+        {
+          "name": "Clear Processor Memory",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/media/clear-memory"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cache",
+      "item": [
+        {
+          "name": "Warm Cache",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/cache/warm"
+          }
+        },
+        {
+          "name": "Warm User Recommendations",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/cache/warm-recommendations/:userId"
+          }
+        },
+        {
+          "name": "Clear Discovery Cache",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/cache/clear-discovery/:userId"
+          }
+        },
+        {
+          "name": "Invalidate Cache Pattern",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/cache/invalidate",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pattern\": \"user:*\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Clear User Cache",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/cache/clear-user"
+          }
+        },
+        {
+          "name": "Get Cache Stats",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/cache/stats"
+          }
+        },
+        {
+          "name": "Cache Health Check",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/cache/health"
+          }
+        },
+        {
+          "name": "Cache Operations",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/cache/operations",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operation\": \"get\",\n  \"key\": \"cache-key\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Warm Cache Pattern",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/cache/warm-pattern",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pattern\": \"discovery:*\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Cache Keys",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/cache/keys/:type"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analytics (Public)",
+      "item": [
+        {
+          "name": "Get Overview",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "GET",
+            "url": "{{baseUrl}}/api/analytics/overview"
+          }
+        },
+        {
+          "name": "Get User Growth",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "GET",
+            "url": "{{baseUrl}}/api/analytics/user-growth"
+          }
+        },
+        {
+          "name": "Get Content Activity",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "GET",
+            "url": "{{baseUrl}}/api/analytics/content-activity"
+          }
+        },
+        {
+          "name": "Get Top Users",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "GET",
+            "url": "{{baseUrl}}/api/analytics/top-users"
+          }
+        },
+        {
+          "name": "Get Recent Activity",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "GET",
+            "url": "{{baseUrl}}/api/analytics/recent-activity"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Interests",
+      "item": [
+        {
+          "name": "Get User Interests",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/interests"
+          }
+        }
+      ]
+    },
+    {
+      "name": "GraphQL",
+      "item": [
+        {
+          "name": "GraphQL Query",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query { profile(id: \\\"user-id\\\") { id username displayName bio } }\",\n  \"variables\": {}\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Post",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetPost($id: ID!) { post(id: $id) { id caption createdAt user { id username displayName } media { id url } likeCount commentCount } }\",\n  \"variables\": {\"id\": \"post-id\"}\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Discovery Feed",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query DiscoverFeed($limit: Int, $cursor: String) { discoverFeed(limit: $limit, cursor: $cursor) { posts { id caption user { username } media { url } } nextCursor hasMore } }\",\n  \"variables\": {\"limit\": 20}\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Following Feed",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query FollowingFeed($limit: Int, $cursor: String) { followingFeed(limit: $limit, cursor: $cursor) { posts { id caption user { username } } nextCursor hasMore } }\",\n  \"variables\": {\"limit\": 20}\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetProfile($id: ID!) { profile(id: $id) { id username displayName bio profileImageUrl followerCount followingCount postCount isFollowing isPrivate } }\",\n  \"variables\": {\"id\": \"user-id\"}\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Comments",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetComments($postId: ID!, $limit: Int, $offset: Int) { comments(postId: $postId, limit: $limit, offset: $offset) { id content createdAt user { id username } replyCount } }\",\n  \"variables\": {\"postId\": \"post-id\", \"limit\": 20, \"offset\": 0}\n}"
+            }
+          }
+        },
+        {
+          "name": "Search Users",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query SearchUsers($query: String!) { searchUsers(query: $query) { id username displayName profileImageUrl } }\",\n  \"variables\": {\"query\": \"searchterm\"}\n}"
+            }
+          }
+        },
+        {
+          "name": "Search Hashtags",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query SearchHashtags($query: String!, $limit: Int) { searchHashtags(query: $query, limit: $limit) { id name postCount } }\",\n  \"variables\": {\"query\": \"tag\", \"limit\": 10}\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Notifications",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetNotifications($limit: Int, $includeRead: Boolean) { notifications(limit: $limit, includeRead: $includeRead) { id type isRead createdAt actor { username } post { id } } unreadNotificationCount }\",\n  \"variables\": {\"limit\": 20, \"includeRead\": false}\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Saved Posts",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query SavedPosts($limit: Int, $offset: Int) { savedPosts(limit: $limit, offset: $offset) { id caption media { url } user { username } } }\",\n  \"variables\": {\"limit\": 20, \"offset\": 0}\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Liked Posts",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query LikedPosts($limit: Int, $offset: Int) { likedPosts(limit: $limit, offset: $offset) { id caption media { url } user { username } } }\",\n  \"variables\": {\"limit\": 20, \"offset\": 0}\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Followers",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query Followers($userId: ID!) { followers(userId: $userId) { id username displayName profileImageUrl } }\",\n  \"variables\": {\"userId\": \"user-id\"}\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Following",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query Following($userId: ID!) { following(userId: $userId) { id username displayName profileImageUrl } }\",\n  \"variables\": {\"userId\": \"user-id\"}\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Blocked Users",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query { blockedUsers { id username displayName profileImageUrl } }\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Draft Posts",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query DraftPosts($limit: Int, $offset: Int) { draftPosts(limit: $limit, offset: $offset) { id caption media { url } updatedAt } }\",\n  \"variables\": {\"limit\": 20, \"offset\": 0}\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Notification Settings",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query { notificationSettings { likes comments follows mentions directMessages } }\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Feedback Categories",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query { feedbackCategories { id name description isActive } }\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Post",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation CreatePost($input: PostInput!) { createPost(input: $input) { id caption createdAt } }\",\n  \"variables\": {\"input\": {\"caption\": \"My new post!\", \"mediaIds\": [\"media-id\"]}}\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Comment",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation CreateComment($input: CommentInput!) { createComment(input: $input) { id content createdAt } }\",\n  \"variables\": {\"input\": {\"postId\": \"post-id\", \"content\": \"Great post!\"}}\n}"
+            }
+          }
+        },
+        {
+          "name": "Like Post",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation LikePost($postId: ID!) { likePost(postId: $postId) { success } }\",\n  \"variables\": {\"postId\": \"post-id\"}\n}"
+            }
+          }
+        },
+        {
+          "name": "Unlike Post",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation UnlikePost($postId: ID!) { unlikePost(postId: $postId) { success } }\",\n  \"variables\": {\"postId\": \"post-id\"}\n}"
+            }
+          }
+        },
+        {
+          "name": "Save Post",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation SavePost($postId: ID!) { savePost(postId: $postId) { success } }\",\n  \"variables\": {\"postId\": \"post-id\"}\n}"
+            }
+          }
+        },
+        {
+          "name": "Follow User",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation FollowUser($userId: ID!) { followUser(userId: $userId) { success } }\",\n  \"variables\": {\"userId\": \"user-id\"}\n}"
+            }
+          }
+        },
+        {
+          "name": "Unfollow User",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation UnfollowUser($userId: ID!) { unfollowUser(userId: $userId) { success } }\",\n  \"variables\": {\"userId\": \"user-id\"}\n}"
+            }
+          }
+        },
+        {
+          "name": "Block User",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation BlockUser($userId: ID!) { blockUser(userId: $userId) { success } }\",\n  \"variables\": {\"userId\": \"user-id\"}\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation UpdateProfile($input: ProfileInput!) { updateProfile(input: $input) { id username displayName bio } }\",\n  \"variables\": {\"input\": {\"displayName\": \"New Name\", \"bio\": \"Updated bio\"}}\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Privacy Settings",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation UpdatePrivacy($isPrivate: Boolean!) { updatePrivacySettings(isPrivate: $isPrivate) { id isPrivate } }\",\n  \"variables\": {\"isPrivate\": true}\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Notification Settings",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation UpdateNotificationSettings($input: NotificationSettingsInput!) { updateNotificationSettings(input: $input) { likes comments follows mentions } }\",\n  \"variables\": {\"input\": {\"likes\": true, \"comments\": true, \"follows\": true}}\n}"
+            }
+          }
+        },
+        {
+          "name": "Mark Notification Read",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation MarkRead($id: ID!) { markNotificationRead(id: $id) { success } }\",\n  \"variables\": {\"id\": \"notification-id\"}\n}"
+            }
+          }
+        },
+        {
+          "name": "Mark All Notifications Read",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation { markAllNotificationsRead { success } }\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Post",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation DeletePost($id: ID!) { deletePost(id: $id) { success } }\",\n  \"variables\": {\"id\": \"post-id\"}\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Feedback Ticket",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/graphql",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation CreateTicket($input: CreateTicketInput!) { createTicket(input: $input) { id title status createdAt } }\",\n  \"variables\": {\"input\": {\"title\": \"Bug report\", \"description\": \"Description here\", \"type\": \"BUG\"}}\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

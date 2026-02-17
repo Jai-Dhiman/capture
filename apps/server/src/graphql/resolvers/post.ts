@@ -722,6 +722,7 @@ export const postResolvers = {
         deletionPromises.push(
           qdrantClient.deleteVector(vectorIdToDelete).catch((err) => {
             console.error(`Failed to delete vector ${vectorIdToDelete} from Qdrant:`, err);
+            throw new Error(`Failed to delete vector from Qdrant: ${err instanceof Error ? err.message : 'Unknown error'}`);
           }),
         );
 
