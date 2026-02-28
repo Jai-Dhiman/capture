@@ -1,4 +1,7 @@
+import { createD1Client } from '@/db';
+import * as schema from '@/db/schema';
 import type { Bindings, Variables } from '@/types';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { createImageService } from '../lib/images/imageService';
 import { createCachingService, CacheKeys, CacheTTL } from '../lib/cache/cachingService';
@@ -476,15 +479,82 @@ mediaRouter.post('/transform/:mediaId', async (c) => {
 });
 
 // Get deleted media items (for soft delete recovery)
-// Feature not yet implemented - returns 501
 mediaRouter.get('/deleted', async (c) => {
-  return c.json({ error: 'Not Implemented', code: 'media/not-implemented' }, 501);
+  const user = c.get('user');
+  if (!user) {
+    return c.json({ error: 'User not authenticated' }, 401);
+  }
+
+  try {
+    const db = createD1Client(c.env);
+    const limit = Number(c.req.query('limit') || '50');
+    const offset = Number(c.req.query('offset') || '0');
+
+    const deletedMedia = await db
+      .select()
+      .from(schema.media)
+      .where(
+        and(
+          eq(schema.media.userId, user.id),
+          sql`${schema.media.deletedAt} IS NOT NULL`,
+        ),
+      )
+      .orderBy(desc(schema.media.deletedAt))
+      .limit(limit)
+      .offset(offset)
+      .all();
+
+    return c.json({
+      media: deletedMedia,
+      count: deletedMedia.length,
+      limit,
+      offset,
+    });
+  } catch (error) {
+    console.error('Error fetching deleted media:', error);
+    return c.json({ error: 'Failed to fetch deleted media' }, 500);
+  }
 });
 
 // Restore soft-deleted media
-// Feature not yet implemented - returns 501
 mediaRouter.post('/restore/:mediaId', async (c) => {
-  return c.json({ error: 'Not Implemented', code: 'media/not-implemented' }, 501);
+  const user = c.get('user');
+  if (!user) {
+    return c.json({ error: 'User not authenticated' }, 401);
+  }
+
+  try {
+    const mediaId = c.req.param('mediaId');
+    const db = createD1Client(c.env);
+
+    const media = await db
+      .select()
+      .from(schema.media)
+      .where(eq(schema.media.id, mediaId))
+      .get();
+
+    if (!media) {
+      return c.json({ error: 'Media not found' }, 404);
+    }
+
+    if (media.userId !== user.id) {
+      return c.json({ error: 'Not authorized' }, 403);
+    }
+
+    if (!media.deletedAt) {
+      return c.json({ error: 'Media is not deleted' }, 400);
+    }
+
+    await db
+      .update(schema.media)
+      .set({ deletedAt: null })
+      .where(eq(schema.media.id, mediaId));
+
+    return c.json({ success: true, message: 'Media restored', mediaId });
+  } catch (error) {
+    console.error('Error restoring media:', error);
+    return c.json({ error: 'Failed to restore media' }, 500);
+  }
 });
 
 // Get WASM processor status
@@ -598,15 +668,93 @@ mediaRouter.post('/batch-transform', async (c) => {
 });
 
 // Get cleanup status and orphaned resources
-// Feature not yet implemented - returns 501
 mediaRouter.get('/cleanup-status', async (c) => {
-  return c.json({ error: 'Not Implemented', code: 'media/not-implemented' }, 501);
+  const user = c.get('user');
+  if (!user) {
+    return c.json({ error: 'User not authenticated' }, 401);
+  }
+
+  try {
+    const db = createD1Client(c.env);
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+    const pendingCleanup = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.media)
+      .where(
+        and(
+          sql`${schema.media.deletedAt} IS NOT NULL`,
+          sql`${schema.media.deletedAt} < ${thirtyDaysAgo}`,
+        ),
+      )
+      .get();
+
+    const totalDeleted = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.media)
+      .where(sql`${schema.media.deletedAt} IS NOT NULL`)
+      .get();
+
+    return c.json({
+      pendingPermanentDeletion: pendingCleanup?.count ?? 0,
+      totalSoftDeleted: totalDeleted?.count ?? 0,
+      retentionDays: 30,
+      cutoffDate: thirtyDaysAgo,
+    });
+  } catch (error) {
+    console.error('Error fetching cleanup status:', error);
+    return c.json({ error: 'Failed to get cleanup status' }, 500);
+  }
 });
 
 // Trigger cleanup of orphaned resources
-// Feature not yet implemented - returns 501
 mediaRouter.post('/cleanup', async (c) => {
-  return c.json({ error: 'Not Implemented', code: 'media/not-implemented' }, 501);
+  const user = c.get('user');
+  if (!user) {
+    return c.json({ error: 'User not authenticated' }, 401);
+  }
+
+  try {
+    const db = createD1Client(c.env);
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+    const expiredMedia = await db
+      .select()
+      .from(schema.media)
+      .where(
+        and(
+          sql`${schema.media.deletedAt} IS NOT NULL`,
+          sql`${schema.media.deletedAt} < ${thirtyDaysAgo}`,
+        ),
+      )
+      .all();
+
+    let deletedCount = 0;
+    const errors: string[] = [];
+
+    for (const media of expiredMedia) {
+      try {
+        await c.env.IMAGE_STORAGE.delete(media.storageKey);
+        await db.delete(schema.media).where(eq(schema.media.id, media.id));
+        deletedCount++;
+      } catch (error) {
+        const msg = `Failed to delete media ${media.id}: ${error instanceof Error ? error.message : 'Unknown'}`;
+        console.error(msg);
+        errors.push(msg);
+      }
+    }
+
+    return c.json({
+      success: true,
+      processed: expiredMedia.length,
+      deleted: deletedCount,
+      failed: errors.length,
+      errors: errors.length > 0 ? errors : undefined,
+    });
+  } catch (error) {
+    console.error('Error during media cleanup:', error);
+    return c.json({ error: 'Failed to perform cleanup' }, 500);
+  }
 });
 
 export default mediaRouter;
