@@ -21,7 +21,7 @@ export const useDiscoverFeed = (limit = 10) => {
   const { sessionId, isNewSession } = useSessionTracking();
 
   return useInfiniteQuery<DiscoveryResult, Error>({
-    queryKey: ['discoverFeed', sessionId], // Include sessionId in query key for proper caching
+    queryKey: ['discoverFeed'],
     queryFn: async ({ pageParam: cursor }: QueryFunctionContext) => {
       const data = await graphqlFetch<{ discoverFeed: DiscoveryResult }>({
         query: `
