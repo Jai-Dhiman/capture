@@ -248,19 +248,43 @@ mediaRouter.get('/:mediaId/url', async (c) => {
 mediaRouter.delete('/:mediaId', async (c) => {
   const mediaId = c.req.param('mediaId');
   const user = c.get('user');
-  const imageService = createImageService(c.env);
-  
-  // Parse query parameters
   const permanent = c.req.query('permanent') === 'true';
-  const softDelete = c.req.query('soft') === 'true';
 
   if (!user) {
     return c.json({ error: 'User not authenticated' }, 401);
   }
 
   try {
-    const result = await imageService.delete(mediaId, user.id, 'user', { permanent, softDelete });
-    return c.json(result);
+    if (permanent) {
+      // Permanent delete via imageService (R2 + DB)
+      const imageService = createImageService(c.env);
+      const result = await imageService.delete(mediaId, user.id, 'user', { permanent: true, softDelete: false });
+      return c.json(result);
+    }
+
+    // Default: soft-delete by setting deletedAt
+    const db = createD1Client(c.env);
+
+    const media = await db
+      .select()
+      .from(schema.media)
+      .where(eq(schema.media.id, mediaId))
+      .get();
+
+    if (!media) {
+      return c.json({ error: 'Media not found' }, 404);
+    }
+
+    if (media.userId !== user.id) {
+      return c.json({ error: 'Access denied' }, 403);
+    }
+
+    await db
+      .update(schema.media)
+      .set({ deletedAt: new Date().toISOString() })
+      .where(eq(schema.media.id, mediaId));
+
+    return c.json({ success: true, message: 'Media soft-deleted', mediaId });
   } catch (error) {
     console.error('Delete failed:', error);
     if (error instanceof Error && error.message.includes('Rate limit')) {
