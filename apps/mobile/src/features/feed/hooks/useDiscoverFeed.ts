@@ -1,4 +1,5 @@
 import { graphqlFetch } from '@/shared/lib/graphqlClient';
+import { STALE_TIMES } from '@/shared/lib/queryConfig';
 import { type QueryFunctionContext, useInfiniteQuery } from '@tanstack/react-query';
 import type { Post } from '@/features/post/types/postTypes';
 import { useSessionTracking } from './useSessionTracking';
@@ -84,7 +85,7 @@ export const useDiscoverFeed = (limit = 10) => {
     },
     initialPageParam: null,
     getNextPageParam: (last) => last.nextCursor ?? undefined,
-    staleTime: 60_000,
+    staleTime: STALE_TIMES.FEED,
     retry: 1,
   });
 };

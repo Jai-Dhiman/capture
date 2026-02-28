@@ -1,4 +1,5 @@
 import { useAuthStore } from '@/features/auth/stores/authStore';
+import { STALE_TIMES } from '@/shared/lib/queryConfig';
 import { API_URL } from '@env';
 import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
 import type { UserProfile } from '../stores/profileStore';
@@ -59,7 +60,7 @@ export function useProfile(
       };
     },
     enabled: !!userId,
-    staleTime: 5 * 60 * 1000,
+    staleTime: STALE_TIMES.PROFILE,
     ...options,
   });
 }

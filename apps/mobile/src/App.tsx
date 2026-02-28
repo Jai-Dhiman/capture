@@ -4,6 +4,7 @@ if (typeof global.Buffer === 'undefined') {
 }
 
 import { NavigationContainer } from '@react-navigation/native';
+import { STALE_TIMES } from '@/shared/lib/queryConfig';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
@@ -33,7 +34,7 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000,
+      staleTime: STALE_TIMES.PROFILE,
     },
   },
 });
