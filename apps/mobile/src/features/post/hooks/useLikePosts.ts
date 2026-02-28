@@ -1,4 +1,5 @@
 import { graphqlFetch } from '@/shared/lib/graphqlClient';
+import { queryKeys } from '@/shared/lib/queryKeys';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export const useLikePost = () => {
@@ -25,9 +26,10 @@ export const useLikePost = () => {
       return data.likePost;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['likedPosts'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.likedPosts() });
       queryClient.invalidateQueries({ queryKey: ['post'] });
-      queryClient.invalidateQueries({ queryKey: ['feed'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.discoverFeed() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.followingFeed() });
     },
   });
 };
@@ -53,9 +55,10 @@ export const useUnlikePost = () => {
       return data.unlikePost;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['likedPosts'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.likedPosts() });
       queryClient.invalidateQueries({ queryKey: ['post'] });
-      queryClient.invalidateQueries({ queryKey: ['feed'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.discoverFeed() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.followingFeed() });
     },
   });
 };

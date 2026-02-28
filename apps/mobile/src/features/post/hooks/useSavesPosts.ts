@@ -1,4 +1,5 @@
 import { graphqlFetch } from '@/shared/lib/graphqlClient';
+import { queryKeys } from '@/shared/lib/queryKeys';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export const useSavedPosts = (limit = 10, offset = 0) => {
@@ -68,9 +69,10 @@ export const useSavePost = () => {
       return data.savePost;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['savedPosts'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.savedPosts() });
       queryClient.invalidateQueries({ queryKey: ['post'] });
-      queryClient.invalidateQueries({ queryKey: ['feed'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.discoverFeed() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.followingFeed() });
     },
   });
 };
@@ -96,9 +98,10 @@ export const useUnsavePost = () => {
       return data.unsavePost;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['savedPosts'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.savedPosts() });
       queryClient.invalidateQueries({ queryKey: ['post'] });
-      queryClient.invalidateQueries({ queryKey: ['feed'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.discoverFeed() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.followingFeed() });
     },
   });
 };

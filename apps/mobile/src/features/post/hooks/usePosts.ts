@@ -1,4 +1,5 @@
 import { graphqlFetch } from '@/shared/lib/graphqlClient';
+import { queryKeys } from '@/shared/lib/queryKeys';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 
@@ -164,9 +165,11 @@ export const useDeletePost = () => {
       return data.deletePost;
     },
     onSuccess: () => {
-      // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['userPosts'] });
-      queryClient.invalidateQueries({ queryKey: ['feed'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.discoverFeed() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.followingFeed() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.savedPosts() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.likedPosts() });
     },
   });
 };

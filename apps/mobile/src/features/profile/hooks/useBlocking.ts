@@ -1,4 +1,5 @@
 import { graphqlFetch } from '@/shared/lib/graphqlClient';
+import { queryKeys } from '@/shared/lib/queryKeys';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export const useBlockUser = (userId: string) => {
@@ -23,8 +24,9 @@ export const useBlockUser = (userId: string) => {
       return data.blockUser;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['blockedUsers'] });
-      queryClient.invalidateQueries({ queryKey: ['feed'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.blockedUsers() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.discoverFeed() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.followingFeed() });
       queryClient.invalidateQueries({ queryKey: ['profile', userId] });
     },
   });
@@ -48,8 +50,9 @@ export const useUnblockUser = (userId: string) => {
       return data.unblockUser;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['blockedUsers'] });
-      queryClient.invalidateQueries({ queryKey: ['feed'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.blockedUsers() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.discoverFeed() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.followingFeed() });
     },
   });
 };
