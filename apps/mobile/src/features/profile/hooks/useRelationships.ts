@@ -128,7 +128,8 @@ export const useFollowing = (userId: string | undefined) => {
         });
         return data.following || [];
       } catch (error) {
-        return [];
+        console.error('Failed to fetch following:', error);
+        throw error;
       }
     },
     enabled: !!userId,

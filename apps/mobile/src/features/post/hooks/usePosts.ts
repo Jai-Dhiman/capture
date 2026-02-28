@@ -140,6 +140,9 @@ export const useCreatePost = () => {
 
       return data.createPost;
     },
+    onError: (error) => {
+      console.error('Create post failed:', error.message);
+    },
   });
 };
 

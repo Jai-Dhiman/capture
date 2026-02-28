@@ -31,6 +31,9 @@ export const useLikePost = () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.discoverFeed() });
       queryClient.invalidateQueries({ queryKey: queryKeys.followingFeed() });
     },
+    onError: (error) => {
+      console.error('Like mutation failed:', error.message);
+    },
   });
 };
 
@@ -59,6 +62,9 @@ export const useUnlikePost = () => {
       queryClient.invalidateQueries({ queryKey: ['post'] });
       queryClient.invalidateQueries({ queryKey: queryKeys.discoverFeed() });
       queryClient.invalidateQueries({ queryKey: queryKeys.followingFeed() });
+    },
+    onError: (error) => {
+      console.error('Like mutation failed:', error.message);
     },
   });
 };

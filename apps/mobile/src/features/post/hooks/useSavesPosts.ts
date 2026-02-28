@@ -74,6 +74,9 @@ export const useSavePost = () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.discoverFeed() });
       queryClient.invalidateQueries({ queryKey: queryKeys.followingFeed() });
     },
+    onError: (error) => {
+      console.error('Save mutation failed:', error.message);
+    },
   });
 };
 
@@ -102,6 +105,9 @@ export const useUnsavePost = () => {
       queryClient.invalidateQueries({ queryKey: ['post'] });
       queryClient.invalidateQueries({ queryKey: queryKeys.discoverFeed() });
       queryClient.invalidateQueries({ queryKey: queryKeys.followingFeed() });
+    },
+    onError: (error) => {
+      console.error('Save mutation failed:', error.message);
     },
   });
 };
