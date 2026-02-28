@@ -133,6 +133,57 @@ export const postResolvers = {
         );
       }
     },
+
+    async postVersionHistory(
+      _parent: unknown,
+      {
+        postId,
+        limit = 10,
+        offset = 0,
+      }: { postId: string; limit?: number; offset?: number },
+      context: ContextType,
+    ) {
+      if (!context.user) {
+        throw new Error('Authentication required');
+      }
+
+      try {
+        const db = createD1Client(context.env);
+
+        const versions = await db
+          .select()
+          .from(schema.postVersionHistory)
+          .where(eq(schema.postVersionHistory.postId, postId))
+          .orderBy(desc(schema.postVersionHistory.version))
+          .limit(limit)
+          .offset(offset)
+          .all();
+
+        return Promise.all(
+          versions.map(async (version) => {
+            const user = await db
+              .select()
+              .from(schema.profile)
+              .where(eq(schema.profile.userId, version.userId))
+              .get();
+
+            return {
+              ...version,
+              user,
+              editingMetadata: version.editingMetadata
+                ? JSON.parse(version.editingMetadata)
+                : null,
+            };
+          }),
+        );
+      } catch (error) {
+        console.error('Error fetching post version history:', error);
+        throw new Error(
+          `Failed to fetch version history: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
+      }
+    },
+
     async post(_parent: unknown, { id }: { id: string }, context: { env: any; user: any }) {
       if (!context.user) {
         throw new Error('Authentication required');
