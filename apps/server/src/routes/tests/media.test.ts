@@ -71,6 +71,32 @@ vi.mock('../../middleware/security.js', () => ({
   cdnSecurityHeaders: vi.fn(() => (c: any, next: any) => next()),
 }));
 
+// Mock D1 client and schema for soft-delete endpoints
+const mockDbSelect = vi.fn();
+const mockDbUpdate = vi.fn();
+const mockDbDelete = vi.fn();
+const mockDbFrom = vi.fn();
+const mockDbWhere = vi.fn();
+const mockDbGet = vi.fn();
+const mockDbSet = vi.fn();
+
+vi.mock('../../db/index.js', () => ({
+  createD1Client: vi.fn(() => ({
+    select: mockDbSelect,
+    update: mockDbUpdate,
+    delete: mockDbDelete,
+  })),
+}));
+
+vi.mock('../../db/schema.js', () => ({
+  media: {
+    id: 'id',
+    userId: 'user_id',
+    deletedAt: 'deleted_at',
+    storageKey: 'storage_key',
+  },
+}));
+
 describe('Media Routes', () => {
   let app: Hono<{ Bindings: Bindings; Variables: Variables }>;
   let mockEnv: Bindings;
@@ -315,9 +341,14 @@ describe('Media Routes', () => {
   });
 
   describe('DELETE /:mediaId', () => {
-    it('should delete media successfully', async () => {
-      const mockResult = { success: true, deletedFiles: 1 };
-      mockDelete.mockResolvedValue(mockResult);
+    it('should soft-delete media by default', async () => {
+      const mockMedia = {
+        id: 'test-media-id',
+        userId: 'test-user-id',
+        storageKey: 'test-key',
+      };
+      mockDbSelect.mockReturnValue({ from: vi.fn().mockReturnValue({ where: vi.fn().mockReturnValue({ get: vi.fn().mockResolvedValue(mockMedia) }) }) });
+      mockDbUpdate.mockReturnValue({ set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }) });
 
       const res = await app.request('/media/test-media-id', {
         method: 'DELETE',
@@ -325,25 +356,22 @@ describe('Media Routes', () => {
 
       expect(res.status).toBe(200);
       const data = await res.json();
-      expect(data).toEqual(mockResult);
-      expect(mockDelete).toHaveBeenCalledWith('test-media-id', 'test-user-id', 'user', {
-        permanent: false,
-        softDelete: false,
-      });
+      expect(data).toHaveProperty('success', true);
+      expect(data).toHaveProperty('message', 'Media soft-deleted');
     });
 
-    it('should handle delete with query parameters', async () => {
+    it('should permanently delete when permanent=true', async () => {
       const mockResult = { success: true, deletedFiles: 1 };
       mockDelete.mockResolvedValue(mockResult);
 
-      const res = await app.request('/media/test-media-id?permanent=true&soft=true', {
+      const res = await app.request('/media/test-media-id?permanent=true', {
         method: 'DELETE',
       });
 
       expect(res.status).toBe(200);
       expect(mockDelete).toHaveBeenCalledWith('test-media-id', 'test-user-id', 'user', {
         permanent: true,
-        softDelete: true,
+        softDelete: false,
       });
     });
   });
@@ -398,48 +426,20 @@ describe('Media Routes', () => {
   });
 
   describe('GET /cdn/*', () => {
-    it('should return CDN URL for regular media', async () => {
-      const mockMedia = {
-        id: 'test-media-id',
-        storageKey: 'test-storage-key',
-      };
-      mockCacheGet.mockResolvedValue(null); // No cache hit
-      mockFindByIdPublic.mockResolvedValue(mockMedia);
-      mockGetImageUrl.mockResolvedValue('https://cdn.example.com/image.jpg');
-
+    it('should redirect to new /cdn/* path', async () => {
       const res = await app.request('/media/cdn/test-media-id');
 
-      expect(res.status).toBe(200);
-      const data = await res.json();
-      expect(data).toHaveProperty('url', 'https://cdn.example.com/image.jpg');
-      expect(data).toHaveProperty('variant', 'original');
-      expect(data).toHaveProperty('format', 'webp');
+      expect(res.status).toBe(301);
+      const location = res.headers.get('location');
+      expect(location).toContain('/cdn/test-media-id');
     });
 
-    it('should handle seed images', async () => {
-      mockCacheGet.mockResolvedValue(null); // No cache hit
-      mockGetImageUrl.mockResolvedValue('https://cdn.example.com/seed-image.jpg');
-
+    it('should redirect seed images to new /cdn/* path', async () => {
       const res = await app.request('/media/cdn/seed-images/photo-27.jpg');
 
-      expect(res.status).toBe(200);
-      const data = await res.json();
-      expect(data).toHaveProperty('url', 'https://cdn.example.com/seed-image.jpg');
-    });
-
-    it('should return cached response when available', async () => {
-      const cachedResponse = {
-        url: 'https://cached.example.com/image.jpg',
-        variant: 'original',
-        format: 'webp',
-      };
-      mockCacheGet.mockResolvedValue(cachedResponse);
-
-      const res = await app.request('/media/cdn/test-media-id');
-
-      expect(res.status).toBe(200);
-      const data = await res.json();
-      expect(data).toEqual(cachedResponse);
+      expect(res.status).toBe(301);
+      const location = res.headers.get('location');
+      expect(location).toContain('/cdn/seed-images/photo-27.jpg');
     });
   });
 
