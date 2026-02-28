@@ -2,7 +2,6 @@ import type { Bindings, Variables } from '@/types';
 import { Hono } from 'hono';
 import { createImageService } from '../lib/images/imageService';
 import { createCachingService, CacheKeys, CacheTTL } from '../lib/cache/cachingService';
-import { cdnSecurityHeaders } from '../middleware/security';
 
 const mediaRouter = new Hono<{
   Bindings: Bindings;
@@ -309,128 +308,13 @@ mediaRouter.delete('/', async (c) => {
   }
 });
 
-// CDN-optimized image serving endpoint with cache control headers
-mediaRouter.get('/cdn/*', cdnSecurityHeaders(), async (c) => {
+// Legacy CDN path - redirect to new /cdn/* path
+mediaRouter.get('/cdn/*', async (c) => {
   const fullPath = c.req.path;
-  const mediaId = fullPath.replace('/api/media/cdn/', ''); // Extract the media ID from the full path
-  const variant = c.req.query('variant') || 'original';
-  const format = c.req.query('format') || 'webp';
-
-  try {
-    // Validate that mediaId is not null or undefined
-    if (!mediaId || typeof mediaId !== 'string') {
-      console.error(`[CDN] Invalid mediaId: ${mediaId}`);
-      return c.json({ error: 'Invalid media ID' }, 400);
-    }
-
-    const imageService = createImageService(c.env);
-    const cachingService = createCachingService(c.env);
-    
-    // Check cache first for the CDN URL response
-    const cacheKey = CacheKeys.cdnUrl(mediaId, variant, format);
-    
-    const cachedResponse = await cachingService.get(cacheKey);
-    if (cachedResponse) {
-      // Set CDN headers for cached response
-      c.header('Cache-Control', 'public, max-age=31536000, stale-while-revalidate=86400');
-      c.header('ETag', `"${mediaId}-${variant}-${format}"`);
-      c.header('Vary', 'Accept, Accept-Encoding');
-      c.header('X-Cache', 'HIT');
-      
-      return c.json(cachedResponse);
-    }
-
-    // Check if this is a seed image path (profile images from seeding)
-    if (mediaId.includes('seed-images/')) {
-      // Handle seed images directly as storage keys
-      const storageKey = mediaId; // seed-images/photo-27.jpg
-      
-      // Set aggressive CDN cache headers
-      c.header('Cache-Control', 'public, max-age=31536000, stale-while-revalidate=86400'); // 1 year cache, 1 day stale
-      c.header('ETag', `"${mediaId}-${variant}-${format}"`);
-      c.header('Vary', 'Accept, Accept-Encoding');
-      c.header('X-Cache', 'MISS');
-      
-      // Support conditional requests
-      const ifNoneMatch = c.req.header('if-none-match');
-      if (ifNoneMatch === `"${mediaId}-${variant}-${format}"`) {
-        return c.newResponse(null, 304);
-      }
-
-      try {
-        const baseUrl = new URL(c.req.url).origin;
-        const url = imageService.getImageUrl(storageKey, baseUrl);
-        const response = { 
-          url,
-          variant,
-          format,
-          etag: `"${mediaId}-${variant}-${format}"`,
-          cacheControl: 'public, max-age=31536000, stale-while-revalidate=86400'
-        };
-        
-        // Cache the response for 1 hour
-        await cachingService.set(cacheKey, response, CacheTTL.MEDIA);
-        
-        return c.json(response);
-      } catch (error) {
-        // Seed image doesn't exist - return null/empty response instead of error
-        // This allows the client to handle the missing image gracefully
-        console.warn(`[CDN] Seed image not found: ${storageKey}`, error);
-        
-        const fallbackResponse = { 
-          url: null,
-          variant,
-          format,
-          etag: `"${mediaId}-${variant}-${format}"`,
-          cacheControl: 'public, max-age=31536000, stale-while-revalidate=86400',
-          isMissing: true
-        };
-        
-        // Cache the fallback response to avoid repeated lookups
-        await cachingService.set(cacheKey, fallbackResponse, CacheTTL.MEDIA);
-        
-        return c.json(fallbackResponse);
-      }
-    }
-
-    // Use public access since media access control is handled by the GraphQL layer
-    const media = await imageService.findByIdPublic(mediaId);
-
-    if (!media) {
-      return c.json({ error: 'Media not found' }, 404);
-    }
-
-    // Set aggressive CDN cache headers
-    c.header('Cache-Control', 'public, max-age=31536000, stale-while-revalidate=86400'); // 1 year cache, 1 day stale
-    c.header('ETag', `"${media.id}-${variant}-${format}"`);
-    c.header('Vary', 'Accept, Accept-Encoding');
-    c.header('X-Cache', 'MISS');
-    
-    // Support conditional requests
-    const ifNoneMatch = c.req.header('if-none-match');
-    if (ifNoneMatch === `"${media.id}-${variant}-${format}"`) {
-      return c.newResponse(null, 304);
-    }
-
-    const baseUrl = new URL(c.req.url).origin;
-    const url = imageService.getImageUrl(media.storageKey, baseUrl);
-    
-    const response = { 
-      url,
-      variant,
-      format,
-      etag: `"${media.id}-${variant}-${format}"`,
-      cacheControl: 'public, max-age=31536000, stale-while-revalidate=86400'
-    };
-    
-    // Cache the response for 1 hour
-    await cachingService.set(cacheKey, response, CacheTTL.MEDIA);
-    
-    return c.json(response);
-  } catch (error) {
-    console.error(`[CDN] Error getting CDN image URL for ${mediaId}:`, error);
-    return c.json({ error: 'Failed to get image URL' }, 500);
-  }
+  const mediaId = fullPath.replace('/api/media/cdn/', '');
+  const url = new URL(c.req.url);
+  url.pathname = `/cdn/${mediaId}`;
+  return c.redirect(url.toString(), 301);
 });
 
 // Cache purging endpoint for CDN invalidation

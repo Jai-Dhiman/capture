@@ -6,6 +6,7 @@ import { securityHeaders, sslRedirectMiddleware } from '@/middleware/security';
 import analyticsRouter from '@/routes/analytics';
 import authRouter from '@/routes/auth';
 import cacheRouter from '@/routes/cache';
+import cdnRouter from '@/routes/cdn';
 import deeplinkRouter from '@/routes/deeplink';
 import healthRoutes from '@/routes/health';
 import interestsRouter from '@/routes/interests';
@@ -128,6 +129,7 @@ app.route('/', healthRoutes);
 app.route('/auth', authRouter);
 app.route('/seed', seedRouter);
 app.route('/api/deeplink', deeplinkRouter);
+app.route('/cdn', cdnRouter);
 
 // Version endpoint for operability and smoke tests
 app.get('/version', (c) => {
