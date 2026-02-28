@@ -162,6 +162,68 @@ export const profileResolvers = {
     },
   },
   Mutation: {
+    async updateProfile(
+      _: unknown,
+      {
+        input,
+      }: {
+        input: {
+          username?: string;
+          bio?: string;
+          profileImage?: string;
+          phoneNumber?: string;
+          isPrivate?: boolean;
+        };
+      },
+      context: ContextType,
+    ) {
+      if (!context?.user) {
+        throw new Error('Authentication required');
+      }
+
+      const userId = context.user.id;
+      const db = createD1Client(context.env);
+
+      const existing = await db
+        .select()
+        .from(schema.profile)
+        .where(eq(schema.profile.userId, userId))
+        .get();
+
+      if (!existing) {
+        throw new Error('Profile not found');
+      }
+
+      const updateData: Record<string, any> = {
+        updatedAt: new Date().toISOString(),
+      };
+
+      if (input.username !== undefined) updateData.username = input.username;
+      if (input.bio !== undefined) updateData.bio = input.bio;
+      if (input.profileImage !== undefined) updateData.profileImage = input.profileImage;
+      if (input.isPrivate !== undefined) updateData.isPrivate = input.isPrivate ? 1 : 0;
+
+      await db
+        .update(schema.profile)
+        .set(updateData)
+        .where(eq(schema.profile.userId, userId));
+
+      const updatedProfile = await db
+        .select()
+        .from(schema.profile)
+        .where(eq(schema.profile.userId, userId))
+        .get();
+
+      if (!updatedProfile) {
+        throw new Error('Failed to update profile');
+      }
+
+      return {
+        ...updatedProfile,
+        isPrivate: !!updatedProfile.isPrivate,
+      };
+    },
+
     async updatePrivacySettings(
       _: unknown,
       { isPrivate }: { isPrivate: boolean },
