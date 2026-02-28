@@ -127,6 +127,7 @@ app.get('/images/*', async (c) => {
 app.route('/', healthRoutes);
 app.route('/auth', authRouter);
 app.route('/seed', seedRouter);
+app.route('/api/deeplink', deeplinkRouter);
 
 // Version endpoint for operability and smoke tests
 app.get('/version', (c) => {
@@ -149,7 +150,6 @@ app.route('/api/cache', cacheRouter);
 app.route('/api/media', mediaRouter);
 app.route('/api/profile', profileRouter);
 app.route('/api/interests', interestsRouter);
-app.route('/api/deeplink', deeplinkRouter);
 
 app.onError(errorHandler);
 
