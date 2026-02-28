@@ -1,10 +1,10 @@
-import { Buffer } from 'buffer';
+import { Buffer } from 'node:buffer';
 if (typeof global.Buffer === 'undefined') {
   global.Buffer = Buffer;
 }
 
-import { NavigationContainer } from '@react-navigation/native';
 import { STALE_TIMES } from '@/shared/lib/queryConfig';
+import { NavigationContainer } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
@@ -16,10 +16,10 @@ import '../global.css';
 import { initializeAuth } from '@/features/auth/stores/authStore';
 import { CommentDrawer } from '@/features/comments//components/CommentDrawer';
 import { MainNavigator, linking } from '@/navigation/index';
+import ErrorBoundary from '@/shared/components/ErrorBoundary';
 import { AlertProvider } from '@/shared/lib/AlertContext';
 import { ApolloProvider } from '@/shared/providers/ApolloProvider';
 import { JotaiInitializer } from '@/shared/providers/JotaiProvider';
-import ErrorBoundary from '@/shared/components/ErrorBoundary';
 import * as Sentry from '@sentry/react-native';
 import { Provider as JotaiProvider } from 'jotai';
 

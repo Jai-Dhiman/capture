@@ -1,6 +1,6 @@
 import { graphqlFetch } from '@/shared/lib/graphqlClient';
-import { queryKeys } from '@/shared/lib/queryKeys';
 import { STALE_TIMES } from '@/shared/lib/queryConfig';
+import { queryKeys } from '@/shared/lib/queryKeys';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export const useDraftPosts = (limit = 10, offset = 0) => {
@@ -33,7 +33,12 @@ export const useSaveDraft = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (input: { content: string; type: 'post' | 'thread'; mediaIds?: string[]; hashtagIds?: string[] }) => {
+    mutationFn: async (input: {
+      content: string;
+      type: 'post' | 'thread';
+      mediaIds?: string[];
+      hashtagIds?: string[];
+    }) => {
       const data = await graphqlFetch<{ saveDraftPost: any }>({
         query: `
           mutation SaveDraft($input: PostInput!) {

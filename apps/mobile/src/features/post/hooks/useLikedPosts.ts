@@ -1,6 +1,6 @@
 import { graphqlFetch } from '@/shared/lib/graphqlClient';
-import { queryKeys } from '@/shared/lib/queryKeys';
 import { STALE_TIMES } from '@/shared/lib/queryConfig';
+import { queryKeys } from '@/shared/lib/queryKeys';
 import { useQuery } from '@tanstack/react-query';
 
 export const useLikedPosts = (limit = 10, offset = 0) => {

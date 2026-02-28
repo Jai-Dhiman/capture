@@ -41,8 +41,5 @@ export const queryKeys = {
 // Invalidation helpers - groups of keys to invalidate together
 export const invalidationGroups = {
   allFeeds: () => [queryKeys.discoverFeed(), queryKeys.followingFeed()],
-  postEngagement: (postId: string) => [
-    queryKeys.post(postId),
-    ...invalidationGroups.allFeeds(),
-  ],
+  postEngagement: (postId: string) => [queryKeys.post(postId), ...invalidationGroups.allFeeds()],
 };

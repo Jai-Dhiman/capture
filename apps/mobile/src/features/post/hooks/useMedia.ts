@@ -1,10 +1,10 @@
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { API_URL } from '@/shared/config/env';
+import { getCDNImageUrl, getImageUrl } from '@/shared/lib/apiClient';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import * as MediaLibrary from 'expo-media-library';
-import * as ImageManipulator from 'expo-image-manipulator';
 import * as FileSystem from 'expo-file-system';
-import { getImageUrl, getCDNImageUrl } from '@/shared/lib/apiClient';
+import * as ImageManipulator from 'expo-image-manipulator';
+import * as MediaLibrary from 'expo-media-library';
 
 interface UploadFile {
   uri: string;
@@ -47,7 +47,7 @@ const convertPhotoLibraryUri = async (uri: string): Promise<{ uri: string; size:
 
     // Get file size
     const fileInfo = await FileSystem.getInfoAsync(manipulatedImage.uri);
-    
+
     return {
       uri: manipulatedImage.uri,
       size: (fileInfo as any).size || 0,
@@ -61,13 +61,13 @@ const convertPhotoLibraryUri = async (uri: string): Promise<{ uri: string; size:
 export const useImageUrl = (
   media: { id: string; storageKey?: string } | null,
   variant: 'thumbnail' | 'small' | 'medium' | 'large' | 'original' = 'medium',
-  useCDN = true
+  useCDN = true,
 ) => {
   return useQuery({
     queryKey: ['imageUrl', media?.id, variant, useCDN],
     queryFn: async () => {
       if (!media?.id) throw new Error('No media ID provided');
-      
+
       if (useCDN) {
         const url = await getCDNImageUrl(media.id, variant);
         // Return null if the image is missing (e.g., seed images that don't exist)
@@ -84,10 +84,10 @@ export const useImageUrl = (
 export const useImageUrls = (
   mediaList: Array<{ id: string; storageKey?: string; order?: number }> = [],
   variant: 'thumbnail' | 'small' | 'medium' | 'large' | 'original' = 'medium',
-  useCDN = true
+  useCDN = true,
 ) => {
   return useQuery({
-    queryKey: ['imageUrls', mediaList.map(m => m.id), variant, useCDN],
+    queryKey: ['imageUrls', mediaList.map((m) => m.id), variant, useCDN],
     queryFn: async () => {
       const urlPromises = mediaList
         .sort((a, b) => (a.order || 0) - (b.order || 0)) // Sort by order
@@ -232,14 +232,14 @@ export const useCloudflareImageUrl = (cloudflareId?: string, expirySeconds = 180
 };
 
 export const useMediaSource = (
-  mediaItem: any, 
-  variant: 'thumbnail' | 'small' | 'medium' | 'large' | 'original' = 'medium'
+  mediaItem: any,
+  variant: 'thumbnail' | 'small' | 'medium' | 'large' | 'original' = 'medium',
 ) => {
   // For R2 system, always use media ID
   if (mediaItem?.id) {
     return useImageUrl(mediaItem, variant, true);
   }
-  
+
   // Legacy support for storageKey or string IDs
   if (typeof mediaItem === 'string') {
     return useImageUrl({ id: mediaItem }, variant, true);
@@ -250,7 +250,7 @@ export const useMediaSource = (
     if (mediaItem.storageKey.includes('seed-images/')) {
       return useImageUrl({ id: mediaItem.storageKey }, variant, true);
     }
-    
+
     // For non-seed images, extract ID from storageKey if needed
     const mediaId = mediaItem.storageKey.split('/').pop()?.split('_')[0];
     return useImageUrl({ id: mediaId || mediaItem.storageKey }, variant, true);
@@ -311,10 +311,9 @@ export const useDeletedMedia = (limit = 50, offset = 0) => {
       const { session } = useAuthStore.getState();
       if (!session?.access_token) throw new Error('Not authenticated');
 
-      const response = await fetch(
-        `${API_URL}/api/media/deleted?limit=${limit}&offset=${offset}`,
-        { headers: { Authorization: `Bearer ${session.access_token}` } },
-      );
+      const response = await fetch(`${API_URL}/api/media/deleted?limit=${limit}&offset=${offset}`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
 
       if (!response.ok) throw new Error('Failed to fetch deleted media');
       return response.json();

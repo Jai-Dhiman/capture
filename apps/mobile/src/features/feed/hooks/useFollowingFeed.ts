@@ -1,7 +1,7 @@
+import type { Post } from '@/features/post/types/postTypes';
 import { graphqlFetch } from '@/shared/lib/graphqlClient';
 import { STALE_TIMES } from '@/shared/lib/queryConfig';
 import { type QueryFunctionContext, useInfiniteQuery } from '@tanstack/react-query';
-import type { Post } from '@/features/post/types/postTypes';
 
 interface FollowingFeedResult {
   posts: Post[];
@@ -69,4 +69,4 @@ export const useFollowingFeed = (limit = 10) => {
     staleTime: STALE_TIMES.FEED,
     retry: 1,
   });
-}; 
+};

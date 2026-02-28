@@ -1,7 +1,7 @@
+import { useAuthStore } from '@/features/auth/stores/authStore';
 import { graphqlFetch } from '@/shared/lib/graphqlClient';
 import { queryKeys } from '@/shared/lib/queryKeys';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useAuthStore } from '@/features/auth/stores/authStore';
 
 export const useUserPosts = (userId?: string) => {
   return useQuery({

@@ -7,7 +7,7 @@ import type { FollowingState } from '../types/followingTypes';
 
 export const useFollowUser = (userId: string) => {
   const queryClient = useQueryClient();
-  const [isFollowing, setIsFollowing] = useAtom(isFollowingAtom(userId));
+  const [_isFollowing, setIsFollowing] = useAtom(isFollowingAtom(userId));
 
   return useMutation({
     mutationFn: async () => {
@@ -45,7 +45,7 @@ export const useFollowUser = (userId: string) => {
 
 export const useUnfollowUser = (userId: string) => {
   const queryClient = useQueryClient();
-  const [isFollowing, setIsFollowing] = useAtom(isFollowingAtom(userId));
+  const [_isFollowing, setIsFollowing] = useAtom(isFollowingAtom(userId));
 
   return useMutation({
     mutationFn: async () => {
@@ -76,7 +76,7 @@ export const useUnfollowUser = (userId: string) => {
 };
 
 export const useFollowers = (userId: string | undefined) => {
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
 
   const result = useQuery({
     queryKey: ['followers', userId],
