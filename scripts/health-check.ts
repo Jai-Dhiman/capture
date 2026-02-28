@@ -229,7 +229,7 @@ function buildTestGroups(): TestGroup[] {
           name: "Profile: check-username",
           method: "GET",
           path: "/api/profile/check-username?username=__health_check_test__",
-          auth: false,
+          auth: true,
         },
       ],
     },
