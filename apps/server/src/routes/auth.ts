@@ -1861,9 +1861,18 @@ router.post('/totp/setup/begin', authMiddleware, authRateLimiter, async (c) => {
       totpId,
     });
   } catch (error) {
-    console.error('TOTP setup begin error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('TOTP setup begin error:', {
+      message: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
+      userId: c.get('user')?.id,
+    });
     return c.json(
-      { error: 'Failed to begin TOTP setup', code: 'auth/totp-setup-failed' },
+      {
+        error: 'Failed to begin TOTP setup',
+        code: 'auth/totp-setup-failed',
+        debug: errorMessage,
+      },
       500,
     );
   }
