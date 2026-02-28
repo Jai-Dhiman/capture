@@ -107,6 +107,7 @@ node_modules/
 .vscode/
 .claude/
 .cursor/
+.worktrees/
 instructions/
 
 CLAUDE.md
