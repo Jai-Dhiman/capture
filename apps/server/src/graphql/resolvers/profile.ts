@@ -250,9 +250,13 @@ export const profileResolvers = {
         .where(eq(schema.profile.userId, userId))
         .get();
 
+      if (!updatedProfile) {
+        throw new Error('Profile not found');
+      }
+
       return {
         ...updatedProfile,
-        isPrivate: !!updatedProfile?.isPrivate,
+        isPrivate: !!updatedProfile.isPrivate,
       };
     },
   },
