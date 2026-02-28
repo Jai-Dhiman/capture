@@ -1,6 +1,7 @@
 import { useProfileStore } from '@/features/profile/stores/profileStore';
 import { useAlert } from '@/shared/lib/AlertContext';
 import { errorService } from '@/shared/services/errorService';
+import { useQueryClient } from '@tanstack/react-query';
 import * as Crypto from 'expo-crypto';
 import { useAtom } from 'jotai';
 import {
@@ -8,7 +9,6 @@ import {
   currentPostIdAtom,
   deleteCommentMutationAtom,
   optimisticCommentsAtom,
-  refetchTriggerAtom,
   replyingToCommentAtom,
 } from '../atoms/commentAtoms';
 import type { Comment } from '../types/commentTypes';
@@ -19,14 +19,9 @@ export const useCommentActions = () => {
   const [deleteMutation] = useAtom(deleteCommentMutationAtom);
   const [replyingTo, setReplyingTo] = useAtom(replyingToCommentAtom);
   const [postId] = useAtom(currentPostIdAtom);
-  const [, setRefetchTrigger] = useAtom(refetchTriggerAtom);
+  const queryClient = useQueryClient();
   const { profile } = useProfileStore();
   const { showAlert } = useAlert();
-
-  // Trigger refetch by incrementing the trigger counter
-  const triggerRefetch = () => {
-    setRefetchTrigger((count) => count + 1);
-  };
 
   const createComment = async (content: string) => {
     if (!postId || !content.trim()) return;
@@ -68,8 +63,9 @@ export const useCommentActions = () => {
       // Remove optimistic comment
       setOptimisticComments((prev) => prev.filter((c) => c.id !== tempId));
 
-      // Trigger a refetch by incrementing the counter
-      triggerRefetch();
+      queryClient.invalidateQueries({ queryKey: ['comments', postId] });
+      queryClient.invalidateQueries({ queryKey: ['post', postId] });
+      queryClient.invalidateQueries({ queryKey: ['comment-has-replies'] });
     } catch (error) {
       console.error('Full error details:', error);
 
@@ -101,8 +97,9 @@ export const useCommentActions = () => {
         postId,
       });
 
-      // Trigger a refetch by incrementing the counter
-      triggerRefetch();
+      queryClient.invalidateQueries({ queryKey: ['comments', postId] });
+      queryClient.invalidateQueries({ queryKey: ['post', postId] });
+      queryClient.invalidateQueries({ queryKey: ['comment-has-replies'] });
     } catch (error) {
       const appError = errorService.createError(
         'Failed to delete comment',

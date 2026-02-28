@@ -13,17 +13,15 @@ export const replyingToCommentAtom = atom<{ id: string; path: string; username?:
 );
 export const commentCursorAtom = atom<string | null>(null);
 export const commentLimitAtom = atom(10);
-export const refetchTriggerAtom = atom(0);
 
 export const commentsQueryAtom = atomWithQuery((get) => {
   const postId = get(currentPostIdAtom);
   const sort = get(commentSortAtom);
   const cursor = get(commentCursorAtom);
   const limit = get(commentLimitAtom);
-  const refetchTrigger = get(refetchTriggerAtom);
 
   return {
-    queryKey: ['comments', postId, sort, cursor, limit, refetchTrigger],
+    queryKey: ['comments', postId, sort, cursor, limit],
     queryFn: async () => {
       const { session } = useAuthStore.getState();
 
