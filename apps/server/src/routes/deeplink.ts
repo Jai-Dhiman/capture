@@ -8,11 +8,18 @@ const deeplinkRouter = new Hono<{ Bindings: Bindings }>();
 
 deeplinkRouter.get('/:id', async (c) => {
   const postId = c.req.param('id');
-  const db = createD1Client(c.env);
-  const post = await db.select().from(schema.post).where(eq(schema.post.id, postId)).get();
-  const description = post?.content.slice(0, 200) ?? '';
-  const shareLink = `capture://post/${postId}`;
-  const html = `<!DOCTYPE html>
+
+  try {
+    const db = createD1Client(c.env);
+    const post = await db.select().from(schema.post).where(eq(schema.post.id, postId)).get();
+    const rawDescription = post?.content?.slice(0, 200) ?? '';
+    const description = rawDescription
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    const shareLink = `capture://post/${encodeURIComponent(postId)}`;
+    const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -23,7 +30,11 @@ deeplinkRouter.get('/:id', async (c) => {
 </head>
 <body>Redirecting...</body>
 </html>`;
-  return c.html(html);
+    return c.html(html);
+  } catch (error) {
+    console.error('Deeplink error:', error);
+    return c.html('<html><body>Redirecting...</body></html>');
+  }
 });
 
 export default deeplinkRouter;
