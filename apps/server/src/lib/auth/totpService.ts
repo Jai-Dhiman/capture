@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from 'crypto';
+import { createHash, createHmac, randomBytes } from 'crypto';
 
 export class TotpService {
   private static readonly DIGITS = 6;
@@ -26,9 +26,9 @@ export class TotpService {
     timeBuffer.writeUInt32BE(Math.floor(time / 0x100000000), 0);
     timeBuffer.writeUInt32BE(time & 0xffffffff, 4);
 
-    // HMAC-SHA1
-    const hmac = createHash('sha1');
-    hmac.update(Buffer.concat([secretBuffer, timeBuffer]));
+    // HMAC-SHA1 (RFC 6238)
+    const hmac = createHmac('sha1', secretBuffer);
+    hmac.update(timeBuffer);
     const hash = hmac.digest();
 
     // Dynamic truncation
