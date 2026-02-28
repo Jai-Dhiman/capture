@@ -68,9 +68,9 @@ export const useSavePost = () => {
 
       return data.savePost;
     },
-    onSuccess: () => {
+    onSuccess: (_data, postId) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.savedPosts() });
-      queryClient.invalidateQueries({ queryKey: ['post'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.post(postId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.discoverFeed() });
       queryClient.invalidateQueries({ queryKey: queryKeys.followingFeed() });
     },
@@ -100,9 +100,9 @@ export const useUnsavePost = () => {
 
       return data.unsavePost;
     },
-    onSuccess: () => {
+    onSuccess: (_data, postId) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.savedPosts() });
-      queryClient.invalidateQueries({ queryKey: ['post'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.post(postId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.discoverFeed() });
       queryClient.invalidateQueries({ queryKey: queryKeys.followingFeed() });
     },

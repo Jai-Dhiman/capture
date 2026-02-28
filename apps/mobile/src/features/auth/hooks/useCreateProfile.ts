@@ -5,10 +5,11 @@ import { errorService } from '@/shared/services/errorService';
 import { API_URL } from '@env';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../stores/authStore';
 
 export function useCreateProfile() {
+  const queryClient = useQueryClient();
   const { user, session, setStage } = useAuthStore();
   const { setProfile } = useProfileStore();
   const { showAlert } = useAlert();
@@ -157,6 +158,7 @@ export function useCreateProfile() {
     },
 
     onSuccess: (profileData) => {
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
       setProfile({
         id: profileData.id,
         userId: profileData.userId,

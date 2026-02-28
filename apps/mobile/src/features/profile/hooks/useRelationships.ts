@@ -1,9 +1,8 @@
 import { graphqlFetch } from '@/shared/lib/graphqlClient';
+import { queryKeys } from '@/shared/lib/queryKeys';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAtom } from 'jotai';
-import { useEffect } from 'react';
 import { isFollowingAtom } from '../atoms/followingAtoms';
-import type { FollowingState } from '../types/followingTypes';
 
 export const useFollowUser = (userId: string) => {
   const queryClient = useQueryClient();
@@ -39,6 +38,7 @@ export const useFollowUser = (userId: string) => {
       queryClient.invalidateQueries({ queryKey: ['profile', userId] });
       queryClient.invalidateQueries({ queryKey: ['followers'] });
       queryClient.invalidateQueries({ queryKey: ['following'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.followingFeed() });
     },
   });
 };
@@ -71,6 +71,7 @@ export const useUnfollowUser = (userId: string) => {
       queryClient.invalidateQueries({ queryKey: ['profile', userId] });
       queryClient.invalidateQueries({ queryKey: ['followers'] });
       queryClient.invalidateQueries({ queryKey: ['following'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.followingFeed() });
     },
   });
 };
@@ -138,31 +139,3 @@ export const useFollowing = (userId: string | undefined) => {
   return result;
 };
 
-export const useSyncFollowingState = (userData: any[]) => {
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    if (!userData || !Array.isArray(userData)) return;
-
-    const jotaiStore = queryClient.getQueryData(['jotai']) as FollowingState | undefined;
-    const currentMap = jotaiStore?.followingMap || {};
-    const newMap = { ...currentMap };
-
-    let hasChanges = false;
-
-    userData.forEach((user) => {
-      if (user?.userId && user?.isFollowing !== undefined) {
-        if (currentMap[user.userId] !== user.isFollowing) {
-          newMap[user.userId] = user.isFollowing;
-          hasChanges = true;
-        }
-      }
-    });
-
-    if (hasChanges) {
-      queryClient.setQueryData<FollowingState>(['jotai'], {
-        followingMap: newMap,
-      });
-    }
-  }, [userData]);
-};

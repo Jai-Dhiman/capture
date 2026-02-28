@@ -90,6 +90,8 @@ export const useSinglePost = (postId?: string) => {
 };
 
 export const useCreatePost = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async ({
       content,
@@ -139,6 +141,11 @@ export const useCreatePost = () => {
       });
 
       return data.createPost;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.discoverFeed() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.followingFeed() });
+      queryClient.invalidateQueries({ queryKey: ['userPosts'] });
     },
     onError: (error) => {
       console.error('Create post failed:', error.message);

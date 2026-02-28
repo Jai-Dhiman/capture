@@ -31,7 +31,7 @@ export default function TOTPSetupScreen({ navigation }: Props) {
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const { setupTOTPBegin, setupTOTPComplete } = useTOTP();
+  const { setupBegin, setupComplete } = useTOTP();
 
   const isMandatory = authStage === 'securitySetupRequired';
 
@@ -42,7 +42,7 @@ export default function TOTPSetupScreen({ navigation }: Props) {
   const initiateTOTPSetup = async () => {
     setIsLoading(true);
     try {
-      const response = await setupTOTPBegin();
+      const response = await setupBegin.mutateAsync();
       setSetupData(response);
     } catch (error) {
       console.error('Failed to initiate TOTP setup:', error);
@@ -64,8 +64,8 @@ export default function TOTPSetupScreen({ navigation }: Props) {
 
     setIsLoading(true);
     try {
-      const response = await setupTOTPComplete(verificationCode);
-      setBackupCodes(response.backupCodes);
+      const response = await setupComplete.mutateAsync(verificationCode);
+      setBackupCodes((response as any).backupCodes);
       setCurrentStep('backup');
     } catch (error) {
       console.error('TOTP verification failed:', error);

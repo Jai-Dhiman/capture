@@ -1,10 +1,11 @@
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { API_URL } from '@/shared/config/env';
 import { getCDNImageUrl, getImageUrl } from '@/shared/lib/apiClient';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as MediaLibrary from 'expo-media-library';
+import { useMemo } from 'react';
 
 interface UploadFile {
   uri: string;
@@ -235,36 +236,23 @@ export const useMediaSource = (
   mediaItem: any,
   variant: 'thumbnail' | 'small' | 'medium' | 'large' | 'original' = 'medium',
 ) => {
-  // For R2 system, always use media ID
-  if (mediaItem?.id) {
-    return useImageUrl(mediaItem, variant, true);
-  }
-
-  // Legacy support for storageKey or string IDs
-  if (typeof mediaItem === 'string') {
-    return useImageUrl({ id: mediaItem }, variant, true);
-  }
-
-  if (mediaItem?.storageKey) {
-    // Check if this is a seed image path - use the full storageKey
-    if (mediaItem.storageKey.includes('seed-images/')) {
-      return useImageUrl({ id: mediaItem.storageKey }, variant, true);
+  const normalizedMedia = useMemo(() => {
+    if (mediaItem?.id) return { id: mediaItem.id };
+    if (typeof mediaItem === 'string') return { id: mediaItem };
+    if (mediaItem?.storageKey) {
+      if (mediaItem.storageKey.includes('seed-images/')) return { id: mediaItem.storageKey };
+      const mediaId = mediaItem.storageKey.split('/').pop()?.split('_')[0];
+      return { id: mediaId || mediaItem.storageKey };
     }
+    return null;
+  }, [mediaItem]);
 
-    // For non-seed images, extract ID from storageKey if needed
-    const mediaId = mediaItem.storageKey.split('/').pop()?.split('_')[0];
-    return useImageUrl({ id: mediaId || mediaItem.storageKey }, variant, true);
-  }
-
-  return {
-    data: null,
-    isLoading: false,
-    error: null, // Changed from Error object to null for consistency
-    isStale: false,
-  };
+  return useImageUrl(normalizedMedia, variant, true);
 };
 
 export const useDeleteMedia = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (mediaId: string) => {
       const { session } = useAuthStore.getState();
@@ -278,6 +266,9 @@ export const useDeleteMedia = () => {
       if (!response.ok) throw new Error('Failed to delete media');
       return response.json();
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['deletedMedia'] });
+    },
     onError: (error) => {
       console.error('Delete media failed:', error.message);
     },
@@ -285,6 +276,8 @@ export const useDeleteMedia = () => {
 };
 
 export const useRestoreMedia = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (mediaId: string) => {
       const { session } = useAuthStore.getState();
@@ -297,6 +290,9 @@ export const useRestoreMedia = () => {
 
       if (!response.ok) throw new Error('Failed to restore media');
       return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['deletedMedia'] });
     },
     onError: (error) => {
       console.error('Restore media failed:', error.message);

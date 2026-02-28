@@ -13,6 +13,8 @@ import type {
   PasskeyRegistrationResponse,
   SendCodeRequest,
   SendCodeResponse,
+  TOTPBackupCodesResponse,
+  TOTPSetupBeginResponse,
   User,
   VerifyCodeRequest,
 } from '../types/index';
@@ -61,9 +63,30 @@ export const workersAuthApi = {
     return apiClient.post('/auth/oauth/apple', data, false);
   },
 
+  // TOTP methods
+  async totpSetupBegin(): Promise<TOTPSetupBeginResponse> {
+    return apiClient.post('/auth/totp/setup/begin', {}, true);
+  },
+
+  async totpSetupComplete(token: string): Promise<BasicSuccessResponse> {
+    return apiClient.post('/auth/totp/setup/complete', { token }, true);
+  },
+
+  async totpVerify(token: string, isBackupCode = false): Promise<BasicSuccessResponse> {
+    return apiClient.post('/auth/totp/verify', { token, isBackupCode }, true);
+  },
+
+  async totpBackupCodes(): Promise<TOTPBackupCodesResponse> {
+    return apiClient.post('/auth/totp/backup-codes', {}, true);
+  },
+
+  async totpDisable(token: string): Promise<BasicSuccessResponse> {
+    return apiClient.request('DELETE', '/auth/totp/disable', { token }, true);
+  },
+
   // Passkey methods
-  async passkeyRegistrationBegin(): Promise<PasskeyRegistrationResponse> {
-    return apiClient.post('/auth/passkey/register/begin', {}, true);
+  async passkeyRegistrationBegin(deviceName?: string): Promise<PasskeyRegistrationResponse> {
+    return apiClient.post('/auth/passkey/register/begin', deviceName ? { deviceName } : {}, true);
   },
 
   async passkeyRegistrationComplete(

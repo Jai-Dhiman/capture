@@ -5,11 +5,11 @@ import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  ScrollView,
 } from 'react-native';
 import { useTOTP } from '../hooks/useTOTP';
 import { useAuthStore } from '../stores/authStore';
@@ -24,7 +24,7 @@ export default function TOTPVerificationScreen({ navigation }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const user = useAuthStore((state) => state.user);
 
-  const { verifyTOTP } = useTOTP();
+  const { verify } = useTOTP();
 
   const handleVerifyCode = async () => {
     if (!verificationCode.trim()) {
@@ -44,7 +44,7 @@ export default function TOTPVerificationScreen({ navigation }: Props) {
 
     setIsLoading(true);
     try {
-      await verifyTOTP(verificationCode, isBackupCode);
+      await verify.mutateAsync({ token: verificationCode, isBackupCode });
       
       // TOTP verification successful - proceed to authenticated state
       const setStage = useAuthStore.getState().setStage;

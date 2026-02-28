@@ -1,5 +1,4 @@
 import { MediaImage } from '@/features/post/components/MediaImage';
-import { useSyncFollowingState } from '@/features/profile/hooks/useRelationships';
 import type { AppStackParamList } from '@/navigation/types';
 import Header from '@/shared/components/Header';
 import { SkeletonElement, SkeletonLoader } from '@/shared/components/SkeletonLoader';
@@ -28,8 +27,6 @@ interface FollowListProps {
 
 export const FollowList = ({ data, loading, onClose, currentUserId }: FollowListProps) => {
   const navigation = useNavigation<NavigationProp>();
-
-  useSyncFollowingState(data);
 
   const renderItem = ({ item }: { item: UserItem }) => {
     const isCurrentUser = item.userId === currentUserId;

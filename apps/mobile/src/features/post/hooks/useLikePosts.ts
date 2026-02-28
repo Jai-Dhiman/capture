@@ -25,9 +25,9 @@ export const useLikePost = () => {
 
       return data.likePost;
     },
-    onSuccess: () => {
+    onSuccess: (_data, postId) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.likedPosts() });
-      queryClient.invalidateQueries({ queryKey: ['post'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.post(postId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.discoverFeed() });
       queryClient.invalidateQueries({ queryKey: queryKeys.followingFeed() });
     },
@@ -57,9 +57,9 @@ export const useUnlikePost = () => {
 
       return data.unlikePost;
     },
-    onSuccess: () => {
+    onSuccess: (_data, postId) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.likedPosts() });
-      queryClient.invalidateQueries({ queryKey: ['post'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.post(postId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.discoverFeed() });
       queryClient.invalidateQueries({ queryKey: queryKeys.followingFeed() });
     },

@@ -1,7 +1,7 @@
 import { useAlert } from '@/shared/lib/AlertContext';
 import { errorService } from '@/shared/services/errorService';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { Platform } from 'react-native';
 import { workersAuthApi } from '../lib/workersAuthApi';
@@ -22,6 +22,7 @@ GoogleSignin.configure({
 });
 
 export function useOAuth() {
+  const queryClient = useQueryClient();
   const { showAlert } = useAlert();
   const setAuthData = useAuthStore((state) => state.setAuthData);
 
@@ -65,6 +66,7 @@ export function useOAuth() {
     },
     onSuccess: (data) => {
       setAuthData(data);
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
     },
     onError: (error) => {
       const appError = errorService.handleAuthError(error);
@@ -137,6 +139,7 @@ export function useOAuth() {
     },
     onSuccess: (data) => {
       setAuthData(data);
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
     },
     onError: (error) => {
       console.error('Apple OAuth error:', error);

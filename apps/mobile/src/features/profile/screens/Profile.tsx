@@ -19,7 +19,7 @@ import { PostCarousel } from '../components/PostCarousel';
 import { ProfileHeader } from '../components/ProfileHeader';
 import { ProfileTabView } from '../components/ProfileTabView';
 import { useProfile } from '../hooks/useProfile';
-import { useFollowers, useSyncFollowingState } from '../hooks/useRelationships';
+import { useFollowers } from '../hooks/useRelationships';
 import { LockIcon2Svg } from '@assets/icons/svgStrings';
 import { svgToDataUri } from '@/shared/utils/svgUtils';
 import { Image } from 'expo-image';
@@ -58,17 +58,6 @@ export default function Profile() {
   const deletePostMutation = useDeletePost();
   const savePostMutation = useSavePost();
   const unsavePostMutation = useUnsavePost();
-
-  useSyncFollowingState(
-    profileData
-      ? [
-          {
-            userId: profileData.userId,
-            isFollowing: profileData.isFollowing,
-          },
-        ]
-      : [],
-  );
 
   // Extract layout values from the hook
   const { itemSize, spacing, containerPadding, carouselTop, carouselHeight } = gridCarouselLayout;

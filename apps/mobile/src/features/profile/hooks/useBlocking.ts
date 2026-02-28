@@ -56,6 +56,7 @@ export const useUnblockUser = (userId: string) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.blockedUsers() });
       queryClient.invalidateQueries({ queryKey: queryKeys.discoverFeed() });
       queryClient.invalidateQueries({ queryKey: queryKeys.followingFeed() });
+      queryClient.invalidateQueries({ queryKey: ['profile', userId] });
     },
     onError: (error) => {
       console.error('Block mutation failed:', error.message);

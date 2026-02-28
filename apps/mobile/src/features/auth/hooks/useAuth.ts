@@ -52,8 +52,8 @@ export function useAuth() {
 
   const logoutMutation = useMutation<void, Error, void>({
     mutationFn: async () => {
-      queryClient.clear();
       await clearAuth();
+      queryClient.clear();
     },
     onError: (error) => {
       console.error('Logout error:', error);

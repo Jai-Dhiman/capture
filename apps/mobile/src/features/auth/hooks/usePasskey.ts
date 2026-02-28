@@ -15,6 +15,7 @@ export function usePasskey() {
   const queryClient = useQueryClient();
   const { showAlert } = useAlert();
   const setAuthData = useAuthStore((state) => state.setAuthData);
+  const user = useAuthStore((state) => state.user);
 
   // Check device capabilities
   const deviceCapabilitiesQuery = useQuery({
@@ -29,7 +30,7 @@ export function usePasskey() {
   const passkeysQuery = useQuery({
     queryKey: ['passkeys'],
     queryFn: () => workersAuthApi.getPasskeys(),
-    enabled: !!useAuthStore.getState().user,
+    enabled: !!user,
   });
 
   // Register passkey mutation
@@ -37,7 +38,7 @@ export function usePasskey() {
     mutationFn: async (data: PasskeyRegistrationRequest) => {
       try {
         // Begin registration with server
-        const registrationOptions = await workersAuthApi.passkeyRegistrationBegin(data);
+        const registrationOptions = await workersAuthApi.passkeyRegistrationBegin(data.deviceName);
 
         // Use actual WebAuthn registration
         const credential = await PasskeyService.registerPasskey(registrationOptions);

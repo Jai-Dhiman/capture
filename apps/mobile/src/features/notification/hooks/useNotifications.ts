@@ -1,4 +1,5 @@
 import { graphqlFetch } from '@/shared/lib/graphqlClient';
+import { STALE_TIMES } from '@/shared/lib/queryConfig';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
@@ -22,9 +23,8 @@ export const useNotifications = (limit = 20, offset = 0, includeRead = false) =>
   return useQuery({
     queryKey: ['notifications', limit, offset, includeRead],
     queryFn: async () => {
-      try {
-        const data = await graphqlFetch<{ notifications: any[] }>({
-          query: `
+      const data = await graphqlFetch<{ notifications: any[] }>({
+        query: `
             query GetNotifications($limit: Int, $offset: Int, $includeRead: Boolean) {
               notifications(limit: $limit, offset: $offset, includeRead: $includeRead) {
                 id
@@ -42,14 +42,11 @@ export const useNotifications = (limit = 20, offset = 0, includeRead = false) =>
               }
             }
           `,
-          variables: { limit, offset, includeRead },
-        });
-        return data.notifications || [];
-      } catch (error) {
-        console.error(error);
-        return [];
-      }
+        variables: { limit, offset, includeRead },
+      });
+      return data.notifications || [];
     },
+    staleTime: STALE_TIMES.FEED,
   });
 };
 
@@ -72,19 +69,16 @@ export const useUnreadNotificationCount = () => {
   return useQuery({
     queryKey: ['unreadNotificationCount'],
     queryFn: async () => {
-      try {
-        const data = await graphqlFetch<{ unreadNotificationCount: number }>({
-          query: `
+      const data = await graphqlFetch<{ unreadNotificationCount: number }>({
+        query: `
             query GetUnreadNotificationCount {
               unreadNotificationCount
             }
           `,
-        });
-        return data.unreadNotificationCount || 0;
-      } catch (error) {
-        return 0;
-      }
+      });
+      return data.unreadNotificationCount || 0;
     },
+    staleTime: STALE_TIMES.FEED,
   });
 };
 
