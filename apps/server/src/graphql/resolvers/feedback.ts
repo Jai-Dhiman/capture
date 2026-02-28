@@ -417,6 +417,9 @@ export const feedbackResolvers = {
 
         return {
           ...createdTicket,
+          status: mapStatus(createdTicket?.status ?? 'open'),
+          priority: mapPriority(createdTicket?.priority ?? 'medium'),
+          type: mapType(createdTicket?.type ?? 'feedback'),
           user,
           category,
           responses: [],
