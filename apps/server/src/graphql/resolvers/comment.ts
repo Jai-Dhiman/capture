@@ -10,6 +10,79 @@ import type { ContextType } from '../../types';
 
 export const commentResolvers = {
   Query: {
+    async comments(
+      _: unknown,
+      {
+        postId,
+        parentCommentId = null,
+        limit = 20,
+        offset = 0,
+        sortBy = 'newest',
+      }: {
+        postId: string;
+        parentCommentId?: string | null;
+        limit?: number;
+        offset?: number;
+        sortBy?: 'newest' | 'oldest';
+      },
+      context: ContextType,
+    ) {
+      if (!context.user) {
+        throw new Error('Authentication required');
+      }
+
+      const db = createD1Client(context.env);
+
+      try {
+        const conditions: SQL<unknown>[] = [eq(schema.comment.postId, postId)];
+
+        if (parentCommentId) {
+          conditions.push(eq(schema.comment.parentId, parentCommentId));
+        }
+
+        const comments = await db
+          .select({
+            id: schema.comment.id,
+            postId: schema.comment.postId,
+            userId: schema.comment.userId,
+            parentId: schema.comment.parentId,
+            content: schema.comment.content,
+            path: schema.comment.path,
+            depth: schema.comment.depth,
+            isDeleted: schema.comment.isDeleted,
+            createdAt: schema.comment.createdAt,
+            _likeCount: schema.comment._likeCount,
+            user: {
+              id: schema.profile.id,
+              userId: schema.profile.userId,
+              username: schema.profile.username,
+              profileImage: schema.profile.profileImage,
+              bio: schema.profile.bio,
+              verifiedType: schema.profile.verifiedType,
+              isPrivate: schema.profile.isPrivate,
+              createdAt: schema.profile.createdAt,
+              updatedAt: schema.profile.updatedAt,
+            },
+          })
+          .from(schema.comment)
+          .innerJoin(schema.profile, eq(schema.comment.userId, schema.profile.userId))
+          .where(and(...conditions))
+          .orderBy(
+            sortBy === 'newest' ? desc(schema.comment.createdAt) : asc(schema.comment.createdAt),
+          )
+          .limit(limit)
+          .offset(offset)
+          .all();
+
+        return comments;
+      } catch (error) {
+        console.error('Error fetching comments:', error);
+        throw new Error(
+          `Failed to fetch comments: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
+      }
+    },
+
     async commentConnection(
       _: unknown,
       {
