@@ -263,3 +263,85 @@ export const useMediaSource = (
     isStale: false,
   };
 };
+
+export const useDeleteMedia = () => {
+  return useMutation({
+    mutationFn: async (mediaId: string) => {
+      const { session } = useAuthStore.getState();
+      if (!session?.access_token) throw new Error('Not authenticated');
+
+      const response = await fetch(`${API_URL}/api/media/${mediaId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+
+      if (!response.ok) throw new Error('Failed to delete media');
+      return response.json();
+    },
+    onError: (error) => {
+      console.error('Delete media failed:', error.message);
+    },
+  });
+};
+
+export const useRestoreMedia = () => {
+  return useMutation({
+    mutationFn: async (mediaId: string) => {
+      const { session } = useAuthStore.getState();
+      if (!session?.access_token) throw new Error('Not authenticated');
+
+      const response = await fetch(`${API_URL}/api/media/restore/${mediaId}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+
+      if (!response.ok) throw new Error('Failed to restore media');
+      return response.json();
+    },
+    onError: (error) => {
+      console.error('Restore media failed:', error.message);
+    },
+  });
+};
+
+export const useDeletedMedia = (limit = 50, offset = 0) => {
+  return useQuery({
+    queryKey: ['deletedMedia', limit, offset],
+    queryFn: async () => {
+      const { session } = useAuthStore.getState();
+      if (!session?.access_token) throw new Error('Not authenticated');
+
+      const response = await fetch(
+        `${API_URL}/api/media/deleted?limit=${limit}&offset=${offset}`,
+        { headers: { Authorization: `Bearer ${session.access_token}` } },
+      );
+
+      if (!response.ok) throw new Error('Failed to fetch deleted media');
+      return response.json();
+    },
+  });
+};
+
+export const useBatchUpload = () => {
+  return useMutation({
+    mutationFn: async ({ count, contentType }: { count: number; contentType?: string }) => {
+      const { session } = useAuthStore.getState();
+      if (!session?.access_token) throw new Error('Not authenticated');
+
+      const response = await fetch(`${API_URL}/api/media/batch-upload`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ count, contentType }),
+      });
+
+      if (!response.ok) throw new Error('Failed to get batch upload URLs');
+      return response.json();
+    },
+    onError: (error) => {
+      console.error('Batch upload failed:', error.message);
+    },
+  });
+};
