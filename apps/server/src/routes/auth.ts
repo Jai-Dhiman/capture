@@ -765,6 +765,7 @@ router.delete('/account', authMiddleware, async (c) => {
   try {
     const user = c.get('user');
     const db = createD1Client(c.env);
+    const errors: string[] = [];
 
     // Get or create the [deleted] system user
     let deletedUser = await db
@@ -783,7 +784,6 @@ router.delete('/account', authMiddleware, async (c) => {
         updatedAt: new Date().toISOString(),
       });
 
-      // Create profile for deleted user
       await db.insert(schema.profile).values({
         id: nanoid(),
         userId: deletedUserId,
@@ -806,68 +806,107 @@ router.delete('/account', authMiddleware, async (c) => {
       throw new Error('Failed to get or create deleted user');
     }
 
-    // Reassign posts to [deleted] user
-    await db
-      .update(schema.post)
-      .set({ userId: deletedUser.id })
-      .where(eq(schema.post.userId, user.id));
+    const steps: Array<{ name: string; fn: () => Promise<void> }> = [
+      {
+        name: 'reassign posts',
+        fn: () => db.update(schema.post).set({ userId: deletedUser!.id }).where(eq(schema.post.userId, user.id)).then(() => {}),
+      },
+      {
+        name: 'reassign draft posts',
+        fn: () => db.update(schema.draftPost).set({ userId: deletedUser!.id }).where(eq(schema.draftPost.userId, user.id)).then(() => {}),
+      },
+      {
+        name: 'reassign comments',
+        fn: () => db.update(schema.comment).set({ userId: deletedUser!.id }).where(eq(schema.comment.userId, user.id)).then(() => {}),
+      },
+      {
+        name: 'delete post likes',
+        fn: () => db.delete(schema.postLike).where(eq(schema.postLike.userId, user.id)).then(() => {}),
+      },
+      {
+        name: 'delete comment likes',
+        fn: () => db.delete(schema.commentLike).where(eq(schema.commentLike.userId, user.id)).then(() => {}),
+      },
+      {
+        name: 'delete saved posts',
+        fn: () => db.delete(schema.savedPost).where(eq(schema.savedPost.userId, user.id)).then(() => {}),
+      },
+      {
+        name: 'delete follower relationships',
+        fn: () => db.delete(schema.relationship).where(eq(schema.relationship.followerId, user.id)).then(() => {}),
+      },
+      {
+        name: 'delete followed relationships',
+        fn: () => db.delete(schema.relationship).where(eq(schema.relationship.followedId, user.id)).then(() => {}),
+      },
+      {
+        name: 'delete blocker records',
+        fn: () => db.delete(schema.blockedUser).where(eq(schema.blockedUser.blockerId, user.id)).then(() => {}),
+      },
+      {
+        name: 'delete blocked records',
+        fn: () => db.delete(schema.blockedUser).where(eq(schema.blockedUser.blockedId, user.id)).then(() => {}),
+      },
+      {
+        name: 'delete user notifications',
+        fn: () => db.delete(schema.notification).where(eq(schema.notification.userId, user.id)).then(() => {}),
+      },
+      {
+        name: 'delete action notifications',
+        fn: () => db.delete(schema.notification).where(eq(schema.notification.actionUserId, user.id)).then(() => {}),
+      },
+      {
+        name: 'delete seen post logs',
+        fn: () => db.delete(schema.seenPostLog).where(eq(schema.seenPostLog.userId, user.id)).then(() => {}),
+      },
+      {
+        name: 'delete user activity',
+        fn: () => db.delete(schema.userActivity).where(eq(schema.userActivity.userId, user.id)).then(() => {}),
+      },
+      {
+        name: 'delete device tokens',
+        fn: () => db.delete(schema.deviceToken).where(eq(schema.deviceToken.userId, user.id)).then(() => {}),
+      },
+      {
+        name: 'delete passkeys',
+        fn: () => db.delete(schema.passkeys).where(eq(schema.passkeys.userId, user.id)).then(() => {}),
+      },
+      {
+        name: 'delete TOTP secrets',
+        fn: () => db.delete(schema.totpSecrets).where(eq(schema.totpSecrets.userId, user.id)).then(() => {}),
+      },
+      {
+        name: 'delete notification settings',
+        fn: () => db.delete(schema.notificationSettings).where(eq(schema.notificationSettings.userId, user.id)).then(() => {}),
+      },
+      {
+        name: 'delete profile',
+        fn: () => db.delete(schema.profile).where(eq(schema.profile.userId, user.id)).then(() => {}),
+      },
+      {
+        name: 'delete user',
+        fn: () => db.delete(schema.users).where(eq(schema.users.id, user.id)).then(() => {}),
+      },
+    ];
 
-    // Reassign draft posts to [deleted] user
-    await db
-      .update(schema.draftPost)
-      .set({ userId: deletedUser.id })
-      .where(eq(schema.draftPost.userId, user.id));
+    for (const step of steps) {
+      try {
+        await step.fn();
+      } catch (error) {
+        const msg = `Step "${step.name}" failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+        console.error(`Account deletion - ${msg}`);
+        errors.push(msg);
+      }
+    }
 
-    // Reassign comments to [deleted] user
-    await db
-      .update(schema.comment)
-      .set({ userId: deletedUser.id })
-      .where(eq(schema.comment.userId, user.id));
-
-    // Delete user's likes
-    await db.delete(schema.postLike).where(eq(schema.postLike.userId, user.id));
-    await db.delete(schema.commentLike).where(eq(schema.commentLike.userId, user.id));
-
-    // Delete user's saved posts
-    await db.delete(schema.savedPost).where(eq(schema.savedPost.userId, user.id));
-
-    // Delete relationships (follows)
-    await db.delete(schema.relationship).where(eq(schema.relationship.followerId, user.id));
-    await db.delete(schema.relationship).where(eq(schema.relationship.followedId, user.id));
-
-    // Delete blocked users
-    await db.delete(schema.blockedUser).where(eq(schema.blockedUser.blockerId, user.id));
-    await db.delete(schema.blockedUser).where(eq(schema.blockedUser.blockedId, user.id));
-
-    // Delete notifications
-    await db.delete(schema.notification).where(eq(schema.notification.userId, user.id));
-    await db.delete(schema.notification).where(eq(schema.notification.actionUserId, user.id));
-
-    // Delete seen post logs
-    await db.delete(schema.seenPostLog).where(eq(schema.seenPostLog.userId, user.id));
-
-    // Delete user activity
-    await db.delete(schema.userActivity).where(eq(schema.userActivity.userId, user.id));
-
-    // Delete passkeys
-    await db.delete(schema.passkeys).where(eq(schema.passkeys.userId, user.id));
-
-    // Delete TOTP secrets
-    await db.delete(schema.totpSecrets).where(eq(schema.totpSecrets.userId, user.id));
-
-    // Delete profile
-    await db.delete(schema.profile).where(eq(schema.profile.userId, user.id));
-
-    // Finally delete the user
-    await db.delete(schema.users).where(eq(schema.users.id, user.id));
-
-    // Invalidate refresh tokens (if we had the token, we'd delete it)
-    // Since we can't enumerate KV, the tokens will expire naturally
-    // In production, consider storing refresh tokens in D1 for easier cleanup
+    if (errors.length > 0) {
+      console.error('Account deletion completed with errors:', errors);
+    }
 
     return c.json({
       success: true,
       message: 'Account deleted successfully. Your posts and comments have been anonymized.',
+      warnings: errors.length > 0 ? errors : undefined,
     });
   } catch (error) {
     console.error('Account deletion error:', error);
