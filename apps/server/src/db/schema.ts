@@ -247,11 +247,14 @@ export const media = sqliteTable(
     storageKey: text('storage_key').notNull(),
     order: integer('order').notNull(),
     createdAt: numeric('created_at').default(new Date().toISOString()).notNull(),
+    deletedAt: text('deleted_at'),
   },
   (table) => [
     index('post_media_idx').on(table.postId),
     index('draft_media_idx').on(table.draftPostId),
     index('user_media_idx').on(table.userId),
+    index('media_deleted_at_idx').on(table.deletedAt),
+    index('media_user_deleted_idx').on(table.userId, table.deletedAt),
   ],
 );
 
