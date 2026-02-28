@@ -1381,9 +1381,22 @@ router.post('/passkey/register/begin', authMiddleware, authRateLimiter, async (c
 
     return c.json(options);
   } catch (error) {
-    console.error('Passkey registration begin error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error('Passkey registration begin error:', {
+      message: errorMessage,
+      stack: errorStack,
+      userId: c.get('user')?.id,
+      hasKV: !!c.env.CAPTURE_KV,
+      hasRpId: !!c.env.PASSKEY_RP_ID,
+      hasOrigins: !!c.env.PASSKEY_ALLOWED_ORIGINS,
+    });
     return c.json(
-      { error: 'Failed to begin passkey registration', code: 'auth/passkey-registration-failed' },
+      {
+        error: 'Failed to begin passkey registration',
+        code: 'auth/passkey-registration-failed',
+        debug: errorMessage,
+      },
       500,
     );
   }
