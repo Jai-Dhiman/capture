@@ -1,10 +1,14 @@
+import { useFeedbackCategories } from '@/features/feedback/hooks/useFeedbackCategories';
 import type { SettingsStackParamList } from '@/navigation/types';
 import { useAlert } from '@/shared/lib/AlertContext';
 import { graphqlFetch } from '@/shared/lib/graphqlClient';
+import { svgToDataUri } from '@/shared/utils/svgUtils';
+import { CustomBackIconSvg } from '@assets/icons/svgStrings';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm } from '@tanstack/react-form';
 import { useMutation } from '@tanstack/react-query';
+import { Image } from 'expo-image';
 import React from 'react';
 import {
   ActivityIndicator,
@@ -17,9 +21,6 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
-import { CustomBackIconSvg } from '@assets/icons/svgStrings';
-import { svgToDataUri } from '@/shared/utils/svgUtils';
-import { Image } from 'expo-image';
 
 type NavigationProp = NativeStackNavigationProp<SettingsStackParamList, 'FeatureRequest'>;
 
@@ -36,9 +37,15 @@ const CREATE_TICKET_MUTATION = `
 export default function FeatureRequestScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { showAlert } = useAlert();
+  const { data: categories, isLoading: categoriesLoading } = useFeedbackCategories();
+  const featureCategory = categories?.find((c) => c.name === 'Feature Request');
 
   const createTicket = useMutation({
     mutationFn: async (data: { subject: string; description: string }) => {
+      if (!featureCategory) {
+        throw new Error('Feature Request category not found');
+      }
+
       const result = await graphqlFetch<{
         createTicket: { id: string; subject: string; status: string };
       }>({
@@ -48,6 +55,7 @@ export default function FeatureRequestScreen() {
             subject: data.subject,
             description: data.description,
             type: 'FEATURE_REQUEST',
+            categoryId: featureCategory.id,
           },
         },
       });
@@ -143,7 +151,7 @@ export default function FeatureRequestScreen() {
           <TouchableOpacity
             className="bg-[#E4CAC7] py-4 rounded-full mb-8"
             onPress={() => form.handleSubmit()}
-            disabled={createTicket.isPending}
+            disabled={createTicket.isPending || categoriesLoading || !featureCategory}
           >
             {createTicket.isPending ? (
               <ActivityIndicator color="#1F2937" />

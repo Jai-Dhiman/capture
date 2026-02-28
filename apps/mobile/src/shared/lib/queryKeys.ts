@@ -36,6 +36,14 @@ export const queryKeys = {
     ['imageUrl', mediaId, variant, useCDN] as const,
   cloudflareImageUrl: (cloudflareId: string, expirySeconds: number) =>
     ['cloudflareImageUrl', cloudflareId, expirySeconds] as const,
+  deletedMedia: () => ['deletedMedia'] as const,
+
+  // Feedback
+  feedbackCategories: () => ['feedbackCategories'] as const,
+
+  // Tickets
+  myTickets: (status?: string) => ['myTickets', status] as const,
+  ticket: (ticketId: string) => ['ticket', ticketId] as const,
 } as const;
 
 // Invalidation helpers - groups of keys to invalidate together

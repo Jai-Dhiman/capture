@@ -1,6 +1,5 @@
-import { useAuthStore } from '@/features/auth/stores/authStore';
+import { graphqlFetch } from '@/shared/lib/graphqlClient';
 import { STALE_TIMES } from '@/shared/lib/queryConfig';
-import { API_URL } from '@env';
 import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
 import type { UserProfile } from '../stores/profileStore';
 
@@ -13,16 +12,10 @@ export function useProfile(
     queryFn: async () => {
       if (!userId) return null;
 
-      const { session } = useAuthStore.getState();
-      if (!session?.access_token) return null;
-
-      const response = await fetch(`${API_URL}/graphql`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
+      try {
+        const data = await graphqlFetch<{
+          profile: UserProfile;
+        }>({
           query: `
             query GetProfile($userId: ID!) {
               profile(id: $userId) {
@@ -39,25 +32,19 @@ export function useProfile(
             }
           `,
           variables: { userId },
-        }),
-      });
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch profile');
-      }
-
-      const data = await response.json();
-      if (data.errors) {
-        if (data.errors.some((e: any) => e.message === 'Profile not found')) {
+        return {
+          ...data.profile,
+          username: data.profile.username || 'User',
+          profileImage: data.profile.profileImage || undefined,
+        };
+      } catch (error) {
+        if (error instanceof Error && error.message === 'Profile not found') {
           return null;
         }
-        throw new Error(data.errors[0]?.message || 'Failed to fetch profile');
+        throw error;
       }
-      return {
-        ...data.data.profile,
-        username: data.data.profile.username || 'User',
-        profileImage: data.data.profile.profileImage || null,
-      };
     },
     enabled: !!userId,
     staleTime: STALE_TIMES.PROFILE,

@@ -1,6 +1,5 @@
-import { useAuthStore } from '@/features/auth/stores/authStore';
+import { graphqlFetch } from '@/shared/lib/graphqlClient';
 import { errorService } from '@/shared/services/errorService';
-import { API_URL } from '@env';
 import { atom } from 'jotai';
 import { atomWithMutation, atomWithQuery } from 'jotai-tanstack-query';
 import type { Comment } from '../types/commentTypes';
@@ -23,66 +22,51 @@ export const commentsQueryAtom = atomWithQuery((get) => {
   return {
     queryKey: ['comments', postId, sort, cursor, limit],
     queryFn: async () => {
-      const { session } = useAuthStore.getState();
-
-      if (!session?.access_token) {
-        console.error('No auth token available for comments query');
-        throw errorService.createError('No auth token available', 'auth/no-token');
-      }
       if (!postId) {
-        return { comments: [], totalCount: 0, hasNextPage: false };
+        return { comments: [], totalCount: 0, hasNextPage: false, nextCursor: null };
       }
 
       try {
-        const response = await fetch(`${API_URL}/graphql`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            query: `
-              query GetComments($postId: ID!, $sort: CommentSortOption, $cursor: String, $limit: Int) {
-                commentConnection(postId: $postId, parentId: null, sortBy: $sort, cursor: $cursor, limit: $limit) {
-                  comments {
+        const data = await graphqlFetch<{
+          commentConnection: {
+            comments: Comment[];
+            totalCount: number;
+            hasNextPage: boolean;
+            nextCursor: string | null;
+          };
+        }>({
+          query: `
+            query GetComments($postId: ID!, $sort: CommentSortOption, $cursor: String, $limit: Int) {
+              commentConnection(postId: $postId, parentId: null, sortBy: $sort, cursor: $cursor, limit: $limit) {
+                comments {
+                  id
+                  content
+                  path
+                  depth
+                  parentId
+                  isDeleted
+                  createdAt
+                  user {
                     id
-                    content
-                    path
-                    depth
-                    parentId
-                    createdAt
-                    user {
-                      id
-                      username
-                      profileImage
-                    }
+                    username
+                    profileImage
                   }
-                  totalCount
-                  hasNextPage
-                  nextCursor
                 }
+                totalCount
+                hasNextPage
+                nextCursor
               }
-            `,
-            variables: {
-              postId,
-              sort,
-              cursor,
-              limit,
-            },
-          }),
+            }
+          `,
+          variables: {
+            postId,
+            sort,
+            cursor,
+            limit,
+          },
         });
 
-        const data = await response.json();
-
-        if (data.errors) {
-          console.error('GraphQL errors:', data.errors);
-          throw errorService.createError(
-            data.errors[0].message || 'Failed to fetch comments',
-            'server/graphql-error',
-          );
-        }
-
-        return data.data?.commentConnection;
+        return data.commentConnection;
       } catch (error) {
         throw errorService.createError(
           'Unable to load comments',
@@ -126,70 +110,38 @@ export const createCommentMutationAtom = atomWithMutation(() => {
       content: string;
       parentId?: string | null;
     }) => {
-      const { session } = useAuthStore.getState();
-
-      if (!session?.access_token) {
-        throw errorService.createError('No auth token available', 'auth/no-token');
-      }
-
-      // Create the request body
-      const requestBody = JSON.stringify({
-        query: `
-          mutation CreateComment($input: CommentInput!) {
-            createComment(input: $input) {
-              id
-              content
-              path
-              depth
-              parentId
-              createdAt
-              user {
+      try {
+        const data = await graphqlFetch<{
+          createComment: Comment;
+        }>({
+          query: `
+            mutation CreateComment($input: CommentInput!) {
+              createComment(input: $input) {
                 id
-                username
-                profileImage
+                content
+                path
+                depth
+                parentId
+                createdAt
+                user {
+                  id
+                  username
+                  profileImage
+                }
               }
             }
-          }
-        `,
-        variables: {
-          input: {
-            postId,
-            content,
-            parentId: parentId || null,
+          `,
+          variables: {
+            input: {
+              postId,
+              content,
+              parentId: parentId || null,
+            },
           },
-        },
-      });
-
-      try {
-        const response = await fetch(`${API_URL}/graphql`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: requestBody,
         });
 
-        const data = await response.json();
-
-        if (data.errors) {
-          console.error('GraphQL error details:', data.errors);
-          throw errorService.createError(
-            data.errors[0].message || 'Failed to create comment',
-            'server/graphql-error',
-          );
-        }
-
-        return data.data.createComment;
+        return data.createComment;
       } catch (error) {
-        console.error('Comment creation network error:', error);
-        // If it's a fetch network error
-        if (error instanceof Error) {
-          console.error('Error name:', error.name);
-          console.error('Error message:', error.message);
-          console.error('Error stack:', error.stack);
-        }
-
         throw errorService.createError(
           error instanceof Error ? error.message : 'Unable to post comment',
           'network/post-failed',
@@ -204,44 +156,24 @@ export const deleteCommentMutationAtom = atomWithMutation(() => {
   return {
     mutationKey: ['deleteComment'],
     mutationFn: async ({ commentId, postId }: { commentId: string; postId: string }) => {
-      const { session } = useAuthStore.getState();
-
-      if (!session?.access_token) {
-        throw errorService.createError('No auth token available', 'auth/no-token');
-      }
-
       try {
-        const response = await fetch(`${API_URL}/graphql`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            query: `
-              mutation DeleteComment($id: ID!) {
-                deleteComment(id: $id) {
-                  id
-                  success
-                }
+        const data = await graphqlFetch<{
+          deleteComment: { id: string; success: boolean };
+        }>({
+          query: `
+            mutation DeleteComment($id: ID!) {
+              deleteComment(id: $id) {
+                id
+                success
               }
-            `,
-            variables: {
-              id: commentId,
-            },
-          }),
+            }
+          `,
+          variables: {
+            id: commentId,
+          },
         });
 
-        const data = await response.json();
-
-        if (data.errors) {
-          throw errorService.createError(
-            data.errors[0].message || 'Failed to delete comment',
-            'server/graphql-error',
-          );
-        }
-
-        return { ...data.data.deleteComment, postId };
+        return { ...data.deleteComment, postId };
       } catch (error) {
         throw errorService.createError(
           'Unable to delete comment',

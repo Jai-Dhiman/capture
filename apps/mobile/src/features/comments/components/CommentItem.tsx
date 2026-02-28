@@ -1,18 +1,16 @@
-import { useAuthStore } from '@/features/auth/stores/authStore';
 import { MediaImage } from '@/features/post/components/MediaImage';
+import { graphqlFetch } from '@/shared/lib/graphqlClient';
 import { errorService } from '@/shared/services/errorService';
-import { API_URL } from '@/shared/config/env';
+import { svgToDataUri } from '@/shared/utils/svgUtils';
+import { XIconSvg } from '@assets/icons/svgStrings';
 import { useQuery } from '@tanstack/react-query';
+import { Image } from 'expo-image';
 import { useAtom } from 'jotai';
 import React, { useState, useEffect } from 'react';
-import { ActivityIndicator, Alert, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 import { currentPostIdAtom, replyingToCommentAtom } from '../atoms/commentAtoms';
 import { useCommentActions } from '../hooks/useCommentActions';
 import type { Comment } from '../types/commentTypes';
-import { XIconSvg } from '@assets/icons/svgStrings';
-import { svgToDataUri } from '@/shared/utils/svgUtils';
-import { Image } from 'expo-image';
-
 
 export const CommentItem = ({ comment }: { comment: Comment }) => {
   const { startReply, cancelReply } = useCommentActions();
@@ -20,7 +18,6 @@ export const CommentItem = ({ comment }: { comment: Comment }) => {
   const [postId] = useAtom(currentPostIdAtom);
   const [showReplies, setShowReplies] = useState(false);
   const [hasReplies, setHasReplies] = useState(false);
-  const { session } = useAuthStore();
 
   const isSelected = replyingTo?.id === comment.id;
 
@@ -28,48 +25,34 @@ export const CommentItem = ({ comment }: { comment: Comment }) => {
   const { data: repliesCheck } = useQuery({
     queryKey: ['comment-has-replies', comment.id],
     queryFn: async () => {
-      if (!session?.access_token || !postId) {
-        return { comments: [], totalCount: 0 };
+      if (!postId) {
+        return { totalCount: 0 };
       }
 
       try {
-        const response = await fetch(`${API_URL}/graphql`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            query: `
-              query CheckCommentReplies($postId: ID!, $parentId: ID!) {
-                commentConnection(postId: $postId, parentId: $parentId, sortBy: newest, limit: 1) {
-                  totalCount
-                }
+        const data = await graphqlFetch<{
+          commentConnection: { totalCount: number };
+        }>({
+          query: `
+            query CheckCommentReplies($postId: ID!, $parentId: ID!) {
+              commentConnection(postId: $postId, parentId: $parentId, sortBy: newest, limit: 1) {
+                totalCount
               }
-            `,
-            variables: {
-              postId,
-              parentId: comment.id,
-            },
-          }),
+            }
+          `,
+          variables: {
+            postId,
+            parentId: comment.id,
+          },
         });
 
-        const data = await response.json();
-
-        if (data.errors) {
-          throw errorService.createError(
-            data.errors[0].message || 'Failed to check replies',
-            'server/graphql-error',
-          );
-        }
-
-        return data.data?.commentConnection;
+        return data.commentConnection;
       } catch (error) {
         console.error('Error checking for replies:', error);
         return { totalCount: 0 };
       }
     },
-    enabled: !!comment.id && !!postId && !!session?.access_token,
+    enabled: !!comment.id && !!postId,
   });
 
   useEffect(() => {
@@ -86,54 +69,41 @@ export const CommentItem = ({ comment }: { comment: Comment }) => {
   } = useQuery({
     queryKey: ['comment-replies', comment.id],
     queryFn: async () => {
-      if (!session?.access_token || !postId) {
+      if (!postId) {
         return { comments: [] };
       }
 
       try {
-        const response = await fetch(`${API_URL}/graphql`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            query: `
-              query GetCommentReplies($postId: ID!, $parentId: ID!) {
-                commentConnection(postId: $postId, parentId: $parentId, sortBy: newest, limit: 10) {
-                  comments {
+        const data = await graphqlFetch<{
+          commentConnection: { comments: Comment[] };
+        }>({
+          query: `
+            query GetCommentReplies($postId: ID!, $parentId: ID!) {
+              commentConnection(postId: $postId, parentId: $parentId, sortBy: newest, limit: 10) {
+                comments {
+                  id
+                  content
+                  path
+                  depth
+                  parentId
+                  isDeleted
+                  createdAt
+                  user {
                     id
-                    content
-                    path
-                    depth
-                    parentId
-                    createdAt
-                    user {
-                      id
-                      username
-                      profileImage
-                    }
+                    username
+                    profileImage
                   }
                 }
               }
-            `,
-            variables: {
-              postId,
-              parentId: comment.id,
-            },
-          }),
+            }
+          `,
+          variables: {
+            postId,
+            parentId: comment.id,
+          },
         });
 
-        const data = await response.json();
-
-        if (data.errors) {
-          throw errorService.createError(
-            data.errors[0].message || 'Failed to fetch replies',
-            'server/graphql-error',
-          );
-        }
-
-        return data.data?.commentConnection;
+        return data.commentConnection;
       } catch (error) {
         throw errorService.createError(
           'Unable to load replies',
@@ -197,9 +167,9 @@ export const CommentItem = ({ comment }: { comment: Comment }) => {
             {isSelected && (
               <TouchableOpacity onPress={cancelReply} className="absolute top-2 right-2 z-10">
                 <Image
-        source={{ uri: svgToDataUri(XIconSvg) }}
-        style={[{ width: 16, height: 16 }, {}]}
-      />
+                  source={{ uri: svgToDataUri(XIconSvg) }}
+                  style={[{ width: 16, height: 16 }, {}]}
+                />
               </TouchableOpacity>
             )}
 

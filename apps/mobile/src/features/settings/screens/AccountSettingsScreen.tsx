@@ -2,24 +2,40 @@ import { useAuthStore } from '@/features/auth/stores/authStore';
 import { MediaImage } from '@/features/post/components/MediaImage';
 import { useProfileStore } from '@/features/profile/stores/profileStore';
 import type { SettingsStackParamList } from '@/navigation/types';
-import { API_URL } from '@env';
+import { useAlert } from '@/shared/lib/AlertContext';
+import { apiClient } from '@/shared/lib/apiClient';
+import { graphqlFetch } from '@/shared/lib/graphqlClient';
+import { svgToDataUri } from '@/shared/utils/svgUtils';
+import {
+  AlgorithmIconSvg,
+  BlockIconSvg,
+  CustomBackIconSvg,
+  EmailIconSvg,
+  EmptyIconSvg,
+  LockIcon2Svg,
+  TrashIconSvg,
+} from '@assets/icons/svgStrings';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import React, { useState, useEffect } from 'react';
-import { Alert, ScrollView, StatusBar, Switch, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
-import { AlgorithmIconSvg, BlockIconSvg, CustomBackIconSvg, EmailIconSvg, EmptyIconSvg, LockIcon2Svg, TrashIconSvg } from '@assets/icons/svgStrings';
-import { svgToDataUri } from '@/shared/utils/svgUtils';
 import { Image } from 'expo-image';
-import { apiClient } from '@/shared/lib/apiClient';
-import { useAlert } from '@/shared/lib/AlertContext';
-
+import React, { useState, useEffect } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StatusBar,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 type NavigationProp = NativeStackNavigationProp<SettingsStackParamList, 'AccountSettings'>;
 
 export default function AccountSettingsScreen() {
   const navigation = useNavigation<NavigationProp>();
-  const { user, session, clearAuth } = useAuthStore();
+  const { user, clearAuth } = useAuthStore();
   const { profile } = useProfileStore();
   const [isPrivate, setIsPrivate] = useState(false);
   const queryClient = useQueryClient();
@@ -27,7 +43,9 @@ export default function AccountSettingsScreen() {
 
   const deleteAccountMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiClient.delete<{ success: boolean; message: string }>('/auth/account');
+      const response = await apiClient.delete<{ success: boolean; message: string }>(
+        '/auth/account',
+      );
       return response;
     },
     onSuccess: () => {
@@ -59,40 +77,34 @@ export default function AccountSettingsScreen() {
                   style: 'destructive',
                   onPress: () => deleteAccountMutation.mutate(),
                 },
-              ]
+              ],
             );
           },
         },
-      ]
+      ],
     );
   };
 
   useEffect(() => {
     const fetchPrivacySetting = async () => {
-      if (!session?.access_token) return;
+      if (!user?.id) return;
 
       try {
-        const response = await fetch(`${API_URL}/graphql`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            query: `
-              query GetProfile($userId: ID!) {
-                profile(id: $userId) {
-                  isPrivate
-                }
+        const data = await graphqlFetch<{
+          profile: { isPrivate: boolean };
+        }>({
+          query: `
+            query GetProfile($userId: ID!) {
+              profile(id: $userId) {
+                isPrivate
               }
-            `,
-            variables: { userId: user?.id },
-          }),
+            }
+          `,
+          variables: { userId: user.id },
         });
 
-        const data = await response.json();
-        if (data.data?.profile?.isPrivate !== undefined) {
-          setIsPrivate(data.data.profile.isPrivate);
+        if (data.profile?.isPrivate !== undefined) {
+          setIsPrivate(data.profile.isPrivate);
         }
       } catch (error) {
         console.error('Error fetching privacy setting:', error);
@@ -100,39 +112,25 @@ export default function AccountSettingsScreen() {
     };
 
     fetchPrivacySetting();
-  }, [user?.id, session]);
+  }, [user?.id]);
 
   const updatePrivacyMutation = useMutation({
     mutationFn: async (newValue: boolean) => {
-      if (!session?.access_token) {
-        throw new Error('No auth token available');
-      }
-
-      const response = await fetch(`${API_URL}/graphql`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          query: `
-            mutation UpdatePrivacySettings($isPrivate: Boolean!) {
-              updatePrivacySettings(isPrivate: $isPrivate) {
-                id
-                isPrivate
-              }
+      const data = await graphqlFetch<{
+        updatePrivacySettings: { id: string; isPrivate: boolean };
+      }>({
+        query: `
+          mutation UpdatePrivacySettings($isPrivate: Boolean!) {
+            updatePrivacySettings(isPrivate: $isPrivate) {
+              id
+              isPrivate
             }
-          `,
-          variables: { isPrivate: newValue },
-        }),
+          }
+        `,
+        variables: { isPrivate: newValue },
       });
 
-      const data = await response.json();
-      if (data.errors) {
-        throw new Error(data.errors[0]?.message || 'Failed to update privacy settings');
-      }
-
-      return data.data.updatePrivacySettings;
+      return data.updatePrivacySettings;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
@@ -159,9 +157,9 @@ export default function AccountSettingsScreen() {
           onPress={goBack}
         >
           <Image
-        source={{ uri: svgToDataUri(CustomBackIconSvg) }}
-        style={[{ width: 30, height: 30 }, {}]}
-      />
+            source={{ uri: svgToDataUri(CustomBackIconSvg) }}
+            style={[{ width: 30, height: 30 }, {}]}
+          />
         </TouchableOpacity>
         <Text className="flex-1 text-center text-xl font-semibold">Capture Account</Text>
       </View>
@@ -184,51 +182,51 @@ export default function AccountSettingsScreen() {
         <View className="bg-stone-400 bg-opacity-0 rounded-[10px] shadow border border-black mb-6">
           <TouchableOpacity className="flex-row items-center p-3 border-b border-black border-opacity-20">
             <Image
-        source={{ uri: svgToDataUri(BlockIconSvg) }}
-        style={[{ width: 25, height: 25 }, {}]}
-      />
+              source={{ uri: svgToDataUri(BlockIconSvg) }}
+              style={[{ width: 25, height: 25 }, {}]}
+            />
             <Text className="ml-4 text-xs font-bold">Account Information</Text>
             <View className="flex-1" />
             <Image
-        source={{ uri: svgToDataUri(EmptyIconSvg) }}
-        style={[{ width: 20, height: 20 }, {}]}
-      />
+              source={{ uri: svgToDataUri(EmptyIconSvg) }}
+              style={[{ width: 20, height: 20 }, {}]}
+            />
           </TouchableOpacity>
 
           <TouchableOpacity className="flex-row items-center p-3 border-b border-black border-opacity-20">
             <Image
-        source={{ uri: svgToDataUri(EmailIconSvg) }}
-        style={[{ width: 25, height: 25 }, {}]}
-      />
+              source={{ uri: svgToDataUri(EmailIconSvg) }}
+              style={[{ width: 25, height: 25 }, {}]}
+            />
             <Text className="ml-4 text-xs font-bold">Password & 2FA</Text>
             <View className="flex-1" />
             <Image
-        source={{ uri: svgToDataUri(EmptyIconSvg) }}
-        style={[{ width: 20, height: 20 }, {}]}
-      />
+              source={{ uri: svgToDataUri(EmptyIconSvg) }}
+              style={[{ width: 20, height: 20 }, {}]}
+            />
           </TouchableOpacity>
 
           <TouchableOpacity className="flex-row items-center p-3 border-b border-black border-opacity-20">
             <Image
-        source={{ uri: svgToDataUri(AlgorithmIconSvg) }}
-        style={[{ width: 25, height: 25 }, {}]}
-      />
+              source={{ uri: svgToDataUri(AlgorithmIconSvg) }}
+              style={[{ width: 25, height: 25 }, {}]}
+            />
             <Text className="ml-4 text-xs font-bold">
               Profile Verification (Media Outlet / Business)
             </Text>
             <View className="flex-1" />
             <Image
-        source={{ uri: svgToDataUri(EmptyIconSvg) }}
-        style={[{ width: 20, height: 20 }, {}]}
-      />
+              source={{ uri: svgToDataUri(EmptyIconSvg) }}
+              style={[{ width: 20, height: 20 }, {}]}
+            />
           </TouchableOpacity>
 
           <View className="flex-row items-center justify-between p-3">
             <View className="flex-row items-center">
               <Image
-        source={{ uri: svgToDataUri(LockIcon2Svg) }}
-        style={[{ width: 25, height: 25 }, {}]}
-      />
+                source={{ uri: svgToDataUri(LockIcon2Svg) }}
+                style={[{ width: 25, height: 25 }, {}]}
+              />
               <View className="ml-4">
                 <Text className="text-xs font-bold">Account Privacy</Text>
                 <Text className="text-[10px] text-black opacity-70">

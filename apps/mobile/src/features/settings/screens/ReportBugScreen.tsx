@@ -1,10 +1,16 @@
+import { useFeedbackCategories } from '@/features/feedback/hooks/useFeedbackCategories';
 import type { SettingsStackParamList } from '@/navigation/types';
 import { useAlert } from '@/shared/lib/AlertContext';
 import { graphqlFetch } from '@/shared/lib/graphqlClient';
+import { svgToDataUri } from '@/shared/utils/svgUtils';
+import { CustomBackIconSvg } from '@assets/icons/svgStrings';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm } from '@tanstack/react-form';
 import { useMutation } from '@tanstack/react-query';
+import Constants from 'expo-constants';
+import * as Device from 'expo-device';
+import { Image } from 'expo-image';
 import React from 'react';
 import {
   ActivityIndicator,
@@ -18,11 +24,6 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
-import * as Device from 'expo-device';
-import Constants from 'expo-constants';
-import { CustomBackIconSvg } from '@assets/icons/svgStrings';
-import { svgToDataUri } from '@/shared/utils/svgUtils';
-import { Image } from 'expo-image';
 
 type NavigationProp = NativeStackNavigationProp<SettingsStackParamList, 'ReportBug'>;
 
@@ -39,15 +40,14 @@ const CREATE_TICKET_MUTATION = `
 export default function ReportBugScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { showAlert } = useAlert();
+  const { data: categories, isLoading: categoriesLoading } = useFeedbackCategories();
+  const bugCategory = categories?.find((c) => c.name === 'Bug Report');
 
   const createTicket = useMutation({
     mutationFn: async (data: { subject: string; description: string }) => {
-      const deviceInfo = {
-        platform: Platform.OS,
-        osVersion: Platform.Version,
-        deviceModel: Device.modelName,
-        appVersion: Constants.expoConfig?.version || 'unknown',
-      };
+      if (!bugCategory) {
+        throw new Error('Bug Report category not found');
+      }
 
       const result = await graphqlFetch<{
         createTicket: { id: string; subject: string; status: string };
@@ -58,7 +58,13 @@ export default function ReportBugScreen() {
             subject: data.subject,
             description: data.description,
             type: 'BUG_REPORT',
-            deviceInfo: JSON.stringify(deviceInfo),
+            categoryId: bugCategory.id,
+            deviceInfo: {
+              platform: Platform.OS,
+              osVersion: String(Platform.Version),
+              appVersion: Constants.expoConfig?.version || 'unknown',
+              deviceModel: Device.modelName || undefined,
+            },
           },
         },
       });
@@ -111,7 +117,8 @@ export default function ReportBugScreen() {
 
         <ScrollView className="flex-1 px-4">
           <Text className="text-sm text-gray-600 mb-6">
-            Found something that isn't working correctly? Let us know and we'll fix it as soon as possible.
+            Found something that isn't working correctly? Let us know and we'll fix it as soon as
+            possible.
           </Text>
 
           <form.Field name="subject">
@@ -154,7 +161,7 @@ export default function ReportBugScreen() {
           <TouchableOpacity
             className="bg-[#E4CAC7] py-4 rounded-full mb-8"
             onPress={() => form.handleSubmit()}
-            disabled={createTicket.isPending}
+            disabled={createTicket.isPending || categoriesLoading || !bugCategory}
           >
             {createTicket.isPending ? (
               <ActivityIndicator color="#1F2937" />

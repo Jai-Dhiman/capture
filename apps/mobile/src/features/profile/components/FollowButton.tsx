@@ -1,6 +1,5 @@
-import { useAuthStore } from '@/features/auth/stores/authStore';
 import type { FollowingState } from '@/features/profile/types/followingTypes';
-import { API_URL } from '@env';
+import { graphqlFetch } from '@/shared/lib/graphqlClient';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import React, { useState, useEffect } from 'react';
 import { ActivityIndicator, Text, TouchableOpacity } from 'react-native';
@@ -37,40 +36,29 @@ export const FollowButton = ({
 
   const followMutation = useMutation({
     mutationFn: async () => {
-      const { session } = useAuthStore.getState();
-      if (!session?.access_token) {
-        throw new Error('No auth token available');
-      }
-
-      const response = await fetch(`${API_URL}/graphql`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          query: `
-            mutation FollowUser($userId: ID!) {
-              followUser(userId: $userId) {
-                success
-                relationship {
-                  id
-                  followerId
-                  followedId
-                  createdAt
-                }
+      const data = await graphqlFetch<{
+        followUser: {
+          success: boolean;
+          relationship: { id: string; followerId: string; followedId: string; createdAt: string };
+        };
+      }>({
+        query: `
+          mutation FollowUser($userId: ID!) {
+            followUser(userId: $userId) {
+              success
+              relationship {
+                id
+                followerId
+                followedId
+                createdAt
               }
             }
-          `,
-          variables: { userId },
-        }),
+          }
+        `,
+        variables: { userId },
       });
 
-      const data = await response.json();
-      if (data.errors) {
-        throw new Error(data.errors[0]?.message || 'Failed to follow user');
-      }
-      return data.data.followUser;
+      return data.followUser;
     },
     onMutate: () => {
       setIsFollowing(true);
@@ -89,34 +77,20 @@ export const FollowButton = ({
 
   const unfollowMutation = useMutation({
     mutationFn: async () => {
-      const { session } = useAuthStore.getState();
-      if (!session?.access_token) {
-        throw new Error('No auth token available');
-      }
-
-      const response = await fetch(`${API_URL}/graphql`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          query: `
-            mutation UnfollowUser($userId: ID!) {
-              unfollowUser(userId: $userId) {
-                success
-              }
+      const data = await graphqlFetch<{
+        unfollowUser: { success: boolean };
+      }>({
+        query: `
+          mutation UnfollowUser($userId: ID!) {
+            unfollowUser(userId: $userId) {
+              success
             }
-          `,
-          variables: { userId },
-        }),
+          }
+        `,
+        variables: { userId },
       });
 
-      const data = await response.json();
-      if (data.errors) {
-        throw new Error(data.errors[0]?.message || 'Failed to unfollow user');
-      }
-      return data.data.unfollowUser;
+      return data.unfollowUser;
     },
     onMutate: () => {
       setIsFollowing(false);
